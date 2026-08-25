@@ -17,4 +17,12 @@ describe("health (NFR-OBS-001)", () => {
     expect(res.body).toEqual({ ok: true });
     expect(res.headers["x-request-id"]).toMatch(/./);
   });
+
+  it("echoes x-request-id (T-NFR-O1)", async () => {
+    const res = await request(app.getHttpServer())
+      .get("/health")
+      .set("x-request-id", "trace-obs-001")
+      .expect(200);
+    expect(res.headers["x-request-id"]).toBe("trace-obs-001");
+  });
 });
