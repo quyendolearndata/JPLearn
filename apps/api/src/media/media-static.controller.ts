@@ -11,7 +11,7 @@ import {
 } from "@nestjs/common";
 import { createReadStream } from "node:fs";
 import { extname } from "node:path";
-import { JwtGuard } from "../auth/jwt.guard";
+import { MediaAccessGuard } from "./media-access.guard";
 import { MediaService } from "./media.service";
 import { LocalStorage } from "./local-storage";
 
@@ -24,7 +24,7 @@ const HLS_CONTENT_TYPES: Record<string, string> = {
 };
 
 @Controller("media")
-@UseGuards(JwtGuard)
+@UseGuards(MediaAccessGuard)
 export class MediaStaticController {
   constructor(
     @Inject(MediaService) private readonly media: MediaService,

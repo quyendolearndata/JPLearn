@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
+import { signedHlsForAsset, signedPlaybackForAsset } from "../media/signed-url";
 import { toPublic } from "./to-public";
 
 export interface CreateCatalogInput {
@@ -115,8 +116,8 @@ export class CatalogService {
         id: asset.id,
         catalog_item_id: asset.catalogItemId,
         storage_key: asset.storageKey,
-        playback_url: asset.playbackUrl,
-        hls_url: asset.hlsUrl,
+        playback_url: signedPlaybackForAsset(asset.id),
+        hls_url: asset.hlsUrl ? signedHlsForAsset(asset.id) : asset.hlsUrl,
         mime: asset.mime,
       })),
     };

@@ -68,12 +68,21 @@ describe("media upload and playback URL", () => {
       .expect(200);
     const item = listed.body.items.find((candidate: { id: string }) => candidate.id === created.body.id);
     expect(item.playback_url).toMatch(/^http:\/\//);
+    expect(new URL(item.playback_url).searchParams.get("sig")).toMatch(/^[a-f0-9]{64}$/);
 
     const playback = await request(app.getHttpServer())
       .get(new URL(uploaded.body.playback_url).pathname)
       .set("Authorization", `Bearer ${learnerToken}`)
       .expect(200);
     expect(playback.body.toString()).toBe("tiny media");
+
+    const signedPath = new URL(item.playback_url).pathname + new URL(item.playback_url).search;
+    const viaSig = await request(app.getHttpServer()).get(signedPath).expect(200);
+    expect(viaSig.body.toString()).toBe("tiny media");
+
+    await request(app.getHttpServer())
+      .get(new URL(item.playback_url).pathname + "?exp=1&sig=" + "ab".repeat(32))
+      .expect(401);
   });
 
   it("forbids learner media uploads and rejects empty files", async () => {

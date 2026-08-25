@@ -7,6 +7,7 @@ import {
 import { randomUUID } from "node:crypto";
 import { PrismaService } from "../prisma/prisma.service";
 import { LocalStorage } from "./local-storage";
+import { signedHlsForAsset, signedPlaybackForAsset } from "./signed-url";
 
 export const HLS_MANIFEST = "index.m3u8";
 
@@ -74,8 +75,8 @@ export class MediaService {
       id: asset.id,
       catalog_item_id: asset.catalogItemId,
       storage_key: asset.storageKey,
-      playback_url: asset.playbackUrl,
-      hls_url: asset.hlsUrl,
+      playback_url: signedPlaybackForAsset(asset.id),
+      hls_url: asset.hlsUrl ? signedHlsForAsset(asset.id) : asset.hlsUrl,
       mime: asset.mime,
     };
   }

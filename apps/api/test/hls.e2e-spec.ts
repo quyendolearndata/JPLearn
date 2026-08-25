@@ -101,9 +101,10 @@ describe("HLS playback (NFR-PERF-002)", () => {
       .post(`/staff/media/${assetId}/hls`)
       .set("Authorization", `Bearer ${adminToken}`)
       .expect(201);
-    expect(registered.body.hls_url).toBe(
-      `http://localhost:3001/media/${assetId}/hls/index.m3u8`,
+    expect(new URL(registered.body.hls_url).pathname).toBe(
+      `/media/${assetId}/hls/index.m3u8`,
     );
+    expect(new URL(registered.body.hls_url).searchParams.get("sig")).toMatch(/^[a-f0-9]{64}$/);
 
     await request(app.getHttpServer())
       .post(`/staff/catalog/${itemId}/submit-qa`)
@@ -119,7 +120,7 @@ describe("HLS playback (NFR-PERF-002)", () => {
       .set("Authorization", `Bearer ${learnerToken}`)
       .expect(200);
     const item = listed.body.items.find((candidate: { id: string }) => candidate.id === itemId);
-    expect(item.hls_url).toBe(registered.body.hls_url);
+    expect(new URL(item.hls_url).pathname).toBe(`/media/${assetId}/hls/index.m3u8`);
     expect(item.playback_url).toMatch(/^http:\/\//);
 
     const manifest = await request(app.getHttpServer())
