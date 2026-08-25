@@ -2,6 +2,8 @@
 
 Mỗi item: owner. Việc kỹ thuật sau SAD-3 mới kéo vào sprint code. Trước đó chỉ docs/SAD.
 
+Danh sách này là **định hướng theo phòng**. Task chạy hằng ngày nằm trên board — xem [board.md](board.md).
+
 ## CEO
 - Ký cổng SAD-1/2/3 khi đủ artifact
 - Runway theo Sóng 1; không tuyển full native 3 team

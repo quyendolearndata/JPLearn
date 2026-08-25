@@ -20,6 +20,8 @@ OKR. Quý 1 chỉ OKR nền tảng — xem [okr-q1.md](okr-q1.md).
 
 ## Definition of Ready
 
+Board và cách dịch DoR sang field: [board.md](board.md).
+
 Một task được kéo vào sprint khi có:
 
 1. Owner và RACI
