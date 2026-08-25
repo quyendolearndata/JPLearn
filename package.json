@@ -1,0 +1,16 @@
+{
+  "name": "jplearn",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "test:guard": "tsx scripts/assert-no-textbook.ts",
+    "test": "pnpm test:guard && pnpm -r test",
+    "dev:api": "pnpm --filter @jplearn/api start",
+    "dev:web": "pnpm --filter @jplearn/web dev",
+    "dev:mobile": "pnpm --filter @jplearn/mobile start",
+    "db:seed": "pnpm --filter @jplearn/api exec prisma db seed"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}
