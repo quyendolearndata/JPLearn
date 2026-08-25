@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Button, Text, View } from "react-native";
 import { Platform, useWindowDimensions } from "react-native";
 import * as SecureStore from "expo-secure-store";
+import { tokens } from "@jplearn/design-tokens";
 import { api } from "../../src/api";
 import { deviceClassFrom } from "../../src/deviceClass";
 
 export default function SessionScreen() {
   const { width, height } = useWindowDimensions();
   const deviceClass = deviceClassFrom({ os: Platform.OS, width, height });
+  const padding = deviceClass === "ipad" ? tokens.spaceIpad : tokens.spacePhone;
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [status, setStatus] = useState("");
 
@@ -36,7 +38,7 @@ export default function SessionScreen() {
   }
 
   return (
-    <View style={{ padding: 16, gap: 8 }}>
+    <View style={{ padding, gap: 8 }}>
       <Text>{status}</Text>
       <Button title="Bắt đầu phiên" onPress={() => void start()} />
       <Button title="Kết thúc phiên" onPress={() => void end()} />
