@@ -12,3 +12,5 @@ apps/api/storage
 media/stock/raw/
 media/stock/mp4/
 media/stock/audio/
+.pnpm-store/
+test-results/

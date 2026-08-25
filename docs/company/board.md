@@ -48,20 +48,20 @@ gh project item-list 1 --owner quyendolearndata --format json
 
 Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CEO**, Gate **SAD-1**, Surface **docs**.
 
-**FR id** chỉ có trên task kỹ thuật (#14–#17). Card cổng, OKR, clip brief để trống FR id là đúng.
+**FR id** bắt buộc trên task kỹ thuật (#14–#17, #24–#28, #30–#31, #34). Card cổng, OKR, clip brief, rubric để trống FR id là đúng.
 
 ## Card trên board (Q1)
 
 | # | Tiêu đề | Seat | Gate | FR / NFR | Ghi chú |
 |---|---|---|---|---|---|
-| — | Scaffold monorepo theo ADR-001 | CTO | Platform | — | Done |
-| — | Sơ đồ SAD-2 và SAD-3 | BA | SAD-2 | — | Done |
-| — | 15 khung lo-fi web / phone / iPad | Design | SAD-3 | NFR-XPLAT-002 | Done |
-| — | Dựng board và quy ước card | CPO | Platform | — | Done |
+| [#21](https://github.com/quyendolearndata/JPLearn/issues/21) | Scaffold monorepo theo ADR-001 | CTO | Platform | — | **Done** |
+| [#20](https://github.com/quyendolearndata/JPLearn/issues/20) | Sơ đồ SAD-2 và SAD-3 | BA | SAD-2 | — | **Done** |
+| [#19](https://github.com/quyendolearndata/JPLearn/issues/19) | 15 khung lo-fi web / phone / iPad | Design | SAD-3 | NFR-XPLAT-002 | **Done** |
+| [#18](https://github.com/quyendolearndata/JPLearn/issues/18) | Dựng board và quy ước card | CPO | Platform | — | **Done** |
 | [#2](https://github.com/quyendolearndata/JPLearn/issues/2) | Ký cổng SAD-1 (SRS) | CEO | SAD-1 | — | **Done** 2026-08-25 |
 | [#3](https://github.com/quyendolearndata/JPLearn/issues/3) | Ký cổng SAD-2 (Phân tích) | BA | SAD-2 | — | **Done** 2026-08-25 |
 | [#4](https://github.com/quyendolearndata/JPLearn/issues/4) | Ký cổng SAD-3 — năm chữ ký | CPO | SAD-3 | — | **Done** 2026-08-25 |
-| — | Ký cổng nền tảng | CEO | Platform | — | **Done** 2026-08-25 (`gates.md`, kèm exception) |
+| [#23](https://github.com/quyendolearndata/JPLearn/issues/23) | Ký cổng nền tảng | CEO | Platform | — | **Done** 2026-08-25 (`gates.md`, kèm exception) |
 | [#5](https://github.com/quyendolearndata/JPLearn/issues/5) | Viết OKR/KPI cho từng ghế Q1 | CPO | Platform | — | **Done** |
 | [#6](https://github.com/quyendolearndata/JPLearn/issues/6) | Merge PR #1 — agent theo ghế | CPO | Platform | — | **Done** |
 | [#7](https://github.com/quyendolearndata/JPLearn/issues/7) | Train rubric CI cho clip 1–2 | Pedagogy | Platform | — | **Done** |
@@ -75,6 +75,17 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | [#15](https://github.com/quyendolearndata/JPLearn/issues/15) | HLS trước cổng nền tảng | Platform | Platform | NFR-PERF-002 | **Done** (5c8dafa) |
 | [#16](https://github.com/quyendolearndata/JPLearn/issues/16) | Event payload vs dictionary | Data | Platform | FR-EVT-* | Done (audit doc) |
 | [#17](https://github.com/quyendolearndata/JPLearn/issues/17) | UC-L06 ba bề mặt | QA | Platform | FR-ID-002, FR-PRG-004 | **Done** (c5a3667, partial native) |
+| [#24](https://github.com/quyendolearndata/JPLearn/issues/24) | HMAC signed playback URL | Platform | Platform | FR-CMS-003, FR-CMS-004 | **In Progress** — code local chưa merge |
+| [#25](https://github.com/quyendolearndata/JPLearn/issues/25) | Request id + log 5xx | Platform | Platform | NFR-OBS-001 | **In Progress** — code local chưa merge |
+| [#26](https://github.com/quyendolearndata/JPLearn/issues/26) | useFlags chrome web | Web | Platform | FR-FLG-002 | **In Progress** — code local chưa merge |
+| [#27](https://github.com/quyendolearndata/JPLearn/issues/27) | Player CI trong phiên web | Web | Phase 5 | FR-LRN-001 | **In Progress** — code local chưa merge |
+| [#28](https://github.com/quyendolearndata/JPLearn/issues/28) | Padding iPad Phiên/Tiến độ | Mobile | Platform | NFR-XPLAT-002 | **In Progress** — code local chưa merge |
+| [#29](https://github.com/quyendolearndata/JPLearn/issues/29) | Cột trạng thái ma trận truy vết | BA | Platform | — | **In Progress** — docs local chưa merge |
+| [#30](https://github.com/quyendolearndata/JPLearn/issues/30) | UC-L06 máy native founder | QA | Platform | FR-ID-002, FR-PRG-004 | **Todo** — theo dõi #17 |
+| [#31](https://github.com/quyendolearndata/JPLearn/issues/31) | Phát HLS trên web | Web | Platform | NFR-PERF-002 | **Todo** — đóng exception player |
+| [#32](https://github.com/quyendolearndata/JPLearn/issues/32) | Review rubric CI clip thí điểm | Pedagogy | Platform | — | **Todo** |
+| [#33](https://github.com/quyendolearndata/JPLearn/issues/33) | Pass/fail 10 clip stock | CI Level QA | Platform | — | **Todo** |
+| [#34](https://github.com/quyendolearndata/JPLearn/issues/34) | Đo contrast chrome AA | QA | Platform | NFR-A11Y-001 | **Todo** |
 
 Định hướng theo phòng (không phải từng card): [90-day-backlog.md](90-day-backlog.md).
 

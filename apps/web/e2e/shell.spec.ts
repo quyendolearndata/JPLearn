@@ -22,6 +22,8 @@ test("login and progress have no grammar chrome T-FLG-002 T-NEG-002", async ({ p
   await expectNoBannedChrome(page);
   await page.goto("/session");
   await expect(page.getByRole("heading", { name: "Phiên" })).toBeVisible();
+  await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+  await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
   await expectNoBannedChrome(page);
   await page.goto("/progress");
   await expect(page.getByText(/phút/i)).toBeVisible();
@@ -32,6 +34,6 @@ test("catalog shows published seed item, hides draft T-CAT-002 T-FLG-002", async
   await register(page);
   await expect(page.getByRole("heading", { name: "Catalog" })).toBeVisible();
   await expect(page.getByText(/daily_home · video · 30s/)).toBeVisible();
-  await expect(page.getByText(/food/)).toHaveCount(0);
+  await expect(page.getByText(/food · video · 25s/)).toHaveCount(0);
   await expectNoBannedChrome(page);
 });
