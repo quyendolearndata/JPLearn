@@ -1,11 +1,11 @@
-import { Controller, Get, Query, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Inject, Query, Req, UseGuards } from "@nestjs/common";
 import { JwtGuard, type AuthenticatedRequest } from "../auth/jwt.guard";
 import { CatalogService } from "./catalog.service";
 
 @Controller("catalog")
 @UseGuards(JwtGuard)
 export class CatalogController {
-  constructor(private readonly catalog: CatalogService) {}
+  constructor(@Inject(CatalogService) private readonly catalog: CatalogService) {}
 
   @Get()
   list(

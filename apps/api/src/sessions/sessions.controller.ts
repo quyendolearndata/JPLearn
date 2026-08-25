@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   HttpCode,
+  Inject,
   Param,
   Post,
   Req,
@@ -15,7 +16,7 @@ import { SessionsService } from "./sessions.service";
 @Controller("sessions")
 @UseGuards(JwtGuard)
 export class SessionsController {
-  constructor(private readonly sessions: SessionsService) {}
+  constructor(@Inject(SessionsService) private readonly sessions: SessionsService) {}
 
   @Post()
   start(@Req() request: AuthenticatedRequest, @Body() body: { device_class?: DeviceClass }) {

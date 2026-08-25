@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  Inject,
   NotFoundException,
   Param,
   Res,
@@ -26,8 +27,8 @@ const HLS_CONTENT_TYPES: Record<string, string> = {
 @UseGuards(JwtGuard)
 export class MediaStaticController {
   constructor(
-    private readonly media: MediaService,
-    private readonly storage: LocalStorage,
+    @Inject(MediaService) private readonly media: MediaService,
+    @Inject(LocalStorage) private readonly storage: LocalStorage,
   ) {}
 
   @Get(":id")

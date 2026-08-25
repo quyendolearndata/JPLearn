@@ -50,6 +50,37 @@ async function main() {
     create: { userId: admin.id, role: "teacher" },
     update: {},
   });
+
+  await prisma.catalogItem.upsert({
+    where: { id: "00000000-0000-4000-8000-0000000000c1" },
+    create: {
+      id: "00000000-0000-4000-8000-0000000000c1",
+      topicId: "daily_home",
+      ciLevel: 0,
+      durationSeconds: 30,
+      mediaType: "video",
+      visualSupport: "high",
+      status: "published",
+      titleInternal: "seed-ci0-daily-home",
+      createdById: admin.id,
+    },
+    update: { status: "published" },
+  });
+  await prisma.catalogItem.upsert({
+    where: { id: "00000000-0000-4000-8000-0000000000d1" },
+    create: {
+      id: "00000000-0000-4000-8000-0000000000d1",
+      topicId: "food",
+      ciLevel: 1,
+      durationSeconds: 25,
+      mediaType: "video",
+      visualSupport: "high",
+      status: "draft",
+      titleInternal: "seed-draft-food",
+      createdById: admin.id,
+    },
+    update: { status: "draft" },
+  });
 }
 
 main()

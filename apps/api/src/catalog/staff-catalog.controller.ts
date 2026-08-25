@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   HttpCode,
+  Inject,
   Param,
   Post,
   Req,
@@ -15,7 +16,7 @@ import { CatalogService, type CreateCatalogInput } from "./catalog.service";
 @Controller("staff/catalog")
 @UseGuards(JwtGuard, RolesGuard)
 export class StaffCatalogController {
-  constructor(private readonly catalog: CatalogService) {}
+  constructor(@Inject(CatalogService) private readonly catalog: CatalogService) {}
 
   @Post()
   @Roles("teacher", "admin")

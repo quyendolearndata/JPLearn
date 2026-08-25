@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Inject,
   Post,
   Req,
   UseGuards,
@@ -13,7 +14,7 @@ import { JwtGuard, AuthenticatedRequest } from "./jwt.guard";
 
 @Controller()
 export class AuthController {
-  constructor(private readonly auth: AuthService) {}
+  constructor(@Inject(AuthService) private readonly auth: AuthService) {}
 
   @Post("auth/register")
   register(@Body() body: AuthCredentials) {

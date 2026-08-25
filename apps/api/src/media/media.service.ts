@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -12,8 +13,8 @@ export const HLS_MANIFEST = "index.m3u8";
 @Injectable()
 export class MediaService {
   constructor(
-    private readonly prisma: PrismaService,
-    private readonly storage: LocalStorage,
+    @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(LocalStorage) private readonly storage: LocalStorage,
   ) {}
 
   async upload(catalogItemId: string, file: { buffer: Buffer; mimetype: string }) {

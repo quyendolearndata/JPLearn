@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Inject,
   Patch,
   Req,
   UseGuards,
@@ -13,7 +14,7 @@ import { FlagsService, type Flags } from "./flags.service";
 
 @Controller()
 export class FlagsController {
-  constructor(private readonly flags: FlagsService) {}
+  constructor(@Inject(FlagsService) private readonly flags: FlagsService) {}
 
   @Get("flags")
   @UseGuards(JwtGuard)

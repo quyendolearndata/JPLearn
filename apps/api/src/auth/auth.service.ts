@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -15,7 +16,7 @@ import type { AuthCredentials } from "./dto";
 export class AuthService {
   private readonly secret: string;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {
     const secret = process.env.JWT_SECRET;
     if (!secret) throw new Error("JWT_SECRET must be set");
     this.secret = secret;

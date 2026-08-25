@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Controller,
+  Inject,
   Param,
   Post,
   UploadedFile,
@@ -16,7 +17,7 @@ import { MediaService } from "./media.service";
 @Controller("staff/catalog")
 @UseGuards(JwtGuard, RolesGuard)
 export class MediaController {
-  constructor(private readonly media: MediaService) {}
+  constructor(@Inject(MediaService) private readonly media: MediaService) {}
 
   @Post(":id/media")
   @Roles("teacher", "admin")

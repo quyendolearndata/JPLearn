@@ -1,6 +1,7 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from "@nestjs/common";
@@ -16,7 +17,7 @@ export interface AuthenticatedRequest {
 export class JwtGuard implements CanActivate {
   private readonly secret: string;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {
     const secret = process.env.JWT_SECRET;
     if (!secret) throw new Error("JWT_SECRET must be set");
     this.secret = secret;

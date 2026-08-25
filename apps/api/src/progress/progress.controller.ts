@@ -1,11 +1,11 @@
-import { Controller, Get, Req, UseGuards } from "@nestjs/common";
+import { Controller, Get, Inject, Req, UseGuards } from "@nestjs/common";
 import { JwtGuard, type AuthenticatedRequest } from "../auth/jwt.guard";
 import { SessionsService } from "../sessions/sessions.service";
 
 @Controller("progress")
 @UseGuards(JwtGuard)
 export class ProgressController {
-  constructor(private readonly sessions: SessionsService) {}
+  constructor(@Inject(SessionsService) private readonly sessions: SessionsService) {}
 
   @Get()
   get(@Req() request: AuthenticatedRequest) {

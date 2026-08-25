@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, OnModuleInit } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 
 export const FLAG_KEYS = [
@@ -12,7 +12,7 @@ export type Flags = Record<(typeof FLAG_KEYS)[number], boolean>;
 
 @Injectable()
 export class FlagsService implements OnModuleInit {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   onModuleInit(): void {
     void this.ensureDefaults().catch(() => undefined);
