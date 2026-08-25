@@ -2,6 +2,8 @@
 
 Actors: **Learner**, **Teacher**, **Admin**, **LevelQA** (có thể trùng Teacher).
 
+Sơ đồ Mermaid (use case, context, quy trình): [diagrams.md](diagrams.md).
+
 ## Sơ đồ (nền tảng)
 
 ```

@@ -37,3 +37,5 @@ Probe  ProbeChoice   (deferred P5)
 4. `minutes_comprehensible` chỉ tăng khi session `ended` hợp lệ (`ended_at > started_at`, duration ≤ 4 giờ — cắt session zombie).
 
 Owner context: xem bảng trong spec tổng hợp.
+
+Sơ đồ: [diagrams.md](diagrams.md).

@@ -11,14 +11,14 @@ Sao chép khối dưới vào cuối artifact khi review. Không ký bằng mi�
 
 ## Cổng SAD-2 — Phân tích
 
-- Tài liệu: `docs/sad/02-analysis/`
+- Tài liệu: `docs/sad/02-analysis/` + [diagrams.md](../sad/02-analysis/diagrams.md)
 - BA: mọi FR nền tảng map ≥1 use case
 - Pedagogy: domain không chứa điểm ngữ pháp/từ vựng như tiến độ
 - CTO: domain hiện thực được bằng Hướng A
 
 ## Cổng SAD-3 — Thiết kế (được phép scaffold)
 
-- Tài liệu: `docs/sad/03-design/` + spec tổng hợp
+- Tài liệu: `docs/sad/03-design/` + spec tổng hợp + [diagrams](../sad/03-design/diagrams.md) + [15 khung](../sad/03-design/wireframes/README.md)
 - CEO, CPO, BA, Pedagogy, CTO: năm chữ ký
 - Điều kiện: truy vết FR/NFR → use case → API/bảng → test ID
 

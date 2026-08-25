@@ -1,5 +1,7 @@
 # ERD v1
 
+Sơ đồ container/sequence: [diagrams.md](diagrams.md).
+
 ```mermaid
 erDiagram
   users ||--o{ user_roles : has
