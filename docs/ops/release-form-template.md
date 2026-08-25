@@ -22,7 +22,7 @@ Owner: Ops. Bắt buộc trước upload (SOP bước 2).
 
 ## Người ký (Production / Ops)
 
-Họ tên: _______________  Ngày: _______________
+Họ tên: Đỗ Qy (Ops mặc định Q1)  Ngày: _______________
 
 ---
 

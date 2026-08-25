@@ -24,7 +24,7 @@ Mật khẩu hash (argon2). Token không log (NFR-SEC-001).
 
 ## Liên hệ
 
-Tester nội bộ: _______________ (điền email Ops).
+Tester nội bộ: qdo654321@gmail.com (Ops).
 
 ## Xóa tài khoản
 
