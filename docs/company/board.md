@@ -61,6 +61,7 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | [#2](https://github.com/quyendolearndata/JPLearn/issues/2) | Ký cổng SAD-1 (SRS) | CEO | SAD-1 | — | **Done** 2026-08-25 |
 | [#3](https://github.com/quyendolearndata/JPLearn/issues/3) | Ký cổng SAD-2 (Phân tích) | BA | SAD-2 | — | **Done** 2026-08-25 |
 | [#4](https://github.com/quyendolearndata/JPLearn/issues/4) | Ký cổng SAD-3 — năm chữ ký | CPO | SAD-3 | — | **Done** 2026-08-25 |
+| — | Ký cổng nền tảng | CEO | Platform | — | **Done** 2026-08-25 (`gates.md`, kèm exception) |
 | [#5](https://github.com/quyendolearndata/JPLearn/issues/5) | Viết OKR/KPI cho từng ghế Q1 | CPO | Platform | — | **Done** |
 | [#6](https://github.com/quyendolearndata/JPLearn/issues/6) | Merge PR #1 — agent theo ghế | CPO | Platform | — | **Done** |
 | [#7](https://github.com/quyendolearndata/JPLearn/issues/7) | Train rubric CI cho clip 1–2 | Pedagogy | Platform | — | **Done** |

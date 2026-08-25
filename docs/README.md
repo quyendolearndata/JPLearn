@@ -1,7 +1,7 @@
 # JPLearn — bộ tài liệu nền tảng
 
 Ngày: 2026-08-25  
-Trạng thái: **cổng SAD-1/2/3 đã ký 2026-08-25** ([gates.md](company/gates.md)); platform đã scaffold trên `main`. Cổng nền tảng (Phase 5) chưa ký.
+Trạng thái: **cổng SAD-1/2/3 và cổng nền tảng đã ký 2026-08-25** ([gates.md](company/gates.md)); platform đã scaffold trên `main`. Phase 5 (SAD vòng học) được phép thiết kế; flags textbook vẫn `false`. Cổng nền tảng kèm exception HLS/URL ký/UC-L06 native — xem `gates.md`.
 
 ## Đọc theo thứ tự
 
