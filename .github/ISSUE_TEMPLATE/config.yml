@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Board JPLearn Platform
+    url: https://github.com/users/quyendolearndata/projects/1
+    about: Xem và kéo card theo ghế (Seat). CPO quản lý board.
+  - name: Quy ước board
+    url: https://github.com/quyendolearndata/JPLearn/blob/main/docs/company/board.md
+    about: Field Seat, FR id, Gate, DoR/DoD
