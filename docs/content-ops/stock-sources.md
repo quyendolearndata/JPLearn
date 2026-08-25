@@ -18,7 +18,20 @@ Thư mục local (không commit binary): `media/stock/mp4/`
 
 Hai file `.ogg` “washing hands” trên Commons thực ra **chỉ có tiếng**, không có hình — đã bỏ.
 
-**Thiếu thoại tiếng Nhật.** Stock này im lặng hoặc có tiếng nước. Để đạt rubric CI vẫn cần lồng 「て、て」「あらう、あらう」 (voice JP, không phụ đề Việt).
+**Thiếu thoại tiếng Nhật.** Stock gốc im lặng. Q1 dùng TTS **Kyoko** (macOS, tiếng Nhật) ghép vào — không lấy giọng YouTube/Forvo (bản quyền).
+
+## Clip đã ghép thoại (local)
+
+| File | Thoại | Nguồn hình |
+|---|---|---|
+| `media/stock/mp4/level-0-wash-hands.mp4` (32s) | て、て / あらう、あらう / きれい、きれい (lặp) | Commons CC BY-SA 2.0 Hand Washing video |
+| `media/stock/mp4/level-0-wash-hands-alt.mp4` (23s) | cùng thoại, bản ngắn | Commons PD Clean hands short |
+| `media/stock/mp4/level-0-kitchen-water.mp4` (8s) | みず、みず | Commons CC BY-SA 4.0 sensor faucet |
+
+Không phụ đề Việt. Pedagogy QA: TTS rõ nhưng chưa phải giọng người thật — đủ để chạy pipeline #13; clip “đời thực + giọng native” làm sau.
+
+Mở file chính: `open media/stock/mp4/level-0-wash-hands.mp4`
+
 
 ## Pexels — khớp brief hơn, tải tay (1 nút Download)
 

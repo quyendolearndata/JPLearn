@@ -11,3 +11,4 @@ apps/api/storage
 .DS_Store
 media/stock/raw/
 media/stock/mp4/
+media/stock/audio/
