@@ -123,6 +123,30 @@ paths:
                 file: { type: string, format: binary }
       responses:
         "201": { description: Media asset created }
+  /media/{id}:
+    get:
+      operationId: streamMedia
+      tags: [Media]
+      x-jplearn-fr: [FR-CMS-003, FR-CMS-004]
+      description: >
+        MP4/audio bytes. Auth is Bearer JWT **or** HMAC query `exp`+`sig` (TTL 1h)
+        so `<video src>` can play without Authorization. Secret = MEDIA_SIGNING_SECRET or JWT_SECRET.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: exp
+          schema: { type: integer }
+          description: Unix seconds expiry (required if no Bearer)
+        - in: query
+          name: sig
+          schema: { type: string, pattern: "^[a-f0-9]{64}$" }
+      responses:
+        "200": { description: Media stream }
+        "401": { description: Missing or invalid JWT/signature }
+        "404": { description: Asset not found }
   /media/{id}/hls/{file}:
     get:
       operationId: streamHls

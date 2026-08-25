@@ -22,8 +22,8 @@ Test ID sẽ dùng khi có repo test. Cột Test = tên dự kiến.
 | FR-PRG-004 | UC-L06 | GET /progress | T-PRG-004 |
 | FR-CMS-001 | UC-T03 | upload media | T-CMS-001 |
 | FR-CMS-002 | UC-T04, UC-A01 | submit-qa, publish | T-CMS-002 |
-| FR-CMS-003 | UC-A01 | playback_url | T-CMS-003 |
-| FR-CMS-004 | UC-A01 | URL từ API | T-CMS-004 |
+| FR-CMS-003 | UC-A01, UC-L02, UC-L10 | playback_url HMAC `exp`+`sig` | T-CMS-003 |
+| FR-CMS-004 | UC-A01 | URL từ API (không CDN hardcode) | T-CMS-004 |
 | FR-FLG-001 | UC-A02 | GET /flags defaults false | T-FLG-001 |
 | FR-FLG-002 | UC-A02 | UI ẩn | T-FLG-002 client |
 | FR-EVT-001 | UC-L03, UC-L04 | events table | T-EVT-001 |
@@ -41,7 +41,21 @@ Test ID sẽ dùng khi có repo test. Cột Test = tên dự kiến.
 | NFR-SEC-002 | UC-T01 | 403 learner staff | T-NFR-S2 |
 | NFR-PRIV-001 | — | PII tối thiểu | T-NFR-PR1 |
 | NFR-A11Y-001 | S-LOGIN, S-SESSION | keyboard pause (P5 play) / chrome AA | T-NFR-A1 |
-| NFR-OBS-001 | — | request id | T-NFR-O1 |
-| FR-LRN-* | UC-L10–12 | không implement | T-P5-hold |
+| NFR-OBS-001 | — | request id | T-NFR-O1 echo `x-request-id` |
+| FR-LRN-001 | UC-L10 | web `<video>` trong phiên, signed URL | T-NFR-A1 keyboard controls |
+| FR-LRN-002…004 | UC-L11–12 | chưa | T-P5-hold |
 
-Lỗ = hàng FR nền tảng không có UC hoặc không có thiết kế. Bảng trên không lỗ FR v1.
+Lỗ = hàng FR nền tảng không có UC hoặc không có thiết kế. Cổng nền tảng 2026-08-25: exception HLS player / native UC-L06 / alert 5xx còn mở.
+
+### Trạng thái hiện thực (2026-08-25)
+
+| Hạng | Trạng thái |
+|---|---|
+| FR v1 identity/catalog/session/progress/flags/events | PASS API + web |
+| FR-CMS-003/004 signed URL | PASS API (HMAC query; JWT vẫn được) |
+| FR-FLG-002 | PASS web `useFlags()`; kênh tắt không vẽ |
+| FR-LRN-001 | PARTIAL — player web trong phiên; chưa Expo |
+| UC-L06 native | PARTIAL — API+web; máy thật chưa |
+| NFR-PERF-002 HLS trên client | GAP |
+| NFR-A11Y-001 contrast đo | GAP |
+| NFR-OBS-001 alert 5xx staging | PARTIAL — log JSON khi 5xx + request id |

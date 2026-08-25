@@ -79,11 +79,11 @@ Admin:   UC-A01 Publish, UC-A02 Manage flags, UC-A03 Manage roles
 - FR: FR-ID-004  
 - Gán `learner` / `teacher` / `admin`.
 
-## Deferred (có ID, không vẽ UI v1)
+## Deferred (có ID; UC-L10 bắt đầu sau cổng nền tảng)
 
 | UC | FR | Tên |
 |---|---|---|
-| UC-L10 | FR-LRN-001 | Phát item CI trong phiên |
+| UC-L10 | FR-LRN-001 | Phát item CI trong phiên — **web skeleton** (video + signed URL); Expo chưa |
 | UC-L11 | FR-LRN-002 | Chọn hình kiểm hiểu |
 | UC-L12 | FR-LRN-003 | Cổng nói sau silent period |
 | UC-L13 | FR-EVT-003 | `level_exposed` khi mở item (có thể làm sớm nếu catalog item mở được; v1 ghi khi user mở chi tiết item nếu shell có màn hình chi tiết) |
