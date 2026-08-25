@@ -52,28 +52,28 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 
 ## Card trên board (Q1)
 
-| # | Tiêu đề | Seat | Gate | FR / NFR |
-|---|---|---|---|---|
-| — | Scaffold monorepo theo ADR-001 | CTO | Platform | — |
-| — | Sơ đồ SAD-2 và SAD-3 | BA | SAD-2 | — |
-| — | 15 khung lo-fi web / phone / iPad | Design | SAD-3 | NFR-XPLAT-002 |
-| — | Dựng board và quy ước card | CPO | Platform | — |
-| [#2](https://github.com/quyendolearndata/JPLearn/issues/2) | Ký cổng SAD-1 (SRS) | CEO | SAD-1 | — |
-| [#3](https://github.com/quyendolearndata/JPLearn/issues/3) | Ký cổng SAD-2 (Phân tích) | BA | SAD-2 | — |
-| [#4](https://github.com/quyendolearndata/JPLearn/issues/4) | Ký cổng SAD-3 — năm chữ ký | CPO | SAD-3 | — |
-| [#5](https://github.com/quyendolearndata/JPLearn/issues/5) | Viết OKR/KPI cho từng ghế Q1 | CPO | Platform | — |
-| [#6](https://github.com/quyendolearndata/JPLearn/issues/6) | Merge PR #1 — agent theo ghế | CPO | Platform | — |
-| [#7](https://github.com/quyendolearndata/JPLearn/issues/7) | Train rubric CI cho clip 1–2 | Pedagogy | Platform | — |
-| [#8](https://github.com/quyendolearndata/JPLearn/issues/8) | Viết 10 brief clip level 0–1 | Teacher | Platform | — |
-| [#9](https://github.com/quyendolearndata/JPLearn/issues/9) | Template release form | Ops | Platform | — |
-| [#10](https://github.com/quyendolearndata/JPLearn/issues/10) | Privacy note staging | Ops | Platform | — |
-| [#11](https://github.com/quyendolearndata/JPLearn/issues/11) | Trang positioning (không campaign) | Growth | Platform | — |
-| [#12](https://github.com/quyendolearndata/JPLearn/issues/12) | Quay/thu 10–20 clip level 0–1 | Production | Platform | — |
-| [#13](https://github.com/quyendolearndata/JPLearn/issues/13) | Chạy hết pipeline clip đầu tiên | Content | Platform | FR-CMS-002 |
-| [#14](https://github.com/quyendolearndata/JPLearn/issues/14) | Playwright e2e API + web | QA | Platform | NFR-A11Y-001 |
-| [#15](https://github.com/quyendolearndata/JPLearn/issues/15) | HLS trước cổng nền tảng | Platform | Platform | NFR-PERF-002 |
-| [#16](https://github.com/quyendolearndata/JPLearn/issues/16) | Event payload vs dictionary | Data | Platform | FR-EVT-* |
-| [#17](https://github.com/quyendolearndata/JPLearn/issues/17) | UC-L06 ba bề mặt | QA | Platform | FR-ID-002, FR-PRG-004 |
+| # | Tiêu đề | Seat | Gate | FR / NFR | Ghi chú |
+|---|---|---|---|---|---|
+| — | Scaffold monorepo theo ADR-001 | CTO | Platform | — | Done |
+| — | Sơ đồ SAD-2 và SAD-3 | BA | SAD-2 | — | Done |
+| — | 15 khung lo-fi web / phone / iPad | Design | SAD-3 | NFR-XPLAT-002 | Done |
+| — | Dựng board và quy ước card | CPO | Platform | — | Done |
+| [#2](https://github.com/quyendolearndata/JPLearn/issues/2) | Ký cổng SAD-1 (SRS) | CEO | SAD-1 | — | Chờ chữ ký người |
+| [#3](https://github.com/quyendolearndata/JPLearn/issues/3) | Ký cổng SAD-2 (Phân tích) | BA | SAD-2 | — | Chờ chữ ký người |
+| [#4](https://github.com/quyendolearndata/JPLearn/issues/4) | Ký cổng SAD-3 — năm chữ ký | CPO | SAD-3 | — | Chờ chữ ký người |
+| [#5](https://github.com/quyendolearndata/JPLearn/issues/5) | Viết OKR/KPI cho từng ghế Q1 | CPO | Platform | — | **Done** |
+| [#6](https://github.com/quyendolearndata/JPLearn/issues/6) | Merge PR #1 — agent theo ghế | CPO | Platform | — | Conflict resolved locally; chờ push + merge |
+| [#7](https://github.com/quyendolearndata/JPLearn/issues/7) | Train rubric CI cho clip 1–2 | Pedagogy | Platform | — | **Done** |
+| [#8](https://github.com/quyendolearndata/JPLearn/issues/8) | Viết 10 brief clip level 0–1 | Teacher | Platform | — | 2/10 mẫu |
+| [#9](https://github.com/quyendolearndata/JPLearn/issues/9) | Template release form | Ops | Platform | — | **Done** |
+| [#10](https://github.com/quyendolearndata/JPLearn/issues/10) | Privacy note staging | Ops | Platform | — | **Done** |
+| [#11](https://github.com/quyendolearndata/JPLearn/issues/11) | Trang positioning (không campaign) | Growth | Platform | — | **Done** |
+| [#12](https://github.com/quyendolearndata/JPLearn/issues/12) | Quay/thu 10–20 clip level 0–1 | Production | Platform | — | Chờ quay |
+| [#13](https://github.com/quyendolearndata/JPLearn/issues/13) | Chạy hết pipeline clip đầu tiên | Content | Platform | FR-CMS-002 | Chờ clip #12 |
+| [#14](https://github.com/quyendolearndata/JPLearn/issues/14) | Playwright e2e API + web | QA | Platform | NFR-A11Y-001 | Sprint kế |
+| [#15](https://github.com/quyendolearndata/JPLearn/issues/15) | HLS trước cổng nền tảng | Platform | Platform | NFR-PERF-002 | Sprint kế |
+| [#16](https://github.com/quyendolearndata/JPLearn/issues/16) | Event payload vs dictionary | Data | Platform | FR-EVT-* | Done (audit doc) |
+| [#17](https://github.com/quyendolearndata/JPLearn/issues/17) | UC-L06 ba bề mặt | QA | Platform | FR-ID-002, FR-PRG-004 | Sprint kế |
 
 Định hướng theo phòng (không phải từng card): [90-day-backlog.md](90-day-backlog.md).
 
