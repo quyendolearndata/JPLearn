@@ -1,0 +1,304 @@
+openapi: 3.0.3
+info:
+  title: JPLearn Platform API
+  version: 0.1.0
+  description: Foundation v1. No grammar, flashcards, or L1 translation channels.
+servers:
+  - url: https://api.staging.jplearn.local
+paths:
+  /auth/register:
+    post:
+      operationId: register
+      tags: [Identity]
+      x-jplearn-fr: [FR-ID-001]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 10 }
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthSession" }
+  /auth/login:
+    post:
+      operationId: login
+      tags: [Identity]
+      x-jplearn-fr: [FR-ID-001, FR-ID-002]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthSession" }
+        "401": { description: Invalid credentials }
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [Identity]
+      x-jplearn-fr: [FR-ID-003]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Logged out this device }
+  /me:
+    get:
+      operationId: getMe
+      tags: [Identity]
+      x-jplearn-fr: [FR-ID-002, FR-ID-004]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+  /catalog:
+    get:
+      operationId: listCatalog
+      tags: [Catalog]
+      x-jplearn-fr: [FR-CAT-002, FR-CAT-003, FR-CAT-004]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: ci_level
+          schema: { type: integer, minimum: 0, maximum: 4 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/CatalogItemPublic" }
+  /staff/catalog:
+    post:
+      operationId: createCatalogItem
+      tags: [CMS]
+      x-jplearn-fr: [FR-CAT-001, FR-CAT-005]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CatalogItemWrite" }
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
+        "403": { description: Not teacher or admin }
+  /staff/catalog/{id}/media:
+    post:
+      operationId: uploadMedia
+      tags: [CMS]
+      x-jplearn-fr: [FR-CMS-001]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201": { description: Media asset created }
+  /staff/catalog/{id}/submit-qa:
+    post:
+      operationId: submitLevelQa
+      tags: [CMS]
+      x-jplearn-fr: [FR-CMS-002]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: status=level_qa }
+  /staff/catalog/{id}/publish:
+    post:
+      operationId: publishCatalogItem
+      tags: [CMS]
+      x-jplearn-fr: [FR-CMS-002, FR-CMS-003, FR-CMS-004]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: status=published }
+        "403": { description: Admin only }
+  /sessions:
+    post:
+      operationId: startSession
+      tags: [Session]
+      x-jplearn-fr: [FR-SES-001, FR-SES-003, FR-EVT-001, FR-EVT-003]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_class]
+              properties:
+                device_class:
+                  type: string
+                  enum: [web, phone, ipad]
+      responses:
+        "201":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningSession" }
+  /sessions/{id}/end:
+    post:
+      operationId: endSession
+      tags: [Session]
+      x-jplearn-fr: [FR-SES-002, FR-PRG-001, FR-EVT-001, FR-EVT-002]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearnerProgress" }
+  /progress:
+    get:
+      operationId: getProgress
+      tags: [Progress]
+      x-jplearn-fr: [FR-PRG-001, FR-PRG-002, FR-PRG-003, FR-PRG-004]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearnerProgress" }
+  /flags:
+    get:
+      operationId: getFlags
+      tags: [Flags]
+      x-jplearn-fr: [FR-FLG-001, FR-FLG-002]
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Flags" }
+  /staff/flags:
+    patch:
+      operationId: patchFlags
+      tags: [Flags]
+      x-jplearn-fr: [FR-FLG-001]
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Flags" }
+      responses:
+        "200": { description: Updated }
+        "403": { description: Admin only }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthSession:
+      type: object
+      required: [access_token, user]
+      properties:
+        access_token: { type: string }
+        user: { $ref: "#/components/schemas/User" }
+    User:
+      type: object
+      required: [id, email, roles]
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string }
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [learner, teacher, admin]
+    CatalogItemPublic:
+      type: object
+      description: Learner-facing. No L1 translation fields.
+      required: [id, ci_level, duration_seconds, media_type, topic_id, visual_support]
+      properties:
+        id: { type: string, format: uuid }
+        ci_level: { type: integer }
+        duration_seconds: { type: integer }
+        media_type: { type: string, enum: [video, audio] }
+        topic_id: { type: string }
+        visual_support: { type: string, enum: [high, medium, low] }
+        playback_url: { type: string, format: uri }
+    CatalogItemWrite:
+      type: object
+      required: [topic_id, ci_level, duration_seconds, media_type, visual_support]
+      properties:
+        topic_id: { type: string }
+        ci_level: { type: integer }
+        duration_seconds: { type: integer }
+        media_type: { type: string, enum: [video, audio] }
+        visual_support: { type: string, enum: [high, medium, low] }
+        title_internal: { type: string }
+    CatalogItemStaff:
+      allOf:
+        - { $ref: "#/components/schemas/CatalogItemWrite" }
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            status:
+              type: string
+              enum: [draft, level_qa, published, archived]
+            has_l1_translation: { type: boolean, enum: [false] }
+    LearningSession:
+      type: object
+      required: [id, device_class, started_at]
+      properties:
+        id: { type: string, format: uuid }
+        device_class: { type: string, enum: [web, phone, ipad] }
+        started_at: { type: string, format: date-time }
+        ended_at: { type: string, format: date-time, nullable: true }
+        duration_seconds: { type: integer, nullable: true }
+    LearnerProgress:
+      type: object
+      required: [minutes_comprehensible, current_ci_level]
+      properties:
+        minutes_comprehensible: { type: integer, minimum: 0 }
+        current_ci_level: { type: integer, minimum: 0, maximum: 4 }
+      additionalProperties: false
+    Flags:
+      type: object
+      required: [speaking_enabled, l1_subtitles_enabled, grammar_enabled, flashcards_enabled]
+      properties:
+        speaking_enabled: { type: boolean }
+        l1_subtitles_enabled: { type: boolean }
+        grammar_enabled: { type: boolean }
+        flashcards_enabled: { type: boolean }
