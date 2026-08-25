@@ -17,6 +17,39 @@ GitHub Projects (không Linear) vì PR, CI và card cùng một chỗ; agent và
 
 **Seat** = ghế chịu trách nhiệm (RACI), không phải tên người. Sóng 1 một người kiêm nhiều ghế; card vẫn ghi ghế.
 
+Field **đã được gán trên từng card** (Seat, Gate, Surface, FR id khi có). GitHub mặc định **chỉ hiện cột Status** — phải bật thêm cột trong view (xem mục dưới). Field custom **không** nằm trong body issue; mở card hoặc bảng Table mới thấy.
+
+## Hiển thị Seat / Gate / Surface / FR id trên UI
+
+GitHub Projects không tự show mọi custom field. Nếu board chỉ thấy **Status**, dữ liệu vẫn có — view chưa bật cột.
+
+### Cách 1 — Table (nên dùng hàng ngày)
+
+1. Mở [JPLearn Platform](https://github.com/users/quyendolearndata/projects/1).
+2. Tab **Table** (không phải Board).
+3. Góc phải bảng → **+** hoặc **Customize** / **Fields**.
+4. Bật: **Seat**, **Gate**, **Surface**, **FR id** (và **Assignees** nếu gán người thật).
+5. (Tuỳ chọn) **Save view** → đặt tên `By seat` hoặc `Full fields`.
+
+Lọc theo ghế: filter `Seat = BA` (hoặc Teacher, Platform, …).
+
+### Cách 2 — Board (kanban)
+
+View **Board** group theo **Status** (Todo / In Progress / Done). Seat/Gate **không** thành cột kanban mặc định.
+
+- Click một card → panel phải → cuộn **Seat**, **Gate**, **Surface**, **FR id**.
+- Muốn nhìn nhiều ghế cùng lúc → dùng **Table**, không dùng Board.
+
+### Cách 3 — CLI (kiểm tra nhanh)
+
+```bash
+gh project item-list 1 --owner quyendolearndata --format json
+```
+
+Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CEO**, Gate **SAD-1**, Surface **docs**.
+
+**FR id** chỉ có trên task kỹ thuật (#14–#17). Card cổng, OKR, clip brief để trống FR id là đúng.
+
 ## Card trên board (Q1)
 
 | # | Tiêu đề | Seat | Gate | FR / NFR |
