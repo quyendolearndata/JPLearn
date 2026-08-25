@@ -71,7 +71,7 @@ importers:
         version: 7.2.2
       ts-jest:
         specifier: ^29.2.0
-        version: 29.4.12(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0)(typescript@5.7.3)
+        version: 29.4.12(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.20.1))(typescript@5.7.3)
       tsx:
         specifier: ^4.19.2
         version: 4.23.12
@@ -92,7 +92,7 @@ importers:
         version: 53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       expo-router:
         specifier: ~5.1.3
-        version: 5.1.11(4zvkmqvwrpibnbe2catt7d34qa)
+        version: 5.1.11(rq3g2ekt3276m7oixva4esuyxy)
       expo-secure-store:
         specifier: ~14.2.3
         version: 14.2.4(expo@53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))
@@ -123,7 +123,7 @@ importers:
         version: 29.7.0(@types/node@22.20.1)
       ts-jest:
         specifier: ^29.2.5
-        version: 29.4.12(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0)(typescript@5.7.3)
+        version: 29.4.12(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.20.1))(typescript@5.7.3)
       typescript:
         specifier: ~5.7.2
         version: 5.7.3
@@ -158,6 +158,12 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.0
         version: 19.2.5(@types/react@19.0.14)
+      axe-core:
+        specifier: ^4.13.0
+        version: 4.13.0
+      axe-playwright:
+        specifier: ^2.2.2
+        version: 2.2.2(playwright@1.62.1)
       typescript:
         specifier: ~5.7.2
         version: 5.7.3
@@ -176,7 +182,7 @@ importers:
         version: 29.7.0(@types/node@22.20.1)
       ts-jest:
         specifier: ^29.2.5
-        version: 29.4.12(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0)(typescript@5.7.3)
+        version: 29.4.12(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.20.1))(typescript@5.7.3)
       typescript:
         specifier: ~5.7.2
         version: 5.7.3
@@ -1582,6 +1588,9 @@ packages:
   '@types/jsonwebtoken@9.0.10':
     resolution: {integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==}
 
+  '@types/junit-report-builder@3.0.2':
+    resolution: {integrity: sha512-R5M+SYhMbwBeQcNXYWNCZkl09vkVfAtcPIaCGdzIkkbeaTrVbGQ7HVgi4s+EmM/M1K4ZuWQH0jGcvMvNePfxYA==}
+
   '@types/methods@1.1.4':
     resolution: {integrity: sha512-ymXWVrDiCxTBE3+RIrrP533E70eA+9qu7zdWoHuOmGujkYtzf4HQF96b8nwHLqhuf4ykX61IGRIB38CC6/sImQ==}
 
@@ -1721,6 +1730,21 @@ packages:
 
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
+
+  axe-core@4.13.0:
+    resolution: {integrity: sha512-UzGt8zg7Ny8djbYMhxl2zuEevVa7r2gJjYY5Lwr1xM7+XU2nd6CkIWFTVcCIbAP63vSz71NaVyyuSk9lHKcy0A==}
+    engines: {node: '>=4'}
+
+  axe-html-reporter@2.2.11:
+    resolution: {integrity: sha512-WlF+xlNVgNVWiM6IdVrsh+N0Cw7qupe5HT9N6Uyi+aN7f6SSi92RDomiP1noW8OWIV85V6x404m5oKMeqRV3tQ==}
+    engines: {node: '>=8.9.0'}
+    peerDependencies:
+      axe-core: '>=3'
+
+  axe-playwright@2.2.2:
+    resolution: {integrity: sha512-h350/grzDCPgpuWV7eEOqr/f61Xn07Gi9f9B3Ew4rW6/nFtpdEJYW6jgRATorgAGXjEAYFTnaY3sEys39wDw4A==}
+    peerDependencies:
+      playwright: '>1.0.0'
 
   babel-jest@29.7.0:
     resolution: {integrity: sha512-BrvGY3xZSwEcCzKvKsCi2GgHqDqsYkOP4/by5xCgIwGXQxIEh+8ew3gmrE1y7XRR6LHZIj6yLYnUi/mm2KXKBg==}
@@ -2918,6 +2942,10 @@ packages:
     resolution: {integrity: sha512-MT/xP0CrubFRNLNKvxJ2BYfy53Zkm++5bX9dtuPbqAeQpTVe0MQTFhao8+Cp//EmJp244xt6Drw/GVEGCUj40g==}
     engines: {node: '>=12', npm: '>=6'}
 
+  junit-report-builder@5.1.2:
+    resolution: {integrity: sha512-HzvLbEQcoqN2LmGnloShxu2hLadi/rkOTU3zt61UeMICLS0wGDvbf8neIi6+bGkxMnAePIcFMFnbqV+r6YvwxA==}
+    engines: {node: '>=16'}
+
   jwa@2.0.1:
     resolution: {integrity: sha512-hRF04fqJIP8Abbkq5NKGN0Bbr3JxlQ+qhZufXVr0DvujKy93ZCbXZMHDL4EOtodSbCWxOqR8MS1tXA5hwqCXDg==}
 
@@ -3048,6 +3076,9 @@ packages:
   lodash.throttle@4.1.1:
     resolution: {integrity: sha512-wIkUCfVKpVsWo3JSZlc+8MB5it+2AN5W8J7YVMST30UrvcQNZ1Okbj+rbVniijTWE6FGYy4XJq/rHkas8qJMLQ==}
 
+  lodash@4.18.1:
+    resolution: {integrity: sha512-dMInicTPVE8d1e5otfwmmjlxkZoUpiVLwyeTdUsi/Caj/gfzzblBcCE5sRHV/AsjuCmxWrte2TNGSYuCeCq+0Q==}
+
   log-symbols@2.2.0:
     resolution: {integrity: sha512-VeIAFslyIerEJLXHziedo2basKbMKtTw3vfn5IzG0XTjhAVEJyNHnL2p7vc+wBDSdQuUpNw3M2u6xb9QsAY5Eg==}
     engines: {node: '>=4'}
@@ -3061,6 +3092,10 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
+
+  make-dir@3.1.0:
+    resolution: {integrity: sha512-g3FeP20LNwhALb/6Cz6Dd4F2ngze0jz7tbzrD2wAV+o9FeNHe4rL+yK2md0J/fiSf1sa1ADhXqi5+oVwOM/eGw==}
+    engines: {node: '>=8'}
 
   make-dir@4.0.0:
     resolution: {integrity: sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw==}
@@ -3229,6 +3264,10 @@ packages:
   multer@2.2.0:
     resolution: {integrity: sha512-6rdyFg2kLrMh9Jee7/BMPuV9lEAd7lLW2YUpF9/YxR7njyoUwwQ0ZPh3TaIY50Sw6vlyD2HW3wGOkTS4P79xrQ==}
     engines: {node: '>= 10.16.0'}
+
+  mustache@4.2.0:
+    resolution: {integrity: sha512-71ippSywq5Yb7/tVYyGbkBggbU8H3u5Rz56fH60jGFgr8uHwxs+aSKeqmluIVzM0m0kB7xQjKS6qPfd0b2ZoqQ==}
+    hasBin: true
 
   mz@2.7.0:
     resolution: {integrity: sha512-z81GNO7nnYMEhrGh9LeymoE4+Yr0Wn5McHIZMK5cfQCl+NDX08sCZgUc9/6MHni9IWuFLm1Z3HTCXu2z9fN62Q==}
@@ -6104,6 +6143,8 @@ snapshots:
       '@types/ms': 2.1.0
       '@types/node': 22.20.1
 
+  '@types/junit-report-builder@3.0.2': {}
+
   '@types/methods@1.1.4': {}
 
   '@types/ms@2.1.0': {}
@@ -6229,6 +6270,22 @@ snapshots:
   async-limiter@1.0.1: {}
 
   asynckit@0.4.0: {}
+
+  axe-core@4.13.0: {}
+
+  axe-html-reporter@2.2.11(axe-core@4.13.0):
+    dependencies:
+      axe-core: 4.13.0
+      mustache: 4.2.0
+
+  axe-playwright@2.2.2(playwright@1.62.1):
+    dependencies:
+      '@types/junit-report-builder': 3.0.2
+      axe-core: 4.13.0
+      axe-html-reporter: 2.2.11(axe-core@4.13.0)
+      junit-report-builder: 5.1.2
+      picocolors: 1.1.1
+      playwright: 1.62.1
 
   babel-jest@29.7.0(@babel/core@7.29.7):
     dependencies:
@@ -6946,7 +7003,7 @@ snapshots:
     dependencies:
       invariant: 2.2.4
 
-  expo-router@5.1.11(4zvkmqvwrpibnbe2catt7d34qa):
+  expo-router@5.1.11(rq3g2ekt3276m7oixva4esuyxy):
     dependencies:
       '@expo/metro-runtime': 5.0.5(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))
       '@expo/schema-utils': 0.1.9
@@ -6957,7 +7014,7 @@ snapshots:
       '@react-navigation/native-stack': 7.18.9(@react-navigation/native@7.3.17(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native-safe-area-context@5.4.0(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native-screens@4.11.1(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       client-only: 0.0.1
       expo: 53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
-      expo-constants: 17.1.8(expo@53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))
+      expo-constants: 57.0.14(expo@53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))
       expo-linking: 57.0.7(expo@53.0.27(@babel/core@7.29.7)(@expo/metro-runtime@5.0.5(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0)))(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.5(@babel/core@7.29.7)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       invariant: 2.2.4
       react-fast-compare: 3.2.2
@@ -7735,6 +7792,12 @@ snapshots:
       ms: 2.1.3
       semver: 7.8.5
 
+  junit-report-builder@5.1.2:
+    dependencies:
+      lodash: 4.18.1
+      make-dir: 3.1.0
+      xmlbuilder: 15.1.1
+
   jwa@2.0.1:
     dependencies:
       buffer-equal-constant-time: 1.0.1
@@ -7836,6 +7899,8 @@ snapshots:
 
   lodash.throttle@4.1.1: {}
 
+  lodash@4.18.1: {}
+
   log-symbols@2.2.0:
     dependencies:
       chalk: 2.4.2
@@ -7849,6 +7914,10 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
+
+  make-dir@3.1.0:
+    dependencies:
+      semver: 6.3.1
 
   make-dir@4.0.0:
     dependencies:
@@ -8104,6 +8173,8 @@ snapshots:
       busboy: 1.6.0
       concat-stream: 2.0.0
       type-is: 1.6.18
+
+  mustache@4.2.0: {}
 
   mz@2.7.0:
     dependencies:
@@ -9022,7 +9093,7 @@ snapshots:
 
   ts-interface-checker@0.1.13: {}
 
-  ts-jest@29.4.12(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0)(typescript@5.7.3):
+  ts-jest@29.4.12(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(jest-util@29.7.0)(jest@29.7.0(@types/node@22.20.1))(typescript@5.7.3):
     dependencies:
       bs-logger: 0.2.6
       fast-json-stable-stringify: 2.1.0
