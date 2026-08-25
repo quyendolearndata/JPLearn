@@ -1,5 +1,11 @@
+node_modules
+.next
+dist
+*.tsbuildinfo
+dist
+.expo
+apps/api/storage
+.env
 .worktrees/
 .superpowers/
 .DS_Store
-node_modules/
-.env
