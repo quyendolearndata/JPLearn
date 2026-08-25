@@ -14,7 +14,7 @@ Trạng thái: **SAD-2/SAD-3 có use case + sơ đồ Mermaid + 15 khung lo-fi**
 7. [Implementation plan — scaffold platform](superpowers/plans/2026-08-25-jplearn-platform-foundation.md)
 8. [Board — task theo ghế](company/board.md) — GitHub Projects · [sync 2026-08-25](company/sync/2026-08-25-q1-planning.md)
 9. [OKR/KPI theo ghế Q1](company/okr-q1-by-seat.md)
-10. [Agents theo ghế](../.cursor/agents/README.md) — sau khi merge PR #1
+10. [Agents theo ghế](../.cursor/agents/README.md)
 
 ## Cổng
 
