@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import type { CatalogItemPublic } from "@jplearn/domain";
 import { api } from "../../lib/api";
 import { getToken } from "../../lib/auth-storage";
 
 export default function SessionPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [status, setStatus] = useState("");
+  const [clipUrl, setClipUrl] = useState<string | null>(null);
 
   async function start() {
     const token = getToken();
@@ -21,7 +23,12 @@ export default function SessionPage() {
     });
     const body = await res.json();
     setSessionId(body.id);
-    setStatus("Phiên đang chạy.");
+    const catalog = await api("/catalog", { token }).then((r) => r.json()) as {
+      items: CatalogItemPublic[];
+    };
+    const clip = catalog.items.find((item) => item.playback_url);
+    setClipUrl(clip?.playback_url ?? null);
+    setStatus(clip?.playback_url ? "Phiên đang chạy." : "Phiên đang chạy. Chưa có clip published.");
   }
 
   async function end() {
@@ -29,6 +36,7 @@ export default function SessionPage() {
     if (!token || !sessionId) return;
     await api(`/sessions/${sessionId}/end`, { method: "POST", token });
     setSessionId(null);
+    setClipUrl(null);
     setStatus("Đã kết thúc phiên.");
   }
 
@@ -42,6 +50,9 @@ export default function SessionPage() {
       <button type="button" onClick={() => void end()}>
         Kết thúc phiên
       </button>
+      {clipUrl ? (
+        <video src={clipUrl} controls playsInline style={{ width: "100%", maxWidth: 720, marginTop: 16 }} />
+      ) : null}
     </section>
   );
 }
