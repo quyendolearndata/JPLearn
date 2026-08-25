@@ -1,6 +1,6 @@
 # Tổ chức đích và sóng tuyển
 
-Cơ cấu **có đủ ghế** ngay. Người thật điền dần. Một founder được giữ tối đa 3 ghế trong Sóng 1; ghế BA không được để trống (CEO/CPO kiêm cũng được, phải ghi rõ).
+Cơ cấu **có đủ ghế** ngay. Người thật điền dần. Một founder được giữ tối đa 3 ghế trong Sóng 1; ghế BA không được để trống (CEO/CPO kiêm cũng được, phải ghi rõ). Mỗi ghế có custom agent trong [`.cursor/agents/`](../../.cursor/agents/README.md).
 
 ## Sơ đồ
 
@@ -52,3 +52,5 @@ Mobile, Web, Video/Audio, CI Level QA, QA engineer.
 Growth, CS, Data, Legal/Ops, thêm giáo viên và production.
 
 Chi tiết task 90 ngày đầu: [raci.md](raci.md) và plan gốc.
+
+**Custom agents:** mỗi ghế một agent — [`.cursor/agents/README.md`](../../.cursor/agents/README.md).
