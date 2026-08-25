@@ -56,3 +56,5 @@ Pixabay tương tự (cũng Cloudflare với máy): [rửa tay #34050](https://p
 1. Chọn **một** MP4 (ưu tiên `hand-washing-video.mp4` hoặc Pexels rửa tay).
 2. Lồng thoại JP ngắn (ghi âm điện thoại) **hoặc** nộp Level QA với ghi chú “visual-only, audio TBD”.
 3. Upload CMS → `level_qa` → publish. Không nhúng file Pexels nguyên bản lên GitHub public (điều khoản: không phát tán như stock).
+
+Thuê người / AI tạo 10 clip: [prompts-for-creators.md](prompts-for-creators.md).
