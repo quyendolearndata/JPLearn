@@ -139,6 +139,9 @@ importers:
       '@jplearn/domain':
         specifier: workspace:*
         version: link:../../packages/domain
+      hls.js:
+        specifier: ^1.7.1
+        version: 1.7.1
       next:
         specifier: ^15.1.0
         version: 15.5.23(@playwright/test@1.62.1)(react-dom@19.2.8(react@19.0.0))(react@19.0.0)
@@ -2630,6 +2633,9 @@ packages:
 
   hermes-parser@0.29.1:
     resolution: {integrity: sha512-xBHWmUtRC5e/UL0tI7Ivt2riA/YBq9+SiYFU7C1oBa/j2jYGlIF9043oak1F47ihuDIxQ5nbsKueYJDRY02UgA==}
+
+  hls.js@1.7.1:
+    resolution: {integrity: sha512-DlzIkeBAS9IIQ432k3BUf3HlwbsR0+trB1i2lDdN2gUkNkrehFurh0/48M5c1/EjlDkdGng1gwZIpwyPxvdZ/g==}
 
   hosted-git-info@7.0.2:
     resolution: {integrity: sha512-puUZAUKT5m8Zzvs72XWy3HtvVbTWljRE66cP60bxJzAqf2DgICo7lYTY2IHUmLnNpjYvw5bvmoHvPc0QO2a62w==}
@@ -7306,6 +7312,8 @@ snapshots:
   hermes-parser@0.29.1:
     dependencies:
       hermes-estree: 0.29.1
+
+  hls.js@1.7.1: {}
 
   hosted-git-info@7.0.2:
     dependencies:
