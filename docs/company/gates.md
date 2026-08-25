@@ -42,10 +42,10 @@ Sao chép khối dưới vào cuối artifact khi review. Không ký bằng mi�
 |---|---|
 | Shell 3 bề mặt + CMS publish + sự kiện phút | **Đạt** — web + API; #13 pipeline; #14 e2e; #16 events |
 | 10 clip thí điểm + quyền | **Đạt thí điểm** — #12 Veo/Commons + Kyoko; không phải 70–95s người thật |
-| HLS trên web và iPad (NFR-PERF-002) | **Exception** — opt-in local, một bitrate, chưa player client |
-| Playback URL đã ký (FR-CMS-003/004) | **Exception** — JWT localhost, disk local |
-| UC-L06 native iPhone/iPad/Android | **Exception** — PASS API + web; native PARTIAL (#17) |
-| NFR-OBS 5xx alert; NFR-A11Y đo | **Exception** — mới `x-request-id`; a11y chrome chưa đo |
+| HLS trên web và iPad (NFR-PERF-002) | **Đã đóng phía web 2026-08-25** — CiPlayer hls.js + fallback MP4 (#31, e2e `hls.spec.ts` PASS); iPad native player có code (expo-video) chờ verify máy thật (#30) |
+| Playback URL đã ký (FR-CMS-003/004) | **Đã đóng 2026-08-25** — HMAC `exp`+`sig` trên playback/hls URL (#24, T-CMS-003 PASS) |
+| UC-L06 native iPhone/iPad/Android | **Exception** — PASS API + web; native PARTIAL (#17), theo dõi #30 |
+| NFR-OBS 5xx alert; NFR-A11Y đo | **Phần lớn đã đóng 2026-08-25** — request id + log 5xx JSON (#25); contrast AA đo bằng axe PASS (#34); còn nợ: alert staging thật (#25 comment), document-title (#36) |
 
 Nợ exception = việc Platform/Mobile/QA **sau cổng**, không chặn SAD vòng học. Không dùng exception để mở FR-NEG.
 
