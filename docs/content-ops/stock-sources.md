@@ -20,17 +20,26 @@ Hai file `.ogg` “washing hands” trên Commons thực ra **chỉ có tiếng*
 
 **Thiếu thoại tiếng Nhật.** Stock gốc im lặng. Q1 dùng TTS **Kyoko** (macOS, tiếng Nhật) ghép vào — không lấy giọng YouTube/Forvo (bản quyền).
 
-## Clip đã ghép thoại (local)
+## Clip đã ghép thoại (local) — bộ Q1 đóng #12
 
-| File | Thoại | Nguồn hình |
-|---|---|---|
-| `media/stock/mp4/level-0-wash-hands.mp4` (32s) | て、て / あらう、あらう / きれい、きれい (lặp) | Commons CC BY-SA 2.0 Hand Washing video |
-| `media/stock/mp4/level-0-wash-hands-alt.mp4` (23s) | cùng thoại, bản ngắn | Commons PD Clean hands short |
-| `media/stock/mp4/level-0-kitchen-water.mp4` (8s) | みず、みず | Commons CC BY-SA 4.0 sensor faucet |
+Mười file khớp brief: [issue-12-clips.md](../qa/issue-12-clips.md). Veo gốc: `media/stock/mp4/veo-original/`.
 
-Không phụ đề Việt. Pedagogy QA: TTS rõ nhưng chưa phải giọng người thật — đủ để chạy pipeline #13; clip “đời thực + giọng native” làm sau.
+| File | dur | Thoại | Nguồn hình |
+|---|---|---|---|
+| `level-0-breakfast.mp4` | 10s | みず / のむ / パン | Google Veo |
+| `level-0-kitchen.mp4` | 10s | コップ / テーブル / おく | Google Veo |
+| `level-0-wash-hands.mp4` | 32s | て / あらう / きれい | Commons CC BY-SA 2.0 Hand Washing video |
+| `level-0-put-on-jacket.mp4` | 10s | ジャケット / きる / ボタン | Google Veo |
+| `level-0-fold-clothes.mp4` | 10s | シャツ / たたむ / しまう | Google Veo |
+| `level-0-boil-water.mp4` | 10s | おゆ / わく / あつい | Google Veo |
+| `level-0-bedtime.mp4` | 10s | スリッパ / けす / おやすみ | Google Veo |
+| `level-0-tidy-books.mp4` | 10s | ほん / ならべる / たな | Google Veo |
+| `level-1-open-door.mp4` | 10s | ドア / あける / いってきます | Google Veo |
+| `level-1-pack-bag.mp4` | 10s | かばん / ほん / いれる / いこう | Google Veo |
 
-Mở file chính: `open media/stock/mp4/level-0-wash-hands.mp4`
+Phụ: `level-0-wash-hands-alt.mp4` (23s, Commons PD), `level-0-kitchen-water.mp4` (8s, Commons vòi). Không phụ đề Việt. TTS Kyoko — chưa phải giọng người thật.
+
+Mở file: `open media/stock/mp4/level-0-wash-hands.mp4`
 
 
 ## Pexels — khớp brief hơn, tải tay (1 nút Download)

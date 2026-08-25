@@ -28,4 +28,4 @@
 
 - HLS cho clip này (opt-in, `hls_url` null — MP4 fallback đúng Q1)
 - UI native iPhone/Android
-- #12 quay 10–20 clip người thật — pipeline dùng stock thí điểm
+- 9 clip Veo còn lại chưa upload CMS (#12 đã đủ file local)

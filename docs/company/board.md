@@ -68,7 +68,7 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | [#9](https://github.com/quyendolearndata/JPLearn/issues/9) | Template release form | Ops | Platform | — | **Done** |
 | [#10](https://github.com/quyendolearndata/JPLearn/issues/10) | Privacy note staging | Ops | Platform | — | **Done** |
 | [#11](https://github.com/quyendolearndata/JPLearn/issues/11) | Trang positioning (không campaign) | Growth | Platform | — | **Done** |
-| [#12](https://github.com/quyendolearndata/JPLearn/issues/12) | Quay/thu 10–20 clip level 0–1 | Production | Platform | — | Chờ quay |
+| [#12](https://github.com/quyendolearndata/JPLearn/issues/12) | Quay/thu 10–20 clip level 0–1 | Production | Platform | — | **Done** (10 MP4 Veo+Commons + Kyoko, docs/qa/issue-12-clips.md) |
 | [#13](https://github.com/quyendolearndata/JPLearn/issues/13) | Chạy hết pipeline clip đầu tiên | Content | Platform | FR-CMS-002 | **Done** (stock+TTS, docs/qa/issue-13-pipeline.md) |
 | [#14](https://github.com/quyendolearndata/JPLearn/issues/14) | Playwright e2e API + web | QA | Platform | NFR-A11Y-001 | **Done** (bfff7cf) |
 | [#15](https://github.com/quyendolearndata/JPLearn/issues/15) | HLS trước cổng nền tảng | Platform | Platform | NFR-PERF-002 | **Done** (5c8dafa) |

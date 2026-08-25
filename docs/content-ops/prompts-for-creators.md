@@ -2,6 +2,14 @@
 
 Owner: Production. Dùng khi **không tự quay**. Đủ 10 file MP4 + quyền (hợp đồng/AI license) là đóng [#12](https://github.com/quyendolearndata/JPLearn/issues/12).
 
+**Lưu video Veo / tải về:**
+
+`media/stock/mp4/`
+
+Đường dẫn đầy đủ: `/Users/quyendo/Documents/Learn/JPLearn/media/stock/mp4/`
+
+Đặt tên đúng: `level-0-breakfast.mp4`, `level-0-kitchen.mp4`, … (10 tên trong mục C). Folder này **gitignore** — không commit lên GitHub.
+
 Gửi **khối A + một clip** mỗi lần. Không gửi cả 10 nếu người kia dễ trộn thoại.
 
 ---
@@ -135,10 +143,10 @@ Giọng: người lớn, trung tính. Không hát.
 
 ## E. Checklist nhận hàng (đóng #12)
 
-- [ ] 10 file MP4, tên đúng bảng C
-- [ ] Không phụ đề Việt / chữ trên hình
-- [ ] Nghe được thoại Nhật khớp cột Thoại
-- [ ] Hợp đồng hoặc license AI: dùng trong app JPLearn
-- [ ] Nếu lộ mặt người thật: [release form](../ops/release-form-template.md) đã ký
+- [x] 10 file MP4, tên đúng bảng C — 2026-08-25, [issue-12-clips.md](../qa/issue-12-clips.md)
+- [x] Không phụ đề Việt / chữ trên hình
+- [x] Nghe được thoại Nhật khớp cột Thoại (Kyoko mux, cùng cách clip rửa tay)
+- [x] License: Veo (9 clip) + Commons (rửa tay) + TTS Kyoko
+- [x] Không lộ người thật → không cần release form cho bộ này
 
-Nhận đủ 10 file → Production đóng issue #12. Upload CMS là việc Content (#13, đã chạy 1 clip).
+Production đã đóng [#12](https://github.com/quyendolearndata/JPLearn/issues/12). Upload CMS là việc Content (#13, đã chạy 1 clip rửa tay).
