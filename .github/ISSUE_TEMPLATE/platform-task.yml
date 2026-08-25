@@ -1,0 +1,82 @@
+name: Platform task (theo ghế)
+description: Card công việc có Seat, FR id, và tiêu chí chấp nhận
+title: "[Seat] "
+labels: []
+body:
+  - type: markdown
+    value: |
+      CPO thêm card lên [JPLearn Platform](https://github.com/users/quyendolearndata/projects/1) sau khi tạo issue.
+      Quy ước: [docs/company/board.md](https://github.com/quyendolearndata/JPLearn/blob/main/docs/company/board.md)
+  - type: dropdown
+    id: seat
+    attributes:
+      label: Seat (ghế chịu trách nhiệm)
+      description: Khớp `.cursor/agents/` — không phải tên người
+      options:
+        - CEO
+        - CPO
+        - BA
+        - Pedagogy
+        - Pedagogy QA
+        - Design
+        - Content
+        - Teacher
+        - Production
+        - CI Level QA
+        - CTO
+        - Platform
+        - Web
+        - Mobile
+        - Data
+        - QA
+        - Growth
+        - CS
+        - Ops
+    validations:
+      required: true
+  - type: dropdown
+    id: gate
+    attributes:
+      label: Gate
+      options:
+        - SAD-1
+        - SAD-2
+        - SAD-3
+        - Platform
+        - Phase 5
+    validations:
+      required: true
+  - type: input
+    id: fr_id
+    attributes:
+      label: FR / NFR id
+      description: Bắt buộc với task kỹ thuật. Ví dụ FR-CAT-002 hoặc NFR-XPLAT-002
+      placeholder: FR-SES-001
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      options:
+        - docs
+        - web
+        - phone
+        - iPad
+        - CMS
+        - API
+        - media
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Tiêu chí chấp nhận
+      description: Definition of Done cho card này
+    validations:
+      required: true
+  - type: checkboxes
+    id: bible
+    attributes:
+      label: Kiểm tra bible
+      options:
+        - label: Không thêm flashcard, grammar drill, hay dịch L1 làm kênh hiểu nghĩa
+          required: true
