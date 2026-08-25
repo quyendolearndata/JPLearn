@@ -38,4 +38,4 @@ Onboarding/cài đặt: tiếng Việt. Chrome học: tối giản, không giả
 - Motion chậm; không badge “+10 XP”.
 - Type: UI Việt/Latin cho chrome; không giả Hán tự như điểm số.
 
-Wireframe lo-fi đủ cổng SAD-3: năm màn S-* trên ba bề mặt (15 khung, có thể trùng logic). File hình đặt `docs/sad/03-design/wireframes/` khi Design vẽ; cổng thiết kế **không** đóng nếu thiếu khung iPad.
+Wireframe lo-fi đủ cổng SAD-3: năm màn S-* trên ba bề mặt (15 khung). File: [wireframes/README.md](wireframes/README.md).

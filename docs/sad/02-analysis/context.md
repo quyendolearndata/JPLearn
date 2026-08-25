@@ -1,5 +1,7 @@
 # System context
 
+Sơ đồ Mermaid: [diagrams.md](diagrams.md).
+
 ```
                     ┌─────────────┐
                     │   Learner   │

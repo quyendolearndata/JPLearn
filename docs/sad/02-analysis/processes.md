@@ -1,5 +1,7 @@
 # Quy trình (BPMN gọn)
 
+Sơ đồ Mermaid: [diagrams.md](diagrams.md).
+
 ## 1. Phiên học skeleton (Learner)
 
 ```

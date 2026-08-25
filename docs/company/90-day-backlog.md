@@ -24,7 +24,7 @@ Mỗi item: owner. Việc kỹ thuật sau SAD-3 mới kéo vào sprint code. Tr
 
 ## Design
 - Tokens tối thiểu
-- 15 khung lo-fi (5 màn × 3 bề mặt), **iPad bắt buộc** trước chữ ký SAD-3
+- 15 khung lo-fi (5 màn × 3 bề mặt), **iPad bắt buộc** — [wireframes](../sad/03-design/wireframes/README.md)
 - Không màn ngữ pháp
 
 ## Content

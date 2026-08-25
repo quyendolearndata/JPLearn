@@ -1,15 +1,15 @@
 # JPLearn — bộ tài liệu nền tảng
 
 Ngày: 2026-08-25  
-Trạng thái: **bản thiết kế nền tảng, chưa được ký cổng**. Không scaffold mã nguồn platform trước khi cổng SAD-3 đóng.
+Trạng thái: **SAD-2/SAD-3 có use case + sơ đồ Mermaid + 15 khung lo-fi**; platform đã scaffold trên `main`. Cổng SAD chưa ký trên [gates.md](company/gates.md).
 
 ## Đọc theo thứ tự
 
 1. [Tầm nhìn công ty](company/vision.md)
 2. [Pedagogy bible](pedagogy/bible.md) — đầu vào nghiệp vụ, không thay SRS
 3. [SAD-1 Khảo sát + SRS](sad/01-survey-srs/srs.md)
-4. [SAD-2 Phân tích](sad/02-analysis/use-cases.md)
-5. [SAD-3 Thiết kế](sad/03-design/c4.md)
+4. [SAD-2 Phân tích](sad/02-analysis/use-cases.md) — [sơ đồ](sad/02-analysis/diagrams.md)
+5. [SAD-3 Thiết kế](sad/03-design/c4.md) — [sơ đồ](sad/03-design/diagrams.md) · [wireframes](sad/03-design/wireframes/README.md)
 6. [Spec tổng hợp](superpowers/specs/2026-08-25-jplearn-foundation-design.md)
 7. [Implementation plan — scaffold platform](superpowers/plans/2026-08-25-jplearn-platform-foundation.md)
 

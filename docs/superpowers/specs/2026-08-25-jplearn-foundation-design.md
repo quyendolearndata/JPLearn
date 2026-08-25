@@ -1,7 +1,7 @@
 # JPLearn Foundation Design Spec
 
 Ngày: 2026-08-25  
-Trạng thái: **artifact đủ để review và ký cổng**; chưa scaffold platform; chưa vòng học Phase 5.  
+Trạng thái: **artifact đủ để review và ký cổng** (use case, Mermaid, 15 khung lo-fi, OpenAPI). Platform đã scaffold trên `main`. Chưa vòng học Phase 5.  
 Owner tổng: CPO + BA. Pedagogy bible là đầu vào, không thay SRS.
 
 > Spec này gộp quyết định đã chốt. Chi tiết sống ở thư mục `docs/`. Đổi yêu cầu thì sửa SRS trước, rồi truy vết, rồi spec này.
@@ -61,7 +61,8 @@ C4: [docs/sad/03-design/c4.md](../../sad/03-design/c4.md).
 ERD: [docs/sad/03-design/erd.md](../../sad/03-design/erd.md).  
 OpenAPI: [docs/sad/03-design/openapi.yaml](../../sad/03-design/openapi.yaml).  
 UI shell: [docs/sad/03-design/ui-shell.md](../../sad/03-design/ui-shell.md).  
-Wireframe hình: [docs/sad/03-design/wireframes/README.md](../../sad/03-design/wireframes/README.md) — **chưa có PNG; bắt buộc trước chữ ký SAD-3**.  
+Wireframe hình: [docs/sad/03-design/wireframes/README.md](../../sad/03-design/wireframes/README.md) — 15 khung SVG lo-fi (web / phone / iPad).
+Sơ đồ: [SAD-2 diagrams](../../sad/02-analysis/diagrams.md), [SAD-3 diagrams](../../sad/03-design/diagrams.md).  
 Deploy: [docs/sad/03-design/deployment.md](../../sad/03-design/deployment.md).  
 Truy vết: [docs/sad/03-design/traceability.md](../../sad/03-design/traceability.md).  
 ADR stack: [docs/sad/03-design/adr-001-stack.md](../../sad/03-design/adr-001-stack.md).
@@ -89,8 +90,8 @@ P0 Company OS → SAD-1 SRS → P1 Pedagogy + SAD-2
   → [cổng nền tảng] → P5 SAD vòng học (FR-LRN-*)
 ```
 
-P0–SAD-3 docs: **đã viết trong repo**.  
-P3 code: **cấm** cho đến năm chữ ký SAD-3 + 15 khung lo-fi.  
+P0–SAD-3 docs + sơ đồ + 15 khung lo-fi: **đã viết trong repo**.
+P3 code: **đã scaffold trên `main`**. Cổng SAD vẫn cần chữ ký trên [gates.md](../../company/gates.md).
 P5: spec riêng, lặp SAD thu hẹp.
 
 Cổng nền tảng: bible ký; truy vết không lỗ FR v1; 3 client cùng catalog; publish ≤ NFR-PERF-001; event phút ghi được; quyền media sạch; tokens 3 bề mặt.
@@ -107,7 +108,7 @@ Cổng nền tảng: bible ký; truy vết không lỗ FR v1; 3 client cùng cat
 
 ## 10. Self-review (2026-08-25)
 
-- Placeholder: không dùng TBD. Việc còn lại ghi rõ (PNG wireframe = Design, trước ký SAD-3; HLS = trước cổng nền tảng; probes = P5).
+- Placeholder: wireframe lo-fi đã có SVG; HLS = trước cổng nền tảng; probes = P5.
 - Mâu thuẫn: player CI đầy đủ là P5; `playback_url` trên catalog vẫn có để CMS chứng minh media — shell v1 không bắt buộc player. MP4 Q1 vs HLS: ADR-001, không mâu thuẫn SRS.
 - Phạm vi: một spec nền tảng, không nhét vòng học.
 - Mơ hồ đã khóa: tiến độ = phút + cấp; publish = admin; session skeleton không cần video; role learner/teacher/admin.
@@ -116,4 +117,4 @@ Cổng nền tảng: bible ký; truy vết không lỗ FR v1; 3 client cùng cat
 
 Implementation plan scaffold: [docs/superpowers/plans/2026-08-25-jplearn-platform-foundation.md](../plans/2026-08-25-jplearn-platform-foundation.md).
 
-Chưa làm: HLS, PNG wireframe, Phase 5 vòng học. Ký cổng trên [gates.md](../../company/gates.md) khi team chính thức; user đã duyệt spec để viết plan này.
+Chưa làm: HLS, Phase 5 vòng học. Ký cổng trên [gates.md](../../company/gates.md) khi team chính thức.
