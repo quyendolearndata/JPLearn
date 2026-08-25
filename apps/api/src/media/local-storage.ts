@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { access, mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 
 export class LocalStorage {
@@ -13,5 +13,22 @@ export class LocalStorage {
 
   pathFor(key: string): string {
     return join(this.root, key);
+  }
+
+  hlsDirFor(assetId: string): string {
+    return join(this.root, "hls", assetId);
+  }
+
+  hlsPathFor(assetId: string, file: string): string {
+    return join(this.hlsDirFor(assetId), file);
+  }
+
+  async exists(path: string): Promise<boolean> {
+    try {
+      await access(path);
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

@@ -7,7 +7,7 @@ export function toPublic(item: {
   mediaType: "video" | "audio";
   topicId: string;
   visualSupport: "high" | "medium" | "low";
-  media: { playbackUrl: string | null }[];
+  media: { playbackUrl: string | null; hlsUrl: string | null }[];
 }): CatalogItemPublic {
   return {
     id: item.id,
@@ -17,5 +17,6 @@ export function toPublic(item: {
     topic_id: item.topicId,
     visual_support: item.visualSupport,
     playback_url: item.media[0]?.playbackUrl ?? undefined,
+    hls_url: item.media[0]?.hlsUrl ?? undefined,
   };
 }

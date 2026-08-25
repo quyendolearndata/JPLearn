@@ -52,6 +52,7 @@ erDiagram
     uuid catalog_item_id FK
     text storage_key
     text playback_url
+    text hls_url
     text mime
   }
   learning_sessions {

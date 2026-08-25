@@ -123,6 +123,46 @@ paths:
                 file: { type: string, format: binary }
       responses:
         "201": { description: Media asset created }
+  /media/{id}/hls/{file}:
+    get:
+      operationId: streamHls
+      tags: [Media]
+      x-jplearn-fr: [NFR-PERF-002]
+      description: HLS manifest (.m3u8) and segments (.ts/.m4s) for an asset; MP4 /media/{id} stays the fallback.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+        - in: path
+          name: file
+          required: true
+          schema: { type: string, pattern: "^[A-Za-z0-9._-]+$" }
+      responses:
+        "200":
+          content:
+            application/vnd.apple.mpegurl: {}
+            video/mp2t: {}
+            video/iso.segment: {}
+        "400": { description: Invalid or unsupported file name }
+        "404": { description: Asset or HLS file not found }
+  /staff/media/{id}/hls:
+    post:
+      operationId: registerHls
+      tags: [CMS]
+      x-jplearn-fr: [FR-CMS-001, NFR-PERF-002]
+      description: Marks an asset HLS-ready after scripts/transcode-hls.sh wrote the bundle to storage/hls/{id}/.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: hls_url registered }
+        "400": { description: HLS manifest missing on disk }
+        "403": { description: Not teacher or admin }
   /staff/catalog/{id}/submit-qa:
     post:
       operationId: submitLevelQa
@@ -258,6 +298,10 @@ components:
         topic_id: { type: string }
         visual_support: { type: string, enum: [high, medium, low] }
         playback_url: { type: string, format: uri }
+        hls_url:
+          type: string
+          format: uri
+          description: NFR-PERF-002 HLS manifest when transcoded; clients prefer it and fall back to playback_url.
     CatalogItemWrite:
       type: object
       required: [topic_id, ci_level, duration_seconds, media_type, visual_support]

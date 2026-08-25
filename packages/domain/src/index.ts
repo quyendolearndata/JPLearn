@@ -27,6 +27,8 @@ export interface CatalogItemPublic {
   topic_id: string;
   visual_support: VisualSupport;
   playback_url?: string;
+  // NFR-PERF-002: HLS manifest URL when transcoded; clients prefer it and fall back to playback_url (MP4)
+  hls_url?: string;
 }
 export interface LearnerProgress {
   minutes_comprehensible: number;

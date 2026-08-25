@@ -96,6 +96,7 @@ model MediaAsset {
   catalogItem   CatalogItem @relation(fields: [catalogItemId], references: [id])
   storageKey    String      @map("storage_key")
   playbackUrl   String?     @map("playback_url")
+  hlsUrl        String?     @map("hls_url")
   mime          String
   @@map("media_assets")
 }

@@ -94,6 +94,7 @@ export class CatalogService {
       catalogItemId: string;
       storageKey: string;
       playbackUrl: string | null;
+      hlsUrl: string | null;
       mime: string;
     }>;
   }) {
@@ -114,6 +115,7 @@ export class CatalogService {
         catalog_item_id: asset.catalogItemId,
         storage_key: asset.storageKey,
         playback_url: asset.playbackUrl,
+        hls_url: asset.hlsUrl,
         mime: asset.mime,
       })),
     };
