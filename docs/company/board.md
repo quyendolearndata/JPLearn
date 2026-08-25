@@ -82,10 +82,14 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | [#28](https://github.com/quyendolearndata/JPLearn/issues/28) | Padding iPad Phiên/Tiến độ | Mobile | Platform | NFR-XPLAT-002 | **Done** (ea73d5f; visual thật ở #30) |
 | [#29](https://github.com/quyendolearndata/JPLearn/issues/29) | Cột trạng thái ma trận truy vết | BA | Platform | — | **Done** (ad81452) |
 | [#30](https://github.com/quyendolearndata/JPLearn/issues/30) | UC-L06 máy native founder | QA | Platform | FR-ID-002, FR-PRG-004 | **Todo** — cần máy thật founder |
-| [#31](https://github.com/quyendolearndata/JPLearn/issues/31) | Phát HLS trên web | Web | Platform | NFR-PERF-002 | **In Progress** — nhánh feat/web-hls-player |
+| [#31](https://github.com/quyendolearndata/JPLearn/issues/31) | Phát HLS trên web | Web | Platform | NFR-PERF-002 | **Done** (fc0d5e0 + e2e hls.spec.ts PASS) |
 | [#32](https://github.com/quyendolearndata/JPLearn/issues/32) | Review rubric CI clip thí điểm | Pedagogy | Platform | — | **Done** (99ba8fc; batch PASS) |
 | [#33](https://github.com/quyendolearndata/JPLearn/issues/33) | Pass/fail 10 clip stock | CI Level QA | Platform | — | **Done** (e54b7d3; 10/10 PASS, nợ workflow level_qa) |
 | [#34](https://github.com/quyendolearndata/JPLearn/issues/34) | Đo contrast chrome AA | QA | Platform | NFR-A11Y-001 | **Done** (6620630; nợ document-title) |
+| [#35](https://github.com/quyendolearndata/JPLearn/issues/35) | Item published không playback_url | Ops | Platform | FR-CAT-002 | **Todo** — từ phát hiện phụ #33 |
+| [#36](https://github.com/quyendolearndata/JPLearn/issues/36) | Document title các route learner | Web | Platform | NFR-A11Y-001 | **Todo** — từ phát hiện phụ #34 |
+
+Mobile player CI trong phiên (Expo, `expo-video`, helper `pickClipSource` + test) đã merge cùng #31 — không tách card vì phần Expo của FR-LRN-001; verify trên máy thật gộp vào #30. Lưu ý: `expo-video` là native module, cần dev build, không chạy trong Expo Go.
 
 Định hướng theo phòng (không phải từng card): [90-day-backlog.md](90-day-backlog.md).
 
