@@ -12,7 +12,8 @@ Trạng thái: **SAD-2/SAD-3 có use case + sơ đồ Mermaid + 15 khung lo-fi**
 5. [SAD-3 Thiết kế](sad/03-design/c4.md) — [sơ đồ](sad/03-design/diagrams.md) · [wireframes](sad/03-design/wireframes/README.md)
 6. [Spec tổng hợp](superpowers/specs/2026-08-25-jplearn-foundation-design.md)
 7. [Implementation plan — scaffold platform](superpowers/plans/2026-08-25-jplearn-platform-foundation.md)
-8. [Agents theo ghế](../.cursor/agents/README.md)
+8. [Board — task theo ghế](company/board.md) — GitHub Projects
+9. [Agents theo ghế](../.cursor/agents/README.md)
 
 ## Cổng
 
