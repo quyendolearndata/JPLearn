@@ -36,24 +36,89 @@ Thay `[TÌNH HUỐNG]` / `[THOẠI]` bằng hàng trong bảng C.
 
 ---
 
-## C. Prompt AI tạo video (English — Kling / Runway / Veo / Sora)
+## C. Prompt dán thẳng vào Veo (10 cái — mỗi lần một cái)
 
-Dán **mỗi clip một prompt**. Sau đó thu âm Nhật riêng (điện thoại hoặc TTS) rồi ghép — nhiều tool AI **không** nói đúng tiếng Nhật chậm. Nếu tool có voice: “slow Japanese only, words: …”
+Veo ~8 giây / lần. Tắt phụ đề nếu có. **Không dán thoại Nhật vào Veo** (ghép audio sau). Lưu file đúng tên.
 
-**Negative (mọi clip):** subtitles, captions, Vietnamese text, English text, on-screen labels, classroom, chalkboard, grammar, flashcards, music, fast cuts, talking head lecture.
+### 1 → lưu `level-0-breakfast.mp4`
 
-| File | Prompt hình (English) | Thoại (nói khi ghép audio) |
-|---|---|---|
-| `level-0-breakfast.mp4` | Close-up of adult hands at a breakfast table: pour water into a clear glass, drink, then pick up bread and take a bite. Bright kitchen, no face needed, photorealistic, one continuous shot, 80 seconds. | みず、みず。のむ、のむ。パン、パン。 |
-| `level-0-kitchen.mp4` | Hands open a cupboard, take a cup, place it on a table, point at the cup. Home kitchen, photorealistic, no face, 80 seconds. | コップ、コップ。テーブル、テーブル。おく、おく。 |
-| `level-0-wash-hands.mp4` | Close-up of two hands under a faucet: turn water on, soap, wash thoroughly, dry on a towel. Bathroom sink, photorealistic, 70 seconds. | て、て。あらう、あらう。きれい、きれい。 |
-| `level-0-put-on-jacket.mp4` | Person puts on a jacket in front of a mirror, buttons it. Camera on hands and jacket. Photorealistic, 80 seconds. | ジャケット、ジャケット。きる、きる。ボタン、ボタン。 |
-| `level-0-fold-clothes.mp4` | Hands fold a shirt on a bed, then put it in a closet. Photorealistic, 80 seconds. | シャツ、シャツ。たたむ、たたむ。しまう、しまう。 |
-| `level-0-boil-water.mp4` | Electric kettle boils, steam, pour hot water into a cup. Close-up kettle and cup. Photorealistic, 80 seconds. | おゆ、おゆ。わく、わく。あつい、あつい。 |
-| `level-0-bedtime.mp4` | Hands place slippers by the bed, turn off a lamp, person lies down. Dim bedroom, photorealistic, 80 seconds. | スリッパ、スリッパ。けす、けす。おやすみ、おやすみ。 |
-| `level-0-tidy-books.mp4` | Hands put books onto a shelf, align the spines. Photorealistic, 80 seconds. | ほん、ほん。ならべる、ならべる。たな、たな。 |
-| `level-1-open-door.mp4` | Inside a home: hand unlocks and opens the front door, person steps out, looks back. Photorealistic, 65 seconds. | ドア、ドア。あける、あける。いってきます、いってきます。 |
-| `level-1-pack-bag.mp4` | Open backpack on a table: put in a book, notebook, pencil case, water bottle, zip, lift onto a shoulder. Photorealistic, 90 seconds. | かばん、かばん。ほん、ほん。いれる、いれる。いこう、いこう。 |
+```
+Photorealistic close-up of adult hands at a breakfast table. The hands pour water into a clear glass, drink, then pick up bread and take a bite. Bright kitchen, 16:9, natural light. No face. Silent, no music. No subtitles, no captions, no text on screen, no Vietnamese, no English labels, no classroom, no graphics.
+```
+
+Thoại ghép sau: `みず、みず。のむ、のむ。パン、パン。`
+
+### 2 → lưu `level-0-kitchen.mp4`
+
+```
+Photorealistic close-up of adult hands in a home kitchen. Hands open a cupboard, take a cup, place it on a table, then point at the cup. 16:9, natural light. No face. Silent, no music. No subtitles, no captions, no text on screen, no Vietnamese, no English labels, no classroom, no graphics.
+```
+
+Thoại ghép sau: `コップ、コップ。テーブル、テーブル。おく、おく。`
+
+### 3 → lưu `level-0-wash-hands.mp4`
+
+```
+Photorealistic close-up of two hands at a bathroom sink. Hands turn on the faucet, use soap, wash thoroughly, then dry on a towel. 16:9, natural light. No face. Silent, no music. No subtitles, no captions, no text on screen, no Vietnamese, no English labels, no classroom, no graphics.
+```
+
+Thoại ghép sau: `て、て。あらう、あらう。きれい、きれい。`
+
+### 4 → lưu `level-0-put-on-jacket.mp4`
+
+```
+Photorealistic shot of adult hands putting on a jacket in front of a mirror and buttoning it. Camera on hands and jacket, 16:9. No face needed. Silent, no music. No subtitles, no captions, no text on screen, no Vietnamese, no English labels, no classroom, no graphics.
+```
+
+Thoại ghép sau: `ジャケット、ジャケット。きる、きる。ボタン、ボタン。`
+
+### 5 → lưu `level-0-fold-clothes.mp4`
+
+```
+Photorealistic close-up of adult hands folding a shirt on a bed, then placing it into a closet. 16:9, natural light. No face. Silent, no music. No subtitles, no captions, no text on screen, no Vietnamese, no English labels, no classroom, no graphics.
+```
+
+Thoại ghép sau: `シャツ、シャツ。たたむ、たたむ。しまう、しまう。`
+
+### 6 → lưu `level-0-boil-water.mp4`
+
+```
+Photorealistic close-up of a glass electric kettle boiling with steam, then hands pouring hot water into a cup. 16:9, kitchen, natural light. No face. Silent, no music. No subtitles, no captions, no text on screen, no Vietnamese, no English labels, no classroom, no graphics.
+```
+
+Thoại ghép sau: `おゆ、おゆ。わく、わく。あつい、あつい。`
+
+### 7 → lưu `level-0-bedtime.mp4`
+
+```
+Photorealistic bedroom scene: hands place slippers beside the bed, turn off a lamp, person lies down. Dim warm light, 16:9. Face optional, no talking. Silent, no music. No subtitles, no captions, no text on screen, no Vietnamese, no English labels, no classroom, no graphics.
+```
+
+Thoại ghép sau: `スリッパ、スリッパ。けす、けす。おやすみ、おやすみ。`
+
+### 8 → lưu `level-0-tidy-books.mp4`
+
+```
+Photorealistic close-up of adult hands placing books onto a shelf and aligning the spines. 16:9, natural light. No face. Silent, no music. No subtitles, no captions, no text on screen, no Vietnamese, no English labels, no classroom, no graphics.
+```
+
+Thoại ghép sau: `ほん、ほん。ならべる、ならべる。たな、たな。`
+
+### 9 → lưu `level-1-open-door.mp4`
+
+```
+Photorealistic shot from inside a home: a hand unlocks and opens the front door, the person steps out and glances back. 16:9, natural light. Silent, no music. No subtitles, no captions, no text on screen, no Vietnamese, no English labels, no classroom, no graphics.
+```
+
+Thoại ghép sau: `ドア、ドア。あける、あける。いってきます、いってきます。`
+
+### 10 → lưu `level-1-pack-bag.mp4`
+
+```
+Photorealistic close-up of an open backpack on a table. Hands put in a book, a notebook, a pencil case, and a water bottle, zip the bag, then lift it onto a shoulder. 16:9, natural light. No face needed. Silent, no music. No subtitles, no captions, no text on screen, no Vietnamese, no English labels, no classroom, no graphics.
+```
+
+Thoại ghép sau: `かばん、かばん。ほん、ほん。いれる、いれる。いこう、いこう。`
 
 ---
 
