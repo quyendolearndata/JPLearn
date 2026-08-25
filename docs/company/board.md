@@ -58,9 +58,9 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | — | Sơ đồ SAD-2 và SAD-3 | BA | SAD-2 | — | Done |
 | — | 15 khung lo-fi web / phone / iPad | Design | SAD-3 | NFR-XPLAT-002 | Done |
 | — | Dựng board và quy ước card | CPO | Platform | — | Done |
-| [#2](https://github.com/quyendolearndata/JPLearn/issues/2) | Ký cổng SAD-1 (SRS) | CEO | SAD-1 | — | Chờ chữ ký người |
-| [#3](https://github.com/quyendolearndata/JPLearn/issues/3) | Ký cổng SAD-2 (Phân tích) | BA | SAD-2 | — | Chờ chữ ký người |
-| [#4](https://github.com/quyendolearndata/JPLearn/issues/4) | Ký cổng SAD-3 — năm chữ ký | CPO | SAD-3 | — | Chờ chữ ký người |
+| [#2](https://github.com/quyendolearndata/JPLearn/issues/2) | Ký cổng SAD-1 (SRS) | CEO | SAD-1 | — | **Done** 2026-08-25 |
+| [#3](https://github.com/quyendolearndata/JPLearn/issues/3) | Ký cổng SAD-2 (Phân tích) | BA | SAD-2 | — | **Done** 2026-08-25 |
+| [#4](https://github.com/quyendolearndata/JPLearn/issues/4) | Ký cổng SAD-3 — năm chữ ký | CPO | SAD-3 | — | **Done** 2026-08-25 |
 | [#5](https://github.com/quyendolearndata/JPLearn/issues/5) | Viết OKR/KPI cho từng ghế Q1 | CPO | Platform | — | **Done** |
 | [#6](https://github.com/quyendolearndata/JPLearn/issues/6) | Merge PR #1 — agent theo ghế | CPO | Platform | — | **Done** |
 | [#7](https://github.com/quyendolearndata/JPLearn/issues/7) | Train rubric CI cho clip 1–2 | Pedagogy | Platform | — | **Done** |

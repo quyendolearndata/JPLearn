@@ -1,7 +1,7 @@
 # JPLearn — bộ tài liệu nền tảng
 
 Ngày: 2026-08-25  
-Trạng thái: **SAD-2/SAD-3 có use case + sơ đồ Mermaid + 15 khung lo-fi**; platform đã scaffold trên `main`. Cổng SAD chưa ký trên [gates.md](company/gates.md).
+Trạng thái: **cổng SAD-1/2/3 đã ký 2026-08-25** ([gates.md](company/gates.md)); platform đã scaffold trên `main`. Cổng nền tảng (Phase 5) chưa ký.
 
 ## Đọc theo thứ tự
 
