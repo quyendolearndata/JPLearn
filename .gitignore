@@ -9,3 +9,5 @@ apps/api/storage
 .worktrees/
 .superpowers/
 .DS_Store
+media/stock/raw/
+media/stock/mp4/
