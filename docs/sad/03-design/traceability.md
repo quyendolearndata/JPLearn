@@ -41,7 +41,7 @@ Test ID sẽ dùng khi có repo test. Cột Test = tên dự kiến.
 | NFR-SEC-002 | UC-T01 | 403 learner staff | T-NFR-S2 |
 | NFR-PRIV-001 | — | PII tối thiểu | T-NFR-PR1 |
 | NFR-A11Y-001 | S-LOGIN, S-SESSION | keyboard pause (P5 play) / chrome AA | T-NFR-A1 |
-| NFR-OBS-001 | — | request id | T-NFR-O1 echo `x-request-id` |
+| NFR-OBS-001 | — | request id + alert webhook 5xx (stub, `ALERT_WEBHOOK_URL`) | T-NFR-O1 echo `x-request-id`; T-NFR-O2 alert 5xx env bật/tắt, 4xx im |
 | FR-LRN-001 | UC-L10 | web `<video>` trong phiên, signed URL | T-NFR-A1 keyboard controls |
 | FR-LRN-002…004 | UC-L11–12 | chưa | T-P5-hold |
 
@@ -58,4 +58,4 @@ Lỗ = hàng FR nền tảng không có UC hoặc không có thiết kế. Cổn
 | UC-L06 native | PARTIAL — API+web; máy thật chưa |
 | NFR-PERF-002 HLS trên client | GAP |
 | NFR-A11Y-001 contrast đo | GAP |
-| NFR-OBS-001 alert 5xx staging | PARTIAL — log JSON khi 5xx + request id |
+| NFR-OBS-001 alert 5xx staging | PASS (stub) — webhook `ALERT_WEBHOOK_URL`, default tắt; URL kênh thật (Slack) chờ Ops cấp |
