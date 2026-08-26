@@ -1,11 +1,27 @@
 import { test, expect, type Page } from "@playwright/test";
 import { injectAxe, checkA11y } from "axe-playwright";
 
-const PAGES: { path: string; ready: (page: Page) => Promise<void> }[] = [
-  { path: "/login", ready: async (p) => p.getByRole("button", { name: "Đăng ký" }).waitFor() },
-  { path: "/", ready: async (p) => p.getByRole("heading", { name: "Catalog" }).waitFor() },
-  { path: "/session", ready: async (p) => p.getByRole("heading", { name: "Phiên" }).waitFor() },
-  { path: "/progress", ready: async (p) => p.getByText(/phút/i).waitFor() },
+const PAGES: { path: string; title: string; ready: (page: Page) => Promise<void> }[] = [
+  {
+    path: "/login",
+    title: "JPLearn — Đăng nhập",
+    ready: async (p) => p.getByRole("button", { name: "Đăng ký" }).waitFor(),
+  },
+  {
+    path: "/",
+    title: "JPLearn — Catalog",
+    ready: async (p) => p.getByRole("heading", { name: "Catalog" }).waitFor(),
+  },
+  {
+    path: "/session",
+    title: "JPLearn — Phiên học",
+    ready: async (p) => p.getByRole("heading", { name: "Phiên" }).waitFor(),
+  },
+  {
+    path: "/progress",
+    title: "JPLearn — Tiến độ",
+    ready: async (p) => p.getByText(/phút/i).waitFor(),
+  },
 ];
 
 async function register(page: Page) {
@@ -17,17 +33,18 @@ async function register(page: Page) {
   await expect(page).toHaveURL("/");
 }
 
-test("chrome learner đạt contrast WCAG AA T-NFR-A1", async ({ page }) => {
+test("chrome learner đạt contrast AA + mọi route có document title T-NFR-A1", async ({ page }) => {
   await register(page);
-  for (const { path, ready } of PAGES) {
+  for (const { path, title, ready } of PAGES) {
     await page.goto(path);
     await ready(page);
+    // NFR-A11Y-001 (#36): mọi route learner phải có document title có ý nghĩa.
+    await expect(page).toHaveTitle(title);
     await injectAxe(page);
-    // Chỉ rule thuộc card #34: contrast (WCAG AA) — document-title là nợ a11y riêng, không phạm vi card này.
+    // Rule thuộc card #34 (contrast, WCAG AA) + #36 (document-title, đã mở lại).
     await checkA11y(page, undefined, {
       detailedReport: true,
       detailedReportOptions: { html: false },
-      axeOptions: { rules: { "document-title": { enabled: false } } },
     });
   }
 });
