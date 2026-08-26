@@ -128,6 +128,7 @@ describe("HLS playback (NFR-PERF-002)", () => {
       .set("Authorization", `Bearer ${learnerToken}`)
       .expect(200);
     expect(manifest.headers["content-type"]).toMatch(/application\/vnd\.apple\.mpegurl/);
+    expect(manifest.headers["x-content-type-options"]).toBe("nosniff");
     expect(manifest.text).toContain("#EXTM3U");
 
     const segment = await request(app.getHttpServer())
@@ -135,7 +136,31 @@ describe("HLS playback (NFR-PERF-002)", () => {
       .set("Authorization", `Bearer ${learnerToken}`)
       .expect(200);
     expect(segment.headers["content-type"]).toMatch(/video\/mp2t/);
+    expect(segment.headers["x-content-type-options"]).toBe("nosniff");
     expect(segment.body.toString()).toBe("fake ts segment");
+  });
+
+  it("signs segment URIs inside the manifest when served via a signed URL", async () => {
+    const listed = await request(app.getHttpServer())
+      .get("/catalog")
+      .set("Authorization", `Bearer ${learnerToken}`)
+      .expect(200);
+    const item = listed.body.items.find((candidate: { id: string }) => candidate.id === itemId);
+    const signedManifest = new URL(item.hls_url);
+
+    const manifest = await request(app.getHttpServer())
+      .get(signedManifest.pathname + signedManifest.search)
+      .expect(200);
+    expect(manifest.headers["x-content-type-options"]).toBe("nosniff");
+    const segmentLine = manifest.text
+      .split("\n")
+      .find((line: string) => line.trim() && !line.trim().startsWith("#"));
+    expect(segmentLine).toMatch(/^segment-000\.ts\?exp=\d+&sig=[a-f0-9]{64}$/);
+
+    // Segment được ký sẵn trong manifest phải tải được không cần Bearer (hls.js không gửi header).
+    await request(app.getHttpServer())
+      .get(`/media/${assetId}/hls/${segmentLine}`)
+      .expect(200);
   });
 
   it("rejects traversal and unsupported HLS file types", async () => {

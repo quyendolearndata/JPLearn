@@ -74,6 +74,7 @@ describe("media upload and playback URL", () => {
       .get(new URL(uploaded.body.playback_url).pathname)
       .set("Authorization", `Bearer ${learnerToken}`)
       .expect(200);
+    expect(playback.headers["x-content-type-options"]).toBe("nosniff");
     expect(playback.body.toString()).toBe("tiny media");
 
     const signedPath = new URL(item.playback_url).pathname + new URL(item.playback_url).search;
