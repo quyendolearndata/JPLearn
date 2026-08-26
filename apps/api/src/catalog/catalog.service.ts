@@ -54,9 +54,31 @@ export class CatalogService {
     if (item.status !== "level_qa") {
       throw new BadRequestException("Only level_qa items can be published");
     }
+    // FR-CAT-002: published items must expose a playback source; playback_url is
+    // derived from the first media asset, so an asset must exist before publish.
+    const mediaCount = await this.prisma.mediaAsset.count({
+      where: { catalogItemId: id },
+    });
+    if (mediaCount === 0) {
+      throw new BadRequestException(
+        "Cannot publish without media: upload a playback source first (FR-CAT-002)",
+      );
+    }
     return this.staffItem(await this.prisma.catalogItem.update({
       where: { id },
       data: { status: "published" },
+      include: { media: true },
+    }));
+  }
+
+  async unpublish(id: string) {
+    const item = await this.getItem(id);
+    if (item.status !== "published") {
+      throw new BadRequestException("Only published items can be unpublished");
+    }
+    return this.staffItem(await this.prisma.catalogItem.update({
+      where: { id },
+      data: { status: "draft" },
       include: { media: true },
     }));
   }

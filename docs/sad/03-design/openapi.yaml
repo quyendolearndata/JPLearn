@@ -204,7 +204,7 @@ paths:
     post:
       operationId: publishCatalogItem
       tags: [CMS]
-      x-jplearn-fr: [FR-CMS-002, FR-CMS-003, FR-CMS-004]
+      x-jplearn-fr: [FR-CMS-002, FR-CMS-003, FR-CMS-004, FR-CAT-002]
       security: [{ bearerAuth: [] }]
       parameters:
         - in: path
@@ -213,7 +213,25 @@ paths:
           schema: { type: string, format: uuid }
       responses:
         "200": { description: status=published }
+        "400": { description: Not level_qa, or no media playback source (FR-CAT-002) }
         "403": { description: Admin only }
+  /staff/catalog/{id}/unpublish:
+    post:
+      operationId: unpublishCatalogItem
+      tags: [CMS]
+      x-jplearn-fr: [FR-CMS-002, FR-CAT-002]
+      description: Moves a published item back to draft so learners no longer see it.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200": { description: status=draft }
+        "400": { description: Item is not published }
+        "403": { description: Admin only }
+        "404": { description: Catalog item not found }
   /sessions:
     post:
       operationId: startSession
