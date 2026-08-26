@@ -14,7 +14,7 @@
 
 ## Observability
 
-- `NFR-OBS-001`: request id header, log JSON, alert 5xx staging.
+- `NFR-OBS-001`: request id header, log JSON, alert 5xx staging qua webhook stub — bật bằng env `ALERT_WEBHOOK_URL` (default tắt; Ops cấp URL kênh thật).
 - Không log access_token, password.
 
 ## Media
