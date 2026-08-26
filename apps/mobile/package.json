@@ -10,6 +10,7 @@
     "@jplearn/design-tokens": "workspace:*",
     "@jplearn/domain": "workspace:*",
     "expo": "~53.0.20",
+    "expo-dev-client": "~5.2.4",
     "expo-router": "~5.1.3",
     "expo-secure-store": "~14.2.3",
     "expo-status-bar": "~2.2.3",
