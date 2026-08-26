@@ -76,7 +76,7 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | [#16](https://github.com/quyendolearndata/JPLearn/issues/16) | Event payload vs dictionary | Data | Platform | FR-EVT-* | Done (audit doc) |
 | [#17](https://github.com/quyendolearndata/JPLearn/issues/17) | UC-L06 ba bề mặt | QA | Platform | FR-ID-002, FR-PRG-004 | **Done** (c5a3667, partial native) |
 | [#24](https://github.com/quyendolearndata/JPLearn/issues/24) | HMAC signed playback URL | Platform | Platform | FR-CMS-003, FR-CMS-004 | **Done** (0b9e3df) |
-| [#25](https://github.com/quyendolearndata/JPLearn/issues/25) | Request id + log 5xx | Platform | Platform | NFR-OBS-001 | **Done** (5ee91ed; alert staging = nợ) |
+| [#25](https://github.com/quyendolearndata/JPLearn/issues/25) | Request id + log 5xx | Platform | Platform | NFR-OBS-001 | **Done** (5ee91ed; alert staging = #38) |
 | [#26](https://github.com/quyendolearndata/JPLearn/issues/26) | useFlags chrome web | Web | Platform | FR-FLG-002 | **Done** (0a58c6d) |
 | [#27](https://github.com/quyendolearndata/JPLearn/issues/27) | Player CI trong phiên web | Web | Phase 5 | FR-LRN-001 | **Done** web (2019ef2; Expo theo #31/nhánh mobile-player) |
 | [#28](https://github.com/quyendolearndata/JPLearn/issues/28) | Padding iPad Phiên/Tiến độ | Mobile | Platform | NFR-XPLAT-002 | **Done** (ea73d5f; visual thật ở #30) |
@@ -89,7 +89,7 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | [#35](https://github.com/quyendolearndata/JPLearn/issues/35) | Item published không playback_url | Ops | Platform | FR-CAT-002 | **Done** (43f7358 + evidence bc4e059; nợ seed re-publish → #39) |
 | [#36](https://github.com/quyendolearndata/JPLearn/issues/36) | Document title các route learner | Web | Platform | NFR-A11Y-001 | **Done** (457c1d8; rule document-title bật lại PASS) |
 | [#37](https://github.com/quyendolearndata/JPLearn/issues/37) | Fix react/react-dom mismatch gãy `next build` | Web | Platform | — | **Done** (e02902f; build xanh 8/8, e2e 4/4 WebKit) |
-| [#38](https://github.com/quyendolearndata/JPLearn/issues/38) | 5xx alert thật trên staging | Platform | Platform | NFR-OBS-001 | **Todo** — sau #39–#40, trước pilot nội bộ; chờ Ops xác nhận kênh alert |
+| [#38](https://github.com/quyendolearndata/JPLearn/issues/38) | 5xx alert thật trên staging | Platform | Platform | NFR-OBS-001 | **Done** (f143c8f; webhook stub `ALERT_WEBHOOK_URL` default tắt; Ops set env staging) |
 | [#39](https://github.com/quyendolearndata/JPLearn/issues/39) | Seed re-publish item thiếu media | Platform | Platform | FR-CAT-002 | **Done** (972cdc7; c1 về draft, regression guard chống đè status) |
 | [#40](https://github.com/quyendolearndata/JPLearn/issues/40) | Thiếu nosniff — Chrome/Edge chặn HLS segment (ORB) | Platform | Platform | NFR-PERF-002 | **Done** (a304934; nosniff + ký segment trong manifest, e2e Chromium/WebKit xanh) |
 
