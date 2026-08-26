@@ -42,10 +42,10 @@ Sao chép khối dưới vào cuối artifact khi review. Không ký bằng mi�
 |---|---|
 | Shell 3 bề mặt + CMS publish + sự kiện phút | **Đạt** — web + API; #13 pipeline; #14 e2e; #16 events |
 | 10 clip thí điểm + quyền | **Đạt thí điểm** — #12 Veo/Commons + Kyoko; không phải 70–95s người thật |
-| HLS trên web và iPad (NFR-PERF-002) | **Đã đóng phía web 2026-08-25** — CiPlayer hls.js + fallback MP4 (#31, e2e `hls.spec.ts` PASS); iPad native player có code (expo-video) chờ verify máy thật (#30) |
-| Playback URL đã ký (FR-CMS-003/004) | **Đã đóng 2026-08-25** — HMAC `exp`+`sig` trên playback/hls URL (#24, T-CMS-003 PASS) |
-| UC-L06 native iPhone/iPad/Android | **Exception** — PASS API + web; native PARTIAL (#17), theo dõi #30 |
-| NFR-OBS 5xx alert; NFR-A11Y đo | **Phần lớn đã đóng 2026-08-25** — request id + log 5xx JSON (#25); contrast AA đo bằng axe PASS (#34); còn nợ: alert staging thật (#25 comment), document-title (#36) |
+| HLS trên web và iPad (NFR-PERF-002) | **Đã đóng phía web 2026-08-25/26** — CiPlayer hls.js + fallback MP4 (#31); #40 vá nosniff + ký segment trong manifest → e2e PASS cả Chromium lẫn WebKit (Chromium phát HLS thật, không rớt MP4); iPad native player có code (expo-video) chờ verify máy thật (#30) |
+| Playback URL đã ký (FR-CMS-003/004) | **Đã đóng 2026-08-25** — HMAC `exp`+`sig` trên playback/hls URL (#24, T-CMS-003 PASS); #35 thêm guard publish thiếu media + unpublish; #39 seed không còn tái tạo item ma |
+| UC-L06 native iPhone/iPad/Android | **Exception** — PASS API + web; native PARTIAL (#17), theo dõi #30 (config EAS dev build + checklist đã sẵn sàng 2026-08-26, chờ Expo login + Apple Developer của founder) |
+| NFR-OBS 5xx alert; NFR-A11Y đo | **A11Y đã đóng 2026-08-26** — request id + log 5xx JSON (#25); contrast AA PASS (#34); document-title PASS (#36); còn nợ duy nhất: alert staging thật (#38, đang làm) |
 
 Nợ exception = việc Platform/Mobile/QA **sau cổng**, không chặn SAD vòng học. Không dùng exception để mở FR-NEG.
 
