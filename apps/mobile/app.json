@@ -3,7 +3,12 @@
     "name": "JPLearn",
     "slug": "jplearn",
     "scheme": "jplearn",
+    "version": "0.1.0",
     "platforms": ["ios", "android"],
-    "plugins": ["expo-router", "expo-secure-store"]
+    "ios": {
+      "bundleIdentifier": "com.jplearn.mobile",
+      "supportsTablet": true
+    },
+    "plugins": ["expo-router", "expo-secure-store", "expo-video"]
   }
 }
