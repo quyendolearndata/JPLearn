@@ -70,6 +70,10 @@ describe("catalog CMS and public list", () => {
       .set("Authorization", `Bearer ${learnerTok}`).expect(200)
       .then((res) => expect(res.body.items.some((item: { id: string }) => item.id === created.body.id)).toBe(false));
 
+    await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/media`)
+      .set("Authorization", `Bearer ${adminTok}`)
+      .attach("file", Buffer.from("tiny media"), "tiny.mp4").expect(201);
+
     await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/submit-qa`)
       .set("Authorization", `Bearer ${adminTok}`).expect(200);
     await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/publish`)
@@ -104,5 +108,70 @@ describe("catalog CMS and public list", () => {
       }).expect(201);
     await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/publish`)
       .set("Authorization", `Bearer ${adminTok}`).expect(400);
+  });
+
+  it("FR-CAT-002 blocks publish without media, allows after upload", async () => {
+    const adminTok = await loginAdmin(app);
+    const created = await request(app.getHttpServer()).post("/staff/catalog")
+      .set("Authorization", `Bearer ${adminTok}`)
+      .send({
+        topic_id: "body", ci_level: 0, duration_seconds: 12,
+        media_type: "video", visual_support: "high", title_internal: "no-media",
+      }).expect(201);
+
+    await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/submit-qa`)
+      .set("Authorization", `Bearer ${adminTok}`).expect(200);
+
+    const blocked = await request(app.getHttpServer())
+      .post(`/staff/catalog/${created.body.id}/publish`)
+      .set("Authorization", `Bearer ${adminTok}`).expect(400);
+    expect(blocked.body.message).toMatch(/without media/);
+
+    await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/media`)
+      .set("Authorization", `Bearer ${adminTok}`)
+      .attach("file", Buffer.from("tiny media"), "tiny.mp4").expect(201);
+    const published = await request(app.getHttpServer())
+      .post(`/staff/catalog/${created.body.id}/publish`)
+      .set("Authorization", `Bearer ${adminTok}`).expect(200);
+    expect(published.body.status).toBe("published");
+  });
+
+  it("unpublishes published items to draft and rejects non-published", async () => {
+    const adminTok = await loginAdmin(app);
+    const learnerTok = (await register(app, `u${Date.now()}@example.com`)).body.access_token;
+    const created = await request(app.getHttpServer()).post("/staff/catalog")
+      .set("Authorization", `Bearer ${adminTok}`)
+      .send({
+        topic_id: "nature", ci_level: 0, duration_seconds: 15,
+        media_type: "video", visual_support: "medium", title_internal: "unpublish-me",
+      }).expect(201);
+
+    // draft cannot be unpublished
+    await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/unpublish`)
+      .set("Authorization", `Bearer ${adminTok}`).expect(400);
+    // learner cannot unpublish
+    await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/unpublish`)
+      .set("Authorization", `Bearer ${learnerTok}`).expect(403);
+
+    await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/media`)
+      .set("Authorization", `Bearer ${adminTok}`)
+      .attach("file", Buffer.from("tiny media"), "tiny.mp4").expect(201);
+    await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/submit-qa`)
+      .set("Authorization", `Bearer ${adminTok}`).expect(200);
+    await request(app.getHttpServer()).post(`/staff/catalog/${created.body.id}/publish`)
+      .set("Authorization", `Bearer ${adminTok}`).expect(200);
+
+    const visible = await request(app.getHttpServer()).get("/catalog")
+      .set("Authorization", `Bearer ${learnerTok}`).expect(200);
+    expect(visible.body.items.some((item: { id: string }) => item.id === created.body.id)).toBe(true);
+
+    const unpublished = await request(app.getHttpServer())
+      .post(`/staff/catalog/${created.body.id}/unpublish`)
+      .set("Authorization", `Bearer ${adminTok}`).expect(200);
+    expect(unpublished.body.status).toBe("draft");
+
+    const hidden = await request(app.getHttpServer()).get("/catalog")
+      .set("Authorization", `Bearer ${learnerTok}`).expect(200);
+    expect(hidden.body.items.some((item: { id: string }) => item.id === created.body.id)).toBe(false);
   });
 });

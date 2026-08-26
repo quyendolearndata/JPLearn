@@ -40,4 +40,11 @@ export class StaffCatalogController {
   publish(@Param("id") id: string) {
     return this.catalog.publish(id);
   }
+
+  @Post(":id/unpublish")
+  @HttpCode(200)
+  @Roles("admin")
+  unpublish(@Param("id") id: string) {
+    return this.catalog.unpublish(id);
+  }
 }
