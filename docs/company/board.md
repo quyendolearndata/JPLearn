@@ -90,8 +90,8 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | [#36](https://github.com/quyendolearndata/JPLearn/issues/36) | Document title các route learner | Web | Platform | NFR-A11Y-001 | **In Progress** — từ phát hiện phụ #34 |
 | [#37](https://github.com/quyendolearndata/JPLearn/issues/37) | Fix react/react-dom mismatch gãy `next build` | Web | Platform | — | **Done** (e02902f; build xanh 8/8, e2e 4/4 WebKit) |
 | [#38](https://github.com/quyendolearndata/JPLearn/issues/38) | 5xx alert thật trên staging | Platform | Platform | NFR-OBS-001 | **Todo** — sau #39–#40, trước pilot nội bộ; chờ Ops xác nhận kênh alert |
-| [#39](https://github.com/quyendolearndata/JPLearn/issues/39) | Seed re-publish item thiếu media | Platform | Platform | FR-CAT-002 | **In Progress** — trước #38; reseed N lần không item ma, kèm test |
-| [#40](https://github.com/quyendolearndata/JPLearn/issues/40) | Thiếu nosniff — Chrome/Edge chặn HLS segment (ORB) | Platform | Platform | NFR-PERF-002 | **Todo** — sau #39, trước #38; e2e Chromium xanh, learner không rớt MP4 |
+| [#39](https://github.com/quyendolearndata/JPLearn/issues/39) | Seed re-publish item thiếu media | Platform | Platform | FR-CAT-002 | **Done** (972cdc7; c1 về draft, regression guard chống đè status) |
+| [#40](https://github.com/quyendolearndata/JPLearn/issues/40) | Thiếu nosniff — Chrome/Edge chặn HLS segment (ORB) | Platform | Platform | NFR-PERF-002 | **In Progress** — trước #38; e2e Chromium xanh, learner không rớt MP4 |
 
 Mobile player CI trong phiên (Expo, `expo-video`, helper `pickClipSource` + test) đã merge cùng #31 — không tách card vì phần Expo của FR-LRN-001; verify trên máy thật gộp vào #30. Lưu ý: `expo-video` là native module, cần dev build, không chạy trong Expo Go.
 
