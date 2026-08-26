@@ -2,6 +2,8 @@
 
 Test ID sẽ dùng khi có repo test. Cột Test = tên dự kiến.
 
+Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-cases.md](../02-analysis/use-cases.md). Quan hệ UML: [diagrams.md](../02-analysis/diagrams.md) mục 1b. Không đổi FR id hay Test id trong bảng dưới.
+
 | Req | Use case | Thiết kế | Test |
 |---|---|---|---|
 | FR-ID-001 | UC-L01, UC-T01 | POST /auth/register, /auth/login | T-ID-001 register+login |
