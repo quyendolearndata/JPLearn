@@ -51,6 +51,10 @@ async function main() {
     update: {},
   });
 
+  // FR-CAT-002: seed phải idempotent và KHÔNG đè status — status là quyết định vận
+  // hành (Level QA publish, Ops unpublish). Item seed chưa có media thật nên chỉ
+  // được tạo ở draft; muốn published phải upload media rồi đi qua submit-qa → publish.
+  // Item seed mới đặt titleInternal prefix "seed-" để test seed.e2e-spec.ts kiểm soát.
   await prisma.catalogItem.upsert({
     where: { id: "00000000-0000-4000-8000-0000000000c1" },
     create: {
@@ -60,11 +64,11 @@ async function main() {
       durationSeconds: 30,
       mediaType: "video",
       visualSupport: "high",
-      status: "published",
+      status: "draft",
       titleInternal: "seed-ci0-daily-home",
       createdById: admin.id,
     },
-    update: { status: "published" },
+    update: {},
   });
   await prisma.catalogItem.upsert({
     where: { id: "00000000-0000-4000-8000-0000000000d1" },
@@ -79,7 +83,7 @@ async function main() {
       titleInternal: "seed-draft-food",
       createdById: admin.id,
     },
-    update: { status: "draft" },
+    update: {},
   });
 }
 
