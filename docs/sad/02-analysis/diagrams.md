@@ -1,6 +1,8 @@
 # Sơ đồ phân tích (SAD-2)
 
-Mở file này trên GitHub hoặc preview Markdown để xem diagram. Spec chữ: [use-cases.md](use-cases.md), [context.md](context.md), [processes.md](processes.md), [domain-model.md](domain-model.md). Actor → UC: mục 1. «include» / «extend»: mục 1b.
+Mở file này trên GitHub hoặc preview Markdown để xem diagram. Spec chữ: [use-cases.md](use-cases.md), [context.md](context.md), [processes.md](processes.md), [domain-model.md](domain-model.md).
+
+Mục: **1** actor → UC; **1b** «include» / «extend»; **2** system context; **3** domain bounded context; **4** phiên học skeleton; **5** nhà máy nội dung; **6** class diagram (domain); **7** state diagram (`CatalogItem.status`, `LearningSession`).
 
 Phase 5 (`UC-L10`…`UC-L13` phát CI / probe) **không** vẽ trên các sơ đồ v1.
 
@@ -233,3 +235,144 @@ flowchart TD
 ```
 
 Cấm nhảy `draft` → `published` bỏ Level QA.
+
+## 6. Class diagram — domain
+
+Class **domain**, không vẽ Controller/Service NestJS. Thuộc tính bám [ERD](../03-design/erd.md) (PK/FK). Phương thức chỉ mức nghiệp vụ: `publish()` / `unpublish()` khớp guard FR-CAT-002 (publish cần media, xem `catalog.service.ts`); `end()` khớp UC-L04.
+
+```mermaid
+classDiagram
+  class User {
+    +uuid id PK
+    +text email
+    +text password_hash
+    +timestamptz created_at
+  }
+  class Device {
+    +uuid id PK
+    +uuid user_id FK
+    +text device_class
+    +timestamptz last_seen_at
+  }
+  class Role {
+    +uuid user_id FK
+    +text role
+  }
+  class Topic {
+    +text id PK
+    +text label_internal
+  }
+  class CatalogItem {
+    +uuid id PK
+    +text topic_id FK
+    +int ci_level
+    +int duration_seconds
+    +text media_type
+    +text visual_support
+    +boolean has_l1_translation
+    +text spoken_language
+    +text status
+    +text title_internal
+    +uuid created_by FK
+    +submitQa()
+    +publish()
+    +unpublish()
+  }
+  class MediaAsset {
+    +uuid id PK
+    +uuid catalog_item_id FK
+    +text storage_key
+    +text playback_url
+    +text hls_url
+    +text mime
+  }
+  class LearningSession {
+    +uuid id PK
+    +uuid user_id FK
+    +text device_class
+    +timestamptz started_at
+    +timestamptz ended_at
+    +int duration_seconds
+    +end()
+  }
+  class LearnerProgress {
+    +uuid user_id PK
+    +int minutes_comprehensible
+    +int current_ci_level
+    +timestamptz updated_at
+  }
+  class FeatureFlag {
+    +text key PK
+    +boolean value
+  }
+  class LearningEvent {
+    +uuid id PK
+    +uuid user_id FK
+    +uuid session_id FK
+    +text type
+    +jsonb payload
+    +timestamptz created_at
+  }
+  class ComprehensionProbe {
+    <<deferred P5>>
+  }
+  class ProbeChoice {
+    <<deferred P5>>
+  }
+
+  User "1" *-- "*" Device : has
+  User "1" *-- "*" Role : user_roles
+  User "1" *-- "*" LearningSession : starts
+  User "1" *-- "1" LearnerProgress : has
+  User "1" *-- "*" LearningEvent : emits
+  User "1" *-- "*" CatalogItem : creates
+  Topic "1" *-- "*" CatalogItem : groups
+  CatalogItem "1" *-- "*" MediaAsset : has
+  LearningSession "1" *-- "*" LearningEvent : records
+  ComprehensionProbe "1" *-- "*" ProbeChoice : choices
+  CatalogItem "1" ..> "*" ComprehensionProbe : future deferred P5
+```
+
+Invariants ([domain-model.md](domain-model.md)):
+
+1. `LearnerProgress` không có field điểm từ/ngữ pháp.
+2. `CatalogItem.has_l1_translation` = false trên mọi item `published` v1.
+3. Flag textbook (`speaking_enabled`, `l1_subtitles_enabled`, `grammar_enabled`, `flashcards_enabled`) mặc định false.
+4. `minutes_comprehensible` chỉ tăng khi session `ended` hợp lệ (`ended_at > started_at`, duration ≤ 4 giờ — cắt session zombie).
+
+`Role` là bảng `user_roles` (user nhiều role: `learner` / `teacher` / `admin`), không phải enum trên `User` — khớp ERD. `ComprehensionProbe` / `ProbeChoice` chừa chỗ schema, **không** UI v1, **không** migration tới Phase 5.
+
+## 7. State diagram
+
+### 7a. `CatalogItem.status`
+
+```mermaid
+stateDiagram-v2
+  [*] --> draft : UC-T02 tạo item
+  draft --> level_qa : UC-T04 nộp Level QA
+  level_qa --> draft : UC-Q02 reject — lý do nội bộ
+  level_qa --> published : UC-A01 publish (Admin) — guard: có media (FR-CAT-002) và has_l1_translation=false
+  published --> draft : UC-A01 unpublish (Admin)
+  note right of published
+    Schema enum còn archived: v1 chưa có UC hay endpoint chuyển vào archived.
+    Chưa có delete-media: nếu item published mất media thì vi phạm guard FR-CAT-002 — rủi ro Platform #35.
+  end note
+```
+
+Cấm `draft` → `published` không qua `level_qa` (processes.md, sequence SAD-3 mục 6). Reject từ `level_qa` luôn về `draft`, không giữ trạng thái riêng.
+
+### 7b. `LearningSession`
+
+```mermaid
+stateDiagram-v2
+  [*] --> started : UC-L03 bắt đầu phiên — ghi device_class
+  started --> ended : UC-L04 — guard: duration ≤ 4h / action: cộng floor phút vào minutes_comprehensible
+  started --> ended : UC-L04 zombie — guard: duration > 4h / action: cộng 0 phút
+  ended --> [*]
+  note right of started
+    Mất mạng khi end: client retry, extend UC-L04 — không tách state, không bịa duration_seconds.
+    Retry vẫn fail: phiên giữ started, không cộng phút, không silent-drop.
+  end note
+```
+
+Zombie không phải state riêng — là guard trên transition `started → ended` (UC-L04 alt 4a, sequence SAD-3 mục 5).

@@ -2,7 +2,7 @@
 
 Test ID sẽ dùng khi có repo test. Cột Test = tên dự kiến.
 
-Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-cases.md](../02-analysis/use-cases.md). Quan hệ UML: [diagrams.md](../02-analysis/diagrams.md) mục 1b. Không đổi FR id hay Test id trong bảng dưới.
+Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-cases.md](../02-analysis/use-cases.md). Quan hệ UML: [diagrams.md](../02-analysis/diagrams.md) mục 1b. SAD-2 đã có class diagram (mục 6) và state diagram cho `CatalogItem.status` + `LearningSession` (mục 7). Không đổi FR id hay Test id trong bảng dưới.
 
 | Req | Use case | Thiết kế | Test |
 |---|---|---|---|
