@@ -1,0 +1,3 @@
+# Native dirs from `expo prebuild` (local Xcode / run:ios — regenerate as needed)
+/ios/
+/android/

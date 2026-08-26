@@ -85,16 +85,18 @@ npx eas-cli build --profile development --platform ios
 
 Founder chọn đường này thay EAS cloud để verify UC-L06 trong ngày. Ghế Mobile đã kiểm tra máy repo:
 
-### F.1 Trạng thái tiền điều kiện (đo thực tế 2026-08-26)
+### F.1 Trạng thái tiền điều kiện (cập nhật 2026-08-26 sau khi founder cài Xcode)
 
 | Tiền điều kiện | Lệnh kiểm tra | Kết quả |
 |---|---|---|
-| Xcode (full IDE) | `xcodebuild -version` | ❌ **CHƯA CÀI** — máy chỉ có Command Line Tools (`xcode-select -p` → `/Library/Developer/CommandLineTools`), Spotlight không tìm thấy Xcode.app |
-| CocoaPods | `pod --version` | ❌ **CHƯA CÀI** (`command not found`; máy có sẵn `ruby`/`gem` hệ thống để cài) |
+| Xcode (full IDE) | `xcodebuild -version` | ✅ **Xcode 26.6** (`/Applications/Xcode.app`) |
+| CocoaPods | `pod --version` | ✅ **1.17.0** (cài qua Homebrew) |
 | IP LAN Mac | `ipconfig getifaddr en0` | ✅ `192.168.1.202` (en0; en1 trống) |
-| Deps JS | `apps/mobile/node_modules` | ✅ đã có sẵn |
+| Prebuild iOS | `npx expo prebuild --platform ios` | ✅ **Đã chạy** — `apps/mobile/ios/` + Pods cài xong |
+| Máy thật cắm cáp | `xcrun xctrace list devices` | ❌ **Chưa thấy** iPhone/iPad — cần cắm USB + Trust máy |
+| Apple ID trong Xcode | Settings → Accounts | ⏳ Founder tự thêm (Personal Team, cert 7 ngày) |
 
-**→ BLOCKER: không thể `npx expo run:ios --device` khi chưa có Xcode.** Mobile không tự vượt (cài Xcode cần App Store + Apple ID của founder, ~12 GB tải về).
+**Bước kế tiếp ngay:** cắm iPhone (rồi iPad) → thêm Apple ID trong Xcode nếu chưa → chạy F.3.
 
 ### F.2 Việc founder cần cài (một lần, ~30–60 phút tùy mạng)
 
