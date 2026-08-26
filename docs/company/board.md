@@ -86,7 +86,7 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | [#32](https://github.com/quyendolearndata/JPLearn/issues/32) | Review rubric CI clip thí điểm | Pedagogy | Platform | — | **Done** (99ba8fc; batch PASS) |
 | [#33](https://github.com/quyendolearndata/JPLearn/issues/33) | Pass/fail 10 clip stock | CI Level QA | Platform | — | **Done** (e54b7d3; 10/10 PASS, nợ workflow level_qa) |
 | [#34](https://github.com/quyendolearndata/JPLearn/issues/34) | Đo contrast chrome AA | QA | Platform | NFR-A11Y-001 | **Done** (6620630; nợ document-title) |
-| [#35](https://github.com/quyendolearndata/JPLearn/issues/35) | Item published không playback_url | Ops | Platform | FR-CAT-002 | **Todo** — từ phát hiện phụ #33 |
+| [#35](https://github.com/quyendolearndata/JPLearn/issues/35) | Item published không playback_url | Ops | Platform | FR-CAT-002 | **Done** (43f7358 + evidence bc4e059; nợ seed re-publish → card riêng) |
 | [#36](https://github.com/quyendolearndata/JPLearn/issues/36) | Document title các route learner | Web | Platform | NFR-A11Y-001 | **Todo** — từ phát hiện phụ #34; sau #37 |
 | [#37](https://github.com/quyendolearndata/JPLearn/issues/37) | Fix react/react-dom mismatch gãy `next build` | Web | Platform | — | **Todo — P0** (CPO tạo 26/8; chặn #36 và mọi web ship) |
 | [#38](https://github.com/quyendolearndata/JPLearn/issues/38) | 5xx alert thật trên staging | Platform | Platform | NFR-OBS-001 | **Todo** — sau 3 card Todo, trước pilot nội bộ |
