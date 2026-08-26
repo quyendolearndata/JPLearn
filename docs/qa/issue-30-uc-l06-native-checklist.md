@@ -79,4 +79,47 @@ npx eas-cli build --profile development --platform ios
 
 5. Gửi link/QR trang build cho QA + hẹn buổi verify (~15' cài/máy + 30–45' chạy checklist).
 
-**Đường dự phòng không tốn phí Apple** (nếu chưa muốn mua Developer Program): build local `npx expo run:ios --device` từ `apps/mobile` — cần Xcode trên Mac, cắm cáp từng máy, cert miễn phí **hết hạn 7 ngày** (phải build lại), và bật trust Developer Mode trên máy. Chậm và thủ công hơn EAS; chỉ nên dùng nếu muốn verify gấp trong tuần.
+**Đường dự phòng không tốn phí Apple** (nếu chưa muốn mua Developer Program): build local `npx expo run:ios --device` từ `apps/mobile` — cần Xcode trên Mac, cắm cáp từng máy, cert miễn phí **hết hạn 7 ngày** (phải build lại), và bật trust Developer Mode trên máy. Chậm và thủ công hơn EAS; chỉ nên dùng nếu muốn verify gấp trong tuần. → Chi tiết mục F.
+
+## F. Build local Xcode (đường dự phòng founder chọn — cập nhật 2026-08-26)
+
+Founder chọn đường này thay EAS cloud để verify UC-L06 trong ngày. Ghế Mobile đã kiểm tra máy repo:
+
+### F.1 Trạng thái tiền điều kiện (đo thực tế 2026-08-26)
+
+| Tiền điều kiện | Lệnh kiểm tra | Kết quả |
+|---|---|---|
+| Xcode (full IDE) | `xcodebuild -version` | ❌ **CHƯA CÀI** — máy chỉ có Command Line Tools (`xcode-select -p` → `/Library/Developer/CommandLineTools`), Spotlight không tìm thấy Xcode.app |
+| CocoaPods | `pod --version` | ❌ **CHƯA CÀI** (`command not found`; máy có sẵn `ruby`/`gem` hệ thống để cài) |
+| IP LAN Mac | `ipconfig getifaddr en0` | ✅ `192.168.1.202` (en0; en1 trống) |
+| Deps JS | `apps/mobile/node_modules` | ✅ đã có sẵn |
+
+**→ BLOCKER: không thể `npx expo run:ios --device` khi chưa có Xcode.** Mobile không tự vượt (cài Xcode cần App Store + Apple ID của founder, ~12 GB tải về).
+
+### F.2 Việc founder cần cài (một lần, ~30–60 phút tùy mạng)
+
+1. Cài **Xcode** từ App Store (hoặc [developer.apple.com/download](https://developer.apple.com/download/all/)) — bản mới nhất hỗ trợ iOS của 2 máy thật.
+2. Mở Xcode lần đầu để nó cài additional components; vào **Settings → Accounts → + Apple ID** (tài khoản thường, miễn phí) để ký cert 7 ngày.
+3. Trỏ developer dir về Xcode: `sudo xcode-select -s /Applications/Xcode.app/Contents/Developer` rồi `sudo xcodebuild -license accept`.
+4. Cài CocoaPods: `sudo gem install cocoapods` (hoặc `brew install cocoapods`).
+
+### F.3 Các bước build (chạy sau khi F.2 xong — Mobile hoặc founder đều chạy được)
+
+```bash
+cd apps/mobile
+npm exec --yes --package=pnpm@9.15.0 -- pnpm install   # nếu deps thay đổi
+npx expo prebuild --platform ios                        # tạo folder ios/ (native project)
+npx expo run:ios --device                               # chọn iPhone/iPad cắm cáp từ danh sách
+```
+
+- Khi hỏi signing: chọn **Personal Team** (Apple ID thường ở F.2.2) — cert miễn phí hết hạn **7 ngày**, verify xong nhớ build lại nếu cần dùng tiếp.
+- Lần đầu trên từng máy: Settings → Privacy & Security → **Developer Mode** → bật → restart; sau khi cài app: Settings → General → VPN & Device Management → **Trust** cert developer.
+- Kết quả build: `.app` nằm trong `~/Library/Developer/Xcode/DerivedData/jplearn-*/Build/Products/Debug-iphoneos/`; `expo run:ios` tự cài thẳng lên máy, không cần lấy file.
+- Có 2 máy: chạy lại `npx expo run:ios --device` và chọn máy còn lại.
+
+### F.4 Cấu hình API cho máy thật (đã làm sẵn hôm nay)
+
+- `apps/api/.env`: đã đổi `API_PUBLIC_URL=http://192.168.1.202:3001` (IP LAN đo ở F.1; file này bị gitignore, e2e tự set biến riêng nên không ảnh hưởng test).
+- Chạy metro: `EXPO_PUBLIC_API_URL=http://192.168.1.202:3001 pnpm dev:mobile`.
+- **Lưu ý**: IP LAN đổi khi Mac đổi Wi-Fi/DHCP → ngày verify phải đo lại `ipconfig getifaddr en0` và sửa cả 2 chỗ trên, rồi restart metro + API. Kiểm tra nhanh: Safari iPhone mở `http://192.168.1.202:3001/health` → 200.
+- Sau buổi verify, nếu quay lại dev simulator: đổi `API_PUBLIC_URL` về `http://localhost:3001`.
