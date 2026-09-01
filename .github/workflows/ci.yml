@@ -28,6 +28,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install
+      - run: pnpm --filter @jplearn/api exec prisma generate
       - run: pnpm test:guard
       - run: pnpm --filter @jplearn/domain test
       - run: pnpm --filter @jplearn/api exec prisma migrate deploy
