@@ -5,22 +5,72 @@
     jplearn-migrate stamp <revision>     # adopt an existing Prisma-built database
     jplearn-migrate current
 
-Reads DATABASE_URL from the environment. The Alembic tree ships inside the
-package so the command works from any working directory.
+Reads DATABASE_URL from the environment. The Alembic tree and schema baseline
+ship inside the package resources so the command works reliably from any working
+directory or inside container artifacts without filesystem depth assumptions.
 """
 
 from __future__ import annotations
 
+import importlib.resources
 import json
 import os
 from pathlib import Path
 import sys
+from typing import Any
 
 from alembic import command
 from alembic.config import Config
 
-BASELINE_PATH = Path(__file__).resolve().parents[4] / "docs" / "qa" / "adr-004-schema-baseline.json"
 MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
+
+
+def load_baseline_schema(explicit_path: Path | str | None = None) -> dict[str, Any]:
+    """Load baseline schema JSON from explicit path, package resources, or repo fallback.
+    Fails closed if missing or malformed.
+    """
+    if explicit_path:
+        p = Path(explicit_path)
+        if not p.exists():
+            raise RuntimeError(f"Baseline schema not found at explicit path: {p}")
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except Exception as err:
+            raise RuntimeError(f"Malformed baseline schema at {p}: {err}") from err
+
+    # 1. Environment variable override
+    env_path = os.environ.get("SCHEMA_BASELINE_PATH")
+    if env_path:
+        p = Path(env_path)
+        if not p.exists():
+            raise RuntimeError(f"SCHEMA_BASELINE_PATH set to '{env_path}' but file does not exist")
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except Exception as err:
+            raise RuntimeError(f"Malformed baseline schema at {p}: {err}") from err
+
+    # 2. Packaged resource
+    try:
+        resource = importlib.resources.files("jplearn_api.resources").joinpath("adr-004-schema-baseline.json")
+        if resource.is_file():
+            return json.loads(resource.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+
+    # 3. Walk parent directories looking for docs/qa/adr-004-schema-baseline.json
+    curr = Path(__file__).resolve().parent
+    for _ in range(6):
+        candidate = curr / "docs" / "qa" / "adr-004-schema-baseline.json"
+        if candidate.is_file():
+            try:
+                return json.loads(candidate.read_text(encoding="utf-8"))
+            except Exception as err:
+                raise RuntimeError(f"Malformed baseline schema at {candidate}: {err}") from err
+        if curr.parent == curr:
+            break
+        curr = curr.parent
+
+    raise RuntimeError("Baseline schema resource 'adr-004-schema-baseline.json' could not be found")
 
 
 def resolve_database_url(explicit: str | None = None) -> str | None:
@@ -53,34 +103,48 @@ def upgrade(database_url: str | None = None, revision: str = "head") -> None:
 
 
 def downgrade(revision: str, database_url: str | None = None) -> None:
-    env = (os.environ.get("ENVIRONMENT") or "development").lower()
-    if revision.lower() in ("base", "-1", "-all") and env in ("staging", "production"):
+    env = (os.environ.get("ENVIRONMENT") or "").lower().strip()
+    is_destructive = revision.lower() in ("base", "-1", "-all") or revision.startswith("-")
+    if is_destructive:
         allow = os.environ.get("ALLOW_DESTRUCTIVE_DOWNGRADE", "").lower() in ("true", "1", "yes")
-        if not allow:
+        if env not in ("local", "test") and not allow:
             raise RuntimeError(
-                f"Destructive downgrade to {revision} is blocked in {env} environment without ALLOW_DESTRUCTIVE_DOWNGRADE=true"
+                f"Destructive downgrade to {revision} is blocked in '{env or 'unknown'}' environment "
+                f"without ALLOW_DESTRUCTIVE_DOWNGRADE=true"
             )
     command.downgrade(alembic_config(database_url), revision)
 
 
-def stamp(revision: str, database_url: str | None = None, *, verify_baseline: bool = True) -> None:
+def stamp(
+    revision: str = "head",
+    database_url: str | None = None,
+    *,
+    verify_baseline: bool = True,
+    baseline_path: Path | str | None = None,
+) -> None:
     url = resolve_database_url(database_url)
     if not url:
         raise RuntimeError("DATABASE_URL is required to run migrations")
 
-    if verify_baseline and revision in ("0001_prisma_baseline", "head") and BASELINE_PATH.exists():
+    if verify_baseline and revision in ("0001_prisma_baseline", "head"):
         import asyncio
         from jplearn_api.schema_snapshot import diff, snapshot_url
 
+        expected = load_baseline_schema(baseline_path)
         actual = asyncio.run(snapshot_url(url))
-        if actual.get("tables"):
-            expected = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
-            problems = diff(expected, actual)
-            if problems:
-                diff_msg = "\n".join(problems)
-                raise RuntimeError(
-                    f"Refusing to stamp {revision}: live schema diverges from baseline:\n{diff_msg}"
-                )
+
+        if not actual.get("tables"):
+            raise RuntimeError(
+                f"Refusing to stamp {revision} on empty database: "
+                "empty databases must use 'upgrade head' instead of adoption stamp"
+            )
+
+        problems = diff(expected, actual)
+        if problems:
+            diff_msg = "\n".join(problems)
+            raise RuntimeError(
+                f"Refusing to stamp {revision}: live schema diverges from baseline:\n{diff_msg}"
+            )
 
     command.stamp(alembic_config(url), revision)
 

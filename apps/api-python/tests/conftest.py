@@ -1,6 +1,8 @@
 import os
 import tempfile
 
+os.environ.setdefault("ENVIRONMENT", "test")
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -11,6 +13,7 @@ from pg_harness import ensure_test_database, stop_docker_postgres
 
 
 def _settings(database_url: str | None = None) -> Settings:
+    os.environ.setdefault("ENVIRONMENT", "test")
     os.environ.setdefault("JWT_SECRET", "test-secret-at-least-32-bytes-long-for-pyjwt-security")
     os.environ.setdefault("API_PUBLIC_URL", "http://localhost:3001")
     os.environ.setdefault(

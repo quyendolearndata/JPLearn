@@ -37,7 +37,12 @@ Evidence run tracking the resolution of:
 
 ---
 
-## 3. Evidence Artifacts
+## 3. Phase 1 Evidence — Migration & Release Artifact Fail Closed
 
-- `run_baseline.log` (captured during initial audit)
-- Subsequent phase logs appended per task.
+- **Status:** **PASS** (G-01, G-02, G-03 closed)
+- **Packaged Resource:** `jplearn_api.resources.adr-004-schema-baseline.json` bundled in wheel and Docker image.
+- **Docker Build & CLI:** Pinned `python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea` and `uv@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff`. Non-root UID 10001 confirmed. Verified `python -m jplearn_api.migrate --help` and baseline loading (10 tables) inside container.
+- **Fail-Closed Stamp:** Empty database stamp rejected with `RuntimeError` before creating `alembic_version`. Diverged schema rejected before creating `alembic_version`.
+- **Environment Resolver:** Missing or unknown environment blocks destructive downgrade without `ALLOW_DESTRUCTIVE_DOWNGRADE=true`.
+- **Runbook:** `docs/ops/runbook-backup-restore.md` authored by Ops seat.
+- **Pytest Gate:** 94 passed (14 new tests in `test_migrate_fail_closed.py`).

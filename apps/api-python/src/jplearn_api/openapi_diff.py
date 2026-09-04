@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import os
 from pathlib import Path
 import sys
 from typing import Any
@@ -362,7 +363,20 @@ def compare_openapi(handwritten: dict[str, Any], generated: dict[str, Any]) -> l
 
 
 def handwritten_spec_path() -> Path:
-    return Path(__file__).resolve().parents[4] / "docs" / "sad" / "03-design" / "openapi.yaml"
+    env_spec = os.environ.get("OPENAPI_SPEC_PATH")
+    if env_spec:
+        p = Path(env_spec)
+        if p.exists():
+            return p
+    curr = Path(__file__).resolve().parent
+    for _ in range(6):
+        candidate = curr / "docs" / "sad" / "03-design" / "openapi.yaml"
+        if candidate.is_file():
+            return candidate
+        if curr.parent == curr:
+            break
+        curr = curr.parent
+    raise FileNotFoundError("Could not locate handwritten OpenAPI contract 'docs/sad/03-design/openapi.yaml'")
 
 
 def load_handwritten_spec(path: Path | None = None) -> dict[str, Any]:

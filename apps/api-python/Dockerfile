@@ -1,7 +1,7 @@
-FROM python:3.12-slim AS base
+FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea AS base
 
-# Install uv package manager
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+# Install uv package manager (pinned digest)
+COPY --from=ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff /uv /uvx /bin/
 
 WORKDIR /app
 
