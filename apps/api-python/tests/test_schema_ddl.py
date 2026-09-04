@@ -170,3 +170,42 @@ def test_fr_neg_scanner_flags_a_python_file() -> None:
         assert "vocabulary_score" in result.stderr + result.stdout
     finally:
         probe.unlink(missing_ok=True)
+
+
+def test_stamp_fails_when_live_schema_diverges(alembic_database: str) -> None:
+    async def add_rogue():
+        conn = await asyncpg.connect(alembic_database)
+        try:
+            await conn.execute("ALTER TABLE users ADD COLUMN rogue_col text")
+        finally:
+            await conn.close()
+
+    async def drop_rogue():
+        conn = await asyncpg.connect(alembic_database)
+        try:
+            await conn.execute("ALTER TABLE users DROP COLUMN IF EXISTS rogue_col")
+        finally:
+            await conn.close()
+
+    asyncio.run(add_rogue())
+    try:
+        with pytest.raises(RuntimeError, match="Refusing to stamp 0001_prisma_baseline"):
+            stamp("0001_prisma_baseline", alembic_database)
+    finally:
+        asyncio.run(drop_rogue())
+
+
+def test_destructive_downgrade_blocked_in_staging_and_production(
+    alembic_database: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("ENVIRONMENT", "staging")
+    monkeypatch.delenv("ALLOW_DESTRUCTIVE_DOWNGRADE", raising=False)
+
+    with pytest.raises(RuntimeError, match="Destructive downgrade to base is blocked"):
+        downgrade("base", alembic_database)
+
+    monkeypatch.setenv("ALLOW_DESTRUCTIVE_DOWNGRADE", "true")
+    downgrade("base", alembic_database)
+    upgrade(alembic_database)
+

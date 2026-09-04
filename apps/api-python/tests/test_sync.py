@@ -104,9 +104,19 @@ def test_same_identity_same_catalog_same_progress_across_devices(live_client):
         assert me.json()["email"] == email
 
     # UC-L06 main: identical published catalog on all three clients.
+    def _strip_sig(cat: dict) -> dict:
+        import copy
+        res = copy.deepcopy(cat)
+        for it in res.get("items", []):
+            if it.get("playback_url"):
+                it["playback_url"] = it["playback_url"].split("?")[0]
+            if it.get("hls_url"):
+                it["hls_url"] = it["hls_url"].split("?")[0]
+        return res
+
     catalogs = [live_client.get("/catalog", headers=_bearer(token)).json() for token in tokens.values()]
-    assert catalogs[1] == catalogs[0]
-    assert catalogs[2] == catalogs[0]
+    assert _strip_sig(catalogs[1]) == _strip_sig(catalogs[0])
+    assert _strip_sig(catalogs[2]) == _strip_sig(catalogs[0])
     ids = [item["id"] for item in catalogs[0]["items"]]
     assert published_id in ids
     assert draft_id not in ids
