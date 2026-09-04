@@ -5,10 +5,12 @@
   "scripts": {
     "test:guard": "tsx scripts/assert-no-textbook.ts",
     "test": "pnpm test:guard && pnpm -r test",
-    "dev:api": "pnpm --filter @jplearn/api start",
+    "test:api": "cd apps/api-python && uv run pytest",
+    "dev:api": "cd apps/api-python && PYTHONPATH=src uv run uvicorn jplearn_api.main:app --reload --port 3002",
     "dev:web": "pnpm --filter @jplearn/web dev",
     "dev:mobile": "pnpm --filter @jplearn/mobile start",
-    "db:seed": "pnpm --filter @jplearn/api exec prisma db seed"
+    "db:migrate": "cd apps/api-python && PYTHONPATH=src uv run python -m jplearn_api.migrate upgrade",
+    "db:seed": "cd apps/api-python && PYTHONPATH=src uv run python -m jplearn_api.seed"
   },
   "devDependencies": {
     "tsx": "^4.19.2"

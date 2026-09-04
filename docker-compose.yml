@@ -6,3 +6,24 @@ services:
       POSTGRES_PASSWORD: jplearn
       POSTGRES_DB: jplearn
     ports: ["5432:5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  db-test:
+    image: postgres:16
+    profiles: ["test"]
+    environment:
+      POSTGRES_USER: jplearn_test
+      POSTGRES_PASSWORD: jplearn_test
+      POSTGRES_DB: jplearn_test
+    ports: ["127.0.0.1::5432"]
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jplearn_test -d jplearn_test"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  postgres_data:

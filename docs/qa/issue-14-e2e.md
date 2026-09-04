@@ -1,5 +1,8 @@
 # Bằng chứng issue #14 — Playwright e2e với API + web sống
 
+> Tài liệu lịch sử: lần chạy này từng dùng embedded PostgreSQL. Workflow hiện tại
+> đã chuyển sang `apps/api/test/docker-db.cjs` và Docker Compose `db-test`.
+
 - Ghế: **QA Engineering** · Ngày: 2026-08-25 · Issue: [#14](https://github.com/quyendolearndata/JPLearn/issues/14)
 - Kết luận: **PASS** — 3/3 Playwright spec xanh trên API :3001 + web :3000 thật, DB embedded Postgres thật.
 

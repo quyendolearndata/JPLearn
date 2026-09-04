@@ -3,23 +3,6 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_USER: jplearn
-          POSTGRES_PASSWORD: jplearn
-          POSTGRES_DB: jplearn
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U jplearn"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-    env:
-      DATABASE_URL: postgresql://jplearn:jplearn@localhost:5432/jplearn
-      JWT_SECRET: ci-secret
-      API_PUBLIC_URL: http://localhost:3001
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -32,6 +15,50 @@ jobs:
       - run: pnpm install
       - run: pnpm test:guard
       - run: pnpm --filter @jplearn/domain test
-      - run: pnpm --filter @jplearn/api exec prisma migrate deploy
-      - run: pnpm --filter @jplearn/api test
+      - run: pnpm --filter @jplearn/web test
       - run: pnpm --filter @jplearn/mobile test
+
+  api-python:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: jplearn
+          POSTGRES_PASSWORD: jplearn
+          POSTGRES_DB: jplearn_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U jplearn -d jplearn_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      JWT_SECRET: ci-secret
+      DATABASE_URL: postgresql://jplearn:jplearn@localhost:5432/jplearn_test
+      JPLEARN_TEST_DATABASE_URL: postgresql://jplearn:jplearn@localhost:5432/jplearn_test
+    steps:
+      - uses: actions/checkout@v4
+      # tsx drives scripts/assert-no-textbook.ts, which the FR-NEG-004 negative
+      # test invokes; the backend itself no longer needs Node (ADR-004).
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install
+      - uses: astral-sh/setup-uv@v4
+      - run: uv sync --frozen
+        working-directory: apps/api-python
+      # Module form, not the console script: uv marks the whole .venv hidden on
+      # macOS and CPython skips hidden .pth files, so the editable install is not
+      # importable there. PYTHONPATH=src behaves the same on every OS.
+      # Alembic owns DDL (ADR-004); pytest applies migrations through pg_harness.
+      - run: PYTHONPATH=src uv run python -m jplearn_api.migrate upgrade
+        working-directory: apps/api-python
+      - run: uv run pytest
+        working-directory: apps/api-python
+      - run: PYTHONPATH=src uv run python -m jplearn_api.openapi_diff
+        working-directory: apps/api-python

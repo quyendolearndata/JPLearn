@@ -8,7 +8,7 @@ Trạng thái: HLS là **opt-in theo từng media asset** trước cổng nền 
 2. Transcode offline (không chạy trong request API):
 
 ```bash
-cd apps/api
+cd apps/api-python
 ./scripts/transcode-hls.sh <asset-id> <staff-token>
 ```
 

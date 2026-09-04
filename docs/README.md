@@ -1,7 +1,7 @@
 # JPLearn — bộ tài liệu nền tảng
 
-Ngày: 2026-08-25  
-Trạng thái: **cổng SAD-1/2/3 và cổng nền tảng đã ký 2026-08-25** ([gates.md](company/gates.md)); platform đã scaffold trên `main`. Phase 5 (SAD vòng học) được phép thiết kế; flags textbook vẫn `false`. Cổng nền tảng kèm exception HLS/URL ký/UC-L06 native — xem `gates.md`.
+Ngày: 2026-08-31  
+Trạng thái: cổng SAD-1/2/3 và cổng nền tảng đã ký 2026-08-25 ([gates.md](company/gates.md)). **SAD-3 mở lại 2026-08-31** — [ADR-003](sad/03-design/adr-003-runtime-python.md) Accepted (runtime API FastAPI); scaffold Python vẫn chờ Phase 0. Phase 5 được phép thiết kế; flags textbook vẫn `false`. Exception HLS/URL ký/UC-L06 native — xem `gates.md`.
 
 ## Đọc theo thứ tự
 

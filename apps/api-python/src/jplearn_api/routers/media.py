@@ -1,0 +1,117 @@
+from pathlib import Path
+from urllib.parse import quote
+
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile
+from fastapi.responses import FileResponse, PlainTextResponse
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from jplearn_api import media_service
+from jplearn_api.deps import get_session
+from jplearn_api.media_access import require_media_access
+from jplearn_api.models import User
+from jplearn_api.roles import require_roles
+from jplearn_api.schemas import MediaAssetStaff
+
+router = APIRouter()
+
+
+@router.post(
+    "/staff/catalog/{id}/media",
+    status_code=201,
+    response_model=MediaAssetStaff,
+    operation_id="uploadMedia",
+    tags=["CMS"],
+    openapi_extra={"x-jplearn-fr": ["FR-CMS-001"]},
+)
+async def upload_media(
+    id: str,
+    request: Request,
+    file: UploadFile,
+    session: AsyncSession = Depends(get_session),
+    _user: User = Depends(require_roles("teacher", "admin")),
+) -> MediaAssetStaff:
+    return await media_service.upload(session, request.app.state.settings, id, file)
+
+
+@router.post(
+    "/staff/media/{id}/hls",
+    status_code=201,
+    response_model=MediaAssetStaff,
+    operation_id="registerHls",
+    tags=["CMS"],
+    openapi_extra={"x-jplearn-fr": ["FR-CMS-001", "NFR-PERF-002"]},
+    responses={400: {"description": "HLS manifest missing on disk"}},
+)
+async def register_hls(
+    id: str,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    _user: User = Depends(require_roles("teacher", "admin")),
+) -> MediaAssetStaff:
+    return await media_service.register_hls(session, request.app.state.settings, id)
+
+
+@router.get(
+    "/media/{id}",
+    operation_id="streamMedia",
+    tags=["Media"],
+    openapi_extra={"x-jplearn-fr": ["FR-CMS-003", "FR-CMS-004"]},
+    responses={401: {"description": "Missing or invalid JWT/signature"}, 404: {"description": "Asset not found"}},
+)
+async def stream_media(
+    id: str,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    _access: None = Depends(require_media_access),
+) -> Response:
+    asset = await media_service.get(session, id)
+    path = media_service.storage_root(request.app.state.settings) / asset.storage_key
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Media asset not found")
+    return FileResponse(path, media_type=asset.mime, headers={"X-Content-Type-Options": "nosniff"})
+
+
+@router.get(
+    "/media/{id}/hls/{file:path}",
+    operation_id="streamHls",
+    tags=["Media"],
+    openapi_extra={"x-jplearn-fr": ["NFR-PERF-002"]},
+    responses={
+        400: {"description": "Invalid or unsupported file name"},
+        401: {"description": "Missing or invalid JWT/signature"},
+        404: {"description": "Asset or HLS file not found"},
+    },
+)
+async def stream_hls(
+    id: str,
+    file: str,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    _access: None = Depends(require_media_access),
+) -> Response:
+    await media_service.get(session, id)
+    try:
+        path = media_service.hls_path(request.app.state.settings, id, file)
+    except HTTPException as exc:
+        # Nest sets @Header("X-Content-Type-Options", "nosniff") on every
+        # response of this handler, including 400/404 errors.
+        raise HTTPException(
+            status_code=exc.status_code,
+            detail=exc.detail,
+            headers={"X-Content-Type-Options": "nosniff"},
+        ) from exc
+    content_type = media_service.HLS_CONTENT_TYPES[Path(file).suffix.lower()]
+    headers = {"X-Content-Type-Options": "nosniff"}
+    exp = request.query_params.get("exp")
+    sig = request.query_params.get("sig")
+    if file.endswith(".m3u8") and exp and sig:
+        manifest = path.read_text(encoding="utf-8")
+        lines = []
+        for line in manifest.split("\n"):
+            trimmed = line.strip()
+            if not trimmed or trimmed.startswith("#"):
+                lines.append(line)
+            else:
+                lines.append(f"{trimmed}?exp={quote(exp)}&sig={quote(sig)}")
+        return PlainTextResponse("\n".join(lines), media_type=content_type, headers=headers)
+    return FileResponse(path, media_type=content_type, headers=headers)

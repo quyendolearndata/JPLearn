@@ -1,0 +1,251 @@
+{
+  "generated_at": "2026-09-04T071945Z",
+  "servers": {
+    "nest": 3101,
+    "python": 3102
+  },
+  "steps": 40,
+  "failed_steps": 0,
+  "results": [
+    {
+      "step": "auth/register",
+      "status": 201,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "auth/login wrong password",
+      "status": 401,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "auth/login",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /me no auth → 401",
+      "status": 401,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /me (own token)",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /progress initial",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST /sessions bad device",
+      "status": 401,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /progress no auth",
+      "status": 401,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST /sessions start",
+      "status": 201,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST /sessions/:id/end (2 min)",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST end twice",
+      "status": 400,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "learning_events types",
+      "status": 0,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /flags no auth → 401",
+      "status": 401,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /flags default false",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "PATCH /staff/flags learner 403",
+      "status": 403,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST /staff/catalog learner 403",
+      "status": 403,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "FR-NEG /flashcards",
+      "status": 404,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "FR-NEG /grammar",
+      "status": 404,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "FR-NEG /grammar/lessons",
+      "status": 404,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "FR-NEG /vocabulary",
+      "status": 404,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "FR-NEG /translations",
+      "status": 404,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "auth/register admin",
+      "status": 201,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST /staff/catalog admin 201",
+      "status": 201,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "submit-qa",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "publish without media 400",
+      "status": 400,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST media upload 201",
+      "status": 201,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "publish with media 200",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /catalog published item shape",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /media Bearer",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /media signed URL",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /media expired sig 401",
+      "status": 401,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "register HLS missing manifest 400",
+      "status": 400,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "register HLS 201",
+      "status": 201,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET manifest Bearer",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "manifest rewrite exp+sig",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET segment via signed URI",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "HLS traversal 400",
+      "status": 400,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "HLS missing 404",
+      "status": 404,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "logout 204",
+      "status": 204,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "me after logout 401",
+      "status": 401,
+      "pass": true,
+      "diffs": []
+    }
+  ]
+}

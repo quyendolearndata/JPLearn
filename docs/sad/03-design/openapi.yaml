@@ -2,10 +2,36 @@ openapi: 3.0.3
 info:
   title: JPLearn Platform API
   version: 0.1.0
-  description: Foundation v1. No grammar, flashcards, or L1 translation channels.
+  description: |
+    Foundation v1. No grammar, flashcards, or L1 translation channels.
+
+    Contract authority is this file (OpenAPI 3.0.3), not FastAPI-generated 3.1 JSON.
+    Semantic normalized diff (ADR-003 D9): must match HTTP status, required/nullability,
+    security, operationId, x-jplearn-fr, and error schema. Allowlist: 3.0↔3.1 nullable
+    vs type union, generated component names, servers, info.
+
+    Docs UI (`/docs`, `/redoc`, `/openapi.json`): off on staging and prod; local dev may
+    enable. Contract tests read this file in git — do not depend on a public OpenAPI URL.
 servers:
   - url: https://api.staging.jplearn.local
 paths:
+  /health:
+    get:
+      operationId: health
+      tags: [Observability]
+      x-jplearn-fr: [NFR-OBS-001]
+      description: Liveness. Echoes `x-request-id` (client value or generated UUID).
+      parameters:
+        - $ref: "#/components/parameters/RequestIdHeader"
+      responses:
+        "200":
+          description: API process is up
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
   /auth/register:
     post:
       operationId: register
@@ -55,7 +81,12 @@ paths:
       x-jplearn-fr: [FR-ID-003]
       security: [{ bearerAuth: [] }]
       responses:
-        "204": { description: Logged out this device }
+        "204": { description: "Invalidates every access_token for this user (all devices); tokenVersion increment (FR-ID-003)" }
+        "401":
+          description: Missing or invalid Bearer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
   /me:
     get:
       operationId: getMe
@@ -152,8 +183,10 @@ paths:
       operationId: streamHls
       tags: [Media]
       x-jplearn-fr: [NFR-PERF-002]
-      description: HLS manifest (.m3u8) and segments (.ts/.m4s) for an asset; MP4 /media/{id} stays the fallback.
-      security: [{ bearerAuth: [] }]
+      description: >
+        HLS manifest (.m3u8) and segments (.ts/.m4s); MP4 /media/{id} stays the fallback.
+        Auth is Bearer JWT **or** HMAC query `exp`+`sig` (same as GET /media/{id}) so
+        hls.js can fetch segments without Authorization. Manifest rewrite copies query onto relative URIs.
       parameters:
         - in: path
           name: id
@@ -163,6 +196,13 @@ paths:
           name: file
           required: true
           schema: { type: string, pattern: "^[A-Za-z0-9._-]+$" }
+        - in: query
+          name: exp
+          schema: { type: integer }
+          description: Unix seconds expiry (required if no Bearer)
+        - in: query
+          name: sig
+          schema: { type: string, pattern: "^[a-f0-9]{64}$" }
       responses:
         "200":
           content:
@@ -170,6 +210,7 @@ paths:
             video/mp2t: {}
             video/iso.segment: {}
         "400": { description: Invalid or unsupported file name }
+        "401": { description: Missing or invalid JWT/signature }
         "404": { description: Asset or HLS file not found }
   /staff/media/{id}/hls:
     post:
@@ -184,7 +225,7 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        "200": { description: hls_url registered }
+        "201": { description: hls_url registered }
         "400": { description: HLS manifest missing on disk }
         "403": { description: Not teacher or admin }
   /staff/catalog/{id}/submit-qa:
@@ -305,12 +346,40 @@ paths:
         "200": { description: Updated }
         "403": { description: Admin only }
 components:
+  parameters:
+    RequestIdHeader:
+      in: header
+      name: x-request-id
+      required: false
+      schema: { type: string }
+      description: Optional trace id; server echoes it. If omitted, server generates a UUID.
+  headers:
+    XRequestId:
+      description: Echo of request `x-request-id`, or a generated UUID
+      schema: { type: string }
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    Health:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean, enum: [true] }
+    HttpError:
+      type: object
+      description: NestJS default JSON error body. FastAPI must map 422 validation to 400 + this shape.
+      required: [statusCode, message]
+      properties:
+        statusCode: { type: integer }
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: string }
+        error: { type: string }
     AuthSession:
       type: object
       required: [access_token, user]
@@ -346,10 +415,12 @@ components:
           description: NFR-PERF-002 HLS manifest when transcoded; clients prefer it and fall back to playback_url.
     CatalogItemWrite:
       type: object
-      required: [topic_id, ci_level, duration_seconds, media_type, visual_support]
+      required: [topic_id, ci_level, duration_seconds, media_type, visual_support, title_internal]
       properties:
         topic_id: { type: string }
-        ci_level: { type: integer }
+        ci_level:
+          type: integer
+          description: v1 write has no min/max (Prisma Int). GET /catalog?ci_level= is 0–4.
         duration_seconds: { type: integer }
         media_type: { type: string, enum: [video, audio] }
         visual_support: { type: string, enum: [high, medium, low] }

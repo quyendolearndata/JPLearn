@@ -12,10 +12,12 @@ const roots = ["apps", "packages"];
 function walk(dir: string, acc: string[] = []): string[] {
   if (!statSync(dir, { throwIfNoEntry: false })) return acc;
   for (const name of readdirSync(dir)) {
-    if (name === "node_modules" || name === ".next" || name === "test" || name === "__tests__") continue;
+    // `tests` (pytest) joins `test`/`__tests__`: fixtures must be able to name a
+    // banned column to prove the guard still catches it. Production trees are scanned.
+    if (name === "node_modules" || name === ".next" || name === "test" || name === "tests" || name === "__tests__" || name === ".venv" || name === "__pycache__") continue;
     const p = join(dir, name);
     if (statSync(p).isDirectory()) walk(p, acc);
-    else if (/\.(ts|tsx|prisma|sql)$/.test(name)) acc.push(p);
+    else if (/\.(ts|tsx|prisma|sql|py|pyi)$/.test(name)) acc.push(p);
   }
   return acc;
 }

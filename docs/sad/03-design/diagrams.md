@@ -26,7 +26,7 @@ flowchart TB
 flowchart LR
   Web[Web Next.js - learner + /staff]
   Expo[Expo iOS / iPad / Android]
-  API[API NestJS]
+  API[API FastAPI]
   DB[(PostgreSQL)]
   Files[Local / object storage]
 
@@ -50,13 +50,13 @@ flowchart TB
   HTTP --> Flags[FlagsModule FR-FLG]
   HTTP --> Events[EventsModule FR-EVT]
   HTTP --> Media[MediaModule upload + playback]
-  Auth --> Prisma[Prisma / PostgreSQL]
-  Catalog --> Prisma
-  Session --> Prisma
-  Progress --> Prisma
-  Flags --> Prisma
-  Events --> Prisma
-  Media --> Prisma
+  Auth --> SQLA[SQLAlchemy / PostgreSQL]
+  Catalog --> SQLA
+  Session --> SQLA
+  Progress --> SQLA
+  Flags --> SQLA
+  Events --> SQLA
+  Media --> SQLA
   Media --> Disk[storage files]
 ```
 
@@ -66,7 +66,7 @@ flowchart TB
 sequenceDiagram
   actor U as Learner
   participant C as Web hoặc Expo
-  participant A as API NestJS
+  participant A as API FastAPI
   participant D as PostgreSQL
 
   U->>C: Email + mật khẩu

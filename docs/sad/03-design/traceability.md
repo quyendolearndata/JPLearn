@@ -8,7 +8,7 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 |---|---|---|---|
 | FR-ID-001 | UC-L01, UC-T01 | POST /auth/register, /auth/login | T-ID-001 register+login |
 | FR-ID-002 | UC-L01, UC-L06 | cùng token schema 3 client | T-ID-002 same user 3 surfaces |
-| FR-ID-003 | UC-L01 | POST /auth/logout | T-ID-003 logout |
+| FR-ID-003 | UC-L01 | POST /auth/logout (tăng `tokenVersion`; mọi token cũ 401) | T-ID-003 logout mọi thiết bị |
 | FR-ID-004 | UC-T01, UC-A03 | User.roles | T-ID-004 learner forbidden staff |
 | FR-CAT-001 | UC-T02 | catalog_items + POST /staff/catalog | T-CAT-001 |
 | FR-CAT-002 | UC-L02 | GET /catalog chỉ published | T-CAT-002 draft hidden |
@@ -18,7 +18,7 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | FR-SES-001 | UC-L03 | POST /sessions | T-SES-001 |
 | FR-SES-002 | UC-L04 | POST /sessions/{id}/end | T-SES-002 |
 | FR-SES-003 | UC-L03 | session không cần media | T-SES-003 |
-| FR-PRG-001 | UC-L04, UC-L05 | minutes tăng khi end | T-PRG-001 |
+| FR-PRG-001 | UC-L04, UC-L05 | minutes tăng khi end. ADR-003 D10: race hai `end()` đồng thời = `KNOWN_DEBT_CARRIED` (không sửa lúc port) | T-PRG-001 |
 | FR-PRG-002 | UC-L05 | current_ci_level | T-PRG-002 |
 | FR-PRG-003 | UC-L05 | OpenAPI additionalProperties false | T-PRG-003 no extra scores |
 | FR-PRG-004 | UC-L06 | GET /progress | T-PRG-004 |

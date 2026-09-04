@@ -1,0 +1,7 @@
+{
+  "library": "node-argon2",
+  "plaintext": "password10",
+  "seed_user": "admin@jplearn.local",
+  "encoded": "$argon2id$v=19$m=65536,p=4,t=3$J/L4jb8SWqs3xR5pSONI6Q$ibPLzumInmisrbAm1LJkZg7q7qvpDMkOw7ltWQvWxa0",
+  "note": "Python argon2-cffi must verify this hash; Node must verify a cffi hash of the same password. Parameters are those of node-argon2 defaults at generation time. node-argon2 emits PHC params as m,p,t; libargon2 parses m,t,p — Python verify normalizes order."
+}
