@@ -32,6 +32,28 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Health" }
+  /ready:
+    get:
+      operationId: ready
+      tags: [Observability]
+      x-jplearn-fr: [NFR-OBS-001]
+      description: Readiness. Checks database connectivity and storage dependency.
+      parameters:
+        - $ref: "#/components/parameters/RequestIdHeader"
+      responses:
+        "200":
+          description: Service dependencies are healthy
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ready" }
+        "503":
+          description: One or more service dependencies are unhealthy
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ready" }
   /auth/register:
     post:
       operationId: register
@@ -368,6 +390,13 @@ components:
       required: [ok]
       properties:
         ok: { type: boolean, enum: [true] }
+    Ready:
+      type: object
+      required: [ok, database, storage]
+      properties:
+        ok: { type: boolean }
+        database: { type: string, enum: [up, down] }
+        storage: { type: string, enum: [up, down] }
     HttpError:
       type: object
       description: NestJS default JSON error body. FastAPI must map 422 validation to 400 + this shape.

@@ -1,3 +1,4 @@
+import asyncio
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -48,10 +49,11 @@ async def register(session: AsyncSession, secret: str, email: str, password: str
     if not normalized:
         raise HTTPException(status_code=400, detail="Email is required")
     now = to_naive_utc(datetime.now(UTC))
+    pw_hash = await asyncio.to_thread(hash_password, password)
     user = User(
         id=str(uuid4()),
         email=normalized,
-        password_hash=hash_password(password),
+        password_hash=pw_hash,
         token_version=0,
         created_at=now,
     )
@@ -87,7 +89,10 @@ async def login(session: AsyncSession, secret: str, email: object, password: obj
         select(User).options(selectinload(User.roles)).where(User.email == email.strip().lower()),
     )
     user = result.scalar_one_or_none()
-    if user is None or not verify_password(user.password_hash, password):
+    if user is None:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    valid = await asyncio.to_thread(verify_password, user.password_hash, password)
+    if not valid:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return session_payload(user, secret)
 

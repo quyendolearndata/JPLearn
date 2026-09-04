@@ -25,10 +25,16 @@ cleanup() {
   set +e
   [[ -n "$WEB_PID" ]] && kill "$WEB_PID" 2>/dev/null
   [[ -n "$API_PID" ]] && kill "$API_PID" 2>/dev/null
+  lsof -ti :"$PY_PORT" | xargs kill -9 2>/dev/null || true
+  lsof -ti :"$WEB_PORT" | xargs kill -9 2>/dev/null || true
   "$VENV_PY" "$REPO/apps/api-python/differential/db.py" down >/dev/null 2>&1
   rm -rf "$STORAGE"
 }
 trap cleanup EXIT
+
+# Pre-clean any stale processes on target ports
+lsof -ti :"$PY_PORT" | xargs kill -9 2>/dev/null || true
+lsof -ti :"$WEB_PORT" | xargs kill -9 2>/dev/null || true
 
 wait_http() { # url, name
   for _ in $(seq 1 120); do
@@ -51,10 +57,10 @@ echo "== 2/5 FastAPI :$PY_PORT =="
   API_PUBLIC_URL="http://localhost:$PY_PORT" \
   STORAGE_ROOT="$STORAGE" \
   PYTHONPATH=src \
-  .venv/bin/uvicorn jplearn_api.main:app --port "$PY_PORT" >/tmp/jplearn-web-e2e-py-api.log 2>&1
+  exec .venv/bin/uvicorn jplearn_api.main:app --port "$PY_PORT" >/tmp/jplearn-web-e2e-py-api.log 2>&1
 ) &
 API_PID=$!
-wait_http "http://localhost:$PY_PORT/health" "FastAPI"
+wait_http "http://localhost:$PY_PORT/ready" "FastAPI"
 
 echo "== 3/5 seed nội dung published + HLS thật =="
 TOKEN="$(curl -fsS -X POST "http://localhost:$PY_PORT/auth/login" \
@@ -89,7 +95,7 @@ echo "== 4/5 web :$WEB_PORT → API :$PY_PORT =="
   NEXT_PUBLIC_API_URL="http://localhost:$PY_PORT" ./node_modules/.bin/next build \
     >/tmp/jplearn-web-e2e-web-build.log 2>&1
   NEXT_PUBLIC_API_URL="http://localhost:$PY_PORT" \
-  ./node_modules/.bin/next start -p "$WEB_PORT" >/tmp/jplearn-web-e2e-py-web.log 2>&1
+  exec ./node_modules/.bin/next start -p "$WEB_PORT" >/tmp/jplearn-web-e2e-py-web.log 2>&1
 ) &
 WEB_PID=$!
 wait_http "http://localhost:$WEB_PORT/login" "Next"
