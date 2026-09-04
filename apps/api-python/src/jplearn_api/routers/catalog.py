@@ -2,11 +2,12 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api import catalog_service
-from jplearn_api.deps import get_session
+from jplearn_api.deps import get_session, get_storage
 from jplearn_api.models import User
 from jplearn_api.roles import require_roles
 from jplearn_api.schemas import CatalogItemStaff, CatalogItemWrite, CatalogList
 from jplearn_api.security import require_user
+from jplearn_api.storage import StoragePort
 
 router = APIRouter()
 
@@ -87,9 +88,10 @@ async def publish_catalog_item(
     id: str,
     request: Request,
     session: AsyncSession = Depends(get_session),
+    storage: StoragePort = Depends(get_storage),
     _admin: User = Depends(require_roles("admin")),
 ) -> CatalogItemStaff:
-    return await catalog_service.publish(session, request.app.state.settings, id)
+    return await catalog_service.publish(session, request.app.state.settings, storage, id)
 
 
 @router.post(

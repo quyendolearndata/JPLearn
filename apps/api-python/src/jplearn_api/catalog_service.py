@@ -10,6 +10,7 @@ from jplearn_api.models import CatalogItem, MediaAsset, Topic
 from jplearn_api.schemas import CatalogItemPublic, CatalogItemStaff, CatalogItemWrite, MediaAssetStaff
 from jplearn_api.settings import Settings
 from jplearn_api.signed_url import sign_hls_url, sign_media_url
+from jplearn_api.storage import StoragePort
 
 
 def _secret(settings: Settings) -> str:
@@ -122,18 +123,30 @@ async def submit_qa(session: AsyncSession, settings: Settings, item_id: str) -> 
     return to_staff(await _load(session, item_id), settings)
 
 
-async def publish(session: AsyncSession, settings: Settings, item_id: str) -> CatalogItemStaff:
+async def publish(
+    session: AsyncSession,
+    settings: Settings,
+    storage: StoragePort,
+    item_id: str,
+) -> CatalogItemStaff:
     item = await _load(session, item_id)
     if item.status != "level_qa":
         raise HTTPException(status_code=400, detail="Only level_qa items can be published")
-    count = await session.scalar(
-        select(func.count()).select_from(MediaAsset).where(MediaAsset.catalog_item_id == item_id),
+    assets_result = await session.execute(
+        select(MediaAsset).where(MediaAsset.catalog_item_id == item_id)
     )
-    if not count:
+    assets = assets_result.scalars().all()
+    if not assets:
         raise HTTPException(
             status_code=400,
             detail="Cannot publish without media: upload a playback source first (FR-CAT-002)",
         )
+    for asset in assets:
+        if not await storage.exists(asset.storage_key):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Cannot publish: media file missing from storage for asset {asset.id} (FR-CAT-002)",
+            )
     item.status = "published"
     await session.commit()
     return to_staff(await _load(session, item_id), settings)

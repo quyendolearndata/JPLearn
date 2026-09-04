@@ -6,11 +6,12 @@ from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api import media_service
-from jplearn_api.deps import get_session
+from jplearn_api.deps import get_session, get_storage
 from jplearn_api.media_access import require_media_access
 from jplearn_api.models import User
 from jplearn_api.roles import require_roles
 from jplearn_api.schemas import MediaAssetStaff
+from jplearn_api.storage import StoragePort
 
 router = APIRouter()
 
@@ -28,9 +29,10 @@ async def upload_media(
     request: Request,
     file: UploadFile,
     session: AsyncSession = Depends(get_session),
+    storage: StoragePort = Depends(get_storage),
     _user: User = Depends(require_roles("teacher", "admin")),
 ) -> MediaAssetStaff:
-    return await media_service.upload(session, request.app.state.settings, id, file)
+    return await media_service.upload(session, request.app.state.settings, storage, id, file)
 
 
 @router.post(
@@ -46,9 +48,10 @@ async def register_hls(
     id: str,
     request: Request,
     session: AsyncSession = Depends(get_session),
+    storage: StoragePort = Depends(get_storage),
     _user: User = Depends(require_roles("teacher", "admin")),
 ) -> MediaAssetStaff:
-    return await media_service.register_hls(session, request.app.state.settings, id)
+    return await media_service.register_hls(session, request.app.state.settings, storage, id)
 
 
 @router.get(
@@ -62,11 +65,13 @@ async def stream_media(
     id: str,
     request: Request,
     session: AsyncSession = Depends(get_session),
+    storage: StoragePort = Depends(get_storage),
     _access: None = Depends(require_media_access),
 ) -> Response:
     asset = await media_service.get(session, id)
-    path = media_service.storage_root(request.app.state.settings) / asset.storage_key
-    if not path.exists():
+    try:
+        path = await storage.get_path(asset.storage_key)
+    except (FileNotFoundError, ValueError):
         raise HTTPException(status_code=404, detail="Media asset not found")
     return FileResponse(path, media_type=asset.mime, headers={"X-Content-Type-Options": "nosniff"})
 
@@ -87,11 +92,12 @@ async def stream_hls(
     file: str,
     request: Request,
     session: AsyncSession = Depends(get_session),
+    storage: StoragePort = Depends(get_storage),
     _access: None = Depends(require_media_access),
 ) -> Response:
     await media_service.get(session, id)
     try:
-        path = media_service.hls_path(request.app.state.settings, id, file)
+        path = await media_service.hls_path(storage, id, file)
     except HTTPException as exc:
         # Nest sets @Header("X-Content-Type-Options", "nosniff") on every
         # response of this handler, including 400/404 errors.

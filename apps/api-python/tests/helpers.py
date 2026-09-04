@@ -57,6 +57,12 @@ def ensure_topics(client: TestClient) -> None:
 
 def insert_media(client: TestClient, catalog_item_id: str) -> str:
     asset_id = str(uuid4())
+    storage_key = f"test/{catalog_item_id}.mp4"
+    storage = getattr(client.app.state, "storage", None)
+    if storage and hasattr(storage, "root"):
+        path = storage.root / storage_key
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"fake media content")
 
     async def _insert() -> None:
         conn = await asyncpg.connect(_database_url(client))
@@ -68,7 +74,7 @@ def insert_media(client: TestClient, catalog_item_id: str) -> str:
                 """,
                 asset_id,
                 catalog_item_id,
-                f"test/{catalog_item_id}.mp4",
+                storage_key,
                 "video/mp4",
             )
         finally:

@@ -28,8 +28,17 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-def create_app(settings: Settings | None = None) -> FastAPI:
+from pathlib import Path
+
+from jplearn_api.storage import LocalFilesystemStorage, StoragePort
+
+
+def create_app(
+    settings: Settings | None = None,
+    storage: StoragePort | None = None,
+) -> FastAPI:
     settings = settings or get_settings()
+    storage = storage or LocalFilesystemStorage(settings.storage_root or (Path.cwd() / "storage"))
     app = FastAPI(
         title="JPLearn Platform API",
         version="0.1.0",
@@ -39,6 +48,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         openapi_url="/openapi.json" if settings.openapi_ui else None,
     )
     app.state.settings = settings
+    app.state.storage = storage
     app.add_middleware(RequestIdMiddleware, settings=settings)
     app.add_middleware(
         CORSMiddleware,
