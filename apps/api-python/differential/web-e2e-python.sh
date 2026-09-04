@@ -47,7 +47,7 @@ echo "== 2/5 FastAPI :$PY_PORT =="
 (
   cd "$REPO/apps/api-python"
   DATABASE_URL="$DATABASE_URL" \
-  JWT_SECRET="test-secret" \
+  JWT_SECRET="test-secret-at-least-32-bytes-long-for-pyjwt-security" \
   API_PUBLIC_URL="http://localhost:$PY_PORT" \
   STORAGE_ROOT="$STORAGE" \
   PYTHONPATH=src \

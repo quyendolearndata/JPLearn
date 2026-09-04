@@ -48,7 +48,7 @@ def webhook():
 def _app(webhook_url: str | None):
     settings = Settings(
         database_url="postgresql://jplearn_test:jplearn_test@127.0.0.1:5432/jplearn_test",
-        jwt_secret="test-secret",
+        jwt_secret="test-secret-at-least-32-bytes-long-for-pyjwt-security",
         alert_webhook_url=webhook_url,
     )
     app = create_app(settings)
@@ -99,7 +99,7 @@ def test_5xx_posts_alert_payload(webhook) -> None:
     assert payload["path"] == "/__test/boom"
     assert payload["status"] == 500
     assert payload["requestId"] == "req-alert-001"
-    assert payload["message"] == "boom"
+    assert "boom" in payload["message"]
     assert payload["timestamp"].startswith("20")
     for fragment in ("500", "/__test/boom", "req-alert-001"):
         assert fragment in payload["text"]
@@ -113,3 +113,87 @@ def test_4xx_does_not_alert(webhook) -> None:
     assert response.status_code == 400
     assert response.json() == {"statusCode": 400, "message": "bad_input", "error": "Bad Request"}
     assert webhook.received == []
+
+
+def test_sensitive_credentials_redacted_in_5xx_and_webhook(webhook) -> None:
+    fake_secret = "super_secret_password_123"
+    fake_hash = "$argon2id$v=19$m=65536,t=3,p=4$some_hash_string"
+    fake_jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIn0.mock_signature"
+    fake_db = "postgresql://user:db_password_456@localhost:5432/jplearn"
+
+    app = _app(f"http://127.0.0.1:{webhook.server_address[1]}/hook")
+
+    async def leak_route() -> None:
+        raise RuntimeError(
+            f"DB query failed: password='{fake_secret}' hash={fake_hash} token={fake_jwt} uri={fake_db}"
+        )
+
+    app.add_api_route("/__test/leak", leak_route, methods=["GET"], include_in_schema=False)
+
+    with TestClient(app, raise_server_exceptions=False) as client:
+        response = client.get("/__test/leak")
+
+    # Response to client must NEVER contain leaked details (NFR-PRIV-001)
+    assert response.status_code == 500
+    assert fake_secret not in response.text
+    assert fake_hash not in response.text
+    assert fake_jwt not in response.text
+    assert "db_password_456" not in response.text
+
+    # Webhook payload must have redacted all sensitive data
+    assert len(webhook.received) == 1
+    alert_payload = webhook.received[0]
+    raw_payload_str = json.dumps(alert_payload)
+    assert fake_secret not in raw_payload_str
+    assert fake_hash not in raw_payload_str
+    assert fake_jwt not in raw_payload_str
+    assert "db_password_456" not in raw_payload_str
+    assert "[REDACTED]" in alert_payload["message"] or "[REDACTED_HASH]" in alert_payload["message"]
+
+
+def test_settings_validation():
+    # 1. Short JWT secret (< 32 bytes) fails
+    with pytest.raises(ValueError, match="JWT_SECRET must be at least 32 bytes"):
+        Settings(
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="short-key",
+        )
+
+    # 2. Relative storage_root fails
+    with pytest.raises(ValueError, match="STORAGE_ROOT must be an absolute path"):
+        Settings(
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="a" * 32,
+            storage_root="relative/path/storage",
+        )
+
+    # 3. Staging/Production without HTTPS fails
+    with pytest.raises(ValueError, match="API_PUBLIC_URL must use HTTPS"):
+        Settings(
+            environment="production",
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="a" * 32,
+            api_public_url="http://insecure.example.com",
+            media_signing_secret="b" * 32,
+        )
+
+    # 4. Staging/Production missing media_signing_secret fails
+    with pytest.raises(ValueError, match="MEDIA_SIGNING_SECRET is required"):
+        Settings(
+            environment="staging",
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="a" * 32,
+            api_public_url="https://api.example.com",
+            media_signing_secret=None,
+        )
+
+    # 5. Staging/Production with media_signing_secret identical to jwt_secret fails
+    with pytest.raises(ValueError, match="MEDIA_SIGNING_SECRET must be distinct"):
+        Settings(
+            environment="production",
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="a" * 32,
+            api_public_url="https://api.example.com",
+            media_signing_secret="a" * 32,
+        )
+

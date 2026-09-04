@@ -1,3 +1,4 @@
+import json
 from uuid import uuid4
 
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -5,6 +6,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from jplearn_api.alert import send_alert_5xx
+from jplearn_api.sanitizer import sanitize_message
 from jplearn_api.settings import Settings
 
 
@@ -19,26 +21,38 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
         try:
             response = await call_next(request)
         except Exception as error:
-            if not getattr(error, "status_code", None) or int(getattr(error, "status_code")) >= 500:
-                print(
-                    '{"request_id":"%s","status":500,"message":"%s"}'
-                    % (request_id, str(error).replace('"', "'")[:300]),
-                )
+            status_code = int(getattr(error, "status_code", 500))
+            if status_code >= 500:
+                error_class = error.__class__.__name__
+                safe_msg = sanitize_message(f"{error_class}: {str(error)}")[:300]
+                log_entry = {
+                    "request_id": request_id,
+                    "method": request.method,
+                    "path": request.url.path,
+                    "status": 500,
+                    "error_class": error_class,
+                    "message": safe_msg,
+                }
+                print(json.dumps(log_entry))
                 await send_alert_5xx(
                     self.settings,
                     method=request.method,
                     path=request.url.path,
                     status=500,
                     request_id=request_id,
-                    message=str(error),
+                    message=safe_msg,
                 )
             raise
         response.headers["x-request-id"] = request_id
         if response.status_code >= 500:
-            print(
-                '{"request_id":"%s","status":%s,"message":"http_%s"}'
-                % (request_id, response.status_code, response.status_code),
-            )
+            log_entry = {
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.url.path,
+                "status": response.status_code,
+                "message": f"http_{response.status_code}",
+            }
+            print(json.dumps(log_entry))
             await send_alert_5xx(
                 self.settings,
                 method=request.method,
@@ -48,3 +62,4 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
                 message=f"http_{response.status_code}",
             )
         return response
+

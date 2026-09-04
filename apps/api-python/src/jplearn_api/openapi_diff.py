@@ -144,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
 
     settings = Settings(
         database_url="postgresql://jplearn_test:jplearn_test@127.0.0.1:5432/jplearn_test",
-        jwt_secret="test-secret",
+        jwt_secret="test-secret-at-least-32-bytes-long-for-pyjwt-security",
         openapi_ui=False,
     )
     problems = compare_openapi(load_handwritten_spec(), create_app(settings).openapi())

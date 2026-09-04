@@ -37,6 +37,9 @@ def seed_database(database_url: str) -> None:
     assert_test_database_url(database_url)
     import asyncio
 
+    os.environ.setdefault("BOOTSTRAP_ADMIN_EMAIL", "admin@jplearn.local")
+    os.environ.setdefault("BOOTSTRAP_ADMIN_PASSWORD", "password10")
+
     from jplearn_api.seed import seed_url
 
     asyncio.run(seed_url(database_url))
