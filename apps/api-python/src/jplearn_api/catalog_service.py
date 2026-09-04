@@ -55,7 +55,7 @@ def to_public(item: CatalogItem, settings: Settings) -> CatalogItemPublic:
     )
 
 
-def to_staff(item: CatalogItem, settings: Settings) -> CatalogItemStaff:
+def to_staff(item: CatalogItem, _settings: Settings) -> CatalogItemStaff:
     return CatalogItemStaff(
         id=item.id,
         topic_id=item.topic_id,
@@ -65,21 +65,9 @@ def to_staff(item: CatalogItem, settings: Settings) -> CatalogItemStaff:
         visual_support=item.visual_support,
         title_internal=item.title_internal,
         has_l1_translation=item.has_l1_translation,
-        spoken_language=item.spoken_language,
         status=item.status,
-        created_by=item.created_by,
-        media=[
-            MediaAssetStaff(
-                id=asset.id,
-                catalog_item_id=asset.catalog_item_id,
-                storage_key=asset.storage_key,
-                playback_url=_signed_playback(asset.id, settings),
-                hls_url=_signed_hls(asset.id, settings) if asset.hls_url else None,
-                mime=asset.mime,
-            )
-            for asset in item.media
-        ],
     )
+
 
 
 async def _load(session: AsyncSession, item_id: str) -> CatalogItem:

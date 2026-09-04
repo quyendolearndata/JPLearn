@@ -56,6 +56,10 @@ async def login(
     status_code=204,
     operation_id="logout",
     openapi_extra={"x-jplearn-fr": ["FR-ID-003"]},
+    responses={
+        204: {"description": "Invalidates every access_token for this user (all devices); tokenVersion increment (FR-ID-003)"},
+        401: {"description": "Missing or invalid Bearer"},
+    },
 )
 async def logout(
     session: AsyncSession = Depends(get_session),

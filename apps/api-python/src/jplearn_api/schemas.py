@@ -85,6 +85,7 @@ class MediaAssetStaff(BaseModel):
 
 
 class CatalogItemStaff(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     id: str = Field(json_schema_extra={"format": "uuid"})
     topic_id: str
     ci_level: int
@@ -93,10 +94,8 @@ class CatalogItemStaff(BaseModel):
     visual_support: Literal["high", "medium", "low"]
     title_internal: str
     has_l1_translation: Literal[False]
-    spoken_language: str
     status: Literal["draft", "level_qa", "published", "archived"]
-    created_by: str
-    media: list[MediaAssetStaff]
+
 
 
 class SessionStartBody(BaseModel):

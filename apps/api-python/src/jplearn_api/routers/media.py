@@ -42,7 +42,10 @@ async def upload_media(
     operation_id="registerHls",
     tags=["CMS"],
     openapi_extra={"x-jplearn-fr": ["FR-CMS-001", "NFR-PERF-002"]},
-    responses={400: {"description": "HLS manifest missing on disk"}},
+    responses={
+        400: {"description": "HLS manifest missing on disk"},
+        403: {"description": "Not teacher or admin"},
+    },
 )
 async def register_hls(
     id: UUIDPath,
@@ -91,8 +94,8 @@ async def stream_media(
 )
 async def stream_hls(
     id: UUIDPath,
-    file: str,
     request: Request,
+    file: str = FastPath(..., pattern=r"^[A-Za-z0-9._-]+$"),
     exp: int | None = Query(default=None, description="Unix seconds expiry (required if no Bearer)"),
     sig: str | None = Query(default=None, pattern="^[a-f0-9]{64}$"),
     session: AsyncSession = Depends(get_session),

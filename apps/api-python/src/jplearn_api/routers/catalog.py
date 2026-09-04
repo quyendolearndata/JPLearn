@@ -69,7 +69,10 @@ async def submit_level_qa(
     operation_id="publishCatalogItem",
     tags=["CMS"],
     openapi_extra={"x-jplearn-fr": ["FR-CMS-002", "FR-CMS-003", "FR-CMS-004", "FR-CAT-002"]},
-    responses={403: {"description": "Admin only"}},
+    responses={
+        400: {"description": "Invalid status or missing media"},
+        403: {"description": "Admin only"},
+    },
 )
 async def publish_catalog_item(
     id: UUIDPath,
@@ -87,7 +90,11 @@ async def publish_catalog_item(
     operation_id="unpublishCatalogItem",
     tags=["CMS"],
     openapi_extra={"x-jplearn-fr": ["FR-CMS-002", "FR-CAT-002"]},
-    responses={403: {"description": "Admin only"}},
+    responses={
+        400: {"description": "Item is not published"},
+        403: {"description": "Admin only"},
+        404: {"description": "Catalog item not found"},
+    },
 )
 async def unpublish_catalog_item(
     id: UUIDPath,

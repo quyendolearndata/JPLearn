@@ -136,6 +136,7 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [items]
                 properties:
                   items:
                     type: array
@@ -172,6 +173,7 @@ paths:
           multipart/form-data:
             schema:
               type: object
+              required: [file]
               properties:
                 file: { type: string, format: binary }
       responses:
@@ -437,10 +439,11 @@ components:
         media_type: { type: string, enum: [video, audio] }
         topic_id: { type: string }
         visual_support: { type: string, enum: [high, medium, low] }
-        playback_url: { type: string, format: uri }
+        playback_url: { type: string, format: uri, nullable: true }
         hls_url:
           type: string
           format: uri
+          nullable: true
           description: NFR-PERF-002 HLS manifest when transcoded; clients prefer it and fall back to playback_url.
     CatalogItemWrite:
       type: object
@@ -458,6 +461,7 @@ components:
       allOf:
         - { $ref: "#/components/schemas/CatalogItemWrite" }
         - type: object
+          required: [id, status, has_l1_translation]
           properties:
             id: { type: string, format: uuid }
             status:

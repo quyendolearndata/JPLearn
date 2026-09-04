@@ -46,3 +46,28 @@ Evidence run tracking the resolution of:
 - **Environment Resolver:** Missing or unknown environment blocks destructive downgrade without `ALLOW_DESTRUCTIVE_DOWNGRADE=true`.
 - **Runbook:** `docs/ops/runbook-backup-restore.md` authored by Ops seat.
 - **Pytest Gate:** 94 passed (14 new tests in `test_migrate_fail_closed.py`).
+
+---
+
+## 4. Phase 2 Evidence — Semantic OpenAPI Gate & Mutation Suite
+
+- **Status:** **PASS** (G-04 closed)
+- **OpenAPI Comparator Hardening:**
+  - Added `/ready` to `REQUIRED_OPERATIONS`.
+  - Bi-directional operation, parameter, property, and required fields comparison.
+  - Strict min, max, minLength, maxLength, pattern, format, enum, and nullable validation.
+  - Full security alternatives comparison (no reduction to boolean).
+  - Strip auto-generated 422 at custom OpenAPI boundary in `main.py` per ADR-005; comparator checks all declared responses.
+- **OpenAPI Mutation Suite:** 10/10 PASS (`test_openapi_mutation_suite.py`):
+  1. `ci_level: integer -> string`: caught type mismatch.
+  2. Drop minimum or maximum: caught missing min/max.
+  3. Add nullable: caught nullable mismatch.
+  4. Drop required field: caught missing required field.
+  5. Expand `device_class` enum: caught enum mismatch.
+  6. Inject 422 / `{detail}`: caught extra responses 422 not in contract.
+  7. Drop security alternative: caught security mismatch.
+  8. Add forbidden response field: caught extra property not in contract.
+  9. Delete `/ready` operation: caught missing required operation.
+  10. CLI gate fail-closed: exit code 1 verified.
+- **Pytest Gate:** 104 passed (10 new tests in `test_openapi_mutation_suite.py`).
+

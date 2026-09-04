@@ -72,7 +72,18 @@ def create_app(
         if app.openapi_schema:
             return app.openapi_schema
         schema = get_openapi(title=app.title, version=app.version, routes=app.routes)
-        app.openapi_schema = normalize_security_scheme_names(schema)
+        schema = normalize_security_scheme_names(schema)
+        # Strip auto-generated 422 per ADR-005 BA contract (runtime validates to 400 Bad Request)
+        for path_item in schema.get("paths", {}).values():
+            if isinstance(path_item, dict):
+                for op in path_item.values():
+                    if isinstance(op, dict) and "responses" in op:
+                        op["responses"].pop("422", None)
+        components = schema.get("components", {})
+        schemas = components.get("schemas", {})
+        schemas.pop("HTTPValidationError", None)
+        schemas.pop("ValidationError", None)
+        app.openapi_schema = schema
         return app.openapi_schema
 
     app.openapi = custom_openapi  # type: ignore[method-assign]
