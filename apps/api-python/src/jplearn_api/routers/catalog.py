@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api import catalog_service
-from jplearn_api.deps import get_session, get_storage
+from jplearn_api.deps import UUIDPath, get_session, get_storage
 from jplearn_api.models import User
 from jplearn_api.roles import require_roles
 from jplearn_api.schemas import CatalogItemStaff, CatalogItemWrite, CatalogList
@@ -10,18 +10,6 @@ from jplearn_api.security import require_user
 from jplearn_api.storage import StoragePort
 
 router = APIRouter()
-
-
-def _parse_ci_level(raw: str | None) -> int | None:
-    if raw is None:
-        return None
-    try:
-        number = float(raw)
-    except ValueError:
-        return None
-    if number.is_integer():
-        return int(number)
-    return None
 
 
 @router.get(
@@ -36,10 +24,9 @@ async def list_catalog(
     request: Request,
     session: AsyncSession = Depends(get_session),
     _user: User = Depends(require_user),
-    ci_level: str | None = Query(default=None),
+    ci_level: int | None = Query(default=None, ge=0, le=4),
 ) -> CatalogList:
-    parsed = _parse_ci_level(ci_level)
-    return CatalogList(items=await catalog_service.list_published(session, request.app.state.settings, parsed))
+    return CatalogList(items=await catalog_service.list_published(session, request.app.state.settings, ci_level))
 
 
 @router.post(
@@ -68,7 +55,7 @@ async def create_catalog_item(
     openapi_extra={"x-jplearn-fr": ["FR-CMS-002"]},
 )
 async def submit_level_qa(
-    id: str,
+    id: UUIDPath,
     request: Request,
     session: AsyncSession = Depends(get_session),
     _user: User = Depends(require_roles("teacher", "admin")),
@@ -85,7 +72,7 @@ async def submit_level_qa(
     responses={403: {"description": "Admin only"}},
 )
 async def publish_catalog_item(
-    id: str,
+    id: UUIDPath,
     request: Request,
     session: AsyncSession = Depends(get_session),
     storage: StoragePort = Depends(get_storage),
@@ -103,7 +90,7 @@ async def publish_catalog_item(
     responses={403: {"description": "Admin only"}},
 )
 async def unpublish_catalog_item(
-    id: str,
+    id: UUIDPath,
     request: Request,
     session: AsyncSession = Depends(get_session),
     _admin: User = Depends(require_roles("admin")),

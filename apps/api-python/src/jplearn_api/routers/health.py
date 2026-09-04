@@ -1,10 +1,12 @@
+from typing import Literal
+
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict
 
 
 class HealthBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    ok: bool = True
+    ok: Literal[True]
 
 
 router = APIRouter(tags=["Observability"])

@@ -1,12 +1,12 @@
 from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Path as FastPath, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api import media_service
-from jplearn_api.deps import get_session, get_storage
+from jplearn_api.deps import UUIDPath, get_session, get_storage
 from jplearn_api.media_access import require_media_access
 from jplearn_api.models import User
 from jplearn_api.roles import require_roles
@@ -25,7 +25,7 @@ router = APIRouter()
     openapi_extra={"x-jplearn-fr": ["FR-CMS-001"]},
 )
 async def upload_media(
-    id: str,
+    id: UUIDPath,
     request: Request,
     file: UploadFile,
     session: AsyncSession = Depends(get_session),
@@ -45,7 +45,7 @@ async def upload_media(
     responses={400: {"description": "HLS manifest missing on disk"}},
 )
 async def register_hls(
-    id: str,
+    id: UUIDPath,
     request: Request,
     session: AsyncSession = Depends(get_session),
     storage: StoragePort = Depends(get_storage),
@@ -62,8 +62,10 @@ async def register_hls(
     responses={401: {"description": "Missing or invalid JWT/signature"}, 404: {"description": "Asset not found"}},
 )
 async def stream_media(
-    id: str,
+    id: UUIDPath,
     request: Request,
+    exp: int | None = Query(default=None, description="Unix seconds expiry (required if no Bearer)"),
+    sig: str | None = Query(default=None, pattern="^[a-f0-9]{64}$"),
     session: AsyncSession = Depends(get_session),
     storage: StoragePort = Depends(get_storage),
     _access: None = Depends(require_media_access),
@@ -88,9 +90,11 @@ async def stream_media(
     },
 )
 async def stream_hls(
-    id: str,
+    id: UUIDPath,
     file: str,
     request: Request,
+    exp: int | None = Query(default=None, description="Unix seconds expiry (required if no Bearer)"),
+    sig: str | None = Query(default=None, pattern="^[a-f0-9]{64}$"),
     session: AsyncSession = Depends(get_session),
     storage: StoragePort = Depends(get_storage),
     _access: None = Depends(require_media_access),
@@ -108,8 +112,6 @@ async def stream_hls(
         ) from exc
     content_type = media_service.HLS_CONTENT_TYPES[Path(file).suffix.lower()]
     headers = {"X-Content-Type-Options": "nosniff"}
-    exp = request.query_params.get("exp")
-    sig = request.query_params.get("sig")
     if file.endswith(".m3u8") and exp and sig:
         manifest = path.read_text(encoding="utf-8")
         lines = []
@@ -118,6 +120,6 @@ async def stream_hls(
             if not trimmed or trimmed.startswith("#"):
                 lines.append(line)
             else:
-                lines.append(f"{trimmed}?exp={quote(exp)}&sig={quote(sig)}")
+                lines.append(f"{trimmed}?exp={quote(str(exp))}&sig={quote(sig)}")
         return PlainTextResponse("\n".join(lines), media_type=content_type, headers=headers)
     return FileResponse(path, media_type=content_type, headers=headers)

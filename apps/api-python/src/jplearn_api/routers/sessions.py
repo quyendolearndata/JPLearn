@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api import sessions_service
-from jplearn_api.deps import get_session
+from jplearn_api.deps import UUIDPath, get_session
 from jplearn_api.models import User
 from jplearn_api.schemas import LearnerProgressPublic, LearningSessionPublic, SessionStartBody
 from jplearn_api.security import require_user
@@ -47,7 +47,7 @@ async def start_session(
     openapi_extra={"x-jplearn-fr": ["FR-SES-002", "FR-PRG-001", "FR-EVT-001", "FR-EVT-002"]},
 )
 async def end_session(
-    id: str,
+    id: UUIDPath,
     session: AsyncSession = Depends(get_session),
     user: User = Depends(require_user),
 ) -> LearnerProgressPublic:
