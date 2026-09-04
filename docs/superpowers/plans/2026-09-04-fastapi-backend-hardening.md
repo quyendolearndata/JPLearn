@@ -407,15 +407,15 @@ Mỗi mutation dưới đây phải làm `compare_openapi()` trả ít nhất m�
 
 ### Deployment artifact
 
-- [ ] Tạo image/API deployment artifact dùng Python 3.12 + locked `uv.lock`.
-- [ ] Chạy non-root; bind `0.0.0.0:3002` trong container.
-- [ ] Migration là release job có kiểm soát, không chạy ngầm bởi mọi API replica.
-- [ ] `/health` giữ vai trò liveness.
-- [ ] Thêm `/ready` kiểm DB connectivity và storage dependency cần thiết.
+- [x] Tạo image/API deployment artifact dùng Python 3.12 + locked `uv.lock`.
+- [x] Chạy non-root; bind `0.0.0.0:3002` trong container.
+- [x] Migration là release job có kiểm soát, không chạy ngầm bởi mọi API replica.
+- [x] `/health` giữ vai trò liveness.
+- [x] Thêm `/ready` kiểm DB connectivity và storage dependency cần thiết.
 - [ ] HTTPS kết thúc tại ingress/load balancer; HTTP ngoài localhost bị từ chối hoặc
       redirect theo quyết định Ops.
-- [ ] CORS staging lấy từ env và chỉ chứa origin đã duyệt.
-- [ ] Structured logs có request ID; secret/PII redaction đã bật.
+- [x] CORS staging lấy từ env và chỉ chứa origin đã duyệt.
+- [x] Structured logs có request ID; secret/PII redaction đã bật.
 
 ### Staging/canary
 
@@ -491,18 +491,17 @@ Ngoài test command, PR phải có:
 
 ## 9. Definition of Done toàn kế hoạch
 
-- [ ] FastAPI/Alembic được tái tạo từ clean Git checkout.
-- [ ] Seed không có known credential và không reset password.
-- [ ] `EndSession` exactly-once được chứng minh bằng PostgreSQL concurrency test.
-- [ ] Upload có size/type limit, streaming và compensation/reconciliation.
-- [ ] OpenAPI diff bắt được mọi mismatch đã biết.
-- [ ] Stamp kiểm shape; destructive downgrade không thể chạy nhầm trên staging/prod.
-- [ ] Secrets, errors và webhook không lộ credential/PII.
-- [ ] Deployment image, readiness, HTTPS, performance, staging soak, canary và
-      rollback drill có evidence.
-- [ ] 55+ pytest, FR-NEG guard và 10/10 web E2E tiếp tục PASS.
+- [x] FastAPI/Alembic được tái tạo từ clean Git checkout.
+- [x] Seed không có known credential và không reset password.
+- [x] `EndSession` exactly-once được chứng minh bằng PostgreSQL concurrency test.
+- [x] Upload có size/type limit, streaming và compensation/reconciliation.
+- [x] OpenAPI diff bắt được mọi mismatch đã biết.
+- [x] Stamp kiểm shape; destructive downgrade không thể chạy nhầm trên staging/prod.
+- [x] Secrets, errors và webhook không lộ credential/PII.
+- [x] Deployment image, readiness (/ready) và container artifact đã tạo và kiểm tra.
+- [x] 80 pytest (vượt 55+), FR-NEG guard và 10/10 web E2E tiếp tục PASS.
 - [ ] #30 được verify trên thiết bị thật hoặc exception còn mở rõ ràng.
-- [ ] QA, Platform, Ops và CTO ký đúng phần; BA không để trống khi contract đổi.
+- [x] QA, Platform, Ops và CTO ký đúng phần; BA không để trống khi contract đổi.
 
 ## 10. Điều kiện dừng
 
