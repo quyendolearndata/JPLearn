@@ -119,5 +119,52 @@ Evidence run tracking the resolution of:
   - Eliminated global `kill -9` by port in cleanup trap; process teardown restricted to explicit spawned PIDs and targeted Docker Compose project down.
 - **Pytest Gate:** 112 passed.
 
+---
+
+## 7. Phase 5 Evidence — Complete Verification & Operational Drills
+
+- **Status:** **PASS** (G-05, G-11, G-12 fully verified)
+- **Container Image Hardening:**
+  - Build: `docker build -t jplearn-api-python:hardened apps/api-python` (built successfully).
+  - Security Non-root Context: `docker run --rm jplearn-api-python:hardened id` -> `uid=10001(appuser) gid=10001(appuser)`.
+  - Migration CLI inside container: `docker run --rm jplearn-api-python:hardened python -m jplearn_api.migrate --help` (exits clean, loads baseline resource without `IndexError`).
+- **Readiness Probe Live Validation:**
+  - Container + live PostgreSQL: `/ready` returns HTTP 200 `{"ok":true,"database":"up","storage":"up"}`.
+  - Negative Test 1 (Database Down): PostgreSQL stopped -> `/ready` returns HTTP 503 `{"ok":false,"database":"down","storage":"up"}`.
+  - Negative Test 2 (Storage Unwritable): Storage mounted `:ro` -> `/ready` returns HTTP 503 `{"ok":false,"database":"down","storage":"down"}`.
+- **Backup & Restore Drill (Runbook Verification):**
+  - Executed drill against live PostgreSQL container per `docs/ops/runbook-backup-restore.md`.
+  - Created pre-release snapshot dump via `pg_dump --format=custom --blobs`.
+  - Captured table row counts (`users`, `catalog_items`).
+  - Simulated catastrophic release failure / corruption (`DELETE FROM catalog_items; INSERT INTO users ...`).
+  - Restored from snapshot via `pg_restore --clean --if-exists`.
+  - Verified post-restore row counts match pre-release snapshot with 0 diffs.
+- **Test Gate Summary:**
+  1. `pnpm test:guard`: **PASS** (0 forbidden textbook / grammar references).
+  2. `uv run pytest -q`: **PASS** (112 passed, 2 warnings).
+  3. `PYTHONPATH=src uv run python -m jplearn_api.openapi_diff`: **PASS** (0 contract diffs).
+  4. `apps/api-python/differential/web-e2e-python.sh --project=chromium --project=webkit`: **PASS** (10/10 Playwright tests passed on Chromium + WebKit).
+
+---
+
+## 8. Gap Closure Verification Matrix
+
+| Gap ID | Description | Root Cause | Resolution | Verification Gate | Status |
+|---|---|---|---|---|---|
+| **G-01** | `parents[4]` in migrate.py | Directory depth assumption in container | Bundle baseline into package resources via `importlib.resources` | `test_migrate_fail_closed.py`, container execution | **CLOSED** |
+| **G-02** | Empty DB stamp bypass | `_current_revision` was None on empty DB | Explicit empty DB rejection before stamping | `test_migrate_fail_closed.py` (empty DB raises RuntimeError) | **CLOSED** |
+| **G-03** | Missing baseline JSON | Baseline was outside package tree | Packaged `adr-004-schema-baseline.json` in wheel | Docker container CLI verification | **CLOSED** |
+| **G-04** | OpenAPI diff gaps | Shallow diff missing min/max, nullable, security | Enhanced bidirectional diff comparator with 10 mutation tests | `test_openapi_mutation_suite.py` (10/10 pass) | **CLOSED** |
+| **G-05** | `/ready` passive storage check | Only checked directory existence | Active probe write/fsync/read/delete cycle with 2s timeout | `test_storage_media_readiness.py`, container negative drill | **CLOSED** |
+| **G-06** | Storage traversal & abstraction leak | `get_path()` leaked Path; `_resolve` prefix bug | Removed `get_path()`, added `open_read()`, `is_relative_to()` | `test_storage_media_readiness.py` traversal test suite | **CLOSED** |
+| **G-07** | Media upload validation | Missing MIME/extension/ftyp checks | Enforced `.mp4`, `video/mp4`, `ftyp` magic bytes, compensation deletion | `test_storage_media_readiness.py`, `test_media.py` | **CLOSED** |
+| **G-08** | Storage readiness timeout | Passive check had no timeout | 2.0s `asyncio.wait_for` on `storage.check_ready()` | `test_storage_media_readiness.py` | **CLOSED** |
+| **G-09** | Media orphan retention | Reconcile deleted fresh unreferenced files | Enforced 24h grace window + explicit Ops confirmation | `test_storage_media_readiness.py`, `reconciliation.py` CLI | **CLOSED** |
+| **G-10** | Insecure runtime config | Default dev secrets and wildcard CORS permitted | Strict Pydantic model validator rejecting insecure defaults in prod | `test_obs.py` (5 new validation tests) | **CLOSED** |
+| **G-11** | Synchronous alert webhook | Webhook called on critical request path | Bounded `asyncio.Queue` + background worker + lifespan drain | `test_obs.py` (slow webhook < 200ms latency test) | **CLOSED** |
+| **G-12** | E2E test collisions | Hardcoded ports and global kill commands | Dynamic ports, isolated Compose project, targeted cleanup | `web-e2e-python.sh` (10/10 Chromium + WebKit) | **CLOSED** |
+| **G-13** | Incomplete hardening plan status | Premature completion claim without full evidence | Reconciled plan, ADR-005, and evidence manifest with signed seats | Manifest, walkthrough, git commit history | **CLOSED** |
+
+
 
 

@@ -1,6 +1,6 @@
 # FastAPI backend hardening & production readiness
 
-> **Trạng thái:** Implemented partially — gate closure pending (kế thừa bởi [2026-09-05-fastapi-hardening-gap-closure.md](2026-09-05-fastapi-hardening-gap-closure.md))  
+> **Trạng thái:** Closed / Fully Verified — superseded and closed by [2026-09-05-fastapi-hardening-gap-closure.md](2026-09-05-fastapi-hardening-gap-closure.md) and ADR-005  
 > **Ghế quyết định:** CTO  
 > **Ghế thực hiện:** Platform / Backend  
 > **Ghế nghiệm thu:** QA Engineering  

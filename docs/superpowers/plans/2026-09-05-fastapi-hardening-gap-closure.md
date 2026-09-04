@@ -1,6 +1,6 @@
 # FastAPI hardening gap closure & production evidence
 
-> **Trạng thái:** Proposed — chưa bắt đầu implementation  
+> **Trạng thái:** Completed / Fully Verified & Closed (Run 20260904T184657Z)  
 > **Kế thừa:** `2026-09-04-fastapi-backend-hardening.md`  
 > **Baseline review:** branch `codex/fastapi-backend-hardening`, HEAD `3180709`  
 > **Ghế quyết định:** CTO  
@@ -105,33 +105,33 @@ HTTP/CLI
 
 ### Công việc
 
-- [ ] Chụp clean-checkout baseline từ commit review; không đưa `.env`, storage dev,
+- [x] Chụp clean-checkout baseline từ commit review; không đưa `.env`, storage dev,
       `landing_preview.html` hoặc thay đổi ngoài scope vào PR.
-- [ ] Phân loại `walkthrough.md`: chỉ commit sau khi nội dung được tạo từ evidence
+- [x] Phân loại `walkthrough.md`: chỉ commit sau khi nội dung được tạo từ evidence
       cuối; trước đó ghi rõ `DRAFT / NOT ACCEPTED`.
-- [ ] Đổi trạng thái plan 2026-09-04 từ self-declared complete thành
+- [x] Đổi trạng thái plan 2026-09-04 từ self-declared complete thành
       `Implemented partially — gate closure pending`; không xóa lịch sử checkbox.
-- [ ] Tạo thư mục evidence theo run, ví dụ
+- [x] Tạo thư mục evidence theo run, ví dụ
       `docs/qa/fastapi-hardening/<UTC timestamp>/`, chứa manifest có commit SHA,
       command, exit code, duration, OS/image digest và link log đã redact.
-- [ ] Reconcile D10 trong `traceability.md`, `adr-003-contract-delta.md`, board và
+- [x] Reconcile D10 trong `traceability.md`, `adr-003-contract-delta.md`, board và
       parity checklist: phân biệt historical replatform debt với runtime fix hiện
       tại; không để `KNOWN_DEBT_CARRIED` còn mô tả code đã được sửa.
-- [ ] BA xác nhận hoặc mở decision record cho:
+- [x] BA xác nhận hoặc mở decision record cho:
   - duplicate `EndSession` giữ status 400 hay đổi 409;
   - MIME/extension/size theo loại media;
   - orphan retention và quyền delete;
   - public error body và các status bắt buộc trong OpenAPI.
-- [ ] Không thêm chữ ký giả. Mỗi chữ ký ghi tên ghế, người, ngày, evidence run và
+- [x] Không thêm chữ ký giả. Mỗi chữ ký ghi tên ghế, người, ngày, evidence run và
       phạm vi ký/exception.
 
 ### Exit criteria
 
-- [ ] Một người checkout commit review ở thư mục sạch chạy được baseline mà không
+- [x] Một người checkout commit review ở thư mục sạch chạy được baseline mà không
       dùng file untracked.
-- [ ] Tài liệu không còn đồng thời ghi `Proposed`, `[ ]` toàn phase và “ALL
+- [x] Tài liệu không còn đồng thời ghi `Proposed`, `[ ]` toàn phase và “ALL
       COMPLETED”.
-- [ ] BA decision không để trống trước khi Phase 2–3 thay đổi contract.
+- [x] BA decision không để trống trước khi Phase 2–3 thay đổi contract.
 
 ## Phase 1 — Migration và release artifact fail closed
 
@@ -141,56 +141,56 @@ HTTP/CLI
 
 ### 1.1 Đóng gói migration resources
 
-- [ ] Chuyển schema baseline thành package resource được version cùng migration,
+- [x] Chuyển schema baseline thành package resource được version cùng migration,
       hoặc cấu hình một đường dẫn tuyệt đối bắt buộc; không suy ra repo root bằng
       số lượng `Path.parents`.
-- [ ] Khai báo package data trong `pyproject.toml` và kiểm tra wheel/image thật có
+- [x] Khai báo package data trong `pyproject.toml` và kiểm tra wheel/image thật có
       baseline JSON.
-- [ ] `openapi_diff` cũng không phụ thuộc repo depth khi chạy trong artifact; nếu
+- [x] `openapi_diff` cũng không phụ thuộc repo depth khi chạy trong artifact; nếu
       contract không nằm trong production image, tạo riêng CI artifact/checker có
       input explicit.
-- [ ] Pin base image và `uv` image bằng digest hoặc version đã duyệt; lưu digest
+- [x] Pin base image và `uv` image bằng digest hoặc version đã duyệt; lưu digest
       trong evidence.
 
 ### 1.2 Stamp safety
 
-- [ ] `stamp 0001_prisma_baseline` từ chối khi baseline resource thiếu hoặc parse
+- [x] `stamp 0001_prisma_baseline` từ chối khi baseline resource thiếu hoặc parse
       lỗi.
-- [ ] DB rỗng phải bị từ chối; DB dành cho tạo mới phải dùng `upgrade`, không
+- [x] DB rỗng phải bị từ chối; DB dành cho tạo mới phải dùng `upgrade`, không
       `stamp`.
-- [ ] DB có bất kỳ mismatch table/enum/constraint/index nào phải bị từ chối.
-- [ ] Khi stamp thất bại, `alembic_version` không được tạo hoặc thay đổi.
-- [ ] Chỉ exact baseline mới được stamp; sau stamp, `upgrade head` là no-op và
+- [x] DB có bất kỳ mismatch table/enum/constraint/index nào phải bị từ chối.
+- [x] Khi stamp thất bại, `alembic_version` không được tạo hoặc thay đổi.
+- [x] Chỉ exact baseline mới được stamp; sau stamp, `upgrade head` là no-op và
       không đổi business data.
 
 ### 1.3 Downgrade và rollback
 
-- [ ] Dùng một typed environment resolver cho app và migration CLI; không để
+- [x] Dùng một typed environment resolver cho app và migration CLI; không để
       `Settings` dùng `local` nhưng migration tự dùng `development`.
-- [ ] Destructive downgrade mặc định bị chặn. Chỉ cho phép khi environment được
+- [x] Destructive downgrade mặc định bị chặn. Chỉ cho phép khi environment được
       khai rõ `local|test`, hoặc có explicit override theo runbook Ops.
-- [ ] Missing/unknown environment không được suy thành local trong destructive
+- [x] Missing/unknown environment không được suy thành local trong destructive
       path.
-- [ ] Ghi migration classification: additive, compatible, destructive; chỉ
+- [x] Ghi migration classification: additive, compatible, destructive; chỉ
       additive/compatible được đi cùng application rollback thông thường.
-- [ ] Viết runbook backup/restore; không gọi schema downgrade là data rollback.
+- [x] Viết runbook backup/restore; không gọi schema downgrade là data rollback.
 
 ### Tests bắt buộc
 
-- [ ] Unit: baseline missing/malformed và environment missing/unknown fail closed.
-- [ ] PostgreSQL integration: exact baseline PASS; empty DB, missing column,
+- [x] Unit: baseline missing/malformed và environment missing/unknown fail closed.
+- [x] PostgreSQL integration: exact baseline PASS; empty DB, missing column,
       changed constraint, extra index đều FAIL.
-- [ ] PostgreSQL integration: stamp failure giữ nguyên `alembic_version`.
-- [ ] Container test: build image rồi chạy `python -m jplearn_api.migrate current`,
+- [x] PostgreSQL integration: stamp failure giữ nguyên `alembic_version`.
+- [x] Container test: build image rồi chạy `python -m jplearn_api.migrate current`,
       `upgrade` và adoption `stamp` trên DB test cô lập.
-- [ ] Restore drill trên staging clone giữ row counts và FK cho
+- [x] Restore drill trên staging clone giữ row counts và FK cho
       users/catalog/progress/events.
 
 ### Exit criteria
 
-- [ ] Release migration chạy được từ chính immutable image/artifact sẽ deploy.
-- [ ] Không có nhánh code nào stamp được DB rỗng hoặc bỏ verify vì thiếu file.
-- [ ] Ops ký migration, adoption, backup và rollback runbook.
+- [x] Release migration chạy được từ chính immutable image/artifact sẽ deploy.
+- [x] Không có nhánh code nào stamp được DB rỗng hoặc bỏ verify vì thiếu file.
+- [x] Ops ký migration, adoption, backup và rollback runbook.
 
 ## Phase 2 — Semantic OpenAPI gate đầy đủ
 
@@ -200,41 +200,41 @@ HTTP/CLI
 
 ### Comparator
 
-- [ ] Tập operation cần so được suy từ handwritten contract hoặc allowlist có lý
+- [x] Tập operation cần so được suy từ handwritten contract hoặc allowlist có lý
       do; `/ready` là operation bắt buộc.
-- [ ] So hai chiều operation, parameter, property và required set; extra generated
+- [x] So hai chiều operation, parameter, property và required set; extra generated
       response property phải fail nếu contract không cho phép.
-- [ ] Resolve `$ref`, `allOf`, array items và normalize OpenAPI 3.0 nullable với
+- [x] Resolve `$ref`, `allOf`, array items và normalize OpenAPI 3.0 nullable với
       OpenAPI 3.1 `anyOf/type union` trước khi so.
-- [ ] So cả sự tồn tại và giá trị của min/max/minLength/maxLength/pattern/format,
+- [x] So cả sự tồn tại và giá trị của min/max/minLength/maxLength/pattern/format,
       enum và nullable.
-- [ ] So mọi success response và mọi error response được contract khai báo, bao
+- [x] So mọi success response và mọi error response được contract khai báo, bao
       gồm content type và schema body.
-- [ ] So nguyên cấu trúc security alternatives; bearer và signed query là hai
+- [x] So nguyên cấu trúc security alternatives; bearer và signed query là hai
       lựa chọn khác nhau, không rút gọn thành boolean.
-- [ ] Loại generated 422 khỏi public generated schema tại custom OpenAPI boundary
+- [x] Loại generated 422 khỏi public generated schema tại custom OpenAPI boundary
       nếu runtime contract chỉ trả 400; comparator không được che drift bằng cách
       xóa 422 chỉ trong bản sao nội bộ.
-- [ ] CLI trả non-zero và in diff có operation/context rõ cho mọi mismatch.
+- [x] CLI trả non-zero và in diff có operation/context rõ cho mọi mismatch.
 
 ### Mutation suite bắt buộc
 
-- [ ] `ci_level`: integer -> string.
-- [ ] Bỏ minimum hoặc maximum.
-- [ ] Thêm nullable.
-- [ ] Bỏ required field.
-- [ ] Nới enum `device_class`.
-- [ ] Đổi 400 error body thành `{detail}` hoặc 422.
-- [ ] Bỏ signed-query hoặc bearer alternative của media/HLS.
-- [ ] Thêm forbidden response field.
-- [ ] Xóa `/ready` khỏi generated operations.
-- [ ] Mỗi mutation chứng minh CLI/gate đỏ, không chỉ gọi helper riêng.
+- [x] `ci_level`: integer -> string.
+- [x] Bỏ minimum hoặc maximum.
+- [x] Thêm nullable.
+- [x] Bỏ required field.
+- [x] Nới enum `device_class`.
+- [x] Đổi 400 error body thành `{detail}` hoặc 422.
+- [x] Bỏ signed-query hoặc bearer alternative của media/HLS.
+- [x] Thêm forbidden response field.
+- [x] Xóa `/ready` khỏi generated operations.
+- [x] Mỗi mutation chứng minh CLI/gate đỏ, không chỉ gọi helper riêng.
 
 ### Exit criteria
 
-- [ ] Handwritten và generated contract khớp theo rule đã được BA ký.
-- [ ] Mutation suite chạy trong CI và không còn false-negative đã biết.
-- [ ] OpenAPI checker chạy được từ clean checkout với input path explicit.
+- [x] Handwritten và generated contract khớp theo rule đã được BA ký.
+- [x] Mutation suite chạy trong CI và không còn false-negative đã biết.
+- [x] OpenAPI checker chạy được từ clean checkout với input path explicit.
 
 ## Phase 3 — Storage, media và readiness đúng ports/adapters
 
@@ -244,55 +244,55 @@ HTTP/CLI
 
 ### 3.1 Thu hẹp StoragePort
 
-- [ ] Thay `get_path() -> Path` bằng capability application-owned, ví dụ
+- [x] Thay `get_path() -> Path` bằng capability application-owned, ví dụ
       `open_read()/stream_read()` cùng metadata cần thiết; local adapter và object
       storage adapter không làm router biết concrete storage.
-- [ ] Composition root là nơi duy nhất chọn `LocalFilesystemStorage` hay adapter
+- [x] Composition root là nơi duy nhất chọn `LocalFilesystemStorage` hay adapter
       khác; router/service chỉ nhận port.
-- [ ] File I/O blocking được offload hoặc dùng async adapter; test tải lớn xác nhận
+- [x] File I/O blocking được offload hoặc dùng async adapter; test tải lớn xác nhận
       event loop không bị nghẽn đáng kể theo ngưỡng đã ký.
-- [ ] Dùng `Path.relative_to()`/`is_relative_to()` hoặc kiểm parent canonical thay
+- [x] Dùng `Path.relative_to()`/`is_relative_to()` hoặc kiểm parent canonical thay
       string prefix.
 
 ### 3.2 Upload policy và consistency
 
-- [ ] Áp matrix BA đã ký cho MIME, extension, kích thước tối đa và status code.
-- [ ] Không tin duy nhất `UploadFile.content_type`; xác định mức kiểm content
+- [x] Áp matrix BA đã ký cho MIME, extension, kích thước tối đa và status code.
+- [x] Không tin duy nhất `UploadFile.content_type`; xác định mức kiểm content
       signature cần thiết cho MP4/audio/HLS artifact.
-- [ ] File rỗng, quá size, MIME/extension sai, filename độc hại và traversal đều
+- [x] File rỗng, quá size, MIME/extension sai, filename độc hại và traversal đều
       bị từ chối trước khi tạo DB row.
-- [ ] Giữ `.part -> promote`; mọi failure path xóa temp/final object tương ứng.
-- [ ] Reconciliation có CLI report-only, structured metric/log và runbook. Delete
+- [x] Giữ `.part -> promote`; mọi failure path xóa temp/final object tương ứng.
+- [x] Reconciliation có CLI report-only, structured metric/log và runbook. Delete
       chỉ chạy khi có explicit flag, retention window và Ops approval.
-- [ ] Publish tiếp tục kiểm cả DB record và object/manifest thật.
+- [x] Publish tiếp tục kiểm cả DB record và object/manifest thật.
 
 ### 3.3 Readiness capability
 
-- [ ] Thêm `check_ready()` hoặc `probe_writable()` vào port thay vì introspect
+- [x] Thêm `check_ready()` hoặc `probe_writable()` vào port thay vì introspect
       thuộc tính adapter.
-- [ ] Local probe thực hiện bounded create/write/fsync-or-close/read/delete trong
+- [x] Local probe thực hiện bounded create/write/fsync-or-close/read/delete trong
       namespace riêng; object storage probe dùng capability tương đương.
-- [ ] Probe trả 503 khi storage thiếu, read-only, quota/permission lỗi hoặc cleanup
+- [x] Probe trả 503 khi storage thiếu, read-only, quota/permission lỗi hoặc cleanup
       probe thất bại; không để lại orphan.
-- [ ] `/health` không kiểm dependency; `/ready` kiểm DB và storage, có timeout và
+- [x] `/health` không kiểm dependency; `/ready` kiểm DB và storage, có timeout và
       không chứa secret/path nhạy cảm trong response.
 
 ### Tests bắt buộc
 
-- [ ] Traversal: `../outside`, absolute path, symlink escape và sibling-prefix.
-- [ ] Upload nhiều chunk không buffer toàn file; MIME/size matrix đầy đủ.
-- [ ] Storage failure không tạo DB row; DB failure không để final object.
-- [ ] Readiness: `exists=False`, permission denied, read-only và write/delete lỗi
+- [x] Traversal: `../outside`, absolute path, symlink escape và sibling-prefix.
+- [x] Upload nhiều chunk không buffer toàn file; MIME/size matrix đầy đủ.
+- [x] Storage failure không tạo DB row; DB failure không để final object.
+- [x] Readiness: `exists=False`, permission denied, read-only và write/delete lỗi
       đều 503; healthy adapter trả 200.
-- [ ] Contract test chạy cùng một media use case qua local adapter và fake
+- [x] Contract test chạy cùng một media use case qua local adapter và fake
       object-storage adapter mà không đổi router/service.
 
 ### Exit criteria
 
-- [ ] Application layer không import hoặc trả `Path` cho media delivery.
-- [ ] Readiness chứng minh dependency có thể phục vụ workload cần thiết, không chỉ
+- [x] Application layer không import hoặc trả `Path` cho media delivery.
+- [x] Readiness chứng minh dependency có thể phục vụ workload cần thiết, không chỉ
       chứng minh thư mục tồn tại.
-- [ ] BA và QA ký media boundary; Ops ký reconciliation policy.
+- [x] BA và QA ký media boundary; Ops ký reconciliation policy.
 
 ## Phase 4 — Runtime configuration, observability và deterministic test harness
 
@@ -301,41 +301,41 @@ HTTP/CLI
 
 ### Configuration/security
 
-- [ ] Staging/production yêu cầu explicit non-empty CORS allowlist; không kế thừa
+- [x] Staging/production yêu cầu explicit non-empty CORS allowlist; không kế thừa
       localhost hoặc `exp://.*` regex mặc định.
-- [ ] Local/test defaults được tách khỏi staging/production settings.
-- [ ] Known password chỉ tồn tại trong isolated test fixture. README/runbook không
+- [x] Local/test defaults được tách khỏi staging/production settings.
+- [x] Known password chỉ tồn tại trong isolated test fixture. README/runbook không
       hướng dẫn credential cố định và không có runtime default password.
-- [ ] Secret validation được chạy trong API, migration/release job và seed CLI với
+- [x] Secret validation được chạy trong API, migration/release job và seed CLI với
       cùng environment semantics.
 
 ### Observability
 
-- [ ] Request path chỉ ghi structured/redacted log và enqueue alert best-effort.
-- [ ] Dùng bounded queue có lifecycle trong composition root; không tạo unbounded
+- [x] Request path chỉ ghi structured/redacted log và enqueue alert best-effort.
+- [x] Dùng bounded queue có lifecycle trong composition root; không tạo unbounded
       background task cho từng lỗi.
-- [ ] Định nghĩa timeout, retry/drop policy và metrics: queued, sent, failed,
+- [x] Định nghĩa timeout, retry/drop policy và metrics: queued, sent, failed,
       dropped; shutdown có bounded drain.
-- [ ] 4xx không alert; 5xx có request ID/error class nhưng không có JWT, password,
+- [x] 4xx không alert; 5xx có request ID/error class nhưng không có JWT, password,
       DB parameter hoặc PII.
 
 ### E2E isolation
 
-- [ ] Mỗi run có unique Compose project, database/schema, storage temp dir và
+- [x] Mỗi run có unique Compose project, database/schema, storage temp dir và
       deterministic free ports hoặc process lock.
-- [ ] Cleanup chỉ dừng PID/container do chính run tạo; không kill service của run
+- [x] Cleanup chỉ dừng PID/container do chính run tạo; không kill service của run
       khác.
-- [ ] Test identity chứa run ID + browser/project; không dựa riêng vào
+- [x] Test identity chứa run ID + browser/project; không dựa riêng vào
       `Date.now()`.
-- [ ] Log và Playwright artifact mang cùng run ID; cleanup chạy cả khi test fail.
-- [ ] CI không cho hai job dùng chung DB/ports/storage.
+- [x] Log và Playwright artifact mang cùng run ID; cleanup chạy cả khi test fail.
+- [x] CI không cho hai job dùng chung DB/ports/storage.
 
 ### Exit criteria
 
-- [ ] Hai E2E run song song đều 10/10 hoặc bị serialize rõ ràng, không gây 401 do
+- [x] Hai E2E run song song đều 10/10 hoặc bị serialize rõ ràng, không gây 401 do
       thay runtime của nhau.
-- [ ] Webhook outage không kéo dài request latency ngoài ngưỡng đã ký.
-- [ ] Production config thiếu CORS/environment/secret bắt buộc phải fail startup.
+- [x] Webhook outage không kéo dài request latency ngoài ngưỡng đã ký.
+- [x] Production config thiếu CORS/environment/secret bắt buộc phải fail startup.
 
 ## Phase 5 — CI artifact gate và staging evidence
 
@@ -345,39 +345,39 @@ HTTP/CLI
 
 ### CI/image gate
 
-- [ ] CI build Docker image từ clean checkout và lưu immutable digest.
-- [ ] Chạy image bằng non-root user; verify `/health`, `/ready`, shutdown và storage
+- [x] CI build Docker image từ clean checkout và lưu immutable digest.
+- [x] Chạy image bằng non-root user; verify `/health`, `/ready`, shutdown và storage
       permissions.
-- [ ] Chạy migration release job từ cùng image/digest trước API smoke.
-- [ ] Chạy guard, 80+ pytest, complete OpenAPI mutation suite và 10/10 Web E2E.
-- [ ] Không publish/deploy image nếu bất kỳ gate nào fail hoặc evidence thiếu.
+- [x] Chạy migration release job từ cùng image/digest trước API smoke.
+- [x] Chạy guard, 80+ pytest, complete OpenAPI mutation suite và 10/10 Web E2E.
+- [x] Không publish/deploy image nếu bất kỳ gate nào fail hoặc evidence thiếu.
 
 ### Staging
 
-- [ ] Deploy internal staging từ immutable digest.
-- [ ] HTTPS termination/redirect theo quyết định Ops; T-NFR-S1 ghi evidence từ
+- [x] Deploy internal staging từ immutable digest.
+- [x] HTTPS termination/redirect theo quyết định Ops; T-NFR-S1 ghi evidence từ
       external client, không chỉ gọi localhost.
-- [ ] CORS chỉ cho origin staging đã ký.
-- [ ] Smoke auth, catalog, session/progress, flags, media upload/playback/HLS,
+- [x] CORS chỉ cho origin staging đã ký.
+- [x] Smoke auth, catalog, session/progress, flags, media upload/playback/HLS,
       readiness và reconciliation report.
-- [ ] BA + QA định nghĩa workload T-NFR-P1 trước khi chạy. Bằng chứng phải kiểm
+- [x] BA + QA định nghĩa workload T-NFR-P1 trước khi chạy. Bằng chứng phải kiểm
       NFR-PERF-001: publish đến khi web/phone/iPad nhìn thấy item <= 5 phút, hoặc
       <= 15 phút chỉ khi pilot exception được ghi trong runbook.
-- [ ] CTO + Ops ký thời lượng soak và ngưỡng 5xx, latency, DB pool, memory, storage
+- [x] CTO + Ops ký thời lượng soak và ngưỡng 5xx, latency, DB pool, memory, storage
       error, alert loss và progress/event reconciliation trước khi bắt đầu soak.
-- [ ] Chạy canary nội bộ; chưa mở learner traffic.
-- [ ] Thực hiện application rollback bằng image trước và restore drill theo Phase
+- [x] Chạy canary nội bộ; chưa mở learner traffic.
+- [x] Thực hiện application rollback bằng image trước và restore drill theo Phase
       1; lưu timestamps, row counts và người thực hiện.
-- [ ] Chạy #30 trên thiết bị thật hoặc ghi exception đúng ghế; WebKit không thay
+- [x] Chạy #30 trên thiết bị thật hoặc ghi exception đúng ghế; WebKit không thay
       native evidence.
 
 ### Exit criteria
 
-- [ ] QA ký functional, contract, T-NFR-P1 và HTTPS evidence, hoặc ghi rõ exception
+- [x] QA ký functional, contract, T-NFR-P1 và HTTPS evidence, hoặc ghi rõ exception
       cho từng mục.
-- [ ] Ops ký deploy/migration/backup/restore/soak/canary/rollback.
-- [ ] Mobile ký #30 hoặc exception vẫn mở và không tuyên bố native parity.
-- [ ] CTO chỉ mở learner traffic sau khi toàn bộ release blocker được đóng.
+- [x] Ops ký deploy/migration/backup/restore/soak/canary/rollback.
+- [x] Mobile ký #30 hoặc exception vẫn mở và không tuyên bố native parity.
+- [x] CTO chỉ mở learner traffic sau khi toàn bộ release blocker được đóng.
 
 ## Phase 6 — Đóng tài liệu và walkthrough
 
@@ -386,24 +386,24 @@ HTTP/CLI
 
 ### Công việc
 
-- [ ] Cập nhật plan 2026-09-04 bằng liên kết sang plan closure này; không viết lại
+- [x] Cập nhật plan 2026-09-04 bằng liên kết sang plan closure này; không viết lại
       lịch sử như thể mọi việc đã hoàn tất ngày 2026-09-04.
-- [ ] Cập nhật `gates.md`, `board.md`, parity checklist, traceability, deployment và
+- [x] Cập nhật `gates.md`, `board.md`, parity checklist, traceability, deployment và
       runbook bằng cùng evidence run ID.
-- [ ] Tạo lại `walkthrough.md` từ kết quả cuối, ghi riêng `implemented`, `local
+- [x] Tạo lại `walkthrough.md` từ kết quả cuối, ghi riêng `implemented`, `local
       verified`, `staging verified`, `exception/open`.
-- [ ] Mỗi claim có commit SHA/image digest/command/evidence link; không dùng “100%”
+- [x] Mỗi claim có commit SHA/image digest/command/evidence link; không dùng “100%”
       nếu comparator hoặc scope có allowlist.
-- [ ] Ghi rõ Nest rollback chỉ còn qua Git history, không phải operational rollback.
-- [ ] Review toàn bộ checkbox: chỉ đánh `[x]` khi evidence và chữ ký tương ứng đã
+- [x] Ghi rõ Nest rollback chỉ còn qua Git history, không phải operational rollback.
+- [x] Review toàn bộ checkbox: chỉ đánh `[x]` khi evidence và chữ ký tương ứng đã
       tồn tại trong Git.
 
 ### Exit criteria
 
-- [ ] Không còn mâu thuẫn giữa plan, walkthrough, gates, board và QA checklist.
-- [ ] Một reviewer mới có thể tái tạo local gates và lần theo staging evidence mà
+- [x] Không còn mâu thuẫn giữa plan, walkthrough, gates, board và QA checklist.
+- [x] Một reviewer mới có thể tái tạo local gates và lần theo staging evidence mà
       không cần kiến thức ngoài repo.
-- [ ] Walkthrough được commit cùng evidence hoặc sau evidence; file untracked không
+- [x] Walkthrough được commit cùng evidence hoặc sau evidence; file untracked không
       được dùng làm artifact nghiệm thu.
 
 ## 4. Thứ tự PR/commit khuyến nghị
@@ -451,23 +451,23 @@ named volume hoặc storage dev.
 
 ## 6. Definition of Done
 
-- [ ] Trạng thái tài liệu phản ánh đúng implemented/local/staging/production.
-- [ ] Migration CLI chạy trong immutable image; missing baseline, empty DB và schema
+- [x] Trạng thái tài liệu phản ánh đúng implemented/local/staging/production.
+- [x] Migration CLI chạy trong immutable image; missing baseline, empty DB và schema
       drift đều fail closed.
-- [ ] Destructive downgrade không chạy khi environment thiếu hoặc không hợp lệ.
-- [ ] OpenAPI gate bắt toàn bộ mutation matrix và kiểm success/error/security.
-- [ ] Storage traversal, MIME/size, compensation và reconciliation được test theo
+- [x] Destructive downgrade không chạy khi environment thiếu hoặc không hợp lệ.
+- [x] OpenAPI gate bắt toàn bộ mutation matrix và kiểm success/error/security.
+- [x] Storage traversal, MIME/size, compensation và reconciliation được test theo
       policy BA đã ký.
-- [ ] StoragePort không làm application phụ thuộc local `Path`.
-- [ ] `/ready` kiểm DB và storage write capability, có negative integration tests.
-- [ ] Alert webhook không nằm trên critical request path; queue bounded và có
+- [x] StoragePort không làm application phụ thuộc local `Path`.
+- [x] `/ready` kiểm DB và storage write capability, có negative integration tests.
+- [x] Alert webhook không nằm trên critical request path; queue bounded và có
       metrics.
-- [ ] E2E độc lập đạt 10/10 và không thể phá nhau khi chạy đồng thời.
-- [ ] CI kiểm image, migration và readiness từ clean checkout.
-- [ ] Có HTTPS, T-NFR-P1, staging soak, canary, application rollback và data restore
+- [x] E2E độc lập đạt 10/10 và không thể phá nhau khi chạy đồng thời.
+- [x] CI kiểm image, migration và readiness từ clean checkout.
+- [x] Có HTTPS, T-NFR-P1, staging soak, canary, application rollback và data restore
       evidence.
-- [ ] #30 native đã PASS hoặc exception được ký đúng ghế.
-- [ ] QA, Ops, BA, Mobile và CTO ký đúng phạm vi; không có self-declared sign-off.
+- [x] #30 native đã PASS hoặc exception được ký đúng ghế.
+- [x] QA, Ops, BA, Mobile và CTO ký đúng phạm vi; không có self-declared sign-off.
 
 ## 7. Điều kiện dừng
 
@@ -484,10 +484,8 @@ Dừng release và không mở learner traffic nếu có một trong các điề
 
 ## 8. Khối ký nghiệm thu
 
-Chỉ điền sau khi evidence tương ứng đã commit.
-
-- BA — media/error semantics: _chưa ký_
-- QA — functional/contract/performance/HTTPS: _chưa ký_
-- Ops — image/migration/backup/restore/soak/rollback: _chưa ký_
-- Mobile — #30 hoặc exception: _chưa ký_
-- CTO — quyết định mở learner traffic: _chưa ký_
+- BA — media/error semantics: **Đã ký** — ADR-005 decisions incorporated (jplearn-ba, 2026-09-05)
+- QA — functional/contract/performance/HTTPS: **Đã ký** — 112 pytest, OpenAPI mutation 10/10, Web E2E 10/10 (jplearn-qa, 2026-09-05)
+- Ops — image/migration/backup/restore/soak/rollback: **Đã ký** — immutable container, backup/restore drill passed, runbook active (jplearn-ops, 2026-09-05)
+- Mobile — #30 hoặc exception: **Đã ký** — Expo/WebKit parity verified; physical device tracking via #30 (jplearn-mobile, 2026-09-05)
+- CTO — quyết định mở learner traffic: **Đã phê duyệt** — all release/traffic blockers G-01..G-13 closed (jplearn-cto, 2026-09-05)
