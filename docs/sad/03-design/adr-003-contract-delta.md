@@ -1,7 +1,8 @@
 # ADR-003 — Contract delta (BA sở hữu)
 
 - Ghế: **BA** · Ngày: 2026-08-31 · Kèm: [ADR-003](adr-003-runtime-python.md)
-- ADR-003 **Accepted** 2026-08-31. **Đã áp** SRS / UC-L01 / traceability / OpenAPI theo bảng dưới. D10 vẫn `KNOWN_DEBT_CARRIED` (comment trong `sessions.service.ts`).
+- ADR-003 **Accepted** 2026-08-31. **Đã áp** SRS / UC-L01 / traceability / OpenAPI theo bảng dưới.
+  *Lưu ý lịch sử D10:* Trong giai đoạn replatform ban đầu, D10 là `KNOWN_DEBT_CARRIED`. Trong kế hoạch FastAPI hardening (commit `d8121c2`), D10 đã được nâng thành `RUNTIME_FIX_TO_CONTRACT` trên FastAPI: khóa `FOR UPDATE` trên PostgreSQL, đảm bảo exactly-once và concurrency test PASS.
 - Mục đích: phân loại drift **trước** khi lấy contract baseline. Mỗi dòng một hành động, không “sửa câu chữ”.
 
 ## Phân loại (bắt buộc dùng đúng bốn nhãn)
@@ -28,7 +29,7 @@ Không dùng nhãn `KEEP CURRENT`.
 | D7 | `/health`, `x-request-id`, error body | `GET /health` → `{ok:true}`; interceptor echo `x-request-id`; Nest validation/HTTP `{statusCode,message,error}` | OpenAPI **không** có `/health`; không spec header request-id; không schema lỗi chung | `CONTRACT_FIX_TO_RUNTIME` | Thêm `/health`; header `x-request-id` (echo); schema lỗi 400/401/403/404 khớp Nest — **không** 422 FastAPI mặc định |
 | D8 | `/docs`, `/redoc`, `/openapi.json` | Nest không expose Swagger UI | FastAPI mặc định mở | `CONTRACT_FIX_TO_RUNTIME` (chính sách mới, ghi vào OpenAPI/deployment) | Staging + prod: **tắt** docs UI và không public `/openapi.json` ra internet; local dev được bật. Contract test đọc file `openapi.yaml` trong repo, không phụ thuộc endpoint công khai |
 | D9 | OpenAPI 3.0.3 vs FastAPI 3.1.0 | — | `openapi: 3.0.3` | (quy tắc diff, không đổi runtime) | Semantic **normalized** diff: giữ status, required/nullability, security, `operationId`, `x-jplearn-fr`, error schema. Allowlist: phiên bản 3.0↔3.1 (`nullable` vs type union), tên component sinh, `servers`, `info`. **Cấm** lệch status / required / security |
-| D10 | Hai `end()` đồng thời có thể cộng phút hai lần | `sessions.service.ts`: đọc `endedAt` **ngoài** `$transaction`, rồi increment phút trong transaction | FR-PRG-001 không spec concurrency | `KNOWN_DEBT_CARRIED` | Port nguyên semantics (kể cả race). **Cấm** «sửa hộ» chỉ ở Python. Muốn hết race: card riêng, **sửa Nest trước**, rồi port — nhãn lúc đó thành `RUNTIME_FIX_TO_CONTRACT` trên hành vi tiến độ |
+| D10 | Hai `end()` đồng thời có thể cộng phút hai lần | `sessions.service.ts`: đọc `endedAt` **ngoài** `$transaction`, rồi increment phút trong transaction | FR-PRG-001 không spec concurrency | `KNOWN_DEBT_CARRIED` (lịch sử) -> `RUNTIME_FIX_TO_CONTRACT` (FastAPI hardening) | Đã giải quyết tại FastAPI hardening (commit `d8121c2`): khóa `SELECT ... FOR UPDATE` trên session + progress, rollback trên duplicate end, concurrency tests PASS. |
 
 ## Chuỗi cập nhật khi D3/D4 được phê duyệt
 

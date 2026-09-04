@@ -32,7 +32,7 @@ Schema vật lý phải map đúng: `TEXT` id (UUID app/Prisma), `TIMESTAMP(3)` 
 
 **Thời gian:** Python dùng datetime **aware UTC**. Adapter ghi/đọc naive UTC cho cột `TIMESTAMP(3)`. JSON ra **ISO-8601 UTC với `Z`** (khớp `Date.toISOString()` hiện tại).
 
-**Session/transaction:** mỗi request/task một `AsyncSession`; không chia sẻ giữa concurrent tasks; không implicit lazy I/O. Transition nghiệp vụ (`end` session, publish, …) phải có transaction tường minh. Race `end()` đồng thời: [D10 delta](adr-003-contract-delta.md) = `KNOWN_DEBT_CARRIED` trừ khi Nest được sửa trước.
+**Session/transaction:** mỗi request/task một `AsyncSession`; không chia sẻ giữa concurrent tasks; không implicit lazy I/O. Transition nghiệp vụ (`end` session, publish, …) phải có transaction tường minh. Race `end()` đồng thời (lịch sử [D10 delta](adr-003-contract-delta.md)) đã được giải quyết tại FastAPI hardening bằng khóa `SELECT ... FOR UPDATE` trên PostgreSQL và rollback trên duplicate end.
 
 ### D3 — `uv`
 

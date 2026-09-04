@@ -59,7 +59,7 @@ Trạng thái: `Chưa` / `PASS-Nest` / `PASS-Py` / `PASS cả hai`.
 | T-NFR-O1/O2 | NFR-OBS-001 | health + `alert-5xx.e2e-spec.ts` | `apps/api-python/tests/test_obs.py` | **PASS-Py** — có test thật: health 200 + echo `x-request-id`, tự sinh request-id khi client không gửi, 5xx → POST webhook đúng payload, **4xx KHÔNG alert**, không cấu hình webhook thì không gọi |
 | T-P5-hold | FR-LRN-002…004 | — | — | ngoài phạm vi |
 
-Chưa có test ID (BA bổ sung, không bịa): seed #39 không đè status; error body shape; race `end()` D10 (freeze hành vi hiện tại).
+Đã bổ sung và verify: seed #39 không ghi đè mật khẩu (`test_seed.py`); error body shape `{statusCode, message, error}` (`test_errors.py`, `test_contract.py`); race `end()` D10 resolved với `SELECT ... FOR UPDATE` (`tests/test_sessions_concurrency.py`).
 
 ## 3. Byte-level gates (Phase 1 tạo vector — không trích «file checklist đã có»)
 
