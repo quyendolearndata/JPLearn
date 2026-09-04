@@ -104,7 +104,7 @@ Ghi trên board khi CPO tạo issue (Seat / Gate / Surface / FR id). Hai dòng *
 | ADR-004 — Alembic sở hữu DDL (supersede ADR-003 D2) | CTO | Platform | API | — | **Done** 2026-09-04 — CTO ký; `apps/api-python` sở hữu DDL, hết `prisma migrate dev` |
 | Stabilization staging + canary + rollback drill (FastAPI) | Platform | Phase 5 | API | NFR-OBS-001 | **Todo** — nợ mục 7 §7 từ override 2026-09-04; FastAPI chưa nhận request thật nào. Cần runbook Platform+Ops duyệt |
 | T-NFR-P1 (NFR-PERF-001) + T-NFR-S1 phần HTTPS | QA | Phase 5 | API | NFR-PERF-001, NFR-SEC-001 | **Todo** — nợ mục 6 §7 từ override 2026-09-04: test mới hoặc exception ký như cổng nền tảng |
-| D10 race `end()` cộng phút hai lần | Platform | Platform | API | FR-PRG-001 | **`KNOWN_DEBT_CARRIED`** — không sửa lúc port; nay sửa trực tiếp trên FastAPI |
+| D10 race `end()` cộng phút hai lần | Platform | Platform | API | FR-PRG-001 | **Done** — `SELECT ... FOR UPDATE` trên session + progress; concurrency tests PASS trên PostgreSQL |
 
 **Feature freeze (ADR-003): hết hiệu lực 2026-09-04** — Nest đã retire, chỉ còn một writer là `apps/api-python`.
 

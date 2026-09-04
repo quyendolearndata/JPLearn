@@ -3,6 +3,7 @@ import json
 from datetime import UTC, datetime, timedelta
 
 import asyncpg
+import pytest
 from helpers import register
 
 
@@ -169,3 +170,157 @@ def test_progress_keys_exactly_two(live_client):
     token = register(live_client).json()["access_token"]
     progress = live_client.get("/progress", headers={"Authorization": f"Bearer {token}"})
     assert sorted(progress.json().keys()) == ["current_ci_level", "minutes_comprehensible"]
+
+
+def test_pure_minutes_from_duration():
+    from jplearn_api.session_policy import minutes_from_duration
+
+    assert minutes_from_duration(-10) == 0
+    assert minutes_from_duration(-1) == 0
+    assert minutes_from_duration(0) == 0
+    assert minutes_from_duration(59) == 0
+    assert minutes_from_duration(60) == 1
+    assert minutes_from_duration(119) == 1
+    assert minutes_from_duration(120) == 2
+    assert minutes_from_duration(4 * 3600) == 240
+    assert minutes_from_duration(4 * 3600 + 1) == 0
+    assert minutes_from_duration(5 * 3600) == 0
+
+
+@pytest.mark.asyncio
+async def test_concurrent_end_same_session_exactly_once(live_database_url: str):
+    from uuid import uuid4
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from jplearn_api.db import async_database_url
+    from jplearn_api.session_policy import SessionAlreadyEnded
+    from jplearn_api.sessions_service import end
+
+    conn = await asyncpg.connect(live_database_url)
+    user_id = str(uuid4())
+    session_id = str(uuid4())
+    now = datetime.now(UTC).replace(tzinfo=None)
+    started_at = now - timedelta(seconds=120)
+    try:
+        await conn.execute("INSERT INTO users (id, email, password_hash, token_version) VALUES ($1, $2, 'hash', 0)", user_id, f"{user_id}@test.com")
+        await conn.execute("INSERT INTO learner_progress (user_id, minutes_comprehensible, current_ci_level, updated_at) VALUES ($1, 0, 0, $2)", user_id, now)
+        await conn.execute("INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'phone', $3)", session_id, user_id, started_at)
+    finally:
+        await conn.close()
+
+    engine = create_async_engine(async_database_url(live_database_url), pool_pre_ping=True)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async def call_end():
+        async with factory() as session:
+            try:
+                res = await end(session, user_id, session_id)
+                return ("ok", res)
+            except SessionAlreadyEnded:
+                return ("already_ended", None)
+            except Exception as e:
+                return ("error", type(e).__name__)
+
+    results = await asyncio.gather(call_end(), call_end())
+    await engine.dispose()
+
+    statuses = [r[0] for r in results]
+    assert sorted(statuses) == ["already_ended", "ok"], f"Expected 1 ok and 1 already_ended, got {statuses}"
+
+    conn = await asyncpg.connect(live_database_url)
+    try:
+        mins = await conn.fetchval("SELECT minutes_comprehensible FROM learner_progress WHERE user_id = $1", user_id)
+        assert mins == 2, f"Expected 2 minutes, got {mins}"
+
+        end_events = await conn.fetchval("SELECT count(*) FROM learning_events WHERE session_id = $1 AND type = 'session_ended'", session_id)
+        min_events = await conn.fetchval("SELECT count(*) FROM learning_events WHERE session_id = $1 AND type = 'minutes_comprehensible'", session_id)
+        assert end_events == 1
+        assert min_events == 1
+    finally:
+        await conn.close()
+
+
+@pytest.mark.asyncio
+async def test_concurrent_end_different_sessions_no_lost_update(live_database_url: str):
+    from uuid import uuid4
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from jplearn_api.db import async_database_url
+    from jplearn_api.sessions_service import end
+
+    conn = await asyncpg.connect(live_database_url)
+    user_id = str(uuid4())
+    s1 = str(uuid4())
+    s2 = str(uuid4())
+    now = datetime.now(UTC).replace(tzinfo=None)
+    started_s1 = now - timedelta(seconds=180)  # 3 minutes
+    started_s2 = now - timedelta(seconds=300)  # 5 minutes
+    try:
+        await conn.execute("INSERT INTO users (id, email, password_hash, token_version) VALUES ($1, $2, 'hash', 0)", user_id, f"{user_id}@test.com")
+        await conn.execute("INSERT INTO learner_progress (user_id, minutes_comprehensible, current_ci_level, updated_at) VALUES ($1, 10, 0, $2)", user_id, now)
+        await conn.execute("INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'web', $3)", s1, user_id, started_s1)
+        await conn.execute("INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'phone', $3)", s2, user_id, started_s2)
+    finally:
+        await conn.close()
+
+    engine = create_async_engine(async_database_url(live_database_url), pool_pre_ping=True)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    async def end_s(sid):
+        async with factory() as session:
+            return await end(session, user_id, sid)
+
+    await asyncio.gather(end_s(s1), end_s(s2))
+    await engine.dispose()
+
+    conn = await asyncpg.connect(live_database_url)
+    try:
+        final_mins = await conn.fetchval("SELECT minutes_comprehensible FROM learner_progress WHERE user_id = $1", user_id)
+        assert final_mins == 18, f"Expected 18 minutes (10 + 3 + 5), got {final_mins}"
+    finally:
+        await conn.close()
+
+
+@pytest.mark.asyncio
+async def test_end_session_failure_rolls_back_atomically(live_database_url: str):
+    from unittest.mock import patch
+    from uuid import uuid4
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+
+    from jplearn_api.db import async_database_url
+    from jplearn_api.sessions_service import end
+
+    conn = await asyncpg.connect(live_database_url)
+    user_id = str(uuid4())
+    session_id = str(uuid4())
+    now = datetime.now(UTC).replace(tzinfo=None)
+    started_at = now - timedelta(seconds=120)
+    try:
+        await conn.execute("INSERT INTO users (id, email, password_hash, token_version) VALUES ($1, $2, 'hash', 0)", user_id, f"{user_id}@test.com")
+        await conn.execute("INSERT INTO learner_progress (user_id, minutes_comprehensible, current_ci_level, updated_at) VALUES ($1, 5, 0, $2)", user_id, now)
+        await conn.execute("INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'web', $3)", session_id, user_id, started_at)
+    finally:
+        await conn.close()
+
+    engine = create_async_engine(async_database_url(live_database_url), pool_pre_ping=True)
+    factory = async_sessionmaker(engine, expire_on_commit=False)
+
+    with patch("jplearn_api.sessions_service.minutes_from_duration", side_effect=RuntimeError("simulated event failure")):
+        async with factory() as session:
+            with pytest.raises(RuntimeError, match="simulated event failure"):
+                await end(session, user_id, session_id)
+
+    await engine.dispose()
+
+    conn = await asyncpg.connect(live_database_url)
+    try:
+        ended_at = await conn.fetchval("SELECT ended_at FROM learning_sessions WHERE id = $1", session_id)
+        mins = await conn.fetchval("SELECT minutes_comprehensible FROM learner_progress WHERE user_id = $1", user_id)
+        assert ended_at is None
+        assert mins == 5
+    finally:
+        await conn.close()
+
