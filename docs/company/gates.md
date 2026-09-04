@@ -25,7 +25,7 @@ Sao chép khối dưới vào cuối artifact khi review. Không ký bằng mi�
 - Tài liệu: `docs/sad/03-design/` + spec tổng hợp + [diagrams](../sad/03-design/diagrams.md) + [15 khung](../sad/03-design/wireframes/README.md)
 - **Artifact:** có — scaffold + wireframes merged
 - **Chữ ký:** đã ký 2026-08-25 — CEO, CPO, BA, Pedagogy, CTO (issue #4)
-- **Mở lại 2026-08-31** — [ADR-003](../sad/03-design/adr-003-runtime-python.md) supersede một phần ADR-001 (runtime API). Năm ghế ký lại; khối 2026-08-25 **giữ**. `apps/api-python` (FastAPI) là **backend duy nhất** từ 2026-09-04 và **sở hữu DDL** qua Alembic theo [ADR-004](../sad/03-design/adr-004-ddl-alembic.md) (CTO ký 2026-09-04; supersede ADR-003 D2 «Prisma giữ DDL»). Phase 0–4 đủ: health + OpenAPI semantic diff + auth + flags/catalog + sessions/progress/events + media/HLS. pytest 54/54 PASS; web e2e 10/10 Chromium+WebKit (`docs/qa/adr-003-web-e2e-python.md`); differential Nest↔FastAPI 40/40 (`docs/qa/differential/2026-09-04T071945Z-parity.json`) — ảnh chụp đóng băng, `apps/api` đã xoá nên **không tái tạo được**. Guard FR-NEG §4 đã port sang pytest. Còn: #30 native, cutover Phase 5 (staging soak / canary / rollback drill).
+- **Mở lại 2026-08-31** — [ADR-003](../sad/03-design/adr-003-runtime-python.md) supersede một phần ADR-001 (runtime API). Năm ghế ký lại; khối 2026-08-25 **giữ**. `apps/api-python` (FastAPI) là **backend duy nhất** từ 2026-09-04 và **sở hữu DDL** qua Alembic theo [ADR-004](../sad/03-design/adr-004-ddl-alembic.md) (CTO ký 2026-09-04; supersede ADR-003 D2 «Prisma giữ DDL»). Phase 0–4 đủ: health + OpenAPI semantic diff + auth + flags/catalog + sessions/progress/events + media/HLS. pytest 55/55 PASS; web e2e 10/10 Chromium+WebKit (`docs/qa/adr-003-web-e2e-python.md`); differential Nest↔FastAPI 40/40 (`docs/qa/differential/2026-09-04T071945Z-parity.json`) — ảnh chụp đóng băng, `apps/api` đã xoá nên **không tái tạo được**. Guard FR-NEG §4 đã port sang pytest. Còn: #30 native, cutover Phase 5 (staging soak / canary / rollback drill).
 - CEO, CPO, BA, Pedagogy, CTO: năm chữ ký
 - Điều kiện: truy vết FR/NFR → use case → API/bảng → test ID
 
@@ -71,7 +71,7 @@ Nợ exception = việc Platform/Mobile/QA **sau cổng**, không chặn SAD vò
 | 6. T-NFR-P1 / T-NFR-PR1 / T-NFR-S1 HTTPS | **Override một phần** — T-NFR-O1/O2 (alert 5xx, 4xx không alert) và T-NFR-PR1 (không lộ credential) đã có test thật; **T-NFR-P1 (NFR-PERF-001) và T-NFR-S1 phần HTTPS: chưa test, chưa exception ký** |
 | 7. Stabilization internal staging + runbook Platform+Ops duyệt + rollback drill | **Override toàn bộ** — chưa soak, chưa runbook duyệt, chưa drill. FastAPI **chưa nhận một request thật nào từ người dùng** |
 
-pytest 54/54 PASS.
+pytest 55/55 PASS.
 
 ### Rủi ro CEO nhận
 

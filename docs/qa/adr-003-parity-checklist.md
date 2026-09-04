@@ -30,7 +30,7 @@ Abort/cutover: xem §8. Vùng còn lại (catalog CRUD, flags, obs, a11y web) kh
 
 Trạng thái: `Chưa` / `PASS-Nest` / `PASS-Py` / `PASS cả hai`.
 
-**Đọc cột 3 cho đúng**: `apps/api` đã bị **xoá** 2026-09-04. Suite Jest liệt kê dưới đây **không còn tồn tại trong repo** — tên để lại làm dấu vết lịch sử, muốn chạy phải `git checkout 7a05e62`. Mọi `PASS cả hai` từ nay là **bằng chứng lịch sử đã đóng băng** (log + differential JSON), không tái hiện được trên HEAD. Số hiện tại: pytest **54/54 PASS**, web e2e **10/10**.
+**Đọc cột 3 cho đúng**: `apps/api` đã bị **xoá** 2026-09-04. Suite Jest liệt kê dưới đây **không còn tồn tại trong repo** — tên để lại làm dấu vết lịch sử, muốn chạy phải `git checkout 7a05e62`. Mọi `PASS cả hai` từ nay là **bằng chứng lịch sử đã đóng băng** (log + differential JSON), không tái hiện được trên HEAD. Số hiện tại: pytest **55/55 PASS**, web e2e **10/10**.
 
 | Test ID | FR/NFR | Suite Nest (retired `7a05e62`) | pytest / web hiện tại | Ghi chú |
 |---|---|---|---|---|

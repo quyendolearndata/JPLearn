@@ -8,7 +8,7 @@ Harness Node đã **xoá** cùng `apps/api` (`test/docker-postgres.cjs`, `test/d
 
 `uv run pytest` trong `apps/api-python`:
 
-- **54/54 PASS** (lần chạy 2026-09-04), gồm contract + vectors + schema DDL.
+- **55/55 PASS** (lần chạy 2026-09-04), gồm contract + vectors + schema DDL.
 - Harness: `apps/api-python/tests/pg_harness.py` — `docker compose --profile test up db-test` trong project riêng, chờ `pg_isready`, đọc port động, rồi migrate.
 - **DDL do Alembic sở hữu** (ADR-004): `jplearn-migrate upgrade|stamp`. Dữ liệu mẫu: `jplearn-seed`. **Không** `create_all`, **không** `prisma migrate` — Prisma không còn dính vào đường test.
 - Guard DB: `assert_test_database_url` chỉ cho pathname `/jplearn_test`. Chạy trúng DB khác → raise, không «cẩn thận nhé».
@@ -20,7 +20,7 @@ Web E2E: `apps/api-python/differential/db.py up|down|url` — Compose project `j
 
 ## Chống drift schema
 
-`docs/qa/adr-004-schema-baseline.json` + `apps/api-python/tests/test_schema_ddl.py` — **5 test PASS**. Phủ cả T-NEG-004: `information_schema` không được có cột textbook, và scanner `scripts/assert-no-textbook.ts` phải **đỏ** khi cột cấm xuất hiện trong file `.py`.
+`docs/qa/adr-004-schema-baseline.json` + `apps/api-python/tests/test_schema_ddl.py` — **6 test PASS**. Phủ cả T-NEG-004: `information_schema` không được có cột textbook, và scanner `scripts/assert-no-textbook.ts` phải **đỏ** khi cột cấm xuất hiện trong file `.py`.
 
 ## Contract
 

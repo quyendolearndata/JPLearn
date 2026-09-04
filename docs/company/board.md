@@ -99,7 +99,7 @@ Ghi trên board khi CPO tạo issue (Seat / Gate / Surface / FR id). Hai dòng *
 
 | Việc | Seat | Gate | Surface | FR / NFR | Ghi chú |
 |---|---|---|---|---|---|
-| Replatform API theo ADR-003 | CTO | Platform | API | NFR-XPLAT-001, FR-NEG-004 | **Done** 2026-09-04 — Phase 0–4 xong; pytest 54/54, web e2e 10/10, differential 40/40 |
+| Replatform API theo ADR-003 | CTO | Platform | API | NFR-XPLAT-001, FR-NEG-004 | **Done** 2026-09-04 — Phase 0–4 xong; pytest 55/55, web e2e 10/10, differential 40/40 |
 | Retire `apps/api` (NestJS + Prisma) — xoá khỏi repo | CEO | Platform | API | NFR-XPLAT-001 | **Done** 2026-09-04 — **CEO override cổng §7**: mục 5-native, mục 6 phần T-NFR-P1 + T-NFR-S1 HTTPS, mục 7 toàn bộ. QA **không ký** mục 7. Commit cuối còn Nest `7a05e62`; rollback chỉ qua git history. Bản ghi: [gates.md](gates.md) |
 | ADR-004 — Alembic sở hữu DDL (supersede ADR-003 D2) | CTO | Platform | API | — | **Done** 2026-09-04 — CTO ký; `apps/api-python` sở hữu DDL, hết `prisma migrate dev` |
 | Stabilization staging + canary + rollback drill (FastAPI) | Platform | Phase 5 | API | NFR-OBS-001 | **Todo** — nợ mục 7 §7 từ override 2026-09-04; FastAPI chưa nhận request thật nào. Cần runbook Platform+Ops duyệt |

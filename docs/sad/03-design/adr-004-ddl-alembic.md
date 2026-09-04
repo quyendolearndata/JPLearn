@@ -44,12 +44,13 @@ Runbook và CI gọi CLI này. Gọi `alembic` trần bỏ qua cấu hình async
 
 - `src/jplearn_api/schema_snapshot.py` chụp cấu trúc **thật** từ `information_schema` / `pg_catalog`: enums, columns, constraints, indexes. So schema sống, không so file.
 - Baseline [`docs/qa/adr-004-schema-baseline.json`](../../qa/adr-004-schema-baseline.json) chụp từ DB do **Prisma** dựng, **trước khi xóa**: 6 enum, 10 bảng, 20 constraint, 12 index. Đây là bằng chứng còn lại duy nhất của schema thời Prisma.
-- [`apps/api-python/tests/test_schema_ddl.py`](../../../apps/api-python/tests/test_schema_ddl.py) — **5 test, PASS**:
+- [`apps/api-python/tests/test_schema_ddl.py`](../../../apps/api-python/tests/test_schema_ddl.py) — **6 test, PASS**:
   1. DB do Alembic dựng == baseline.
   2. `downgrade base` → `upgrade head` trở lại **đúng** baseline (migration hai chiều, không one-way).
-  3. Seed idempotent và giữ `draft`.
-  4. FR-NEG-004: schema sống không có cột textbook.
-  5. Scanner `scripts/assert-no-textbook.ts` vẫn **đỏ** khi cột cấm nằm trong file `.py`.
+  3. `stamp` adopt DB dựng trước Alembic (`0001_prisma_baseline`).
+  4. Seed idempotent và giữ `draft`.
+  5. FR-NEG-004: schema sống không có cột textbook.
+  6. Scanner `scripts/assert-no-textbook.ts` vẫn **đỏ** khi cột cấm nằm trong file `.py`.
 
 **Quy tắc:** đổi schema có chủ đích thì revision mới **và** regenerate baseline JSON **trong cùng một commit**, kèm FR id. Baseline lệch mà commit chỉ sửa test → reject.
 
@@ -77,7 +78,7 @@ Runbook và CI gọi CLI này. Gọi `alembic` trần bỏ qua cấu hình async
 |---|---|---|
 | Revision tay sai hoặc thiếu | Không có autogenerate đối chiếu | Round-trip `downgrade base` → `upgrade head` so baseline; job CI `api-python` chạy `jplearn-migrate upgrade` trên DB trống |
 | Regenerate baseline «cho xanh» | JSON là chỗ dễ ăn gian nhất trong gate | Review coi sửa baseline **là** sửa schema: phải có revision + FR id đi kèm trong cùng commit |
-| Không còn runtime thứ hai để đối chiếu | Sai **hành vi** (không phải sai schema) không còn bên nào so | Baseline mới = pytest 54/54 + web E2E Playwright 10/10 (chromium + webkit). Hồi quy phải thành test mới, không so với Nest |
+| Không còn runtime thứ hai để đối chiếu | Sai **hành vi** (không phải sai schema) không còn bên nào so | Baseline mới = pytest 55/55 + web E2E Playwright 10/10 (chromium + webkit). Hồi quy phải thành test mới, không so với Nest |
 | `stamp` sai trên staging | `stamp` ghi version mà không kiểm shape | Chạy `schema_snapshot` so baseline **trước** khi stamp; nằm trong runbook Platform + Ops |
 | Có người «điền vào» `target_metadata` | `None` dễ bị đọc là thiếu sót | Ghi lý do tại `env.py` và tại D2 ở trên; PR bật autogenerate khi mapping chưa mang DDL truth → reject |
 
