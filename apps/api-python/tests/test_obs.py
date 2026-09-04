@@ -197,3 +197,129 @@ def test_settings_validation():
             media_signing_secret="a" * 32,
         )
 
+    # 6. Staging/Production with wildcard CORS fails
+    with pytest.raises(ValueError, match="CORS_ORIGINS cannot be empty or contain wildcard"):
+        Settings(
+            environment="staging",
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="a" * 32,
+            api_public_url="https://api.example.com",
+            media_signing_secret="b" * 32,
+            cors_origins=["*"],
+        )
+
+    # 7. Production with HTTP CORS origin fails
+    with pytest.raises(ValueError, match="CORS_ORIGINS entries must use HTTPS in production"):
+        Settings(
+            environment="production",
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="a" * 32,
+            api_public_url="https://api.example.com",
+            media_signing_secret="b" * 32,
+            cors_origins=["http://insecure.example.com"],
+        )
+
+    # 8. Staging/Production with dev-secret fails
+    with pytest.raises(ValueError, match="Insecure JWT_SECRET"):
+        Settings(
+            environment="staging",
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="dev-secret-longer-than-32-bytes-still-insecure",
+            api_public_url="https://api.example.com",
+            media_signing_secret="b" * 32,
+            cors_origins=["https://staging.example.com"],
+        )
+
+    # 9. Production with allow_admin_bootstrap fails
+    with pytest.raises(ValueError, match="ALLOW_ADMIN_BOOTSTRAP cannot be enabled in production"):
+        Settings(
+            environment="production",
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="a" * 32,
+            api_public_url="https://api.example.com",
+            media_signing_secret="b" * 32,
+            cors_origins=["https://production.example.com"],
+            allow_admin_bootstrap=True,
+        )
+
+
+def test_slow_webhook_does_not_block_client_response() -> None:
+    import time
+
+    class _SlowReceiver(BaseHTTPRequestHandler):
+        def do_POST(self) -> None:  # noqa: N802
+            time.sleep(0.4)
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *_args) -> None:
+            pass
+
+    server = HTTPServer(("127.0.0.1", 0), _SlowReceiver)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{server.server_address[1]}/hook"
+        app = _app(url)
+        with TestClient(app, raise_server_exceptions=False) as client:
+            t0 = time.monotonic()
+            resp = client.get("/__test/boom")
+            elapsed = time.monotonic() - t0
+            assert resp.status_code == 500
+            # Client request was NOT delayed by the 400ms webhook POST
+            assert elapsed < 0.2, f"Client response delayed: {elapsed}s"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
+def test_alert_queue_overflow_drops_safely() -> None:
+    import asyncio
+    from jplearn_api.alert import enqueue_alert
+
+    small_queue: asyncio.Queue = asyncio.Queue(maxsize=2)
+    settings = Settings(
+        database_url="postgresql://user:pass@localhost:5432/db",
+        jwt_secret="a" * 32,
+        alert_webhook_url="http://127.0.0.1:9999/hook",
+    )
+    assert (
+        enqueue_alert(
+            settings,
+            method="GET",
+            path="/",
+            status=500,
+            request_id="1",
+            message="m1",
+            queue=small_queue,
+        )
+        is True
+    )
+    assert (
+        enqueue_alert(
+            settings,
+            method="GET",
+            path="/",
+            status=500,
+            request_id="2",
+            message="m2",
+            queue=small_queue,
+        )
+        is True
+    )
+    # Third item drops safely without blocking or raising
+    assert (
+        enqueue_alert(
+            settings,
+            method="GET",
+            path="/",
+            status=500,
+            request_id="3",
+            message="m3",
+            queue=small_queue,
+        )
+        is False
+    )
+
+

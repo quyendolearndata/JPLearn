@@ -54,6 +54,22 @@ class Settings(BaseSettings):
                 raise ValueError(
                     f"MEDIA_SIGNING_SECRET must be distinct from JWT_SECRET in {self.environment}"
                 )
+            if not self.cors_origins or any(o.strip() == "*" for o in self.cors_origins):
+                raise ValueError(
+                    f"CORS_ORIGINS cannot be empty or contain wildcard '*' in {self.environment}"
+                )
+            if self.environment == "production":
+                for origin in self.cors_origins:
+                    if not origin.startswith("https://"):
+                        raise ValueError(
+                            f"CORS_ORIGINS entries must use HTTPS in production, got '{origin}'"
+                        )
+            if "dev-secret" in self.jwt_secret.lower() or "change-me" in self.jwt_secret.lower():
+                raise ValueError(
+                    f"Insecure JWT_SECRET detected in {self.environment} environment"
+                )
+            if self.allow_admin_bootstrap and self.environment == "production":
+                raise ValueError("ALLOW_ADMIN_BOOTSTRAP cannot be enabled in production")
 
         return self
 

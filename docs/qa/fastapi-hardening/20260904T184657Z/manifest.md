@@ -96,4 +96,28 @@ Evidence run tracking the resolution of:
 - **Phase 3 Tests:** 6 new unit/integration tests in `test_storage_media_readiness.py` covering traversal, adapter parity, MIME/magic bytes validation, active readiness probe, and 24h grace window retention.
 - **Pytest Gate:** 110 passed.
 
+---
+
+## 6. Phase 4 Evidence — Runtime Configuration, Alert Decoupling & Test Isolation
+
+- **Status:** **PASS** (G-10, G-11, G-12 closed)
+- **Strict Runtime Configuration (G-10):**
+  - Staging/production environment rejects wildcard `*` in `CORS_ORIGINS`.
+  - Staging/production environment rejects empty `CORS_ORIGINS`.
+  - Production environment strictly requires HTTPS for all `CORS_ORIGINS` origins.
+  - Staging/production rejects insecure secret patterns (`dev-secret`, `change-me`).
+  - Production rejects `allow_admin_bootstrap=True`.
+- **Decoupled Alert Webhook (G-11):**
+  - Replaced synchronous in-request webhook calls with non-blocking bounded queue (`asyncio.Queue[dict]`, max size 1000).
+  - Background worker task dispatches alert payloads with timeout (1.0s max per attempt).
+  - Graceful shutdown in FastAPI `lifespan` drains queue via `drain_alert_queue` (3.0s deadline).
+  - Validated that 400ms slow webhook does NOT add latency to client response (client latency < 200ms).
+  - Validated that queue overflow drops excess alerts gracefully without blocking or throwing.
+- **Differential Web E2E Isolation (G-12):**
+  - Upgraded `apps/api-python/differential/web-e2e-python.sh` and `db.py` to support dynamic ephemeral ports (`PY_PORT`, `WEB_PORT`) and unique Compose project per run (`jplearn-web-e2e-<timestamp>_<rand>`).
+  - Updated `apps/web/playwright.config.ts` to support `PLAYWRIGHT_TEST_BASE_URL` dynamically.
+  - Eliminated global `kill -9` by port in cleanup trap; process teardown restricted to explicit spawned PIDs and targeted Docker Compose project down.
+- **Pytest Gate:** 112 passed.
+
+
 

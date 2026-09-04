@@ -5,7 +5,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from jplearn_api.alert import send_alert_5xx
+from jplearn_api.alert import enqueue_alert
 from jplearn_api.sanitizer import sanitize_message
 from jplearn_api.settings import Settings
 
@@ -34,13 +34,15 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
                     "message": safe_msg,
                 }
                 print(json.dumps(log_entry))
-                await send_alert_5xx(
+                queue = getattr(request.app.state, "alert_queue", None)
+                enqueue_alert(
                     self.settings,
                     method=request.method,
                     path=request.url.path,
                     status=500,
                     request_id=request_id,
                     message=safe_msg,
+                    queue=queue,
                 )
             raise
         response.headers["x-request-id"] = request_id
@@ -53,13 +55,14 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
                 "message": f"http_{response.status_code}",
             }
             print(json.dumps(log_entry))
-            await send_alert_5xx(
+            queue = getattr(request.app.state, "alert_queue", None)
+            enqueue_alert(
                 self.settings,
                 method=request.method,
                 path=request.url.path,
                 status=response.status_code,
                 request_id=request_id,
                 message=f"http_{response.status_code}",
+                queue=queue,
             )
         return response
-

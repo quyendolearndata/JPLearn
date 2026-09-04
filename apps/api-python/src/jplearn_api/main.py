@@ -1,4 +1,6 @@
+import asyncio
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -6,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from jplearn_api.alert import alert_worker, drain_alert_queue
 from jplearn_api.db import create_engine_and_sessions
 from jplearn_api.errors import (
     http_exception_handler,
@@ -16,6 +19,7 @@ from jplearn_api.middleware import RequestIdMiddleware
 from jplearn_api.openapi_diff import normalize_security_scheme_names
 from jplearn_api.routers import auth, catalog, flags, health, media, sessions
 from jplearn_api.settings import Settings, get_settings
+from jplearn_api.storage import LocalFilesystemStorage, StoragePort
 
 
 @asynccontextmanager
@@ -24,13 +28,16 @@ async def lifespan(app: FastAPI):
     engine, factory = create_engine_and_sessions(settings)
     app.state.engine = engine
     app.state.sessionmaker = factory
+
+    alert_queue = getattr(app.state, "alert_queue", None)
+    if alert_queue is None:
+        alert_queue = asyncio.Queue(maxsize=1000)
+        app.state.alert_queue = alert_queue
+
+    worker_task = asyncio.create_task(alert_worker(alert_queue, settings))
     yield
+    await drain_alert_queue(alert_queue, worker_task, timeout=3.0)
     await engine.dispose()
-
-
-from pathlib import Path
-
-from jplearn_api.storage import LocalFilesystemStorage, StoragePort
 
 
 def create_app(
@@ -49,6 +56,7 @@ def create_app(
     )
     app.state.settings = settings
     app.state.storage = storage
+    app.state.alert_queue = asyncio.Queue(maxsize=1000)
     app.add_middleware(RequestIdMiddleware, settings=settings)
     app.add_middleware(
         CORSMiddleware,
