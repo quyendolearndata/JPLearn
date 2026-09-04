@@ -68,7 +68,7 @@ def _shift_started_at(client, session_id: str, seconds: int) -> None:
         client,
         lambda conn: conn.execute(
             "UPDATE learning_sessions SET started_at = NOW() - make_interval(secs => $1) WHERE id = $2",
-            seconds,
+            seconds + 2,
             session_id,
         ),
     )

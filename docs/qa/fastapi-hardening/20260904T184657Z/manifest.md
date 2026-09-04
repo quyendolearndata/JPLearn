@@ -71,3 +71,29 @@ Evidence run tracking the resolution of:
   10. CLI gate fail-closed: exit code 1 verified.
 - **Pytest Gate:** 104 passed (10 new tests in `test_openapi_mutation_suite.py`).
 
+---
+
+## 5. Phase 3 Evidence — Storage Boundary, Media Validation, Readiness & Retention
+
+- **Status:** **PASS** (G-06, G-07, G-08, G-09 closed)
+- **Storage Port Hardening (G-06):**
+  - Removed `get_path() -> Path` from `StoragePort` to decouple application layer from local filesystem paths.
+  - Added `open_read() -> AsyncIterator[bytes]` and `get_metadata() -> StorageMetadata`.
+  - Replaced `FileResponse` with `StreamingResponse` in `routers/media.py`.
+  - Hardened `LocalFilesystemStorage._resolve(key)` with absolute path detection, parent escape rejection, and `is_relative_to(self.root)` guard against sibling-directory prefix collisions.
+  - Created `InMemoryStorage` fake object storage adapter passing parity contract tests.
+- **Media Upload Validation & Atomicity (G-07):**
+  - Enforced `.mp4` file extension and `video/mp4` MIME type per ADR-005 BA decision.
+  - Enforced inspection of first chunk for MP4 box type `ftyp` at bytes 4..8. Corrupted headers, non-MP4 files, and payloads < 8 bytes return 400 Bad Request.
+  - Enforced temporary staging to `<asset_id>.part` with atomic promotion to `<asset_id>.bin`.
+  - Wrapped DB commit with compensation deletion to ensure no orphaned files on DB failure and no DB rows on storage failure.
+- **Active Readiness Probe (G-08):**
+  - Upgraded `/ready` probe to perform an active write + fsync + read + delete cycle (`__probe__/probe.tmp`) with `asyncio.wait_for(..., timeout=2.0)`.
+  - Negative tests verify 503 Service Unavailable with `storage="down"` upon simulated storage failure or unwritable filesystem.
+- **Media Orphan Retention Policy (G-09):**
+  - Enforced 24-hour grace window in `reconcile_orphans`: unreferenced storage objects newer than 24 hours are marked protected and never deleted.
+  - Default CLI and library execution is report-only (`--dry-run`). Destructive deletion requires explicit `--confirm-retention-exceeded` (or `confirm_retention_exceeded=True`).
+- **Phase 3 Tests:** 6 new unit/integration tests in `test_storage_media_readiness.py` covering traversal, adapter parity, MIME/magic bytes validation, active readiness probe, and 24h grace window retention.
+- **Pytest Gate:** 110 passed.
+
+

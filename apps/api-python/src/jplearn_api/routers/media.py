@@ -2,7 +2,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Path as FastPath, Query, Request, Response, UploadFile
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api import media_service
@@ -73,12 +73,15 @@ async def stream_media(
     storage: StoragePort = Depends(get_storage),
     _access: None = Depends(require_media_access),
 ) -> Response:
-    asset = await media_service.get(session, id)
-    try:
-        path = await storage.get_path(asset.storage_key)
-    except (FileNotFoundError, ValueError):
-        raise HTTPException(status_code=404, detail="Media asset not found")
-    return FileResponse(path, media_type=asset.mime, headers={"X-Content-Type-Options": "nosniff"})
+    stream_iter, size, mime = await media_service.stream(session, storage, id)
+    return StreamingResponse(
+        stream_iter,
+        media_type=mime,
+        headers={
+            "Content-Length": str(size),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.get(
@@ -104,7 +107,7 @@ async def stream_hls(
 ) -> Response:
     await media_service.get(session, id)
     try:
-        path = await media_service.hls_path(storage, id, file)
+        stream_iter, size, content_type = await media_service.stream_hls(storage, id, file)
     except HTTPException as exc:
         # Nest sets @Header("X-Content-Type-Options", "nosniff") on every
         # response of this handler, including 400/404 errors.
@@ -113,10 +116,13 @@ async def stream_hls(
             detail=exc.detail,
             headers={"X-Content-Type-Options": "nosniff"},
         ) from exc
-    content_type = media_service.HLS_CONTENT_TYPES[Path(file).suffix.lower()]
+
     headers = {"X-Content-Type-Options": "nosniff"}
     if file.endswith(".m3u8") and exp and sig:
-        manifest = path.read_text(encoding="utf-8")
+        chunks = []
+        async for chunk in stream_iter:
+            chunks.append(chunk)
+        manifest = b"".join(chunks).decode("utf-8")
         lines = []
         for line in manifest.split("\n"):
             trimmed = line.strip()
@@ -125,4 +131,12 @@ async def stream_hls(
             else:
                 lines.append(f"{trimmed}?exp={quote(str(exp))}&sig={quote(sig)}")
         return PlainTextResponse("\n".join(lines), media_type=content_type, headers=headers)
-    return FileResponse(path, media_type=content_type, headers=headers)
+
+    return StreamingResponse(
+        stream_iter,
+        media_type=content_type,
+        headers={
+            "Content-Length": str(size),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )

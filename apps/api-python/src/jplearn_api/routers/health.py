@@ -1,4 +1,4 @@
-from pathlib import Path
+import asyncio
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Response, status
@@ -53,17 +53,13 @@ async def ready(
     db_ok = True
     storage_ok = True
     try:
-        await session.execute(text("SELECT 1"))
+        await asyncio.wait_for(session.execute(text("SELECT 1")), timeout=2.0)
     except Exception:
         db_ok = False
 
     try:
-        if hasattr(storage, "storage_root"):
-            root = Path(getattr(storage, "storage_root"))
-            if not root.exists() or not root.is_dir():
-                storage_ok = False
-        else:
-            await storage.exists("__probe__")
+        probe_ok, _msg = await asyncio.wait_for(storage.check_ready(), timeout=2.0)
+        storage_ok = probe_ok
     except Exception:
         storage_ok = False
 

@@ -41,7 +41,7 @@ def _upload(live_client, token: str) -> tuple[str, str]:
     uploaded = live_client.post(
         f"/staff/catalog/{item_id}/media",
         headers={"Authorization": f"Bearer {token}"},
-        files={"file": ("clip.mp4", b"fake mp4 bytes", "video/mp4")},
+        files={"file": ("clip.mp4", b"\x00\x00\x00\x18ftypmp42fake mp4 bytes", "video/mp4")},
     )
     assert uploaded.status_code == 201
     return item_id, uploaded.json()["id"]

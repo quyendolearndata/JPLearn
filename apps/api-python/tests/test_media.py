@@ -8,6 +8,8 @@ from helpers import ensure_topics, grant_role, insert_media, register
 from jplearn_api.reconciliation import reconcile_orphans
 from jplearn_api.storage import LocalFilesystemStorage
 
+TINY_MP4 = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom" + b"tiny media"
+
 
 def _admin(live_client):
     ensure_topics(live_client)
@@ -55,7 +57,7 @@ def test_upload_and_playback_dual_mode(live_client):
     uploaded = live_client.post(
         f"/staff/catalog/{item_id}/media",
         headers={"Authorization": f"Bearer {admin}"},
-        files={"file": ("tiny.mp4", b"tiny media", "video/mp4")},
+        files={"file": ("tiny.mp4", TINY_MP4, "video/mp4")},
     )
     assert uploaded.status_code == 201, uploaded.text
     assert uploaded.json()["playback_url"].startswith("http://")
@@ -73,11 +75,11 @@ def test_upload_and_playback_dual_mode(live_client):
     )
     assert playback.status_code == 200
     assert playback.headers["x-content-type-options"] == "nosniff"
-    assert playback.content == b"tiny media"
+    assert playback.content == TINY_MP4
 
     signed = live_client.get(f"{parsed.path}?{parsed.query}")
     assert signed.status_code == 200
-    assert signed.content == b"tiny media"
+    assert signed.content == TINY_MP4
 
     bad = live_client.get(f"/media/{asset_id}?exp=1&sig={'ab' * 32}")
     assert bad.status_code == 401
@@ -109,7 +111,7 @@ def test_media_requires_auth(live_client):
     uploaded = live_client.post(
         f"/staff/catalog/{item_id}/media",
         headers={"Authorization": f"Bearer {admin}"},
-        files={"file": ("clip.mp4", b"bytes", "video/mp4")},
+        files={"file": ("clip.mp4", TINY_MP4, "video/mp4")},
     )
     asset_id = uploaded.json()["id"]
     assert live_client.get(f"/media/{asset_id}").status_code == 401
@@ -154,10 +156,11 @@ async def test_storage_port_unit(tmp_path):
     await storage.promote("good.part", "final/good.bin")
     assert not (tmp_path / "good.part").exists()
     assert (tmp_path / "final/good.bin").exists()
-    assert await storage.exists("final/good.bin")
-
-    path = await storage.get_path("final/good.bin")
-    assert path.read_bytes() == b"chunk1chunk2"
+    meta = await storage.get_metadata("final/good.bin")
+    assert meta.size == 12
+    stream_iter = await storage.open_read("final/good.bin")
+    chunks = [c async for c in stream_iter]
+    assert b"".join(chunks) == b"chunk1chunk2"
 
     # 5. List keys
     keys = await storage.list_keys()
@@ -208,7 +211,7 @@ def test_media_upload_db_failure_cleans_up_storage(live_client, monkeypatch):
         live_client.post(
             f"/staff/catalog/{item_id}/media",
             headers={"Authorization": f"Bearer {admin}"},
-            files={"file": ("test.mp4", b"some bytes", "video/mp4")},
+            files={"file": ("test.mp4", TINY_MP4, "video/mp4")},
         )
 
     # Verify no .part or .bin files left in storage
@@ -229,7 +232,7 @@ def test_media_storage_failure_creates_no_db_row(live_client, monkeypatch):
         live_client.post(
             f"/staff/catalog/{item_id}/media",
             headers={"Authorization": f"Bearer {admin}"},
-            files={"file": ("test.mp4", b"some bytes", "video/mp4")},
+            files={"file": ("test.mp4", TINY_MP4, "video/mp4")},
         )
 
     async def count_assets():
@@ -273,7 +276,13 @@ def test_orphan_reconciliation(live_client):
                 assert len(rep_dry["deleted_storage_keys"]) == 0
                 assert orphan_path.exists()
 
-                rep_run = await reconcile_orphans(session, storage, dry_run=False)
+                rep_run = await reconcile_orphans(
+                    session,
+                    storage,
+                    dry_run=False,
+                    confirm_retention_exceeded=True,
+                    retention_seconds=0,
+                )
                 assert orphan_key in rep_run["deleted_storage_keys"]
                 assert not orphan_path.exists()
         finally:

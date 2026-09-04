@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import re
+from collections.abc import AsyncIterator
 from pathlib import Path
+import re
 from time import time
 from uuid import uuid4
 
@@ -23,12 +24,6 @@ HLS_CONTENT_TYPES = {
     ".vtt": "text/vtt",
 }
 HLS_FILE_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
-
-
-def storage_root(settings: Settings) -> Path:
-    if settings.storage_root:
-        return Path(settings.storage_root)
-    return Path.cwd() / "storage"
 
 
 def _secret(settings: Settings) -> str:
@@ -81,17 +76,39 @@ async def upload(
     if item is None:
         raise HTTPException(status_code=404, detail="Catalog item not found")
 
+    # 1. Validate file extension and MIME per ADR-005 BA decision
+    filename = (file.filename or "").lower().strip()
+    if not filename.endswith(".mp4"):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file extension: expected '.mp4', got '{Path(filename).suffix}'",
+        )
+    if file.content_type != "video/mp4":
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid MIME type: expected 'video/mp4', got '{file.content_type}'",
+        )
+
+    # 2. Inspect first chunk for MP4 magic bytes (ftyp box at offset 4)
+    first_chunk = await file.read(64 * 1024)
+    if not first_chunk or len(first_chunk) < 8:
+        raise HTTPException(status_code=400, detail="File must not be empty and must contain a valid header")
+    if first_chunk[4:8] != b"ftyp":
+        raise HTTPException(status_code=400, detail="Invalid MP4 file signature: expected 'ftyp' box")
+
     asset_id = str(uuid4())
     temp_key = f"{asset_id}.part"
     final_key = f"{asset_id}.bin"
 
-    async def file_stream():
+    async def file_stream() -> AsyncIterator[bytes]:
+        yield first_chunk
         while True:
             chunk = await file.read(64 * 1024)
             if not chunk:
                 break
             yield chunk
 
+    # 3. Stream to staging key and promote
     try:
         await storage.stage_stream(temp_key, file_stream())
     except ValueError as exc:
@@ -103,13 +120,14 @@ async def upload(
         await storage.delete(temp_key)
         raise HTTPException(status_code=500, detail="Failed to store media file") from exc
 
+    # 4. Insert DB record with rollback and compensation deletion
     asset = MediaAsset(
         id=asset_id,
         catalog_item_id=catalog_item_id,
         storage_key=final_key,
         playback_url=f"{_base_url(settings)}/media/{asset_id}",
         hls_url=None,
-        mime=file.content_type or "application/octet-stream",
+        mime="video/mp4",
     )
     session.add(asset)
     try:
@@ -147,13 +165,35 @@ async def register_hls(
     return to_staff(asset, settings)
 
 
-async def hls_path(storage: StoragePort, asset_id: str, file: str) -> Path:
-    if not HLS_FILE_PATTERN.match(file) or ".." in file:
+async def stream(
+    session: AsyncSession,
+    storage: StoragePort,
+    asset_id: str,
+) -> tuple[AsyncIterator[bytes], int, str]:
+    """Retrieve async byte stream, total size, and MIME type without leaking storage paths."""
+    asset = await get(session, asset_id)
+    if not await storage.exists(asset.storage_key):
+        raise HTTPException(status_code=404, detail="Media asset not found")
+    meta = await storage.get_metadata(asset.storage_key)
+    stream_iter = await storage.open_read(asset.storage_key)
+    return stream_iter, meta.size, asset.mime
+
+
+async def stream_hls(
+    storage: StoragePort,
+    asset_id: str,
+    file: str,
+) -> tuple[AsyncIterator[bytes], int, str]:
+    """Retrieve async stream for HLS manifest or segment without leaking storage paths."""
+    if not HLS_FILE_PATTERN.match(file) or ".." in file or "/" in file or "\\" in file:
         raise HTTPException(status_code=400, detail="Invalid HLS file name")
-    content_type = HLS_CONTENT_TYPES.get(Path(file).suffix.lower())
+    suffix = Path(file).suffix.lower()
+    content_type = HLS_CONTENT_TYPES.get(suffix)
     if content_type is None:
         raise HTTPException(status_code=400, detail="Unsupported HLS file type")
     key = f"hls/{asset_id}/{file}"
     if not await storage.exists(key):
         raise HTTPException(status_code=404, detail="HLS file not found")
-    return await storage.get_path(key)
+    meta = await storage.get_metadata(key)
+    stream_iter = await storage.open_read(key)
+    return stream_iter, meta.size, content_type
