@@ -20,42 +20,47 @@ sys.path.insert(0, str(REPO / "apps" / "api-python" / "src"))
 
 from pg_harness import start_docker_postgres, stop_docker_postgres  # noqa: E402
 
+import argparse
+
 PROJECT = "jplearn-web-e2e"
-STATE = Path(tempfile.gettempdir()) / "jplearn-web-e2e-docker.json"
 
 
-def up() -> int:
-    stop_docker_postgres(PROJECT)
-    url = start_docker_postgres(PROJECT, seed=True)
-    STATE.write_text(json.dumps({"project": PROJECT, "databaseUrl": url}), encoding="utf-8")
+def _state_file(project: str) -> Path:
+    return Path(tempfile.gettempdir()) / f"{project}-docker.json"
+
+
+def up(project: str = PROJECT) -> int:
+    stop_docker_postgres(project)
+    url = start_docker_postgres(project, seed=True)
+    _state_file(project).write_text(json.dumps({"project": project, "databaseUrl": url}), encoding="utf-8")
     print(f"E2E_DB_READY {url}")
     return 0
 
 
-def down() -> int:
-    stop_docker_postgres(PROJECT)
-    STATE.unlink(missing_ok=True)
+def down(project: str = PROJECT) -> int:
+    stop_docker_postgres(project)
+    _state_file(project).unlink(missing_ok=True)
     print("E2E_DB_STOPPED")
     return 0
 
 
-def url() -> int:
-    if not STATE.exists():
-        print("no running web E2E database; run `db.py up` first", file=sys.stderr)
+def url(project: str = PROJECT) -> int:
+    state = _state_file(project)
+    if not state.exists():
+        print(f"no running web E2E database for project '{project}'; run `db.py up` first", file=sys.stderr)
         return 1
-    print(json.loads(STATE.read_text(encoding="utf-8"))["databaseUrl"])
+    print(json.loads(state.read_text(encoding="utf-8"))["databaseUrl"])
     return 0
 
 
-ACTIONS = {"up": up, "down": down, "url": url}
-
-
 def main() -> int:
-    action = ACTIONS.get(sys.argv[1] if len(sys.argv) > 1 else "up")
-    if action is None:
-        print("usage: python differential/db.py <up|down|url>", file=sys.stderr)
-        return 2
-    return action()
+    parser = argparse.ArgumentParser(description="Manage Docker Postgres for Web E2E")
+    parser.add_argument("action", choices=["up", "down", "url"], nargs="?", default="up")
+    parser.add_argument("--project", default=PROJECT, help="Docker compose project name")
+    args = parser.parse_args()
+
+    actions = {"up": up, "down": down, "url": url}
+    return actions[args.action](args.project)
 
 
 if __name__ == "__main__":

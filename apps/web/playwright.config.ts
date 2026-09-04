@@ -6,5 +6,5 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
-  use: { baseURL: "http://localhost:3000" },
+  use: { baseURL: process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000" },
 });

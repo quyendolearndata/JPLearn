@@ -3,18 +3,24 @@
 #
 #   apps/api-python/differential/web-e2e-python.sh [--project=chromium ...]
 #
-# Dựng DB test riêng (Alembic migrate + seed), chạy FastAPI :3002, dựng nội dung
+# Dựng DB test riêng (Alembic migrate + seed), chạy FastAPI trên port động, dựng nội dung
 # thật (upload MP4 kho stock → submit-qa → publish → transcode HLS → register),
-# build + serve web :3000 trỏ vào :3002, rồi playwright test.
+# build + serve web trỏ vào API, rồi playwright test.
 # Mặc định chạy mọi project trong playwright.config.ts (chromium + webkit).
 #
-# Baseline Nest cũ: xem tag `pre-adr-004-nest-retire` (apps/api đã bị xóa).
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
 VENV_PY="$REPO/apps/api-python/.venv/bin/python"
-PY_PORT=3002
-WEB_PORT=3000
+
+get_free_port() {
+  python3 -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()'
+}
+
+PY_PORT="${PY_PORT:-$(get_free_port)}"
+WEB_PORT="${WEB_PORT:-$(get_free_port)}"
+RUN_ID="$(date +%Y%m%d%H%M%S)_$RANDOM"
+E2E_PROJECT="jplearn-web-e2e-${RUN_ID}"
 STORAGE="$(mktemp -d /tmp/jplearn-web-e2e-py-storage.XXXXXX)"
 API_PID=""
 WEB_PID=""
@@ -23,18 +29,19 @@ SOURCE_MP4="$REPO/media/stock/mp4/level-0-wash-hands.mp4"
 
 cleanup() {
   set +e
-  [[ -n "$WEB_PID" ]] && kill "$WEB_PID" 2>/dev/null
-  [[ -n "$API_PID" ]] && kill "$API_PID" 2>/dev/null
-  lsof -ti :"$PY_PORT" | xargs kill -9 2>/dev/null || true
-  lsof -ti :"$WEB_PORT" | xargs kill -9 2>/dev/null || true
-  "$VENV_PY" "$REPO/apps/api-python/differential/db.py" down >/dev/null 2>&1
+  echo "== Cleaning up E2E resources =="
+  if [[ -n "$WEB_PID" ]] && kill -0 "$WEB_PID" 2>/dev/null; then
+    kill "$WEB_PID" 2>/dev/null || true
+    wait "$WEB_PID" 2>/dev/null || true
+  fi
+  if [[ -n "$API_PID" ]] && kill -0 "$API_PID" 2>/dev/null; then
+    kill "$API_PID" 2>/dev/null || true
+    wait "$API_PID" 2>/dev/null || true
+  fi
+  "$VENV_PY" "$REPO/apps/api-python/differential/db.py" --project "$E2E_PROJECT" down >/dev/null 2>&1 || true
   rm -rf "$STORAGE"
 }
-trap cleanup EXIT
-
-# Pre-clean any stale processes on target ports
-lsof -ti :"$PY_PORT" | xargs kill -9 2>/dev/null || true
-lsof -ti :"$WEB_PORT" | xargs kill -9 2>/dev/null || true
+trap cleanup EXIT ERR INT TERM
 
 wait_http() { # url, name
   for _ in $(seq 1 120); do
@@ -45,8 +52,8 @@ wait_http() { # url, name
   exit 1
 }
 
-echo "== 1/5 docker db-test (Alembic migrate + seed) =="
-DB_LINE="$("$VENV_PY" "$REPO/apps/api-python/differential/db.py" up | grep E2E_DB_READY)"
+echo "== 1/5 docker db-test (Alembic migrate + seed) [project=$E2E_PROJECT] =="
+DB_LINE="$("$VENV_PY" "$REPO/apps/api-python/differential/db.py" --project "$E2E_PROJECT" up | grep E2E_DB_READY)"
 DATABASE_URL="${DB_LINE#E2E_DB_READY }"
 
 echo "== 2/5 FastAPI :$PY_PORT =="
@@ -56,6 +63,8 @@ echo "== 2/5 FastAPI :$PY_PORT =="
   JWT_SECRET="test-secret-at-least-32-bytes-long-for-pyjwt-security" \
   API_PUBLIC_URL="http://localhost:$PY_PORT" \
   STORAGE_ROOT="$STORAGE" \
+  ENVIRONMENT="test" \
+  CORS_ORIGIN_REGEX="^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$" \
   PYTHONPATH=src \
   exec .venv/bin/uvicorn jplearn_api.main:app --port "$PY_PORT" >/tmp/jplearn-web-e2e-py-api.log 2>&1
 ) &
@@ -88,8 +97,6 @@ curl -fsS -X POST "http://localhost:$PY_PORT/staff/media/$ASSET_ID/hls" \
 echo "   published item $ITEM_ID, asset $ASSET_ID (+hls)"
 
 echo "== 4/5 web :$WEB_PORT → API :$PY_PORT =="
-# Build prod thay vì dev: on-demand compile của next dev làm WebKit gãy navigation
-# (flake độc lập backend — đã đối chứng trên Nest trước khi retire).
 (
   cd "$REPO/apps/web"
   NEXT_PUBLIC_API_URL="http://localhost:$PY_PORT" ./node_modules/.bin/next build \
@@ -102,5 +109,5 @@ wait_http "http://localhost:$WEB_PORT/login" "Next"
 
 echo "== 5/5 playwright $* =="
 cd "$REPO/apps/web"
-# Sandbox của Cursor trỏ PLAYWRIGHT_BROWSERS_PATH vào cache rỗng; dùng cache mặc định.
-env -u PLAYWRIGHT_BROWSERS_PATH ./node_modules/.bin/playwright test "$@"
+PLAYWRIGHT_TEST_BASE_URL="http://localhost:$WEB_PORT" \
+  env -u PLAYWRIGHT_BROWSERS_PATH ./node_modules/.bin/playwright test "$@"
