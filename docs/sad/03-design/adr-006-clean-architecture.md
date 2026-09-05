@@ -2,7 +2,7 @@
 
 - **Ghế chủ trì:** CTO (`jplearn-cto`)
 - **Ngày:** 2026-09-05
-- **Trạng thái:** Accepted
+- **Trạng thái:** Accepted (Engineering Closure Complete; Operational Acceptance on HOLD)
 - **Phối hợp:** BA (`jplearn-ba`), Platform (`jplearn-platform`), QA (`jplearn-qa`), Ops (`jplearn-ops`), Web (`jplearn-web`)
 - **Kế thừa & liên quan:** ADR-001, ADR-003, ADR-004, ADR-005, `docs/superpowers/plans/2026-09-05-fastapi-clean-architecture-rewrite.md`
 
@@ -94,6 +94,10 @@ Mọi write use case đều bắt buộc phải chạy trong phạm vi của m�
 
 ## 4. Trạng thái kiểm chứng & Ranh giới vận hành
 
-- **Milestone 1 (Clean Architecture Rewrite):** Đang thực hiện kế hoạch đóng các lỗ hổng kỹ thuật cuối cùng (Closure v4 theo `docs/superpowers/plans/2026-09-05-clean-architecture-closure-v4.md`: repeated cancellation cleanup ownership, baseline assertion mapping, reproducible benchmark raw samples và clean candidate provenance). Engineering acceptance cấp sau khi hoàn thành C1–C4 trên clean checkout.
-- **Milestone 2 (Operational Acceptance / R-09):** Tiếp tục duy trì trạng thái **STRICTLY HOLD / BLOCKED** cho đến khi có đủ hạ tầng staging và quyết định mở traffic từ ghế Ops & CTO.
+- **Milestone 1 (Clean Architecture Rewrite):** Đã hoàn thành nghiệm thu kỹ thuật (Engineering Closure Complete) theo Closure v4 ([`2026-09-05-clean-architecture-closure-v4.md`](../../superpowers/plans/2026-09-05-clean-architecture-closure-v4.md)). Cả 5 ghế kỹ thuật (CTO, BA, Platform, QA, Ops) đã ký duyệt sau khi giải quyết trọn vẹn 4 lỗ hổng cốt lõi:
+  1. `UploadTransactionCoordinator` bảo đảm single-owner cleanup khi bị repeated cancellation mà không orphan task hay gây double-rollback context exit.
+  2. Machine-readable baseline mapping 164/164 test cases và assertion diff review đầy đủ (196 candidate tests).
+  3. In-tree benchmark runner, raw sample measurement, và quyết định chấp thuận đánh đổi +12% (+2.71 ms) upload p95 latency từ CTO để đổi lấy tính an toàn tuyệt đối khi hủy tác vụ và giải phóng kết nối DB trong lúc stream file.
+  4. Clean detached worktree qualification với 0 dirty files pre/post và toàn bộ 6 verification gates PASS 100%.
+- **Milestone 2 (Operational Acceptance / R-09):** Tiếp tục duy trì trạng thái **STRICTLY HOLD / BLOCKED** cho đến khi có đủ hạ tầng staging thực tế và quyết định mở traffic từ ghế Ops & CTO.
 
