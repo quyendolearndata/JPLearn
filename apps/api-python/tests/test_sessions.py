@@ -308,19 +308,35 @@ async def test_end_session_failure_rolls_back_atomically(live_database_url: str)
     engine = create_async_engine(async_database_url(live_database_url), pool_pre_ping=True)
     factory = async_sessionmaker(engine, expire_on_commit=False)
 
-    with patch("jplearn_api.sessions_service.minutes_from_duration", side_effect=RuntimeError("simulated event failure")):
-        async with factory() as session:
-            with pytest.raises(RuntimeError, match="simulated event failure"):
-                await end(session, user_id, session_id)
+    async with factory() as session:
+        original_add = session.add
+
+        def failing_add(instance, *args, **kwargs):
+            if getattr(instance, "type", None) == "minutes_comprehensible":
+                raise RuntimeError("simulated event insert failure")
+            return original_add(instance, *args, **kwargs)
+
+        session.add = failing_add
+        with pytest.raises(RuntimeError, match="simulated event insert failure"):
+            await end(session, user_id, session_id)
 
     await engine.dispose()
 
     conn = await asyncpg.connect(live_database_url)
     try:
-        ended_at = await conn.fetchval("SELECT ended_at FROM learning_sessions WHERE id = $1", session_id)
-        mins = await conn.fetchval("SELECT minutes_comprehensible FROM learner_progress WHERE user_id = $1", user_id)
-        assert ended_at is None
+        session_row = await conn.fetchrow(
+            "SELECT ended_at, duration_seconds FROM learning_sessions WHERE id = $1", session_id
+        )
+        mins = await conn.fetchval(
+            "SELECT minutes_comprehensible FROM learner_progress WHERE user_id = $1", user_id
+        )
+        events_count = await conn.fetchval(
+            "SELECT count(*) FROM learning_events WHERE session_id = $1", session_id
+        )
+        assert session_row["ended_at"] is None
+        assert session_row["duration_seconds"] is None
         assert mins == 5
+        assert events_count == 0, f"Expected 0 events due to rollback, found {events_count}"
     finally:
         await conn.close()
 

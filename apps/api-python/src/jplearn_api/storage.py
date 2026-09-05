@@ -57,6 +57,15 @@ class StoragePort(ABC):
         ...
 
     @abstractmethod
+    async def open_read_range(
+        self, key: str, start: int, length: int
+    ) -> AsyncIterator[bytes]:
+        """Stream length bytes starting at offset start without buffering entire file.
+        Raises FileNotFoundError if missing.
+        """
+        ...
+
+    @abstractmethod
     async def get_metadata(self, key: str) -> StorageMetadata:
         """Get object metadata. Raises FileNotFoundError if missing."""
         ...
@@ -97,16 +106,23 @@ class LocalFilesystemStorage(StoragePort):
         temp_path = self._resolve(temp_key)
         temp_path.parent.mkdir(parents=True, exist_ok=True)
         total_bytes = 0
+        loop = asyncio.get_running_loop()
 
         try:
-            with temp_path.open("wb") as f:
+            file_handle = await loop.run_in_executor(None, temp_path.open, "wb")
+            try:
                 async for chunk in stream:
                     if not chunk:
                         continue
                     total_bytes += len(chunk)
                     if total_bytes > max_bytes:
                         raise ValueError(f"File size exceeds limit of {max_bytes} bytes")
-                    f.write(chunk)
+                    await loop.run_in_executor(None, file_handle.write, chunk)
+
+                await loop.run_in_executor(None, file_handle.flush)
+                await loop.run_in_executor(None, os.fsync, file_handle.fileno())
+            finally:
+                await loop.run_in_executor(None, file_handle.close)
 
             if total_bytes == 0:
                 temp_path.unlink(missing_ok=True)
@@ -155,6 +171,36 @@ class LocalFilesystemStorage(StoragePort):
                     chunk = await loop.run_in_executor(None, file_handle.read, CHUNK_SIZE)
                     if not chunk:
                         break
+                    yield chunk
+            finally:
+                await loop.run_in_executor(None, file_handle.close)
+
+        return _generator()
+
+    async def open_read_range(
+        self, key: str, start: int, length: int
+    ) -> AsyncIterator[bytes]:
+        path = self._resolve(key)
+        if not path.is_file():
+            raise FileNotFoundError(f"File not found: {key}")
+
+        loop = asyncio.get_running_loop()
+        file_handle = await loop.run_in_executor(None, path.open, "rb")
+
+        def _seek_sync() -> None:
+            file_handle.seek(start)
+
+        await loop.run_in_executor(None, _seek_sync)
+
+        async def _generator():
+            remaining = length
+            try:
+                while remaining > 0:
+                    read_size = min(CHUNK_SIZE, remaining)
+                    chunk = await loop.run_in_executor(None, file_handle.read, read_size)
+                    if not chunk:
+                        break
+                    remaining -= len(chunk)
                     yield chunk
             finally:
                 await loop.run_in_executor(None, file_handle.close)
@@ -262,6 +308,22 @@ class InMemoryStorage(StoragePort):
             offset = 0
             while offset < len(data):
                 yield data[offset : offset + CHUNK_SIZE]
+                offset += CHUNK_SIZE
+
+        return _generator()
+
+    async def open_read_range(
+        self, key: str, start: int, length: int
+    ) -> AsyncIterator[bytes]:
+        if key not in self.objects:
+            raise FileNotFoundError(f"File not found: {key}")
+        data = self.objects[key]
+        slice_data = data[start : start + length]
+
+        async def _generator():
+            offset = 0
+            while offset < len(slice_data):
+                yield slice_data[offset : offset + CHUNK_SIZE]
                 offset += CHUNK_SIZE
 
         return _generator()

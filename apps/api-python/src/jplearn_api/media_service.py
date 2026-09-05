@@ -165,25 +165,120 @@ async def register_hls(
     return to_staff(asset, settings)
 
 
+class RangeNotSatisfiable(Exception):
+    def __init__(self, total_size: int) -> None:
+        self.total_size = total_size
+
+
+def parse_byte_range(range_header: str | None, total_size: int) -> tuple[int, int, int] | None:
+    """Parse HTTP Range header for single byte range per RFC 7233 / RFC 9110.
+
+    Returns (start, end, length) if a valid satisfiable single range is requested.
+    Returns None if Range header is missing, or contains multiple ranges / unsupported units (falls back to 200).
+    Raises RangeNotSatisfiable if range is unsatisfiable (HTTP 416).
+    """
+    if not range_header or not range_header.strip():
+        return None
+
+    range_header = range_header.strip()
+    if not range_header.startswith("bytes="):
+        # Ignore unsupported range unit per RFC 7233 §3.1
+        return None
+
+    specs = range_header[len("bytes=") :].strip()
+    # RFC 7233 §3.1: server supporting range requests MAY ignore multiple ranges and serve full 200 response
+    if "," in specs:
+        return None
+
+    if total_size <= 0:
+        raise RangeNotSatisfiable(total_size)
+
+    if specs.startswith("-"):
+        # Suffix range: bytes=-suffix
+        suffix_str = specs[1:].strip()
+        if not suffix_str.isdigit():
+            return None
+        suffix = int(suffix_str)
+        if suffix <= 0:
+            raise RangeNotSatisfiable(total_size)
+        if suffix >= total_size:
+            start = 0
+        else:
+            start = total_size - suffix
+        end = total_size - 1
+        return (start, end, end - start + 1)
+
+    if "-" not in specs:
+        return None
+
+    start_str, end_str = specs.split("-", 1)
+    start_str = start_str.strip()
+    end_str = end_str.strip()
+
+    if not start_str.isdigit():
+        return None
+
+    start = int(start_str)
+    if start >= total_size:
+        raise RangeNotSatisfiable(total_size)
+
+    if not end_str:
+        # Open-ended: bytes=start-
+        end = total_size - 1
+    else:
+        if not end_str.isdigit():
+            return None
+        end = int(end_str)
+        if start > end:
+            raise RangeNotSatisfiable(total_size)
+        if end >= total_size:
+            end = total_size - 1
+
+    return (start, end, end - start + 1)
+
+
 async def stream(
     session: AsyncSession,
     storage: StoragePort,
     asset_id: str,
-) -> tuple[AsyncIterator[bytes], int, str]:
-    """Retrieve async byte stream, total size, and MIME type without leaking storage paths."""
+    range_header: str | None = None,
+) -> tuple[AsyncIterator[bytes], int, str, int, dict[str, str]]:
+    """Retrieve async byte stream, total size, MIME, status_code, and range response headers."""
     asset = await get(session, asset_id)
     if not await storage.exists(asset.storage_key):
         raise HTTPException(status_code=404, detail="Media asset not found")
     meta = await storage.get_metadata(asset.storage_key)
-    stream_iter = await storage.open_read(asset.storage_key)
-    return stream_iter, meta.size, asset.mime
+    total_size = meta.size
+
+    range_spec = parse_byte_range(range_header, total_size)
+    if range_spec is not None:
+        start, end, length = range_spec
+        stream_iter = await storage.open_read_range(asset.storage_key, start, length)
+        status_code = 206
+        headers = {
+            "Content-Range": f"bytes {start}-{end}/{total_size}",
+            "Content-Length": str(length),
+            "Accept-Ranges": "bytes",
+            "X-Content-Type-Options": "nosniff",
+        }
+    else:
+        stream_iter = await storage.open_read(asset.storage_key)
+        status_code = 200
+        headers = {
+            "Content-Length": str(total_size),
+            "Accept-Ranges": "bytes",
+            "X-Content-Type-Options": "nosniff",
+        }
+
+    return stream_iter, total_size, asset.mime, status_code, headers
 
 
 async def stream_hls(
     storage: StoragePort,
     asset_id: str,
     file: str,
-) -> tuple[AsyncIterator[bytes], int, str]:
+    range_header: str | None = None,
+) -> tuple[AsyncIterator[bytes], int, str, int, dict[str, str]]:
     """Retrieve async stream for HLS manifest or segment without leaking storage paths."""
     if not HLS_FILE_PATTERN.match(file) or ".." in file or "/" in file or "\\" in file:
         raise HTTPException(status_code=400, detail="Invalid HLS file name")
@@ -195,5 +290,28 @@ async def stream_hls(
     if not await storage.exists(key):
         raise HTTPException(status_code=404, detail="HLS file not found")
     meta = await storage.get_metadata(key)
-    stream_iter = await storage.open_read(key)
-    return stream_iter, meta.size, content_type
+    total_size = meta.size
+
+    is_manifest = suffix == ".m3u8"
+    range_spec = None if is_manifest else parse_byte_range(range_header, total_size)
+
+    if range_spec is not None:
+        start, end, length = range_spec
+        stream_iter = await storage.open_read_range(key, start, length)
+        status_code = 206
+        headers = {
+            "Content-Range": f"bytes {start}-{end}/{total_size}",
+            "Content-Length": str(length),
+            "Accept-Ranges": "bytes",
+            "X-Content-Type-Options": "nosniff",
+        }
+    else:
+        stream_iter = await storage.open_read(key)
+        status_code = 200
+        headers = {
+            "Content-Length": str(total_size),
+            "Accept-Ranges": "bytes" if not is_manifest else "none",
+            "X-Content-Type-Options": "nosniff",
+        }
+
+    return stream_iter, total_size, content_type, status_code, headers

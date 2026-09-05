@@ -86,14 +86,26 @@ async def stream_media(
     storage: StoragePort = Depends(get_storage),
     _access: None = Depends(require_media_access),
 ) -> Response:
-    stream_iter, size, mime = await media_service.stream(session, storage, id)
+    range_header = request.headers.get("range")
+    try:
+        stream_iter, _size, mime, status_code, headers = await media_service.stream(
+            session, storage, id, range_header=range_header
+        )
+    except media_service.RangeNotSatisfiable as exc:
+        raise HTTPException(
+            status_code=416,
+            detail="Range Not Satisfiable",
+            headers={
+                "Content-Range": f"bytes */{exc.total_size}",
+                "Accept-Ranges": "bytes",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
     return StreamingResponse(
         stream_iter,
+        status_code=status_code,
         media_type=mime,
-        headers={
-            "Content-Length": str(size),
-            "X-Content-Type-Options": "nosniff",
-        },
+        headers=headers,
     )
 
 
@@ -130,8 +142,21 @@ async def stream_hls(
     _access: None = Depends(require_media_access),
 ) -> Response:
     await media_service.get(session, id)
+    range_header = request.headers.get("range")
     try:
-        stream_iter, size, content_type = await media_service.stream_hls(storage, id, file)
+        stream_iter, _size, content_type, status_code, headers = await media_service.stream_hls(
+            storage, id, file, range_header=range_header
+        )
+    except media_service.RangeNotSatisfiable as exc:
+        raise HTTPException(
+            status_code=416,
+            detail="Range Not Satisfiable",
+            headers={
+                "Content-Range": f"bytes */{exc.total_size}",
+                "Accept-Ranges": "bytes",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
     except HTTPException as exc:
         # Nest sets @Header("X-Content-Type-Options", "nosniff") on every
         # response of this handler, including 400/404 errors.
@@ -141,7 +166,6 @@ async def stream_hls(
             headers={"X-Content-Type-Options": "nosniff"},
         ) from exc
 
-    headers = {"X-Content-Type-Options": "nosniff"}
     if file.endswith(".m3u8") and exp and sig:
         chunks = []
         async for chunk in stream_iter:
@@ -154,13 +178,18 @@ async def stream_hls(
                 lines.append(line)
             else:
                 lines.append(f"{trimmed}?exp={quote(str(exp))}&sig={quote(sig)}")
-        return PlainTextResponse("\n".join(lines), media_type=content_type, headers=headers)
+        return PlainTextResponse(
+            "\n".join(lines),
+            media_type=content_type,
+            headers={
+                "Accept-Ranges": "none",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
 
     return StreamingResponse(
         stream_iter,
+        status_code=status_code,
         media_type=content_type,
-        headers={
-            "Content-Length": str(size),
-            "X-Content-Type-Options": "nosniff",
-        },
+        headers=headers,
     )
