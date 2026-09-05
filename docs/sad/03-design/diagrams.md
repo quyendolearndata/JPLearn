@@ -38,26 +38,52 @@ flowchart LR
 
 Client không nói chuyện thẳng với DB. Playback: API trả URL đã ký; Q1 là MP4, HLS trước cổng nền tảng / P5 (`NFR-PERF-002`).
 
-## 3. C4 Level 3 — Component API
+## 3. C4 Level 3 — Component API (Clean Architecture)
 
 ```mermaid
 flowchart TB
-  HTTP[HTTP + request id]
-  HTTP --> Auth[AuthModule FR-ID]
-  HTTP --> Catalog[CatalogModule FR-CAT / FR-CMS]
-  HTTP --> Session[SessionModule FR-SES]
-  HTTP --> Progress[ProgressModule FR-PRG]
-  HTTP --> Flags[FlagsModule FR-FLG]
-  HTTP --> Events[EventsModule FR-EVT]
-  HTTP --> Media[MediaModule upload + playback]
-  Auth --> SQLA[SQLAlchemy / PostgreSQL]
-  Catalog --> SQLA
-  Session --> SQLA
-  Progress --> SQLA
-  Flags --> SQLA
-  Events --> SQLA
-  Media --> SQLA
-  Media --> Disk[storage files]
+  subgraph Entrypoints ["Entrypoints Layer (HTTP / CLI)"]
+    HTTP["FastAPI App + RequestId Middleware"]
+    Routers["Routers: Auth, Catalog, Flags, Sessions, Media, Health"]
+    HTTP --> Routers
+  end
+
+  subgraph Bootstrap ["Composition Root"]
+    Boot["bootstrap.py: Factories & Container"]
+  end
+
+  subgraph Application ["Application Layer (Use Cases & Ports)"]
+    Handlers["Handlers: Identity, Catalog, Learning, Flags, Media, Reconciliation"]
+    Ports["Ports: Repositories, UnitOfWork, StoragePort, SecurityPorts"]
+    ReadModels["Read Models / DTOs"]
+    Handlers --> Ports
+    Handlers --> ReadModels
+  end
+
+  subgraph Domain ["Domain Layer (Pure Python)"]
+    Entities["Entities: UserAccount, CatalogItem, LearningSession, LearnerProgress, MediaAsset"]
+    DomainLogic["Rules: RangeParser, MinutesCalc, InvariantErrors"]
+  end
+
+  subgraph Adapters ["Adapters Layer (Infrastructure)"]
+    RepoImpl["SQLAlchemy Repositories & UnitOfWork"]
+    StorageImpl["LocalFilesystemStorage"]
+    SecImpl["Argon2, JWT, HmacMediaUrlSigner"]
+    ObsImpl["AlertQueue & Worker"]
+  end
+
+  Routers --> Handlers
+  Routers -.-> Boot
+  Boot --> RepoImpl
+  Boot --> StorageImpl
+  Boot --> SecImpl
+  Handlers --> Entities
+  Handlers --> DomainLogic
+  RepoImpl -.-> Ports
+  StorageImpl -.-> Ports
+  SecImpl -.-> Ports
+  RepoImpl --> DB[("PostgreSQL")]
+  StorageImpl --> Disk[("Storage Files")]
 ```
 
 ## 4. Sequence — đăng nhập và catalog (UC-L01, UC-L02)

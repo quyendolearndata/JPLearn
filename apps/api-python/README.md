@@ -3,8 +3,8 @@
 Backend **duy nhất** của JPLearn. Sở hữu luôn DDL qua Alembic từ ADR-004 — NestJS
 (`apps/api`) đã retire, commit cuối còn nó là `7a05e62`.
 
-SQLAlchemy trong `models.py` vẫn **mapping-only**: cấm `create_all`, cấm
-autogenerate. Revision viết tay, khóa bởi baseline chống drift.
+SQLAlchemy trong `src/jplearn_api/adapters/persistence/models.py` vẫn **mapping-only**: cấm `create_all`, cấm
+autogenerate. Revision viết tay, khóa bởi baseline chống drift (ADR-006 Clean Architecture).
 
 ## Run
 

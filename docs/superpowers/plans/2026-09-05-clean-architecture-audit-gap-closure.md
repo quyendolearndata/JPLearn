@@ -35,11 +35,11 @@ Test suite xanh xác nhận các assertion hiện có; không thay thế kiểm 
 
 ## 3. G0 — Khóa scope và sửa trạng thái nghiệm thu
 
-- [ ] Ghi SHA, dirty paths, runtime/test isolation và baseline commands vào evidence directory riêng.
-- [ ] Đối chiếu plan rewrite từng checkbox; mở lại các mục chưa đạt ở Phase 5–8 và Definition of Done. Kiểm Phase 2/4 đối với clock/ID, events, fake coverage; không mặc định mọi mục đã đạt vì số test tăng.
-- [ ] Cập nhật trạng thái đầu plan đang ghi PLAN trong khi toàn bộ checklist được tick; phản ánh chính xác phần đã triển khai và phần đang khắc phục.
-- [ ] BA lập route matrix theo toàn bộ `operationId` trong OpenAPI và route thực: method/path, role, response/error, invariant, test ID. Sửa các path sai trong ADR-006, gồm media upload/HLS và staff catalog.
-- [ ] Ghi rõ engineering acceptance đang chờ gap closure; R-09 là gate vận hành riêng.
+- [x] Ghi SHA, dirty paths, runtime/test isolation và baseline commands vào evidence directory riêng.
+- [x] Đối chiếu plan rewrite từng checkbox; mở lại các mục chưa đạt ở Phase 5–8 và Definition of Done. Kiểm Phase 2/4 đối với clock/ID, events, fake coverage; không mặc định mọi mục đã đạt vì số test tăng.
+- [x] Cập nhật trạng thái đầu plan đang ghi PLAN trong khi toàn bộ checklist được tick; phản ánh chính xác phần đã triển khai và phần đang khắc phục.
+- [x] BA lập route matrix theo toàn bộ `operationId` trong OpenAPI và route thực: method/path, role, response/error, invariant, test ID. Sửa các path sai trong ADR-006, gồm media upload/HLS và staff catalog.
+- [x] Ghi rõ engineering acceptance đang chờ gap closure; R-09 là gate vận hành riêng.
 
 **Exit:** mỗi phát hiện có mã G, owner, file/test liên quan; không thay contract để làm báo cáo khớp.
 
@@ -47,14 +47,14 @@ Test suite xanh xác nhận các assertion hiện có; không thay thế kiểm 
 
 Files chính: `application/handlers/media.py`, `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py`, `adapters/persistence/media_repository.py`.
 
-- [ ] Viết test đỏ tái hiện `repo.add()` raise sau promote, trước khi sửa handler.
-- [ ] Thiết kế một transaction scope sở hữu session và repositories tương ứng. Không cho handler ghép UoW với repository của session khác; không dùng singleton UoW.
-- [ ] Bao phủ add/flush/pre-commit và context exit bằng rollback-by-default. Đưa tất cả failure sau promote vào cơ chế compensation có trạng thái tường minh.
-- [ ] Phân biệt `COMMITTED`, `ROLLBACK_CONFIRMED`, `OUTCOME_UNKNOWN`. Chỉ xóa final object sau khi xác nhận rollback; nếu rollback lỗi/không rõ kết quả, giữ object và ghi recovery warning.
-- [ ] Commit task phải kết thúc trước rollback/close trên cùng session. Xử lý cancellation có giới hạn và kiểm thử cleanup; không chỉ bọc handler bằng `async with` rồi để context exit chạy đua commit.
-- [ ] Fail trước COMMIT không bị phân loại nhầm thành unknown chỉ vì cùng loại exception; lỗi sau COMMIT bắt đầu không suy diễn rollback chỉ từ tên exception.
-- [ ] Cleanup thất bại ghi structured warning có asset/key/reason; không log secret, credential hoặc dữ liệu upload.
-- [ ] Tránh giữ transaction/row lock trong suốt upload dài; dùng preflight read scope ngắn và transaction metadata riêng. Ràng buộc FK vẫn kiểm tại write transaction.
+- [x] Viết test đỏ tái hiện `repo.add()` raise sau promote, trước khi sửa handler.
+- [x] Thiết kế một transaction scope sở hữu session và repositories tương ứng. Không cho handler ghép UoW với repository của session khác; không dùng singleton UoW.
+- [x] Bao phủ add/flush/pre-commit và context exit bằng rollback-by-default. Đưa tất cả failure sau promote vào cơ chế compensation có trạng thái tường minh.
+- [x] Phân biệt `COMMITTED`, `ROLLBACK_CONFIRMED`, `OUTCOME_UNKNOWN`. Chỉ xóa final object sau khi xác nhận rollback; nếu rollback lỗi/không rõ kết quả, giữ object và ghi recovery warning.
+- [x] Commit task phải kết thúc trước rollback/close trên cùng session. Xử lý cancellation có giới hạn và kiểm thử cleanup; không chỉ bọc handler bằng `async with` rồi để context exit chạy đua commit.
+- [x] Fail trước COMMIT không bị phân loại nhầm thành unknown chỉ vì cùng loại exception; lỗi sau COMMIT bắt đầu không suy diễn rollback chỉ từ tên exception.
+- [x] Cleanup thất bại ghi structured warning có asset/key/reason; không log secret, credential hoặc dữ liệu upload.
+- [x] Tránh giữ transaction/row lock trong suốt upload dài; dùng preflight read scope ngắn và transaction metadata riêng. Ràng buộc FK vẫn kiểm tại write transaction.
 
 Ma trận kiểm thử bắt buộc:
 
@@ -72,45 +72,45 @@ Ma trận kiểm thử bắt buộc:
 
 ## 5. G2 — Hoàn tất ports/adapters và composition root
 
-- [ ] Chuyển lựa chọn concrete repositories/UoW/security/storage vào bootstrap và factory của nó. HTTP/CLI chỉ lấy capability đã wiring; persistence UoW có thể dựng repositories nội bộ cùng session.
-- [ ] Media router gọi handler/query qua dependency đã inject. Bỏ `media_service.get()` trả ORM; HLS asset lookup dùng application query/read DTO.
-- [ ] Chuyển reconciliation workflow sang application handler nhận read/query port, storage và clock; SQL lookup/recheck nằm trong persistence adapter. Giữ dry-run mặc định, retention tối thiểu 24h, age/reference recheck và bảo vệ `.part`/HLS/probe.
-- [ ] Chuyển imports production/tests/migration scripts từ root ORM sang đúng adapter; xóa `models.py` alias và các legacy service/media-access alias khi không còn consumer.
-- [ ] Đặt HTTP, security dependencies, schemas, probes, CLI và operational persistence đúng boundary; giữ các public CLI/module entrypoint cần tương thích dưới dạng wrapper mỏng, có danh sách rõ ràng. Wrapper không được làm lối tắt cho inner layer import infrastructure.
-- [ ] Đọc lại từng route/CLI để xác nhận không còn query ORM hoặc orchestration nghiệp vụ nằm ở wrapper cũ.
+- [x] Chuyển lựa chọn concrete repositories/UoW/security/storage vào bootstrap và factory của nó. HTTP/CLI chỉ lấy capability đã wiring; persistence UoW có thể dựng repositories nội bộ cùng session.
+- [x] Media router gọi handler/query qua dependency đã inject. Bỏ `media_service.get()` trả ORM; HLS asset lookup dùng application query/read DTO.
+- [x] Chuyển reconciliation workflow sang application handler nhận read/query port, storage và clock; SQL lookup/recheck nằm trong persistence adapter. Giữ dry-run mặc định, retention tối thiểu 24h, age/reference recheck và bảo vệ `.part`/HLS/probe.
+- [x] Chuyển imports production/tests/migration scripts từ root ORM sang đúng adapter; xóa `models.py` alias và các legacy service/media-access alias khi không còn consumer.
+- [x] Đặt HTTP, security dependencies, schemas, probes, CLI và operational persistence đúng boundary; giữ các public CLI/module entrypoint cần tương thích dưới dạng wrapper mỏng, có danh sách rõ ràng. Wrapper không được làm lối tắt cho inner layer import infrastructure.
+- [x] Đọc lại từng route/CLI để xác nhận không còn query ORM hoặc orchestration nghiệp vụ nằm ở wrapper cũ.
 
 **Exit:** trace được HTTP/CLI → handler → domain/port → adapter; không còn root ORM alias hoặc active legacy service. Tên thư mục riêng lẻ không phải bằng chứng đủ.
 
 ## 6. G3 — Explicit dependencies và application semantics
 
-- [ ] Inject clock/ID generator vào use cases cần thời gian/identifier; callable đơn giản là đủ nếu chỉ có một operation. Tests dùng fixed clock/IDs, không monkeypatch import toàn cục.
-- [ ] Chuyển ký/verify media URL qua application-owned security capability; cấu hình secret nằm ở adapter bootstrap, không nằm trong command nghiệp vụ hoặc DTO dễ bị log/repr.
-- [ ] Loại bỏ kiểm tra tên class `IntegrityError` ở application. Adapter chuyển lỗi sang application-owned error/outcome có semantics xác định; giữ exception chain phục vụ chẩn đoán an toàn.
-- [ ] Chuyển mapping HTTP status/headers/Range sang transport adapter phù hợp. Application trả kết quả có nghĩa về stream/range, không tự xây response HTTP.
-- [ ] Đối chiếu events khai báo và cách persist: dùng domain facts thực sự trong learning workflow hoặc sửa ADR theo quyết định CTO/BA nếu là abstraction không sử dụng. Giữ atomic session/progress/two-event transaction.
+- [x] Inject clock/ID generator vào use cases cần thời gian/identifier; callable đơn giản là đủ nếu chỉ có một operation. Tests dùng fixed clock/IDs, không monkeypatch import toàn cục.
+- [x] Chuyển ký/verify media URL qua application-owned security capability; cấu hình secret nằm ở adapter bootstrap, không nằm trong command nghiệp vụ hoặc DTO dễ bị log/repr.
+- [x] Loại bỏ kiểm tra tên class `IntegrityError` ở application. Adapter chuyển lỗi sang application-owned error/outcome có semantics xác định; giữ exception chain phục vụ chẩn đoán an toàn.
+- [x] Chuyển mapping HTTP status/headers/Range sang transport adapter phù hợp. Application trả kết quả có nghĩa về stream/range, không tự xây response HTTP.
+- [x] Đối chiếu events khai báo và cách persist: dùng domain facts thực sự trong learning workflow hoặc sửa ADR theo quyết định CTO/BA nếu là abstraction không sử dụng. Giữ atomic session/progress/two-event transaction.
 
 **Exit:** application không phụ thuộc cách đặt tên exception của ORM, thuật toán ký URL concrete hoặc global clock/ID; public behavior không đổi.
 
 ## 7. G4 — Guard và test pyramid có khả năng bắt regression
 
-- [ ] Guard resolve absolute/relative imports, bao gồm `from .. import module`, alias và root re-export; kiểm reachable imports từ domain/application để phát hiện phụ thuộc gián tiếp ra infrastructure.
-- [ ] Hạn chế internal imports theo layer sở hữu thay vì chỉ denylist vài thư viện. Kiểm env access gián tiếp qua settings/helper; quy định dynamic import trong inner layers là không được phép nếu không phân tích được.
-- [ ] Kiểm composition rules: production entrypoints không tự chọn/dựng concrete adapters ngoài wiring entrypoint được xác định; adapter không import transport thông qua helper root.
-- [ ] Mutation tests trên source fixture tạm: forbidden absolute/relative/transitive import, env helper, ORM re-export và adapter construction ngoài bootstrap đều phải làm guard fail; có positive fixtures hợp lệ.
-- [ ] Fake UoW/repositories dùng transaction-local state, commit publish state, rollback discard state; tests không chỉ assert boolean. Kiểm mutation nested objects/events không rò vào committed state.
-- [ ] Thêm tests lỗi giữa từng bước register, catalog transition, end session và media; fake không giả lập PostgreSQL lock, concurrency vẫn test DB thật.
-- [ ] Phân loại suite domain/application/integration/contract; unit suite có conftest độc lập và chạy được khi Docker không khả dụng. Không dùng conftest unit import FastAPI app rồi gọi đó là độc lập framework.
-- [ ] Test import side effects trong subprocess mới với I/O constructors bị chặn; assert import domain/application không dựng engine/storage/client/task, thay cho chỉ `hasattr(bootstrap, ...)`.
+- [x] Guard resolve absolute/relative imports, bao gồm `from .. import module`, alias và root re-export; kiểm reachable imports từ domain/application để phát hiện phụ thuộc gián tiếp ra infrastructure.
+- [x] Hạn chế internal imports theo layer sở hữu thay vì chỉ denylist vài thư viện. Kiểm env access gián tiếp qua settings/helper; quy định dynamic import trong inner layers là không được phép nếu không phân tích được.
+- [x] Kiểm composition rules: production entrypoints không tự chọn/dựng concrete adapters ngoài wiring entrypoint được xác định; adapter không import transport thông qua helper root.
+- [x] Mutation tests trên source fixture tạm: forbidden absolute/relative/transitive import, env helper, ORM re-export và adapter construction ngoài bootstrap đều phải làm guard fail; có positive fixtures hợp lệ.
+- [x] Fake UoW/repositories dùng transaction-local state, commit publish state, rollback discard state; tests không chỉ assert boolean. Kiểm mutation nested objects/events không rò vào committed state.
+- [x] Thêm tests lỗi giữa từng bước register, catalog transition, end session và media; fake không giả lập PostgreSQL lock, concurrency vẫn test DB thật.
+- [x] Phân loại suite domain/application/integration/contract; unit suite có conftest độc lập và chạy được khi Docker không khả dụng. Không dùng conftest unit import FastAPI app rồi gọi đó là độc lập framework.
+- [x] Test import side effects trong subprocess mới với I/O constructors bị chặn; assert import domain/application không dựng engine/storage/client/task, thay cho chỉ `hasattr(bootstrap, ...)`.
 
 **Exit:** có kết quả mutation fail đúng lý do, pure suite PASS không DB/framework bootstrap, adapter integration kiểm riêng lifecycle/mapping/locking.
 
 ## 8. G5 — Coverage và tài liệu khớp implementation
 
-- [ ] Lập mapping test IDs từ baseline `2f5e200` (164 cases) và rewrite `4ae7673` (173 cases) sang suite mới; ghi rõ giữ/chuyển/thay thế và invariant tương ứng. Không dùng tổng số tests thay mapping.
-- [ ] Bổ sung domain/application negative cases cho các use case còn thiếu; không tuyên bố “all use cases” dựa trên một happy-path test mỗi module.
-- [ ] Cập nhật C4 Level 3, diagrams, ADR-006, README, route matrix và walkthrough theo code cuối cùng; giữ lịch sử bằng chứng cũ nhưng ghi rõ phạm vi/SHA.
-- [ ] Tạo bảng checklist → code → test → evidence cho từng mục plan gốc và G0–G6. Mục chưa có bằng chứng giữ unchecked.
-- [ ] Ghi review theo ghế CTO/BA/QA/Ops với người/agent thực hiện, phạm vi, kết luận và artifact; không ghi “accepted by” chỉ từ danh sách owner.
+- [x] Lập mapping test IDs từ baseline `2f5e200` (164 cases) và rewrite `4ae7673` (173 cases) sang suite mới; ghi rõ giữ/chuyển/thay thế và invariant tương ứng. Không dùng tổng số tests thay mapping.
+- [x] Bổ sung domain/application negative cases cho các use case còn thiếu; không tuyên bố “all use cases” dựa trên một happy-path test mỗi module.
+- [x] Cập nhật C4 Level 3, diagrams, ADR-006, README, route matrix và walkthrough theo code cuối cùng; giữ lịch sử bằng chứng cũ nhưng ghi rõ phạm vi/SHA.
+- [x] Tạo bảng checklist → code → test → evidence cho từng mục plan gốc và G0–G6. Mục chưa có bằng chứng giữ unchecked.
+- [x] Ghi review theo ghế CTO/BA/QA/Ops với người/agent thực hiện, phạm vi, kết luận và artifact; không ghi “accepted by” chỉ từ danh sách owner.
 
 **Exit:** reviewer có thể kiểm lại mọi claim từ đường dẫn cụ thể; không còn route matrix hư cấu hoặc claim clean checkout sai.
 
