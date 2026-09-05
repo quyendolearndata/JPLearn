@@ -91,6 +91,117 @@ class StoragePort(ABC):
         pass
 
 
+class _StagingSession:
+    """Thread-safe state manager for staging stream I/O lifecycle across task cancellation."""
+
+    def __init__(self, temp_path: Path) -> None:
+        self.temp_path = temp_path
+        self._lock = threading.Lock()
+        self.file_handle: Any = None
+        self.cancelled = False
+        self.closed = False
+        self.in_flight_writes = 0
+        self.write_complete_event = threading.Event()
+        self.write_complete_event.set()
+
+    def sync_open(self) -> Any:
+        handle = self.temp_path.open("wb")
+        with self._lock:
+            if self.cancelled:
+                # Task was cancelled while open was in-flight; immediately close and clean up
+                try:
+                    handle.close()
+                except Exception as exc:
+                    logger.error(
+                        "storage_staging_late_open_close_failed",
+                        extra={"path": str(self.temp_path), "error": type(exc).__name__},
+                    )
+                try:
+                    self.temp_path.unlink(missing_ok=True)
+                except Exception as exc:
+                    logger.error(
+                        "storage_staging_late_open_unlink_failed",
+                        extra={"path": str(self.temp_path), "error": type(exc).__name__},
+                    )
+                return None
+            self.file_handle = handle
+            return handle
+
+    def sync_write(self, chunk: bytes) -> int:
+        with self._lock:
+            if self.cancelled or self.closed or self.file_handle is None:
+                return 0
+            self.in_flight_writes += 1
+            self.write_complete_event.clear()
+            handle = self.file_handle
+
+        try:
+            return handle.write(chunk)
+        finally:
+            with self._lock:
+                self.in_flight_writes -= 1
+                if self.in_flight_writes == 0:
+                    self.write_complete_event.set()
+
+    def sync_flush_and_sync(self) -> None:
+        with self._lock:
+            if self.cancelled or self.closed or self.file_handle is None:
+                return
+            self.in_flight_writes += 1
+            self.write_complete_event.clear()
+            handle = self.file_handle
+
+        try:
+            handle.flush()
+            os.fsync(handle.fileno())
+        finally:
+            with self._lock:
+                self.in_flight_writes -= 1
+                if self.in_flight_writes == 0:
+                    self.write_complete_event.set()
+
+    def sync_cleanup(self, remove_file: bool = True) -> None:
+        with self._lock:
+            self.cancelled = True
+            handle = self.file_handle
+            self.file_handle = None
+
+        # Bounded wait for in-flight writes to finish
+        write_drained = self.write_complete_event.wait(timeout=5.0)
+        if not write_drained:
+            logger.error(
+                "storage_staging_write_drain_timeout",
+                extra={"path": str(self.temp_path)},
+            )
+
+        close_exc = None
+        unlink_exc = None
+
+        if handle is not None and not self.closed:
+            try:
+                handle.close()
+            except Exception as exc:
+                close_exc = exc
+            finally:
+                self.closed = True
+
+        if remove_file:
+            try:
+                self.temp_path.unlink(missing_ok=True)
+            except Exception as exc:
+                unlink_exc = exc
+
+        if close_exc or unlink_exc:
+            logger.error(
+                "storage_staging_cleanup_failed",
+                extra={
+                    "path": str(self.temp_path),
+                    "close_error": type(close_exc).__name__ if close_exc else None,
+                    "unlink_error": type(unlink_exc).__name__ if unlink_exc else None,
+                },
+            )
+
+
 class LocalFilesystemStorage(StoragePort):
     def __init__(self, root: Path | str) -> None:
         self.root = Path(root).resolve()
@@ -124,21 +235,23 @@ class LocalFilesystemStorage(StoragePort):
         temp_path.parent.mkdir(parents=True, exist_ok=True)
         total_bytes = 0
         loop = asyncio.get_running_loop()
-        file_handle = None
+        session = _StagingSession(temp_path)
         success = False
 
         try:
-            file_handle = await loop.run_in_executor(None, temp_path.open, "wb")
+            handle = await loop.run_in_executor(None, session.sync_open)
+            if handle is None:
+                raise asyncio.CancelledError()
+
             async for chunk in stream:
                 if not chunk:
                     continue
                 total_bytes += len(chunk)
                 if total_bytes > max_bytes:
                     raise ValueError(f"File size exceeds limit of {max_bytes} bytes")
-                await loop.run_in_executor(None, file_handle.write, chunk)
+                await loop.run_in_executor(None, session.sync_write, chunk)
 
-            await loop.run_in_executor(None, file_handle.flush)
-            await loop.run_in_executor(None, os.fsync, file_handle.fileno())
+            await loop.run_in_executor(None, session.sync_flush_and_sync)
 
             if total_bytes == 0:
                 raise ValueError("File must not be empty")
@@ -147,18 +260,7 @@ class LocalFilesystemStorage(StoragePort):
             return total_bytes
         finally:
             async def _cleanup():
-                nonlocal file_handle
-                if file_handle is not None:
-                    try:
-                        await loop.run_in_executor(None, file_handle.close)
-                    except Exception:
-                        pass
-                    file_handle = None
-                if not success:
-                    try:
-                        await loop.run_in_executor(None, lambda: temp_path.unlink(missing_ok=True))
-                    except Exception:
-                        pass
+                await loop.run_in_executor(None, session.sync_cleanup, not success)
 
             await asyncio.shield(_cleanup())
 

@@ -570,3 +570,149 @@ def test_reconciliation_cli_args_parsing():
     with pytest.raises(SystemExit):
         parse_args(["--force-delete"])
 
+
+# ==============================================================================
+# 7. R-07/A: Storage I/O Cancellation & Ownership
+# ==============================================================================
+
+
+@pytest.mark.asyncio
+async def test_stage_stream_cancellation_during_late_open(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """R-07/A: When cancelled while executor is opening the file, the returned
+    file handle must be safely closed and .part unlinked by the completing thread."""
+    import threading
+
+    storage = LocalFilesystemStorage(tmp_path / "late_open_test")
+    temp_key = "late_open.part"
+    temp_path = storage.root / temp_key
+
+    open_started = threading.Event()
+    allow_open_finish = threading.Event()
+    captured_handles = []
+    real_open = Path.open
+
+    def delayed_open(self_path, mode="r", *args, **kwargs):
+        handle = real_open(self_path, mode, *args, **kwargs)
+        if "late_open.part" in str(self_path):
+            captured_handles.append(handle)
+            open_started.set()
+            allow_open_finish.wait(timeout=5.0)
+        return handle
+
+    monkeypatch.setattr(Path, "open", delayed_open)
+
+    async def dummy_stream():
+        yield b"never_sent"
+
+    task = asyncio.create_task(storage.stage_stream(temp_key, dummy_stream()))
+
+    while not open_started.is_set():
+        await asyncio.sleep(0.01)
+
+    # Cancel the asyncio task while open() is blocked in worker thread
+    task.cancel()
+
+    # Allow delayed_open to finish
+    allow_open_finish.set()
+
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    # Assert captured handle was closed
+    assert len(captured_handles) == 1
+    assert captured_handles[0].closed is True, "File handle was leaked open after cancellation!"
+
+    # Assert .part file was unlinked and does not exist on disk
+    assert not temp_path.exists(), f"Orphaned .part file remained on disk: {temp_path}"
+
+
+@pytest.mark.asyncio
+async def test_stage_stream_cancellation_during_in_flight_write(tmp_path: Path):
+    """R-07/A: When cancelled while executor write is in-flight, cleanup must wait
+    for the active write to complete before closing handle and unlinking."""
+    import threading
+
+    storage = LocalFilesystemStorage(tmp_path / "write_cancel_test")
+    temp_key = "write_cancel.part"
+    temp_path = storage.root / temp_key
+
+    write_started = threading.Event()
+    allow_write_finish = threading.Event()
+
+    from jplearn_api.storage import _StagingSession
+
+    real_sync_write = _StagingSession.sync_write
+    written_successfully = []
+
+    def delayed_sync_write(self_session, chunk: bytes) -> int:
+        write_started.set()
+        allow_write_finish.wait(timeout=5.0)
+        res = real_sync_write(self_session, chunk)
+        written_successfully.append(res)
+        return res
+
+    _StagingSession.sync_write = delayed_sync_write  # type: ignore[assignment]
+
+    try:
+        async def slow_stream():
+            yield b"payload_chunk_data"
+
+        task = asyncio.create_task(storage.stage_stream(temp_key, slow_stream()))
+
+        while not write_started.is_set():
+            await asyncio.sleep(0.01)
+
+        # Cancel the task while write is in-flight
+        task.cancel()
+
+        # Allow delayed write to finish
+        allow_write_finish.set()
+
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+        assert len(written_successfully) == 1
+        assert not temp_path.exists(), "Part file was not unlinked after cancellation!"
+    finally:
+        _StagingSession.sync_write = real_sync_write  # type: ignore[assignment]
+
+
+@pytest.mark.asyncio
+async def test_stage_stream_cleanup_failure_logging(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """R-07/A: When cleanup unlink raises an error, it must be logged with structured error."""
+    storage = LocalFilesystemStorage(tmp_path / "cleanup_err_test")
+    temp_key = "cleanup_err.part"
+
+    real_unlink = Path.unlink
+
+    def faulty_unlink(self_path, *args, **kwargs):
+        if "cleanup_err.part" in str(self_path):
+            raise PermissionError("Permission denied during test cleanup")
+        return real_unlink(self_path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", faulty_unlink)
+
+    logged_errors = []
+    from jplearn_api import storage as storage_mod
+
+    real_error = storage_mod.logger.error
+
+    def capture_error(msg, *args, **kwargs):
+        logged_errors.append((msg, kwargs.get("extra", {})))
+        return real_error(msg, *args, **kwargs)
+
+    monkeypatch.setattr(storage_mod.logger, "error", capture_error)
+
+    async def invalid_stream():
+        if False:
+            yield b""
+
+    with pytest.raises(ValueError, match="File must not be empty"):
+        await storage.stage_stream(temp_key, invalid_stream())
+
+    # Verify structured failure log
+    cleanup_logs = [e for e in logged_errors if e[0] == "storage_staging_cleanup_failed"]
+    assert len(cleanup_logs) == 1
+    assert cleanup_logs[0][1].get("unlink_error") == "PermissionError"
+
+
