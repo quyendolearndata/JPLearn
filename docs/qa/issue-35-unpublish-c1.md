@@ -1,5 +1,8 @@
 # Bằng chứng issue #35 — gỡ item `published` không có media (c1) khỏi catalog learner
 
+> Tài liệu lịch sử: lần kiểm chứng này từng dùng embedded PostgreSQL. Workflow
+> hiện tại chỉ dùng Docker PostgreSQL qua Compose `db-test`.
+
 - Ghế: **Ops / Legal / Finance** · Ngày: 2026-08-26 · Issue: [#35](https://github.com/quyendolearndata/JPLearn/issues/35)
 - Code kiểm chứng: `main` @ `43f7358` (endpoint `POST /staff/catalog/:id/unpublish`, admin only, published→draft + guard chặn publish thiếu media, FR-CAT-002)
 - Kết luận: **PASS**. c1 `published`→`draft`; learner `GET /catalog` không còn thấy c1; toàn catalog còn **0** item `published` thiếu media.

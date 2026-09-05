@@ -4,7 +4,7 @@ dist
 *.tsbuildinfo
 dist
 .expo
-apps/api/storage
+apps/api-python/storage
 .env
 .worktrees/
 .superpowers/
@@ -14,3 +14,9 @@ media/stock/mp4/
 media/stock/audio/
 .pnpm-store/
 test-results/
+.fr-neg-probe.py
+_fr_neg_probe.py
+.venv
+__pycache__/
+.pytest_cache/
+*.pyc

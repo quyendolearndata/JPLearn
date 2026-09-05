@@ -17,6 +17,12 @@
 - `NFR-OBS-001`: request id header, log JSON, alert 5xx staging qua webhook stub — bật bằng env `ALERT_WEBHOOK_URL` (default tắt; Ops cấp URL kênh thật).
 - Không log access_token, password.
 
+## OpenAPI / docs UI (ADR-003 D8)
+
+- Contract: `docs/sad/03-design/openapi.yaml` trong git ([openapi-diff.md](openapi-diff.md)).
+- Staging và prod: **tắt** `/docs`, `/redoc`, `/openapi.json` public.
+- Local: được bật.
+
 ## Media
 
 - Q1 thí điểm: object storage + MP4 URL ký (xem ADR).

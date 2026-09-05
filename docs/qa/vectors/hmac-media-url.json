@@ -1,0 +1,68 @@
+{
+  "algorithm": "HMAC-SHA256",
+  "message_format": "${assetId}:${exp}",
+  "encoding": "hex",
+  "default_ttl_sec": 3600,
+  "secret_fallback": [
+    "MEDIA_SIGNING_SECRET",
+    "JWT_SECRET"
+  ],
+  "cases": [
+    {
+      "id": "canonical",
+      "secret": "test-secret",
+      "assetId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      "exp": 1700000060,
+      "nowSec": 1700000000,
+      "expect": {
+        "valid": true,
+        "sig": "cf672ea58106864d56722be406598571a96c883b969eb52ca9dd8ae64730b328"
+      }
+    },
+    {
+      "id": "expired",
+      "secret": "test-secret",
+      "assetId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      "exp": 1700000060,
+      "nowSec": 1700000061,
+      "expect": {
+        "valid": false,
+        "sig": "cf672ea58106864d56722be406598571a96c883b969eb52ca9dd8ae64730b328"
+      }
+    },
+    {
+      "id": "wrong-length-sig",
+      "secret": "test-secret",
+      "assetId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      "exp": 1700000060,
+      "nowSec": 1700000000,
+      "expect": {
+        "valid": false,
+        "sig": "abababababababababababababababab"
+      }
+    },
+    {
+      "id": "uppercase-sig",
+      "secret": "test-secret",
+      "assetId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      "exp": 1700000060,
+      "nowSec": 1700000000,
+      "expect": {
+        "valid": true,
+        "sig": "CF672EA58106864D56722BE406598571A96C883B969EB52CA9DD8AE64730B328",
+        "openapi_sig_pattern": false
+      }
+    },
+    {
+      "id": "non-ascii-secret",
+      "secret": "khóa-ký-日本語",
+      "assetId": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+      "exp": 1700000060,
+      "nowSec": 1700000000,
+      "expect": {
+        "valid": true,
+        "sig": "7241f5539c9c22aadd9f39fe7be30de527ed5dc962864afb17d3f2dd9b9b2065"
+      }
+    }
+  ]
+}

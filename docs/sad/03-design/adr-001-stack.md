@@ -1,6 +1,6 @@
 # ADR-001 — Stack nền tảng (Hướng A)
 
-- Trạng thái: Accepted (đề xuất ký cùng cổng SAD-3)
+- Trạng thái: Accepted (ký cổng SAD-3 2026-08-25). **Superseded một phần** bởi [ADR-003](adr-003-runtime-python.md) (2026-08-31): runtime API được phép FastAPI; web/Expo/Postgres/storage/`/staff` giữ nguyên.
 - Ngày: 2026-08-25
 
 ## Quyết định

@@ -2,10 +2,58 @@ openapi: 3.0.3
 info:
   title: JPLearn Platform API
   version: 0.1.0
-  description: Foundation v1. No grammar, flashcards, or L1 translation channels.
+  description: |
+    Foundation v1. No grammar, flashcards, or L1 translation channels.
+
+    Contract authority is this file (OpenAPI 3.0.3), not FastAPI-generated 3.1 JSON.
+    Semantic normalized diff (ADR-003 D9): must match HTTP status, required/nullability,
+    security, operationId, x-jplearn-fr, and error schema. Allowlist: 3.0↔3.1 nullable
+    vs type union, generated component names, servers, info.
+
+    Docs UI (`/docs`, `/redoc`, `/openapi.json`): off on staging and prod; local dev may
+    enable. Contract tests read this file in git — do not depend on a public OpenAPI URL.
 servers:
   - url: https://api.staging.jplearn.local
 paths:
+  /health:
+    get:
+      operationId: health
+      tags: [Observability]
+      x-jplearn-fr: [NFR-OBS-001]
+      description: Liveness. Echoes `x-request-id` (client value or generated UUID).
+      parameters:
+        - $ref: "#/components/parameters/RequestIdHeader"
+      responses:
+        "200":
+          description: API process is up
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+  /ready:
+    get:
+      operationId: ready
+      tags: [Observability]
+      x-jplearn-fr: [NFR-OBS-001]
+      description: Readiness. Checks database connectivity and storage dependency.
+      parameters:
+        - $ref: "#/components/parameters/RequestIdHeader"
+      responses:
+        "200":
+          description: Service dependencies are healthy
+          headers:
+            X-Request-Id:
+              $ref: "#/components/headers/XRequestId"
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ready" }
+        "503":
+          description: One or more service dependencies are unhealthy
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Ready" }
   /auth/register:
     post:
       operationId: register
@@ -47,7 +95,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AuthSession" }
-        "401": { description: Invalid credentials }
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Http401Error" }
   /auth/logout:
     post:
       operationId: logout
@@ -55,7 +107,12 @@ paths:
       x-jplearn-fr: [FR-ID-003]
       security: [{ bearerAuth: [] }]
       responses:
-        "204": { description: Logged out this device }
+        "204": { description: "Invalidates every access_token for this user (all devices); tokenVersion increment (FR-ID-003)" }
+        "401":
+          description: Missing or invalid Bearer
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Http401Error" }
   /me:
     get:
       operationId: getMe
@@ -83,6 +140,7 @@ paths:
             application/json:
               schema:
                 type: object
+                required: [items]
                 properties:
                   items:
                     type: array
@@ -102,7 +160,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CatalogItemStaff" }
-        "403": { description: Not teacher or admin }
+        "403":
+          description: Not teacher or admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
   /staff/catalog/{id}/media:
     post:
       operationId: uploadMedia
@@ -119,10 +181,15 @@ paths:
           multipart/form-data:
             schema:
               type: object
+              required: [file]
               properties:
                 file: { type: string, format: binary }
       responses:
-        "201": { description: Media asset created }
+        "201":
+          description: Media asset created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaAssetStaff" }
   /media/{id}:
     get:
       operationId: streamMedia
@@ -131,6 +198,9 @@ paths:
       description: >
         MP4/audio bytes. Auth is Bearer JWT **or** HMAC query `exp`+`sig` (TTL 1h)
         so `<video src>` can play without Authorization. Secret = MEDIA_SIGNING_SECRET or JWT_SECRET.
+      security:
+        - bearerAuth: []
+        - signedQuery: []
       parameters:
         - in: path
           name: id
@@ -144,16 +214,33 @@ paths:
           name: sig
           schema: { type: string, pattern: "^[a-f0-9]{64}$" }
       responses:
-        "200": { description: Media stream }
-        "401": { description: Missing or invalid JWT/signature }
-        "404": { description: Asset not found }
+        "200":
+          description: Media stream
+          content:
+            video/mp4:
+              schema: { type: string, format: binary }
+        "401":
+          description: Missing or invalid JWT/signature
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Http401Error" }
+        "404":
+          description: Asset not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
   /media/{id}/hls/{file}:
     get:
       operationId: streamHls
       tags: [Media]
       x-jplearn-fr: [NFR-PERF-002]
-      description: HLS manifest (.m3u8) and segments (.ts/.m4s) for an asset; MP4 /media/{id} stays the fallback.
-      security: [{ bearerAuth: [] }]
+      description: >
+        HLS manifest (.m3u8) and segments (.ts/.m4s); MP4 /media/{id} stays the fallback.
+        Auth is Bearer JWT **or** HMAC query `exp`+`sig` (same as GET /media/{id}) so
+        hls.js can fetch segments without Authorization. Manifest rewrite copies query onto relative URIs.
+      security:
+        - bearerAuth: []
+        - signedQuery: []
       parameters:
         - in: path
           name: id
@@ -163,14 +250,34 @@ paths:
           name: file
           required: true
           schema: { type: string, pattern: "^[A-Za-z0-9._-]+$" }
+        - in: query
+          name: exp
+          schema: { type: integer }
+          description: Unix seconds expiry (required if no Bearer)
+        - in: query
+          name: sig
+          schema: { type: string, pattern: "^[a-f0-9]{64}$" }
       responses:
         "200":
           content:
             application/vnd.apple.mpegurl: {}
             video/mp2t: {}
             video/iso.segment: {}
-        "400": { description: Invalid or unsupported file name }
-        "404": { description: Asset or HLS file not found }
+        "400":
+          description: Invalid or unsupported file name
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+        "401":
+          description: Missing or invalid JWT/signature
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Http401Error" }
+        "404":
+          description: Asset or HLS file not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
   /staff/media/{id}/hls:
     post:
       operationId: registerHls
@@ -184,9 +291,21 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        "200": { description: hls_url registered }
-        "400": { description: HLS manifest missing on disk }
-        "403": { description: Not teacher or admin }
+        "201":
+          description: hls_url registered
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MediaAssetStaff" }
+        "400":
+          description: HLS manifest missing on disk
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+        "403":
+          description: Not teacher or admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
   /staff/catalog/{id}/submit-qa:
     post:
       operationId: submitLevelQa
@@ -199,7 +318,11 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        "200": { description: status=level_qa }
+        "200":
+          description: status=level_qa
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
   /staff/catalog/{id}/publish:
     post:
       operationId: publishCatalogItem
@@ -212,9 +335,21 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        "200": { description: status=published }
-        "400": { description: Not level_qa, or no media playback source (FR-CAT-002) }
-        "403": { description: Admin only }
+        "200":
+          description: status=published
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
+        "400":
+          description: Not level_qa, or no media playback source (FR-CAT-002)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
   /staff/catalog/{id}/unpublish:
     post:
       operationId: unpublishCatalogItem
@@ -228,10 +363,26 @@ paths:
           required: true
           schema: { type: string, format: uuid }
       responses:
-        "200": { description: status=draft }
-        "400": { description: Item is not published }
-        "403": { description: Admin only }
-        "404": { description: Catalog item not found }
+        "200":
+          description: status=draft
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
+        "400":
+          description: Item is not published
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+        "404":
+          description: Catalog item not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
   /sessions:
     post:
       operationId: startSession
@@ -269,6 +420,11 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LearnerProgress" }
+        "400":
+          description: Session already ended
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
   /progress:
     get:
       operationId: getProgress
@@ -302,15 +458,80 @@ paths:
           application/json:
             schema: { $ref: "#/components/schemas/Flags" }
       responses:
-        "200": { description: Updated }
-        "403": { description: Admin only }
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Flags" }
+        "403":
+          description: Admin only
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
 components:
+  parameters:
+    RequestIdHeader:
+      in: header
+      name: x-request-id
+      required: false
+      schema: { type: string }
+      description: Optional trace id; server echoes it. If omitted, server generates a UUID.
+  headers:
+    XRequestId:
+      description: Echo of request `x-request-id`, or a generated UUID
+      schema: { type: string }
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+    signedQuery:
+      type: apiKey
+      in: query
+      name: sig
+      description: HMAC-SHA256 signature for media streaming (with exp timestamp)
   schemas:
+    Health:
+      type: object
+      required: [ok]
+      properties:
+        ok: { type: boolean, enum: [true] }
+    Ready:
+      type: object
+      required: [ok, database, storage]
+      properties:
+        ok: { type: boolean }
+        database: { type: string, enum: [up, down] }
+        storage: { type: string, enum: [up, down] }
+    HttpError:
+      type: object
+      description: Standard JSON error body (400, 403, 404, 500) per ADR-005.
+      required: [statusCode, message, error]
+      properties:
+        statusCode: { type: integer }
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items: { type: string }
+        error: { type: string }
+    Http401Error:
+      type: object
+      description: Distinct 401 Unauthorized JSON error body per ADR-005.
+      required: [statusCode, message]
+      properties:
+        statusCode: { type: integer, enum: [401] }
+        message: { type: string }
+    MediaAssetStaff:
+      type: object
+      required: [id, catalog_item_id, storage_key, playback_url, mime]
+      properties:
+        id: { type: string, format: uuid }
+        catalog_item_id: { type: string }
+        storage_key: { type: string }
+        playback_url: { type: string }
+        hls_url: { type: string, nullable: true }
+        mime: { type: string }
     AuthSession:
       type: object
       required: [access_token, user]
@@ -339,17 +560,20 @@ components:
         media_type: { type: string, enum: [video, audio] }
         topic_id: { type: string }
         visual_support: { type: string, enum: [high, medium, low] }
-        playback_url: { type: string, format: uri }
+        playback_url: { type: string, format: uri, nullable: true }
         hls_url:
           type: string
           format: uri
+          nullable: true
           description: NFR-PERF-002 HLS manifest when transcoded; clients prefer it and fall back to playback_url.
     CatalogItemWrite:
       type: object
-      required: [topic_id, ci_level, duration_seconds, media_type, visual_support]
+      required: [topic_id, ci_level, duration_seconds, media_type, visual_support, title_internal]
       properties:
         topic_id: { type: string }
-        ci_level: { type: integer }
+        ci_level:
+          type: integer
+          description: v1 write has no min/max (Prisma Int). GET /catalog?ci_level= is 0–4.
         duration_seconds: { type: integer }
         media_type: { type: string, enum: [video, audio] }
         visual_support: { type: string, enum: [high, medium, low] }
@@ -358,6 +582,7 @@ components:
       allOf:
         - { $ref: "#/components/schemas/CatalogItemWrite" }
         - type: object
+          required: [id, status, has_l1_translation]
           properties:
             id: { type: string, format: uuid }
             status:

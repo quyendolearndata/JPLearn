@@ -19,8 +19,10 @@ test("UC-L06 cùng user hai client: cùng catalog published, cùng minutes_compr
     await page.getByLabel("Mật khẩu").fill("password10");
   };
 
+  const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000";
+
   // Client A: desktop web — đăng ký tài khoản mới qua UI
-  const ctxA = await browser.newContext({ baseURL: "http://localhost:3000" });
+  const ctxA = await browser.newContext({ baseURL: baseUrl });
   const pageA = await ctxA.newPage();
   await fillAuth(pageA);
   await pageA.getByRole("button", { name: "Đăng ký" }).click();
@@ -35,7 +37,7 @@ test("UC-L06 cùng user hai client: cùng catalog published, cùng minutes_compr
   // Client B: phone web (iPhone emulation) — đăng nhập cùng tài khoản
   const ctxB = await browser.newContext({
     ...devices["iPhone 13"],
-    baseURL: "http://localhost:3000",
+    baseURL: baseUrl,
   });
   const pageB = await ctxB.newPage();
   await fillAuth(pageB);

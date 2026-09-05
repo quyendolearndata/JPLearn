@@ -1,0 +1,293 @@
+{
+  "generated_at": "2026-09-04T071650Z",
+  "servers": {
+    "nest": 3101,
+    "python": 3102
+  },
+  "steps": 40,
+  "failed_steps": 21,
+  "results": [
+    {
+      "step": "auth/register",
+      "status": 201,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "auth/login wrong password",
+      "status": 401,
+      "pass": false,
+      "diffs": [
+        "auth/login wrong password: body\n  nest={\"message\": \"Unauthorized\", \"statusCode\": 401}\n  py={\"error\": \"Unauthorized\", \"message\": \"Unauthorized\", \"statusCode\": 401}"
+      ]
+    },
+    {
+      "step": "auth/login",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /me no auth → 401",
+      "status": 401,
+      "pass": false,
+      "diffs": [
+        "GET /me no auth → 401: body\n  nest={\"message\": \"Unauthorized\", \"statusCode\": 401}\n  py={\"error\": \"Unauthorized\", \"message\": \"Unauthorized\", \"statusCode\": 401}"
+      ]
+    },
+    {
+      "step": "GET /me (own token)",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /progress initial",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST /sessions bad device",
+      "status": 401,
+      "pass": false,
+      "diffs": [
+        "POST /sessions bad device: body\n  nest={\"message\": \"Unauthorized\", \"statusCode\": 401}\n  py={\"error\": \"Unauthorized\", \"message\": \"Unauthorized\", \"statusCode\": 401}"
+      ]
+    },
+    {
+      "step": "GET /progress no auth",
+      "status": 401,
+      "pass": false,
+      "diffs": [
+        "GET /progress no auth: body\n  nest={\"message\": \"Unauthorized\", \"statusCode\": 401}\n  py={\"error\": \"Unauthorized\", \"message\": \"Unauthorized\", \"statusCode\": 401}"
+      ]
+    },
+    {
+      "step": "POST /sessions start",
+      "status": 201,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST /sessions/:id/end (2 min)",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST end twice",
+      "status": 400,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "learning_events types",
+      "status": 0,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /flags no auth → 401",
+      "status": 401,
+      "pass": false,
+      "diffs": [
+        "GET /flags no auth → 401: body\n  nest={\"message\": \"Unauthorized\", \"statusCode\": 401}\n  py={\"error\": \"Unauthorized\", \"message\": \"Unauthorized\", \"statusCode\": 401}"
+      ]
+    },
+    {
+      "step": "GET /flags default false",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "PATCH /staff/flags learner 403",
+      "status": 403,
+      "pass": false,
+      "diffs": [
+        "PATCH /staff/flags as learner → 403: body\n  nest={\"error\": \"Forbidden\", \"message\": \"Forbidden resource\", \"statusCode\": 403}\n  py={\"error\": \"Forbidden\", \"message\": \"Forbidden\", \"statusCode\": 403}"
+      ]
+    },
+    {
+      "step": "POST /staff/catalog learner 403",
+      "status": 403,
+      "pass": false,
+      "diffs": [
+        "POST /staff/catalog learner → 403: body\n  nest={\"error\": \"Forbidden\", \"message\": \"Forbidden resource\", \"statusCode\": 403}\n  py={\"error\": \"Forbidden\", \"message\": \"Forbidden\", \"statusCode\": 403}"
+      ]
+    },
+    {
+      "step": "FR-NEG /flashcards",
+      "status": 404,
+      "pass": false,
+      "diffs": [
+        "GET /flashcards → 404: body\n  nest={\"error\": \"Not Found\", \"message\": \"Cannot GET /flashcards\", \"statusCode\": 404}\n  py={\"error\": \"Not Found\", \"message\": \"Not Found\", \"statusCode\": 404}"
+      ]
+    },
+    {
+      "step": "FR-NEG /grammar",
+      "status": 404,
+      "pass": false,
+      "diffs": [
+        "GET /grammar → 404: body\n  nest={\"error\": \"Not Found\", \"message\": \"Cannot GET /grammar\", \"statusCode\": 404}\n  py={\"error\": \"Not Found\", \"message\": \"Not Found\", \"statusCode\": 404}"
+      ]
+    },
+    {
+      "step": "FR-NEG /grammar/lessons",
+      "status": 404,
+      "pass": false,
+      "diffs": [
+        "GET /grammar/lessons → 404: body\n  nest={\"error\": \"Not Found\", \"message\": \"Cannot GET /grammar/lessons\", \"statusCode\": 404}\n  py={\"error\": \"Not Found\", \"message\": \"Not Found\", \"statusCode\": 404}"
+      ]
+    },
+    {
+      "step": "FR-NEG /vocabulary",
+      "status": 404,
+      "pass": false,
+      "diffs": [
+        "GET /vocabulary → 404: body\n  nest={\"error\": \"Not Found\", \"message\": \"Cannot GET /vocabulary\", \"statusCode\": 404}\n  py={\"error\": \"Not Found\", \"message\": \"Not Found\", \"statusCode\": 404}"
+      ]
+    },
+    {
+      "step": "FR-NEG /translations",
+      "status": 404,
+      "pass": false,
+      "diffs": [
+        "GET /translations → 404: body\n  nest={\"error\": \"Not Found\", \"message\": \"Cannot GET /translations\", \"statusCode\": 404}\n  py={\"error\": \"Not Found\", \"message\": \"Not Found\", \"statusCode\": 404}"
+      ]
+    },
+    {
+      "step": "auth/register admin",
+      "status": 201,
+      "pass": false,
+      "diffs": [
+        "auth/register admin: body\n  nest={\"access_token\": {\"jwt\": {\"email\": \"admin-1788506219@example.com\", \"exp\": 1788535019, \"iat\": 1788506219, \"jti\": \"<uuid>\", \"sub\": \"<uuid>\", \"ver\": 0}}, \"user\": {\"email\": \"admin-1788506219@example.com\", \"id\": \"<uuid>\", \"roles\": [\"learner\"]}}\n  py={\"access_token\": {\"jwt\": {\"email\": \"admin-1788506219@example.com\", \"exp\": 1788535020, \"iat\": 1788506220, \"jti\": \"<uuid>\", \"sub\": \"<uuid>\", \"ver\": 0}}, \"user\": {\"email\": \"admin-1788506219@example.com\", \"id\": \"<uuid>\", \"roles\": [\"learner\"]}}"
+      ]
+    },
+    {
+      "step": "POST /staff/catalog admin 201",
+      "status": 201,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "submit-qa",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "publish without media 400",
+      "status": 400,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "POST media upload 201",
+      "status": 201,
+      "pass": false,
+      "diffs": [
+        "POST media upload → 201: body\n  nest={\"catalog_item_id\": \"<uuid>\", \"hls_url\": null, \"id\": \"<uuid>\", \"mime\": \"video/mp4\", \"playback_url\": {\"url\": \"/media/5c8d9da7-0bf2-43b2-b9cb-9f35a2bad84a\", \"params\": [\"exp\", \"sig\"]}, \"storage_key\": \"5c8d9da7-0bf2-43b2-b9cb-9f35a2bad84a.bin\"}\n  py={\"catalog_item_id\": \"<uuid>\", \"hls_url\": null, \"id\": \"<uuid>\", \"mime\": \"video/mp4\", \"playback_url\": {\"url\": \"/media/842bb2b2-d01e-4060-bfbc-c244e9cef1c8\", \"params\": [\"exp\", \"sig\"]}, \"storage_key\": \"842bb2b2-d01e-4060-bfbc-c244e9cef1c8.bin\"}"
+      ]
+    },
+    {
+      "step": "publish with media 200",
+      "status": 200,
+      "pass": false,
+      "diffs": [
+        "publish with media → 200: body\n  nest={\"ci_level\": 0, \"created_by\": \"<uuid>\", \"duration_seconds\": 30, \"has_l1_translation\": false, \"id\": \"<uuid>\", \"media\": [{\"catalog_item_id\": \"<uuid>\", \"hls_url\": null, \"id\": \"<uuid>\", \"mime\": \"video/mp4\", \"playback_url\": {\"url\": \"/media/5c8d9da7-0bf2-43b2-b9cb-9f35a2bad84a\", \"params\": [\"exp\", \"sig\"]}, \"storage_key\": \"5c8d9da7-0bf2-43b2-b9cb-9f35a2bad84a.bin\"}], \"media_type\": \"video\", \"spoken_languag\n  py={\"ci_level\": 0, \"created_by\": \"<uuid>\", \"duration_seconds\": 30, \"has_l1_translation\": false, \"id\": \"<uuid>\", \"media\": [{\"catalog_item_id\": \"<uuid>\", \"hls_url\": null, \"id\": \"<uuid>\", \"mime\": \"video/mp4\", \"playback_url\": {\"url\": \"/media/842bb2b2-d01e-4060-bfbc-c244e9cef1c8\", \"params\": [\"exp\", \"sig\"]}, \"storage_key\": \"842bb2b2-d01e-4060-bfbc-c244e9cef1c8.bin\"}], \"media_type\": \"video\", \"spoken_languag"
+      ]
+    },
+    {
+      "step": "GET /catalog published item shape",
+      "status": 200,
+      "pass": false,
+      "diffs": [
+        "GET /catalog published item: body\n  nest={\"ci_level\": 0, \"duration_seconds\": 30, \"id\": \"<uuid>\", \"media_type\": \"video\", \"playback_url\": {\"url\": \"/media/5c8d9da7-0bf2-43b2-b9cb-9f35a2bad84a\", \"params\": [\"exp\", \"sig\"]}, \"topic_id\": \"daily_home\", \"visual_support\": \"high\"}\n  py={\"ci_level\": 0, \"duration_seconds\": 30, \"id\": \"<uuid>\", \"media_type\": \"video\", \"playback_url\": {\"url\": \"/media/842bb2b2-d01e-4060-bfbc-c244e9cef1c8\", \"params\": [\"exp\", \"sig\"]}, \"topic_id\": \"daily_home\", \"visual_support\": \"high\"}"
+      ]
+    },
+    {
+      "step": "GET /media Bearer",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /media signed URL",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET /media expired sig 401",
+      "status": 401,
+      "pass": false,
+      "diffs": [
+        "GET /media expired sig → 401: body\n  nest={\"message\": \"Unauthorized\", \"statusCode\": 401}\n  py={\"error\": \"Unauthorized\", \"message\": \"Unauthorized\", \"statusCode\": 401}"
+      ]
+    },
+    {
+      "step": "register HLS missing manifest 400",
+      "status": 400,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "register HLS 201",
+      "status": 201,
+      "pass": false,
+      "diffs": [
+        "register HLS → 201: body\n  nest={\"catalog_item_id\": \"<uuid>\", \"hls_url\": {\"url\": \"/media/5c8d9da7-0bf2-43b2-b9cb-9f35a2bad84a/hls/index.m3u8\", \"params\": [\"exp\", \"sig\"]}, \"id\": \"<uuid>\", \"mime\": \"video/mp4\", \"playback_url\": {\"url\": \"/media/5c8d9da7-0bf2-43b2-b9cb-9f35a2bad84a\", \"params\": [\"exp\", \"sig\"]}, \"storage_key\": \"5c8d9da7-0bf2-43b2-b9cb-9f35a2bad84a.bin\"}\n  py={\"catalog_item_id\": \"<uuid>\", \"hls_url\": {\"url\": \"/media/842bb2b2-d01e-4060-bfbc-c244e9cef1c8/hls/index.m3u8\", \"params\": [\"exp\", \"sig\"]}, \"id\": \"<uuid>\", \"mime\": \"video/mp4\", \"playback_url\": {\"url\": \"/media/842bb2b2-d01e-4060-bfbc-c244e9cef1c8\", \"params\": [\"exp\", \"sig\"]}, \"storage_key\": \"842bb2b2-d01e-4060-bfbc-c244e9cef1c8.bin\"}"
+      ]
+    },
+    {
+      "step": "GET manifest Bearer",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "manifest rewrite exp+sig",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "GET segment via signed URI",
+      "status": 200,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "HLS traversal 400",
+      "status": 400,
+      "pass": false,
+      "diffs": [
+        "HLS traversal → 400: header x-content-type-options 'nosniff' != None"
+      ]
+    },
+    {
+      "step": "HLS missing 404",
+      "status": 404,
+      "pass": false,
+      "diffs": [
+        "HLS missing segment → 404: header x-content-type-options 'nosniff' != None"
+      ]
+    },
+    {
+      "step": "logout 204",
+      "status": 204,
+      "pass": true,
+      "diffs": []
+    },
+    {
+      "step": "me after logout 401",
+      "status": 401,
+      "pass": false,
+      "diffs": [
+        "GET /me after logout → 401: body\n  nest={\"message\": \"Unauthorized\", \"statusCode\": 401}\n  py={\"error\": \"Unauthorized\", \"message\": \"Unauthorized\", \"statusCode\": 401}"
+      ]
+    }
+  ]
+}

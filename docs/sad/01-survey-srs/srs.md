@@ -3,7 +3,8 @@
 Mã yêu cầu ổn định. Story sprint phải trích mã.  
 Phạm vi: **nền tảng**. Yêu cầu học đầy đủ đánh dấu `Deferred-P5`.
 
-**Cổng SAD-1:** CPO, Pedagogy, CTO ký [gates.md](../../company/gates.md).
+**Cổng SAD-1:** CPO, Pedagogy, CTO ký [gates.md](../../company/gates.md).  
+**Wording 2026-08-31 (ADR-003):** FR-ID-003 (logout mọi thiết bị) và FR-CMS-002 (chỉ Admin publish) — `INTENTIONAL_REQUIREMENT_CHANGE`, đã ký SAD-3.
 
 ## 1. Yêu cầu chức năng — nền tảng
 
@@ -13,7 +14,7 @@ Phạm vi: **nền tảng**. Yêu cầu học đầy đủ đánh dấu `Deferre
 |---|---|---|
 | FR-ID-001 | Người dùng đăng ký và đăng nhập bằng email + mật khẩu | P0 |
 | FR-ID-002 | Một identity dùng chung web, iOS, iPad, Android | P0 |
-| FR-ID-003 | Phiên đăng nhập hết hạn an toàn; đăng xuất trên thiết bị hiện tại | P0 |
+| FR-ID-003 | Phiên đăng nhập hết hạn an toàn; đăng xuất vô hiệu hoá **mọi** access_token của user (mọi thiết bị). v1: `tokenVersion` trên User, không phiên per-device | P0 |
 | FR-ID-004 | Tài khoản có `role`: `learner`, `teacher`, `admin` | P0 |
 
 ### Catalog
@@ -48,7 +49,7 @@ Phạm vi: **nền tảng**. Yêu cầu học đầy đủ đánh dấu `Deferre
 | ID | Yêu cầu | Ưu tiên |
 |---|---|---|
 | FR-CMS-001 | Giáo viên upload media thô gắn với item | P0 |
-| FR-CMS-002 | Sau Level QA, giáo viên hoặc admin chuyển `status` sang `published` | P0 |
+| FR-CMS-002 | Sau Level QA, **chỉ admin** chuyển `status` sang `published` (Teacher dừng ở `level_qa`; khớp UC-A01) | P0 |
 | FR-CMS-003 | Item published có URL media phát được trên web và mobile | P0 |
 | FR-CMS-004 | Client lấy playback URL qua API, không hardcode CDN | P0 |
 

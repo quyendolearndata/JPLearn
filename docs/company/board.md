@@ -81,7 +81,7 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | [#27](https://github.com/quyendolearndata/JPLearn/issues/27) | Player CI trong phiên web | Web | Phase 5 | FR-LRN-001 | **Done** web (2019ef2; Expo theo #31/nhánh mobile-player) |
 | [#28](https://github.com/quyendolearndata/JPLearn/issues/28) | Padding iPad Phiên/Tiến độ | Mobile | Platform | NFR-XPLAT-002 | **Done** (ea73d5f; visual thật ở #30) |
 | [#29](https://github.com/quyendolearndata/JPLearn/issues/29) | Cột trạng thái ma trận truy vết | BA | Platform | — | **Done** (ad81452) |
-| [#30](https://github.com/quyendolearndata/JPLearn/issues/30) | UC-L06 máy native founder | QA | Platform | FR-ID-002, FR-PRG-004 | **Todo** — cần máy thật founder |
+| [#30](https://github.com/quyendolearndata/JPLearn/issues/30) | UC-L06 máy native founder | QA | Platform | FR-ID-002, FR-PRG-004 | **Todo** — cần máy thật founder; override retire Nest 2026-09-04 **không** đóng card này |
 | [#31](https://github.com/quyendolearndata/JPLearn/issues/31) | Phát HLS trên web | Web | Platform | NFR-PERF-002 | **Done** (fc0d5e0 + e2e hls.spec.ts PASS) |
 | [#32](https://github.com/quyendolearndata/JPLearn/issues/32) | Review rubric CI clip thí điểm | Pedagogy | Platform | — | **Done** (99ba8fc; batch PASS) |
 | [#33](https://github.com/quyendolearndata/JPLearn/issues/33) | Pass/fail 10 clip stock | CI Level QA | Platform | — | **Done** (e54b7d3; 10/10 PASS, nợ workflow level_qa) |
@@ -92,6 +92,21 @@ Mỗi item có `seat`, `gate`, `surface`, `status`. Ví dụ issue #2: Seat **CE
 | [#38](https://github.com/quyendolearndata/JPLearn/issues/38) | 5xx alert thật trên staging | Platform | Platform | NFR-OBS-001 | **Done** (f143c8f; webhook stub `ALERT_WEBHOOK_URL` default tắt; Ops set env staging) |
 | [#39](https://github.com/quyendolearndata/JPLearn/issues/39) | Seed re-publish item thiếu media | Platform | Platform | FR-CAT-002 | **Done** (972cdc7; c1 về draft, regression guard chống đè status) |
 | [#40](https://github.com/quyendolearndata/JPLearn/issues/40) | Thiếu nosniff — Chrome/Edge chặn HLS segment (ORB) | Platform | Platform | NFR-PERF-002 | **Done** (a304934; nosniff + ký segment trong manifest, e2e Chromium/WebKit xanh) |
+
+### ADR-003 (runtime FastAPI) — chưa có số issue GitHub
+
+Ghi trên board khi CPO tạo issue (Seat / Gate / Surface / FR id). Hai dòng **Todo** dưới là nợ từ override 2026-09-04 — CPO tạo issue thật trước Phase 5.
+
+| Việc | Seat | Gate | Surface | FR / NFR | Ghi chú |
+|---|---|---|---|---|---|
+| Replatform API theo ADR-003 | CTO | Platform | API | NFR-XPLAT-001, FR-NEG-004 | **Done** 2026-09-04 — Phase 0–4 xong; pytest 55/55, web e2e 10/10, differential 40/40 |
+| Retire `apps/api` (NestJS + Prisma) — xoá khỏi repo | CEO | Platform | API | NFR-XPLAT-001 | **Done** 2026-09-04 — **CEO override cổng §7**: mục 5-native, mục 6 phần T-NFR-P1 + T-NFR-S1 HTTPS, mục 7 toàn bộ. QA **không ký** mục 7. Commit cuối còn Nest `7a05e62`; rollback chỉ qua git history. Bản ghi: [gates.md](gates.md) |
+| ADR-004 — Alembic sở hữu DDL (supersede ADR-003 D2) | CTO | Platform | API | — | **Done** 2026-09-04 — CTO ký; `apps/api-python` sở hữu DDL, hết `prisma migrate dev` |
+| Stabilization staging + canary + rollback drill (FastAPI) | Platform | Phase 5 | API | NFR-OBS-001 | **Todo** — nợ mục 7 §7 từ override 2026-09-04; FastAPI chưa nhận request thật nào. Cần runbook Platform+Ops duyệt |
+| T-NFR-P1 (NFR-PERF-001) + T-NFR-S1 phần HTTPS | QA | Phase 5 | API | NFR-PERF-001, NFR-SEC-001 | **Todo** — nợ mục 6 §7 từ override 2026-09-04: test mới hoặc exception ký như cổng nền tảng |
+| D10 race `end()` cộng phút hai lần | Platform | Platform | API | FR-PRG-001 | **Done** — `SELECT ... FOR UPDATE` trên session + progress; concurrency tests PASS trên PostgreSQL |
+
+**Feature freeze (ADR-003): hết hiệu lực 2026-09-04** — Nest đã retire, chỉ còn một writer là `apps/api-python`.
 
 Mobile player CI trong phiên (Expo, `expo-video`, helper `pickClipSource` + test) đã merge cùng #31 — không tách card vì phần Expo của FR-LRN-001; verify trên máy thật gộp vào #30. Lưu ý: `expo-video` là native module, cần dev build, không chạy trong Expo Go.
 

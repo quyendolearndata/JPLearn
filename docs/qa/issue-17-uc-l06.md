@@ -1,5 +1,8 @@
 # Bằng chứng issue #17 — UC-L06 đồng bộ thiết bị trên các bề mặt
 
+> Tài liệu lịch sử: lần kiểm chứng này từng dùng embedded PostgreSQL. Workflow
+> hiện tại chỉ dùng Docker PostgreSQL qua Compose `db-test`.
+
 - Ghế: **QA Engineering** · Ngày: 2026-08-25 · Issue: [#17](https://github.com/quyendolearndata/JPLearn/issues/17)
 - Use case: **UC-L06** (đồng bộ thiết bị) — `docs/sad/02-analysis/use-cases.md` dòng 45–47
 - Test ID (theo `docs/sad/03-design/traceability.md`): **T-ID-002** (cùng token schema 3 client, FR-ID-002), **T-PRG-004** (GET /progress, FR-PRG-004); liên quan **NFR-XPLAT-001 / T-NFR-X1** (3 client 1 API)

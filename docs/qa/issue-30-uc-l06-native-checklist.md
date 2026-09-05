@@ -30,21 +30,21 @@ Ghi chú: mật khẩu mặc định gõ sẵn trên form là placeholder dev �
 
 ## C. Chạy API local cho máy thật (bắt buộc đọc trước buổi verify)
 
-Máy thật **không dùng được `localhost`**. App lấy API base từ `EXPO_PUBLIC_API_URL` (`apps/mobile/src/api.ts`, default `http://localhost:3001` chỉ đúng cho simulator). Cần dùng **IP LAN** của Mac chạy API.
+Máy thật **không dùng được `localhost`**. App lấy API base từ `EXPO_PUBLIC_API_URL` (`apps/mobile/src/api.ts`, default `http://localhost:3002` chỉ đúng cho simulator). Cần dùng **IP LAN** của Mac chạy API hoặc URL HTTPS staging.
 
 1. Lấy IP LAN trên Mac: `ipconfig getifaddr en0` (ví dụ `192.168.1.10`). iPhone, iPad và Mac phải **cùng Wi-Fi**; tắt "Private Wi-Fi Address" nếu mạng lạ chặn client-to-client.
-2. Sửa `apps/api/.env`: `API_PUBLIC_URL=http://<IP-LAN>:3001`.
-   **Bắt buộc**: URL video (`playback_url`/`hls_url`) là URL tuyệt đối ký HMAC build từ biến này (`apps/api/src/media/signed-url.ts` → `publicApiBaseUrl()`). Để `localhost` thì catalog vẫn lên nhưng **video không chạy trên máy thật**.
-3. Chạy API: `pnpm dev:api` (NestJS `app.listen(PORT ?? 3001)` mặc định bind `0.0.0.0` → LAN truy cập được. App native dùng RN `fetch`, không gửi `Origin` → CORS whitelist trong `main.ts` không chặn máy thật; không cần sửa CORS).
+2. Sửa `apps/api-python/.env`: `API_PUBLIC_URL=http://<IP-LAN>:3002`.
+   **Bắt buộc**: URL video (`playback_url`/`hls_url`) là URL tuyệt đối ký HMAC build từ biến này (`apps/api-python/src/jplearn_api/signed_url.py`). Để `localhost` thì catalog vẫn lên nhưng **video không chạy trên máy thật**.
+3. Chạy API: `pnpm dev:api` (FastAPI uvicorn `--host 0.0.0.0 --port 3002` bind `0.0.0.0` → LAN truy cập được. App native dùng RN `fetch`, không gửi `Origin` → CORS không chặn máy thật).
 4. Chạy metro cho dev build:
 
 ```bash
-EXPO_PUBLIC_API_URL=http://<IP-LAN>:3001 pnpm dev:mobile
+EXPO_PUBLIC_API_URL=http://<IP-LAN>:3002 pnpm dev:mobile
 ```
 
 `EXPO_PUBLIC_*` được inline lúc bundle → **đổi IP phải restart metro**. Mở app trên máy → chọn đúng metro server cùng mạng (hoặc nhập URL thủ công `http://<IP-LAN>:8081`).
-5. Kiểm tra nhanh trước khi verify: Safari trên iPhone mở `http://<IP-LAN>:3001/health` → phải ra 200. Không ra → sai IP / khác mạng / firewall macOS chặn node (System Settings → Network → Firewall → cho phép node nhận kết nối đến).
-6. Dữ liệu: cần ít nhất 1 item **published có media** trong catalog (`pnpm db:seed` nếu DB trống). Khác mạng Wi-Fi thường xuyên → phương án dự phòng: tunnel API (vd `cloudflared`/`ngrok`) và đặt cả `API_PUBLIC_URL` lẫn `EXPO_PUBLIC_API_URL` bằng URL tunnel.
+5. Kiểm tra nhanh trước khi verify: Safari trên iPhone mở `http://<IP-LAN>:3002/health` → phải ra 200. Không ra → sai IP / khác mạng / firewall macOS chặn (System Settings → Network → Firewall → cho phép python nhận kết nối đến).
+6. Dữ liệu: cần ít nhất 1 item **published có media** trong catalog (`pnpm db:seed` nếu DB trống). Khác mạng Wi-Fi thường xuyên → phương án dự phòng: tunnel API (vd `cloudflared`/`ngrok`) hoặc HTTPS staging và đặt cả `API_PUBLIC_URL` lẫn `EXPO_PUBLIC_API_URL` bằng URL đó.
 
 ## D. Thu evidence trong buổi verify
 
@@ -121,7 +121,7 @@ npx expo run:ios --device                               # chọn iPhone/iPad c�
 
 ### F.4 Cấu hình API cho máy thật (đã làm sẵn hôm nay)
 
-- `apps/api/.env`: đã đổi `API_PUBLIC_URL=http://192.168.1.202:3001` (IP LAN đo ở F.1; file này bị gitignore, e2e tự set biến riêng nên không ảnh hưởng test).
-- Chạy metro: `EXPO_PUBLIC_API_URL=http://192.168.1.202:3001 pnpm dev:mobile`.
-- **Lưu ý**: IP LAN đổi khi Mac đổi Wi-Fi/DHCP → ngày verify phải đo lại `ipconfig getifaddr en0` và sửa cả 2 chỗ trên, rồi restart metro + API. Kiểm tra nhanh: Safari iPhone mở `http://192.168.1.202:3001/health` → 200.
-- Sau buổi verify, nếu quay lại dev simulator: đổi `API_PUBLIC_URL` về `http://localhost:3001`.
+- `apps/api-python/.env`: đã đổi `API_PUBLIC_URL=http://192.168.1.202:3002` (IP LAN đo ở F.1; file này bị gitignore, e2e tự set biến riêng nên không ảnh hưởng test; hoặc trỏ HTTPS staging).
+- Chạy metro: `EXPO_PUBLIC_API_URL=http://192.168.1.202:3002 pnpm dev:mobile`.
+- **Lưu ý**: IP LAN đổi khi Mac đổi Wi-Fi/DHCP → ngày verify phải đo lại `ipconfig getifaddr en0` và sửa cả 2 chỗ trên, rồi restart metro + API. Kiểm tra nhanh: Safari iPhone mở `http://192.168.1.202:3002/health` → 200.
+- Sau buổi verify, nếu quay lại dev simulator: đổi `API_PUBLIC_URL` về `http://localhost:3002`.

@@ -25,15 +25,15 @@ Admin:   UC-A01 Publish, UC-A02 Manage flags, UC-A03 Manage roles
 - **FR / NFR:** FR-ID-001, FR-ID-002, FR-ID-003
 - **Trigger:** Actor mở web hoặc Expo, cần vào shell học viên (`S-LOGIN`).
 - **Tiền điều kiện:** Client gọi cùng API identity (web / phone / iPad). Tài khoản đã có, hoặc Actor đăng ký mới trên cùng form (FR-ID-001).
-- **Hậu điều kiện (thành công):** Có `access_token` trên thiết bị hiện tại; Actor vào shell học viên; identity dùng được trên bề mặt khác (FR-ID-002). Đăng xuất chỉ huỷ phiên thiết bị hiện tại (FR-ID-003).
+- **Hậu điều kiện (thành công):** Có `access_token` trên thiết bị hiện tại; Actor vào shell học viên; identity dùng được trên bề mặt khác (FR-ID-002). Đăng xuất vô hiệu hoá mọi `access_token` của user trên mọi thiết bị (FR-ID-003, `tokenVersion`).
 - **Kịch bản chính:**
   1. Actor mở `S-LOGIN`.
   2. Actor nhập email + mật khẩu. Nếu chưa có tài khoản: Actor đăng ký → Hệ thống tạo user `role=learner`, trả session.
   3. Hệ thống tìm user, so khớp mật khẩu (không lưu plaintext).
   4. Hệ thống cấp `access_token` + user (kèm `roles`).
   5. Hệ thống đưa Actor vào shell học viên (không vào CMS).
-  6. Actor chọn đăng xuất trên thiết bị hiện tại.
-  7. Hệ thống huỷ phiên thiết bị đó; Actor về `S-LOGIN`.
+  6. Actor chọn đăng xuất (từ thiết bị đang dùng).
+  7. Hệ thống tăng `tokenVersion` — mọi token cũ của user (mọi thiết bị) 401; Actor về `S-LOGIN`.
 - **Kịch bản phụ (extend):**
   - 3a. Sai mật khẩu — Hệ thống trả 401, không vào shell. «extend» UC-L01.
   - 5a. Hết hạn token khi gọi API được bảo vệ — Hệ thống yêu cầu login lại. «extend» UC-L01.
