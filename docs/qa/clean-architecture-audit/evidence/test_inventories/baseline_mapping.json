@@ -1,0 +1,1694 @@
+{
+  "version": "1.0",
+  "baseline_sha": "2f5e200f92fcc8a2247802288f9648a9739020ff",
+  "candidate_sha": "b90ebe4",
+  "summary": {
+    "total_baseline_tests": 164,
+    "total_candidate_tests": 196,
+    "total_mapped_tests": 164,
+    "total_unmapped_tests": 0,
+    "total_added_candidate_tests": 32,
+    "status_breakdown": {
+      "unchanged": 113,
+      "adapted_helper": 9,
+      "adapted_import": 20,
+      "adapted_harness": 22
+    }
+  },
+  "mappings": [
+    {
+      "baseline_node_id": "tests/test_auth.py::test_duplicate_email_is_409",
+      "candidate_node_id": "tests/test_auth.py::test_duplicate_email_is_409",
+      "status": "unchanged",
+      "fr_id": "FR-ID-001..003",
+      "description": "User registration, argon2 password hashing, login, token revocation",
+      "assertion_diff_summary": "Verbatim unchanged: identical endpoints, payload schemas, and JWT/Argon2 assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_auth.py::test_login_issues_token_for_registered_user",
+      "candidate_node_id": "tests/test_auth.py::test_login_issues_token_for_registered_user",
+      "status": "unchanged",
+      "fr_id": "FR-ID-001..003",
+      "description": "User registration, argon2 password hashing, login, token revocation",
+      "assertion_diff_summary": "Verbatim unchanged: identical endpoints, payload schemas, and JWT/Argon2 assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_auth.py::test_logout_invalidates_every_token",
+      "candidate_node_id": "tests/test_auth.py::test_logout_invalidates_every_token",
+      "status": "unchanged",
+      "fr_id": "FR-ID-001..003",
+      "description": "User registration, argon2 password hashing, login, token revocation",
+      "assertion_diff_summary": "Verbatim unchanged: identical endpoints, payload schemas, and JWT/Argon2 assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_auth.py::test_me_without_bearer_is_401",
+      "candidate_node_id": "tests/test_auth.py::test_me_without_bearer_is_401",
+      "status": "unchanged",
+      "fr_id": "FR-ID-001..003",
+      "description": "User registration, argon2 password hashing, login, token revocation",
+      "assertion_diff_summary": "Verbatim unchanged: identical endpoints, payload schemas, and JWT/Argon2 assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_auth.py::test_no_auth_payload_leaks_credentials",
+      "candidate_node_id": "tests/test_auth.py::test_no_auth_payload_leaks_credentials",
+      "status": "unchanged",
+      "fr_id": "FR-ID-001..003",
+      "description": "User registration, argon2 password hashing, login, token revocation",
+      "assertion_diff_summary": "Verbatim unchanged: identical endpoints, payload schemas, and JWT/Argon2 assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_auth.py::test_register_login_me_hides_password_hash",
+      "candidate_node_id": "tests/test_auth.py::test_register_login_me_hides_password_hash",
+      "status": "unchanged",
+      "fr_id": "FR-ID-001..003",
+      "description": "User registration, argon2 password hashing, login, token revocation",
+      "assertion_diff_summary": "Verbatim unchanged: identical endpoints, payload schemas, and JWT/Argon2 assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_auth.py::test_short_password_is_400",
+      "candidate_node_id": "tests/test_auth.py::test_short_password_is_400",
+      "status": "unchanged",
+      "fr_id": "FR-ID-001..003",
+      "description": "User registration, argon2 password hashing, login, token revocation",
+      "assertion_diff_summary": "Verbatim unchanged: identical endpoints, payload schemas, and JWT/Argon2 assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_catalog.py::test_draft_hidden_until_qa_and_publish_without_l1_fields",
+      "candidate_node_id": "tests/test_catalog.py::test_draft_hidden_until_qa_and_publish_without_l1_fields",
+      "status": "unchanged",
+      "fr_id": "FR-CAT-001..005",
+      "description": "Catalog state machine draft->submit->publish, RBAC enforcement",
+      "assertion_diff_summary": "Verbatim unchanged: identical HTTP requests, role permissions, and catalog item assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_catalog.py::test_learner_cannot_create_catalog",
+      "candidate_node_id": "tests/test_catalog.py::test_learner_cannot_create_catalog",
+      "status": "unchanged",
+      "fr_id": "FR-CAT-001..005",
+      "description": "Catalog state machine draft->submit->publish, RBAC enforcement",
+      "assertion_diff_summary": "Verbatim unchanged: identical HTTP requests, role permissions, and catalog item assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_catalog.py::test_publish_from_draft_is_400",
+      "candidate_node_id": "tests/test_catalog.py::test_publish_from_draft_is_400",
+      "status": "unchanged",
+      "fr_id": "FR-CAT-001..005",
+      "description": "Catalog state machine draft->submit->publish, RBAC enforcement",
+      "assertion_diff_summary": "Verbatim unchanged: identical HTTP requests, role permissions, and catalog item assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_catalog.py::test_publish_without_media_then_after_media",
+      "candidate_node_id": "tests/test_catalog.py::test_publish_without_media_then_after_media",
+      "status": "unchanged",
+      "fr_id": "FR-CAT-001..005",
+      "description": "Catalog state machine draft->submit->publish, RBAC enforcement",
+      "assertion_diff_summary": "Verbatim unchanged: identical HTTP requests, role permissions, and catalog item assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_catalog.py::test_teacher_cannot_publish",
+      "candidate_node_id": "tests/test_catalog.py::test_teacher_cannot_publish",
+      "status": "unchanged",
+      "fr_id": "FR-CAT-001..005",
+      "description": "Catalog state machine draft->submit->publish, RBAC enforcement",
+      "assertion_diff_summary": "Verbatim unchanged: identical HTTP requests, role permissions, and catalog item assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_catalog.py::test_unpublish_hides_from_learners",
+      "candidate_node_id": "tests/test_catalog.py::test_unpublish_hides_from_learners",
+      "status": "unchanged",
+      "fr_id": "FR-CAT-001..005",
+      "description": "Catalog state machine draft->submit->publish, RBAC enforcement",
+      "assertion_diff_summary": "Verbatim unchanged: identical HTTP requests, role permissions, and catalog item assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_contract.py::test_empty_body_is_400_in_nest_shape",
+      "candidate_node_id": "tests/test_contract.py::test_empty_body_is_400_in_nest_shape",
+      "status": "unchanged",
+      "fr_id": "FR-CON-001",
+      "description": "OpenAPI contract structure, OpenAPI schema endpoints parity",
+      "assertion_diff_summary": "Verbatim unchanged: identical endpoint list and schema structure validations",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_contract.py::test_every_documented_operation_is_routed",
+      "candidate_node_id": "tests/test_contract.py::test_every_documented_operation_is_routed",
+      "status": "unchanged",
+      "fr_id": "FR-CON-001",
+      "description": "OpenAPI contract structure, OpenAPI schema endpoints parity",
+      "assertion_diff_summary": "Verbatim unchanged: identical endpoint list and schema structure validations",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_e2e_runner_isolation.py::test_supervisor_child_failure_releases_lock",
+      "candidate_node_id": "tests/test_e2e_runner_isolation.py::test_supervisor_child_failure_releases_lock",
+      "status": "unchanged",
+      "fr_id": "OPS-RUN-001",
+      "description": "E2E runner process isolation, port selection, subprocess cleanup",
+      "assertion_diff_summary": "Verbatim unchanged: runner execution and port binding checks",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_e2e_runner_isolation.py::test_supervisor_escalates_to_sigkill_on_unresponsive_child",
+      "candidate_node_id": "tests/test_e2e_runner_isolation.py::test_supervisor_escalates_to_sigkill_on_unresponsive_child",
+      "status": "unchanged",
+      "fr_id": "OPS-RUN-001",
+      "description": "E2E runner process isolation, port selection, subprocess cleanup",
+      "assertion_diff_summary": "Verbatim unchanged: runner execution and port binding checks",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_e2e_runner_isolation.py::test_supervisor_kills_grandchild_before_releasing_lock",
+      "candidate_node_id": "tests/test_e2e_runner_isolation.py::test_supervisor_kills_grandchild_before_releasing_lock",
+      "status": "unchanged",
+      "fr_id": "OPS-RUN-001",
+      "description": "E2E runner process isolation, port selection, subprocess cleanup",
+      "assertion_diff_summary": "Verbatim unchanged: runner execution and port binding checks",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_e2e_runner_isolation.py::test_supervisor_lock_serialization_with_stdin_devnull",
+      "candidate_node_id": "tests/test_e2e_runner_isolation.py::test_supervisor_lock_serialization_with_stdin_devnull",
+      "status": "unchanged",
+      "fr_id": "OPS-RUN-001",
+      "description": "E2E runner process isolation, port selection, subprocess cleanup",
+      "assertion_diff_summary": "Verbatim unchanged: runner execution and port binding checks",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_e2e_runner_isolation.py::test_supervisor_term_handling_cleans_up_and_releases_lock",
+      "candidate_node_id": "tests/test_e2e_runner_isolation.py::test_supervisor_term_handling_cleans_up_and_releases_lock",
+      "status": "unchanged",
+      "fr_id": "OPS-RUN-001",
+      "description": "E2E runner process isolation, port selection, subprocess cleanup",
+      "assertion_diff_summary": "Verbatim unchanged: runner execution and port binding checks",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_e2e_runner_isolation.py::test_user_config_files_preserved_in_isolated_fixture_repo",
+      "candidate_node_id": "tests/test_e2e_runner_isolation.py::test_user_config_files_preserved_in_isolated_fixture_repo",
+      "status": "unchanged",
+      "fr_id": "OPS-RUN-001",
+      "description": "E2E runner process isolation, port selection, subprocess cleanup",
+      "assertion_diff_summary": "Verbatim unchanged: runner execution and port binding checks",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_env_resolver.py::test_destructive_downgrade_blocked_when_environment_completely_unconfigured",
+      "candidate_node_id": "tests/test_env_resolver.py::test_destructive_downgrade_blocked_when_environment_completely_unconfigured",
+      "status": "unchanged",
+      "fr_id": "SEC-CFG-001",
+      "description": "Strict env variable resolution, fallback suppression, secret strength",
+      "assertion_diff_summary": "Verbatim unchanged: parser validation and security boundaries",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_env_resolver.py::test_is_destructive_downgrade_allowed",
+      "candidate_node_id": "tests/test_env_resolver.py::test_is_destructive_downgrade_allowed",
+      "status": "unchanged",
+      "fr_id": "SEC-CFG-001",
+      "description": "Strict env variable resolution, fallback suppression, secret strength",
+      "assertion_diff_summary": "Verbatim unchanged: parser validation and security boundaries",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_env_resolver.py::test_migrate_downgrade_cli_destructive_safety",
+      "candidate_node_id": "tests/test_env_resolver.py::test_migrate_downgrade_cli_destructive_safety",
+      "status": "unchanged",
+      "fr_id": "SEC-CFG-001",
+      "description": "Strict env variable resolution, fallback suppression, secret strength",
+      "assertion_diff_summary": "Verbatim unchanged: parser validation and security boundaries",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_env_resolver.py::test_resolve_database_url_precedence",
+      "candidate_node_id": "tests/test_env_resolver.py::test_resolve_database_url_precedence",
+      "status": "unchanged",
+      "fr_id": "SEC-CFG-001",
+      "description": "Strict env variable resolution, fallback suppression, secret strength",
+      "assertion_diff_summary": "Verbatim unchanged: parser validation and security boundaries",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_env_resolver.py::test_resolve_environment_precedence",
+      "candidate_node_id": "tests/test_env_resolver.py::test_resolve_environment_precedence",
+      "status": "unchanged",
+      "fr_id": "SEC-CFG-001",
+      "description": "Strict env variable resolution, fallback suppression, secret strength",
+      "assertion_diff_summary": "Verbatim unchanged: parser validation and security boundaries",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_env_resolver.py::test_resolve_environment_rejects_unknown",
+      "candidate_node_id": "tests/test_env_resolver.py::test_resolve_environment_rejects_unknown",
+      "status": "unchanged",
+      "fr_id": "SEC-CFG-001",
+      "description": "Strict env variable resolution, fallback suppression, secret strength",
+      "assertion_diff_summary": "Verbatim unchanged: parser validation and security boundaries",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_errors.py::test_method_not_allowed_is_not_422",
+      "candidate_node_id": "tests/test_errors.py::test_method_not_allowed_is_not_422",
+      "status": "unchanged",
+      "fr_id": "FR-ERR-001",
+      "description": "RFC 7807 problem details error mapping and 500 error sanitization",
+      "assertion_diff_summary": "Verbatim unchanged: JSON problem details format and status codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_errors.py::test_unknown_route_uses_nest_error_shape",
+      "candidate_node_id": "tests/test_errors.py::test_unknown_route_uses_nest_error_shape",
+      "status": "unchanged",
+      "fr_id": "FR-ERR-001",
+      "description": "RFC 7807 problem details error mapping and 500 error sanitization",
+      "assertion_diff_summary": "Verbatim unchanged: JSON problem details format and status codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_flags.py::test_admin_patch_flags_updates_all_keys",
+      "candidate_node_id": "tests/test_flags.py::test_admin_patch_flags_updates_all_keys",
+      "status": "unchanged",
+      "fr_id": "FR-FLG-001..003",
+      "description": "Feature flag reading, defaults seeding, admin update restrictions",
+      "assertion_diff_summary": "Verbatim unchanged: flag query, admin mutation, and learner read-only checks",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_flags.py::test_get_flags_defaults_false",
+      "candidate_node_id": "tests/test_flags.py::test_get_flags_defaults_false",
+      "status": "unchanged",
+      "fr_id": "FR-FLG-001..003",
+      "description": "Feature flag reading, defaults seeding, admin update restrictions",
+      "assertion_diff_summary": "Verbatim unchanged: flag query, admin mutation, and learner read-only checks",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_flags.py::test_learner_cannot_patch_staff_flags",
+      "candidate_node_id": "tests/test_flags.py::test_learner_cannot_patch_staff_flags",
+      "status": "unchanged",
+      "fr_id": "FR-FLG-001..003",
+      "description": "Feature flag reading, defaults seeding, admin update restrictions",
+      "assertion_diff_summary": "Verbatim unchanged: flag query, admin mutation, and learner read-only checks",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_health.py::test_docs_off_by_default",
+      "candidate_node_id": "tests/test_health.py::test_docs_off_by_default",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-001",
+      "description": "Liveness and readiness probes under healthy and degraded storage/DB",
+      "assertion_diff_summary": "Verbatim unchanged: probe HTTP codes and dependency status payloads",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_health.py::test_health_ok",
+      "candidate_node_id": "tests/test_health.py::test_health_ok",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-001",
+      "description": "Liveness and readiness probes under healthy and degraded storage/DB",
+      "assertion_diff_summary": "Verbatim unchanged: probe HTTP codes and dependency status payloads",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_health.py::test_ready_db_down",
+      "candidate_node_id": "tests/test_health.py::test_ready_db_down",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-001",
+      "description": "Liveness and readiness probes under healthy and degraded storage/DB",
+      "assertion_diff_summary": "Verbatim unchanged: probe HTTP codes and dependency status payloads",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_health.py::test_ready_ok",
+      "candidate_node_id": "tests/test_health.py::test_ready_ok",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-001",
+      "description": "Liveness and readiness probes under healthy and degraded storage/DB",
+      "assertion_diff_summary": "Verbatim unchanged: probe HTTP codes and dependency status payloads",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_health.py::test_ready_storage_down",
+      "candidate_node_id": "tests/test_health.py::test_ready_storage_down",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-001",
+      "description": "Liveness and readiness probes under healthy and degraded storage/DB",
+      "assertion_diff_summary": "Verbatim unchanged: probe HTTP codes and dependency status payloads",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_hls.py::test_learner_cannot_register_hls",
+      "candidate_node_id": "tests/test_hls.py::test_learner_cannot_register_hls",
+      "status": "unchanged",
+      "fr_id": "FR-CMS-001",
+      "description": "HLS manifest generation, playlist streaming, byte-range segment access",
+      "assertion_diff_summary": "Verbatim unchanged: HTTP range requests, MIME types, and segment responses",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_hls.py::test_register_requires_manifest_on_disk",
+      "candidate_node_id": "tests/test_hls.py::test_register_requires_manifest_on_disk",
+      "status": "unchanged",
+      "fr_id": "FR-CMS-001",
+      "description": "HLS manifest generation, playlist streaming, byte-range segment access",
+      "assertion_diff_summary": "Verbatim unchanged: HTTP range requests, MIME types, and segment responses",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_hls.py::test_register_serves_manifest_and_segments",
+      "candidate_node_id": "tests/test_hls.py::test_register_serves_manifest_and_segments",
+      "status": "unchanged",
+      "fr_id": "FR-CMS-001",
+      "description": "HLS manifest generation, playlist streaming, byte-range segment access",
+      "assertion_diff_summary": "Verbatim unchanged: HTTP range requests, MIME types, and segment responses",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_hls.py::test_rejects_traversal_and_unsupported_types",
+      "candidate_node_id": "tests/test_hls.py::test_rejects_traversal_and_unsupported_types",
+      "status": "unchanged",
+      "fr_id": "FR-CMS-001",
+      "description": "HLS manifest generation, playlist streaming, byte-range segment access",
+      "assertion_diff_summary": "Verbatim unchanged: HTTP range requests, MIME types, and segment responses",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_hls.py::test_requires_auth_and_404_missing",
+      "candidate_node_id": "tests/test_hls.py::test_requires_auth_and_404_missing",
+      "status": "unchanged",
+      "fr_id": "FR-CMS-001",
+      "description": "HLS manifest generation, playlist streaming, byte-range segment access",
+      "assertion_diff_summary": "Verbatim unchanged: HTTP range requests, MIME types, and segment responses",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_hls.py::test_signed_manifest_rewrites_segment_uris",
+      "candidate_node_id": "tests/test_hls.py::test_signed_manifest_rewrites_segment_uris",
+      "status": "unchanged",
+      "fr_id": "FR-CMS-001",
+      "description": "HLS manifest generation, playlist streaming, byte-range segment access",
+      "assertion_diff_summary": "Verbatim unchanged: HTTP range requests, MIME types, and segment responses",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_hls_segment_http_byte_range",
+      "candidate_node_id": "tests/test_media.py::test_hls_segment_http_byte_range",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_learner_cannot_upload_and_empty_file_400",
+      "candidate_node_id": "tests/test_media.py::test_learner_cannot_upload_and_empty_file_400",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_media_requires_auth",
+      "candidate_node_id": "tests/test_media.py::test_media_requires_auth",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_media_storage_failure_creates_no_db_row",
+      "candidate_node_id": "tests/test_media.py::test_media_storage_failure_creates_no_db_row",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_media_stream_http_byte_ranges",
+      "candidate_node_id": "tests/test_media.py::test_media_stream_http_byte_ranges",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_media_upload_db_failure_cleans_up_storage",
+      "candidate_node_id": "tests/test_media.py::test_media_upload_db_failure_cleans_up_storage",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_orphan_reconciliation",
+      "candidate_node_id": "tests/test_media.py::test_orphan_reconciliation",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_parse_byte_range_matrix",
+      "candidate_node_id": "tests/test_media.py::test_parse_byte_range_matrix",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_publish_rejected_if_media_missing_from_storage",
+      "candidate_node_id": "tests/test_media.py::test_publish_rejected_if_media_missing_from_storage",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_stage_stream_cancellation_cleans_up_part_file",
+      "candidate_node_id": "tests/test_media.py::test_stage_stream_cancellation_cleans_up_part_file",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_storage_adapters_open_read_range",
+      "candidate_node_id": "tests/test_media.py::test_storage_adapters_open_read_range",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_storage_port_unit",
+      "candidate_node_id": "tests/test_media.py::test_storage_port_unit",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_upload_and_playback_dual_mode",
+      "candidate_node_id": "tests/test_media.py::test_upload_and_playback_dual_mode",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_upload_cancellation_before_commit_rolls_back_and_compensates",
+      "candidate_node_id": "tests/test_media.py::test_upload_cancellation_before_commit_rolls_back_and_compensates",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_upload_cancellation_during_commit_preserves_object_if_committed",
+      "candidate_node_id": "tests/test_media.py::test_upload_cancellation_during_commit_preserves_object_if_committed",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_upload_db_error_at_commit_compensates",
+      "candidate_node_id": "tests/test_media.py::test_upload_db_error_at_commit_compensates",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_upload_does_not_rollback_while_cancelled_commit_is_still_running",
+      "candidate_node_id": "tests/test_media.py::test_upload_does_not_rollback_while_cancelled_commit_is_still_running",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_upload_outcome_1_pre_commit_cancellation_compensates",
+      "candidate_node_id": "tests/test_media.py::test_upload_outcome_1_pre_commit_cancellation_compensates",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_upload_outcome_2_commit_in_flight_cancelled_preserves_object_and_logs",
+      "candidate_node_id": "tests/test_media.py::test_upload_outcome_2_commit_in_flight_cancelled_preserves_object_and_logs",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_upload_outcome_3_server_commit_response_lost_preserves_object",
+      "candidate_node_id": "tests/test_media.py::test_upload_outcome_3_server_commit_response_lost_preserves_object",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_upload_outcome_4_rollback_failure_preserves_object_and_logs",
+      "candidate_node_id": "tests/test_media.py::test_upload_outcome_4_rollback_failure_preserves_object_and_logs",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_media.py::test_upload_outcome_5_post_commit_cancellation_preserves_object",
+      "candidate_node_id": "tests/test_media.py::test_upload_outcome_5_post_commit_cancellation_preserves_object",
+      "status": "adapted_harness",
+      "fr_id": "FR-MED-001 / INV-UOW-001",
+      "description": "Media upload, storage staging, dual-mode playback, and compensation",
+      "assertion_diff_summary": "Harness enhanced with UploadTransactionCoordinator and connection barriers; all 22 baseline assertions preserved verbatim",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_allowed_with_explicit_override",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_allowed_with_explicit_override",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[-False]",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[-False]",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[development-False]",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[development-False]",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[local-True]",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[local-True]",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[production-False]",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[production-False]",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[staging-False]",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[staging-False]",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[test-True]",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[test-True]",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[unknown_env-False]",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_environment_guards[unknown_env-False]",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_unconfigured_env_preserves_data",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_destructive_downgrade_unconfigured_env_preserves_data",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_load_baseline_schema_env_var_missing_file",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_load_baseline_schema_env_var_missing_file",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_load_baseline_schema_malformed_json",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_load_baseline_schema_malformed_json",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_load_baseline_schema_missing_explicit_path",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_load_baseline_schema_missing_explicit_path",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_load_baseline_schema_packaged_resource",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_load_baseline_schema_packaged_resource",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_migrate_cli_help_and_unknown_exit_codes",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_migrate_cli_help_and_unknown_exit_codes",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_stamp_empty_database_fails_closed",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_stamp_empty_database_fails_closed",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_migrate_fail_closed.py::test_stamp_fails_on_schema_divergence_and_preserves_clean_state",
+      "candidate_node_id": "tests/test_migrate_fail_closed.py::test_stamp_fails_on_schema_divergence_and_preserves_clean_state",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-001",
+      "description": "Fail-closed Alembic migrations, destructive downgrade protection",
+      "assertion_diff_summary": "Verbatim unchanged: migration subprocess CLI, environment guards, and exit codes",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_neg.py::test_textbook_routes_are_404",
+      "candidate_node_id": "tests/test_neg.py::test_textbook_routes_are_404",
+      "status": "unchanged",
+      "fr_id": "SEC-NEG-001",
+      "description": "Negative route scanner asserting 404 on deprecated textbook endpoints",
+      "assertion_diff_summary": "Verbatim unchanged: route reflection asserting 404 on textbook paths",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_4xx_does_not_alert",
+      "candidate_node_id": "tests/test_obs.py::test_4xx_does_not_alert",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_5xx_posts_alert_payload",
+      "candidate_node_id": "tests/test_obs.py::test_5xx_posts_alert_payload",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_alert_queue_overflow_drops_safely",
+      "candidate_node_id": "tests/test_obs.py::test_alert_queue_overflow_drops_safely",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_health_is_200_and_echoes_request_id",
+      "candidate_node_id": "tests/test_obs.py::test_health_is_200_and_echoes_request_id",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_local_test_cors_expo_and_dynamic_ports",
+      "candidate_node_id": "tests/test_obs.py::test_local_test_cors_expo_and_dynamic_ports",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_no_webhook_configured_means_no_alert",
+      "candidate_node_id": "tests/test_obs.py::test_no_webhook_configured_means_no_alert",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_production_cors_fail_closed_middleware",
+      "candidate_node_id": "tests/test_obs.py::test_production_cors_fail_closed_middleware",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_request_id_is_generated_when_absent",
+      "candidate_node_id": "tests/test_obs.py::test_request_id_is_generated_when_absent",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_sensitive_credentials_redacted_in_5xx_and_webhook",
+      "candidate_node_id": "tests/test_obs.py::test_sensitive_credentials_redacted_in_5xx_and_webhook",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_settings_validation",
+      "candidate_node_id": "tests/test_obs.py::test_settings_validation",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_obs.py::test_slow_webhook_does_not_block_client_response",
+      "candidate_node_id": "tests/test_obs.py::test_slow_webhook_does_not_block_client_response",
+      "status": "unchanged",
+      "fr_id": "OPS-OBS-002",
+      "description": "Observability: request ID tracing, 5xx alerting, credential redaction, CORS",
+      "assertion_diff_summary": "Verbatim unchanged: header inspection, webhook payload capture, and redaction assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_diff.py::test_docs_and_openapi_json_stay_off",
+      "candidate_node_id": "tests/test_openapi_diff.py::test_docs_and_openapi_json_stay_off",
+      "status": "unchanged",
+      "fr_id": "FR-CON-002",
+      "description": "Zero OpenAPI semantic drift against handwritten specification",
+      "assertion_diff_summary": "Verbatim unchanged: structural AST comparison of OpenAPI specs",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_diff.py::test_generated_openapi_matches_handwritten_on_implemented_ops",
+      "candidate_node_id": "tests/test_openapi_diff.py::test_generated_openapi_matches_handwritten_on_implemented_ops",
+      "status": "unchanged",
+      "fr_id": "FR-CON-002",
+      "description": "Zero OpenAPI semantic drift against handwritten specification",
+      "assertion_diff_summary": "Verbatim unchanged: structural AST comparison of OpenAPI specs",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_diff.py::test_main_cli_returns_non_zero_on_mismatch",
+      "candidate_node_id": "tests/test_openapi_diff.py::test_main_cli_returns_non_zero_on_mismatch",
+      "status": "unchanged",
+      "fr_id": "FR-CON-002",
+      "description": "Zero OpenAPI semantic drift against handwritten specification",
+      "assertion_diff_summary": "Verbatim unchanged: structural AST comparison of OpenAPI specs",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_diff.py::test_negative_changing_parameter_type_fails_diff",
+      "candidate_node_id": "tests/test_openapi_diff.py::test_negative_changing_parameter_type_fails_diff",
+      "status": "unchanged",
+      "fr_id": "FR-CON-002",
+      "description": "Zero OpenAPI semantic drift against handwritten specification",
+      "assertion_diff_summary": "Verbatim unchanged: structural AST comparison of OpenAPI specs",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_diff.py::test_negative_extra_endpoint_fails_diff",
+      "candidate_node_id": "tests/test_openapi_diff.py::test_negative_extra_endpoint_fails_diff",
+      "status": "unchanged",
+      "fr_id": "FR-CON-002",
+      "description": "Zero OpenAPI semantic drift against handwritten specification",
+      "assertion_diff_summary": "Verbatim unchanged: structural AST comparison of OpenAPI specs",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_diff.py::test_negative_removing_endpoint_fails_diff",
+      "candidate_node_id": "tests/test_openapi_diff.py::test_negative_removing_endpoint_fails_diff",
+      "status": "unchanged",
+      "fr_id": "FR-CON-002",
+      "description": "Zero OpenAPI semantic drift against handwritten specification",
+      "assertion_diff_summary": "Verbatim unchanged: structural AST comparison of OpenAPI specs",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_diff.py::test_negative_removing_required_field_fails_diff",
+      "candidate_node_id": "tests/test_openapi_diff.py::test_negative_removing_required_field_fails_diff",
+      "status": "unchanged",
+      "fr_id": "FR-CON-002",
+      "description": "Zero OpenAPI semantic drift against handwritten specification",
+      "assertion_diff_summary": "Verbatim unchanged: structural AST comparison of OpenAPI specs",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_baseline_cli_exits_zero",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_baseline_cli_exits_zero",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_10_extra_required_query_parameter",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_10_extra_required_query_parameter",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_11_missing_type_in_schema",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_11_missing_type_in_schema",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_12_undefined_ref_fails",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_12_undefined_ref_fails",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_13_password_min_length_100_fails",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_13_password_min_length_100_fails",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_14_password_min_length_1_fails",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_14_password_min_length_1_fails",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_15_password_min_length_dropped_fails",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_15_password_min_length_dropped_fails",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_16_max_length_variations_fail",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_16_max_length_variations_fail",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_17_unexpected_min_length_added_fails",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_17_unexpected_min_length_added_fails",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_18_enum_type_bool_vs_int_fails",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_18_enum_type_bool_vs_int_fails",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_1_ci_level_integer_to_string",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_1_ci_level_integer_to_string",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_2_drop_minimum_or_maximum",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_2_drop_minimum_or_maximum",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_3_add_nullable",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_3_add_nullable",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_4_drop_required_field",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_4_drop_required_field",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_5_expand_device_class_enum_and_case",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_5_expand_device_class_enum_and_case",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_6_change_400_body_to_detail",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_6_change_400_body_to_detail",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_7_drop_security_alternative_on_media",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_7_drop_security_alternative_on_media",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_8_add_forbidden_response_field",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_8_add_forbidden_response_field",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_9_delete_ready_operation",
+      "candidate_node_id": "tests/test_openapi_mutation_suite.py::test_mutation_9_delete_ready_operation",
+      "status": "unchanged",
+      "fr_id": "FR-CON-003",
+      "description": "18 negative OpenAPI schema mutations detecting drift and field drops",
+      "assertion_diff_summary": "Verbatim unchanged: schema mutant generation and error detection assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_schema_ddl.py::test_alembic_schema_matches_prisma_baseline",
+      "candidate_node_id": "tests/test_schema_ddl.py::test_alembic_schema_matches_prisma_baseline",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-002",
+      "description": "PostgreSQL schema DDL equality against baseline Prisma reference",
+      "assertion_diff_summary": "Verbatim unchanged: table definitions, column types, and foreign keys",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_schema_ddl.py::test_destructive_downgrade_blocked_in_staging_and_production",
+      "candidate_node_id": "tests/test_schema_ddl.py::test_destructive_downgrade_blocked_in_staging_and_production",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-002",
+      "description": "PostgreSQL schema DDL equality against baseline Prisma reference",
+      "assertion_diff_summary": "Verbatim unchanged: table definitions, column types, and foreign keys",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_schema_ddl.py::test_downgrade_then_upgrade_returns_to_baseline",
+      "candidate_node_id": "tests/test_schema_ddl.py::test_downgrade_then_upgrade_returns_to_baseline",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-002",
+      "description": "PostgreSQL schema DDL equality against baseline Prisma reference",
+      "assertion_diff_summary": "Verbatim unchanged: table definitions, column types, and foreign keys",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_schema_ddl.py::test_fr_neg_scanner_flags_a_python_file",
+      "candidate_node_id": "tests/test_schema_ddl.py::test_fr_neg_scanner_flags_a_python_file",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-002",
+      "description": "PostgreSQL schema DDL equality against baseline Prisma reference",
+      "assertion_diff_summary": "Verbatim unchanged: table definitions, column types, and foreign keys",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_schema_ddl.py::test_live_schema_has_no_textbook_columns",
+      "candidate_node_id": "tests/test_schema_ddl.py::test_live_schema_has_no_textbook_columns",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-002",
+      "description": "PostgreSQL schema DDL equality against baseline Prisma reference",
+      "assertion_diff_summary": "Verbatim unchanged: table definitions, column types, and foreign keys",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_schema_ddl.py::test_seed_is_idempotent_and_keeps_seed_items_draft",
+      "candidate_node_id": "tests/test_schema_ddl.py::test_seed_is_idempotent_and_keeps_seed_items_draft",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-002",
+      "description": "PostgreSQL schema DDL equality against baseline Prisma reference",
+      "assertion_diff_summary": "Verbatim unchanged: table definitions, column types, and foreign keys",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_schema_ddl.py::test_stamp_adopts_a_database_built_before_alembic",
+      "candidate_node_id": "tests/test_schema_ddl.py::test_stamp_adopts_a_database_built_before_alembic",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-002",
+      "description": "PostgreSQL schema DDL equality against baseline Prisma reference",
+      "assertion_diff_summary": "Verbatim unchanged: table definitions, column types, and foreign keys",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_schema_ddl.py::test_stamp_fails_when_live_schema_diverges",
+      "candidate_node_id": "tests/test_schema_ddl.py::test_stamp_fails_when_live_schema_diverges",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-002",
+      "description": "PostgreSQL schema DDL equality against baseline Prisma reference",
+      "assertion_diff_summary": "Verbatim unchanged: table definitions, column types, and foreign keys",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_seed.py::test_admin_bootstrap_create_only_does_not_reset_password",
+      "candidate_node_id": "tests/test_seed.py::test_admin_bootstrap_create_only_does_not_reset_password",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-003",
+      "description": "Database seed idempotency, bootstrap admin user creation",
+      "assertion_diff_summary": "Verbatim unchanged: record existence, count, and password non-overwrite assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_seed.py::test_production_bootstrap_fails_with_weak_password",
+      "candidate_node_id": "tests/test_seed.py::test_production_bootstrap_fails_with_weak_password",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-003",
+      "description": "Database seed idempotency, bootstrap admin user creation",
+      "assertion_diff_summary": "Verbatim unchanged: record existence, count, and password non-overwrite assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_seed.py::test_production_bootstrap_fails_without_opt_in",
+      "candidate_node_id": "tests/test_seed.py::test_production_bootstrap_fails_without_opt_in",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-003",
+      "description": "Database seed idempotency, bootstrap admin user creation",
+      "assertion_diff_summary": "Verbatim unchanged: record existence, count, and password non-overwrite assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_seed.py::test_seed_reference_data_is_idempotent",
+      "candidate_node_id": "tests/test_seed.py::test_seed_reference_data_is_idempotent",
+      "status": "unchanged",
+      "fr_id": "OPS-DB-003",
+      "description": "Database seed idempotency, bootstrap admin user creation",
+      "assertion_diff_summary": "Verbatim unchanged: record existence, count, and password non-overwrite assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sessions.py::test_concurrent_end_different_sessions_no_lost_update",
+      "candidate_node_id": "tests/test_sessions.py::test_concurrent_end_different_sessions_no_lost_update",
+      "status": "adapted_helper",
+      "fr_id": "FR-LRN-001",
+      "description": "Learning session lifecycle, pessimistic locking, atomic events",
+      "assertion_diff_summary": "Calls _end_session instead of old service; asserts both succeed without lost updates",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sessions.py::test_concurrent_end_same_session_exactly_once",
+      "candidate_node_id": "tests/test_sessions.py::test_concurrent_end_same_session_exactly_once",
+      "status": "adapted_helper",
+      "fr_id": "FR-LRN-001",
+      "description": "Learning session lifecycle, pessimistic locking, atomic events",
+      "assertion_diff_summary": "Calls _end_session (SqlAlchemyUnitOfWork + handle_end_session) instead of old service; asserts exactly 1 winner, 1 SessionAlreadyEnded, zero lost updates",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sessions.py::test_end_forbidden_other_user_and_double_end",
+      "candidate_node_id": "tests/test_sessions.py::test_end_forbidden_other_user_and_double_end",
+      "status": "adapted_helper",
+      "fr_id": "FR-LRN-001",
+      "description": "Learning session lifecycle, pessimistic locking, atomic events",
+      "assertion_diff_summary": "_end_session helper routes through handle_end_session and SqlAlchemyUnitOfWork; domain import updated; all assertions on progress, events, and locking identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sessions.py::test_end_session_failure_rolls_back_atomically",
+      "candidate_node_id": "tests/test_sessions.py::test_end_session_failure_rolls_back_atomically",
+      "status": "adapted_helper",
+      "fr_id": "FR-LRN-001",
+      "description": "Learning session lifecycle, pessimistic locking, atomic events",
+      "assertion_diff_summary": "Calls _end_session with induced failure; asserts complete atomic rollback of both session status and progress event",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sessions.py::test_invalid_device_class_is_400",
+      "candidate_node_id": "tests/test_sessions.py::test_invalid_device_class_is_400",
+      "status": "adapted_helper",
+      "fr_id": "FR-LRN-001",
+      "description": "Learning session lifecycle, pessimistic locking, atomic events",
+      "assertion_diff_summary": "_end_session helper routes through handle_end_session and SqlAlchemyUnitOfWork; domain import updated; all assertions on progress, events, and locking identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sessions.py::test_progress_keys_exactly_two",
+      "candidate_node_id": "tests/test_sessions.py::test_progress_keys_exactly_two",
+      "status": "adapted_helper",
+      "fr_id": "FR-LRN-001",
+      "description": "Learning session lifecycle, pessimistic locking, atomic events",
+      "assertion_diff_summary": "_end_session helper routes through handle_end_session and SqlAlchemyUnitOfWork; domain import updated; all assertions on progress, events, and locking identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sessions.py::test_progress_requires_auth",
+      "candidate_node_id": "tests/test_sessions.py::test_progress_requires_auth",
+      "status": "adapted_helper",
+      "fr_id": "FR-LRN-001",
+      "description": "Learning session lifecycle, pessimistic locking, atomic events",
+      "assertion_diff_summary": "_end_session helper routes through handle_end_session and SqlAlchemyUnitOfWork; domain import updated; all assertions on progress, events, and locking identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sessions.py::test_pure_minutes_from_duration",
+      "candidate_node_id": "tests/test_sessions.py::test_pure_minutes_from_duration",
+      "status": "adapted_import",
+      "fr_id": "FR-LRN-001",
+      "description": "Learning session lifecycle, pessimistic locking, atomic events",
+      "assertion_diff_summary": "Import updated to jplearn_api.domain.learning.minutes_from_duration; mathematical domain assertions verbatim identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sessions.py::test_start_end_records_events_and_progress",
+      "candidate_node_id": "tests/test_sessions.py::test_start_end_records_events_and_progress",
+      "status": "adapted_helper",
+      "fr_id": "FR-LRN-001",
+      "description": "Learning session lifecycle, pessimistic locking, atomic events",
+      "assertion_diff_summary": "_end_session helper routes through handle_end_session and SqlAlchemyUnitOfWork; domain import updated; all assertions on progress, events, and locking identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sessions.py::test_zombie_session_counts_zero_minutes",
+      "candidate_node_id": "tests/test_sessions.py::test_zombie_session_counts_zero_minutes",
+      "status": "adapted_helper",
+      "fr_id": "FR-LRN-001",
+      "description": "Learning session lifecycle, pessimistic locking, atomic events",
+      "assertion_diff_summary": "_end_session helper routes through handle_end_session and SqlAlchemyUnitOfWork; domain import updated; all assertions on progress, events, and locking identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_media_upload_extension_and_mime_validation",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_media_upload_extension_and_mime_validation",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_media_upload_magic_bytes_inspection",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_media_upload_magic_bytes_inspection",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_readiness_bounded_workers_under_timeout_cancel",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_readiness_bounded_workers_under_timeout_cancel",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_readiness_probe_active_checks",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_readiness_probe_active_checks",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_readiness_probe_db_timeout_liveness_intact",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_readiness_probe_db_timeout_liveness_intact",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_readiness_probe_storage_timeout_db_intact",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_readiness_probe_storage_timeout_db_intact",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_readiness_probe_unlink_permission_error_fails",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_readiness_probe_unlink_permission_error_fails",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_reconciliation_24h_grace_retention",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_reconciliation_24h_grace_retention",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_reconciliation_cli_args_parsing",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_reconciliation_cli_args_parsing",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_reconciliation_metadata_protection_and_race_prevention",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_reconciliation_metadata_protection_and_race_prevention",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_reconciliation_retention_policy_validation",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_reconciliation_retention_policy_validation",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_stage_stream_cancellation_during_in_flight_write",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_stage_stream_cancellation_during_in_flight_write",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_stage_stream_cancellation_during_late_open",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_stage_stream_cancellation_during_late_open",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_stage_stream_cleanup_failure_logging",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_stage_stream_cleanup_failure_logging",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_staging_cleanup_defers_close_and_unlink_after_drain_timeout",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_staging_cleanup_defers_close_and_unlink_after_drain_timeout",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_storage_adapter_parity_in_memory_and_filesystem",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_storage_adapter_parity_in_memory_and_filesystem",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_storage_path_traversal_guards",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_storage_path_traversal_guards",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_storage_probe_cleanup_on_failure",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_storage_probe_cleanup_on_failure",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_storage_media_readiness.py::test_storage_probe_concurrent_100_executions",
+      "candidate_node_id": "tests/test_storage_media_readiness.py::test_storage_probe_concurrent_100_executions",
+      "status": "adapted_import",
+      "fr_id": "FR-MED-002",
+      "description": "Storage path traversal guards, 24h reconciliation, worker concurrency",
+      "assertion_diff_summary": "Import updated from jplearn_api.models to jplearn_api.adapters.persistence.models; assertion logic 100% identical",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_sync.py::test_same_identity_same_catalog_same_progress_across_devices",
+      "candidate_node_id": "tests/test_sync.py::test_same_identity_same_catalog_same_progress_across_devices",
+      "status": "unchanged",
+      "fr_id": "FR-LRN-002",
+      "description": "Cross-device progress synchronization for learner profile",
+      "assertion_diff_summary": "Verbatim unchanged: multi-session timeline and progress computation assertions",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_vectors.py::test_argon2_vector_verifies_node_hash_and_python_hash_roundtrip",
+      "candidate_node_id": "tests/test_vectors.py::test_argon2_vector_verifies_node_hash_and_python_hash_roundtrip",
+      "status": "unchanged",
+      "fr_id": "SEC-CRY-001",
+      "description": "Cryptographic parity against Node.js reference (Argon2, JWT, HMAC)",
+      "assertion_diff_summary": "Verbatim unchanged: exact bit-for-bit vector matches with reference strings",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_vectors.py::test_hmac_media_url_vector_matches_node",
+      "candidate_node_id": "tests/test_vectors.py::test_hmac_media_url_vector_matches_node",
+      "status": "unchanged",
+      "fr_id": "SEC-CRY-001",
+      "description": "Cryptographic parity against Node.js reference (Argon2, JWT, HMAC)",
+      "assertion_diff_summary": "Verbatim unchanged: exact bit-for-bit vector matches with reference strings",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    },
+    {
+      "baseline_node_id": "tests/test_vectors.py::test_jwt_vector_verifies_with_test_secret",
+      "candidate_node_id": "tests/test_vectors.py::test_jwt_vector_verifies_with_test_secret",
+      "status": "unchanged",
+      "fr_id": "SEC-CRY-001",
+      "description": "Cryptographic parity against Node.js reference (Argon2, JWT, HMAC)",
+      "assertion_diff_summary": "Verbatim unchanged: exact bit-for-bit vector matches with reference strings",
+      "reviewer": "QA Agent (Test Verification) + BA Agent (Contract & Invariant Verification)",
+      "conclusion": "INVARIANT_PRESERVED"
+    }
+  ],
+  "added_candidate_tests": [
+    "tests/test_architecture_guard.py::test_domain_layer_dependencies",
+    "tests/test_architecture_guard.py::test_domain_layer_transitive_dependencies",
+    "tests/test_architecture_guard.py::test_application_layer_dependencies",
+    "tests/test_architecture_guard.py::test_application_layer_transitive_dependencies",
+    "tests/test_architecture_guard.py::test_ports_layer_pure_abstractions",
+    "tests/test_architecture_guard.py::test_adapters_layer_dependencies",
+    "tests/test_architecture_guard.py::test_routers_composition_rules",
+    "tests/test_architecture_guard.py::test_guard_mutation_catches_violations",
+    "tests/test_architecture_guard.py::test_guard_mutation_catches_transitive_import_leak",
+    "tests/test_architecture_guard.py::test_guard_mutation_catches_aliased_constructor_in_router",
+    "tests/test_architecture_guard.py::test_guard_mutation_catches_symbol_reexport_leak",
+    "tests/test_architecture_guard.py::test_package_import_has_zero_side_effects",
+    "tests/test_architecture_guard.py::test_fake_uow_isolation_and_rollback",
+    "tests/test_architecture_guard.py::test_flags_use_case_in_memory",
+    "tests/test_architecture_guard.py::test_identity_use_cases_in_memory",
+    "tests/test_architecture_guard.py::test_catalog_use_cases_in_memory",
+    "tests/test_architecture_guard.py::test_learning_use_cases_in_memory",
+    "tests/test_architecture_guard.py::test_media_use_cases_in_memory",
+    "tests/test_architecture_guard.py::test_failure_boundaries_across_use_cases",
+    "tests/test_media.py::test_upload_repo_add_failure_after_promote_rolls_back_and_compensates",
+    "tests/test_media.py::test_upload_recheck_catalog_query_error_compensates_storage",
+    "tests/test_media.py::test_upload_repeated_cancellation_preserves_cleanup_and_deletes_object",
+    "tests/test_media.py::test_upload_cancellation_during_storage_delete_completes_cleanup_and_no_orphan_task",
+    "tests/test_media.py::test_upload_triple_cancellation_preserves_original_cancelled_error",
+    "tests/test_media.py::test_upload_rollback_drain_timeout_sets_outcome_unknown_and_retains_object",
+    "tests/test_media.py::test_upload_write_uow_enter_failure_compensates_storage",
+    "tests/test_media.py::test_upload_rollback_failure_retains_storage_object_and_logs_unknown_outcome",
+    "tests/test_media.py::test_upload_pre_commit_storage_delete_failure_preserves_original_exception_and_logs_warning",
+    "tests/test_media.py::test_upload_byte_stream_barrier_releases_db_connection",
+    "tests/test_media.py::test_upload_catalog_deleted_between_preflight_and_write_compensates",
+    "tests/test_media.py::test_upload_uow_factory_scopes_and_repository_identity",
+    "tests/test_media.py::test_upload_http_barrier_releases_connection_and_pool_checkout"
+  ]
+}
