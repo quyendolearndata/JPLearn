@@ -275,13 +275,17 @@ def test_orphan_reconciliation(live_client):
                 assert missing_key in rep_dry["missing_storage_keys"]
                 assert len(rep_dry["deleted_storage_keys"]) == 0
                 assert orphan_path.exists()
-
+                import os
+                import time
+                now = time.time()
+                old_mtime = now - (25 * 3600)
+                os.utime(orphan_path, (old_mtime, old_mtime))
                 rep_run = await reconcile_orphans(
                     session,
                     storage,
                     dry_run=False,
                     confirm_retention_exceeded=True,
-                    retention_seconds=0,
+                    now=now,
                 )
                 assert orphan_key in rep_run["deleted_storage_keys"]
                 assert not orphan_path.exists()

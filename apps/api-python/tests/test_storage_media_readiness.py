@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 import time
+import uuid
 
 from fastapi.testclient import TestClient
 import pytest
@@ -263,3 +264,223 @@ async def test_reconciliation_24h_grace_retention(live_client: TestClient):
             fresh_path.unlink(missing_ok=True)
     finally:
         await engine.dispose()
+
+
+# ==============================================================================
+# 5. R-03: Concurrency & Fault Tolerance for Storage Probe
+# ==============================================================================
+
+
+@pytest.mark.asyncio
+async def test_storage_probe_concurrent_100_executions(tmp_path: Path):
+    storage = LocalFilesystemStorage(tmp_path / "probe_concurrency_test")
+    # Execute 100 concurrent readiness probes
+    tasks = [asyncio.create_task(storage.check_ready()) for _ in range(100)]
+    results = await asyncio.gather(*tasks)
+
+    for ok, msg in results:
+        assert ok is True, f"Probe failed: {msg}"
+        assert msg == "up"
+
+    # Verify that NO leftover probe files remain in __probe__/
+    probe_dir = storage.root / "__probe__"
+    if probe_dir.exists():
+        remaining = list(probe_dir.glob("*.tmp"))
+        assert len(remaining) == 0, f"Leaked probe files: {remaining}"
+
+
+@pytest.mark.asyncio
+async def test_storage_probe_cleanup_on_failure(tmp_path: Path, monkeypatch):
+    storage = LocalFilesystemStorage(tmp_path / "probe_failure_test")
+
+    # Hook into open to simulate readback corruption
+    real_open = Path.open
+
+    def faulty_open(path_obj, mode="r", *args, **kwargs):
+        handle = real_open(path_obj, mode, *args, **kwargs)
+        if "probe_" in path_obj.name and mode == "rb":
+            # Return corrupt handle or read wrong bytes
+            class CorruptReader:
+                def __init__(self, inner):
+                    self.inner = inner
+                def read(self, *a, **kw):
+                    return b"corrupted_probe_content"
+                def close(self):
+                    self.inner.close()
+                def __enter__(self):
+                    return self
+                def __exit__(self, *a):
+                    self.close()
+            return CorruptReader(handle)
+        return handle
+
+    monkeypatch.setattr(Path, "open", faulty_open)
+
+    ok, msg = await storage.check_ready()
+    assert ok is False
+    assert "Readback mismatch" in msg
+
+    # Even on failure, probe file must be cleaned up via finally
+    probe_dir = storage.root / "__probe__"
+    if probe_dir.exists():
+        remaining = list(probe_dir.glob("*.tmp"))
+        assert len(remaining) == 0, f"Leaked probe files after failure: {remaining}"
+
+
+def test_readiness_probe_db_timeout_liveness_intact(live_client: TestClient, monkeypatch):
+    from sqlalchemy.ext.asyncio import AsyncSession
+
+    # Liveness remains intact
+    health_resp = live_client.get("/health")
+    assert health_resp.status_code == 200
+
+    # Simulate slow/hanging DB query
+    async def slow_execute(self, *args, **kwargs):
+        await asyncio.sleep(3.0)
+
+    monkeypatch.setattr(AsyncSession, "execute", slow_execute)
+
+    ready_resp = live_client.get("/ready")
+    assert ready_resp.status_code == 503
+    ready_data = ready_resp.json()
+    assert ready_data["ok"] is False
+    assert ready_data["database"] == "down"
+
+
+# ==============================================================================
+# 6. R-05: Hardened Orphan Retention, Boundary & Race Conditions
+# ==============================================================================
+
+
+@pytest.mark.asyncio
+async def test_reconciliation_retention_policy_validation(live_client: TestClient):
+    from jplearn_api.db import create_engine_and_sessions
+
+    storage = live_client.app.state.storage
+    engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+
+    try:
+        async with sessionmaker() as session:
+            # Rejects retention less than 24h
+            with pytest.raises(ValueError, match="retention_seconds must be a finite number >= 86400"):
+                await reconcile_orphans(session, storage, retention_seconds=3600)
+
+            # Rejects negative retention
+            with pytest.raises(ValueError, match="retention_seconds must be a finite number >= 86400"):
+                await reconcile_orphans(session, storage, retention_seconds=-100)
+
+            # Rejects NaN
+            with pytest.raises(ValueError, match="retention_seconds must be a finite number >= 86400"):
+                await reconcile_orphans(session, storage, retention_seconds=float("nan"))
+    finally:
+        await engine.dispose()
+
+
+def test_reconciliation_metadata_protection_and_race_prevention(live_client: TestClient):
+    import os
+    from jplearn_api.db import create_engine_and_sessions
+
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin)
+
+    storage = live_client.app.state.storage
+
+    async def _run():
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        try:
+            now = time.time()
+            # 1. Exactly at boundary: 24h - 1s (protected), 24h + 1s (eligible)
+            boundary_young = "boundary_young.bin"
+            boundary_old = "boundary_old.bin"
+            future_file = "future_file.bin"
+            part_file = "uploading.part"
+
+            (storage.root / boundary_young).write_bytes(b"young")
+            (storage.root / boundary_old).write_bytes(b"old")
+            (storage.root / future_file).write_bytes(b"future")
+            (storage.root / part_file).write_bytes(b"in_flight")
+
+            os.utime(storage.root / boundary_young, (now - 86390, now - 86390))
+            os.utime(storage.root / boundary_old, (now - 86410, now - 86410))
+            os.utime(storage.root / future_file, (now + 7200, now + 7200))
+
+            async with sessionmaker() as session:
+                rep = await reconcile_orphans(session, storage, dry_run=True, now=now)
+
+                # Part file must never be in orphan list
+                assert part_file not in rep["orphan_storage_keys"]
+
+                # Young boundary file protected
+                assert boundary_young in rep["protected_orphan_keys"]
+                assert boundary_young not in rep["eligible_orphan_keys"]
+
+                # Future file protected and recorded in unknown_metadata_keys
+                assert future_file in rep["protected_orphan_keys"]
+                assert future_file in rep["unknown_metadata_keys"]
+                assert future_file not in rep["eligible_orphan_keys"]
+
+                # Old boundary file eligible
+                assert boundary_old in rep["eligible_orphan_keys"]
+
+                # 2. Race prevention test:
+                # If an eligible orphan is inserted into the DB right before deletion,
+                # reconcile_orphans must re-check and refuse to delete it!
+                racing_key = boundary_old
+                racing_asset = MediaAsset(
+                    id=str(uuid.uuid4()),
+                    catalog_item_id=item_id,
+                    storage_key=racing_key,
+                    mime="video/mp4",
+                )
+                session.add(racing_asset)
+                await session.commit()
+
+                # Now execute deletion
+                rep_race = await reconcile_orphans(
+                    session,
+                    storage,
+                    dry_run=False,
+                    confirm_retention_exceeded=True,
+                    now=now,
+                )
+
+                # racing_key should NOT be deleted because pre-delete recheck caught it
+                assert racing_key not in rep_race["deleted_storage_keys"]
+                assert (storage.root / racing_key).exists()
+
+                # Clean up test DB row
+                await session.delete(racing_asset)
+                await session.commit()
+        finally:
+            (storage.root / boundary_young).unlink(missing_ok=True)
+            (storage.root / boundary_old).unlink(missing_ok=True)
+            (storage.root / future_file).unlink(missing_ok=True)
+            (storage.root / part_file).unlink(missing_ok=True)
+            await engine.dispose()
+
+    asyncio.run(_run())
+
+
+def test_reconciliation_cli_args_parsing():
+    from jplearn_api.reconciliation import parse_args
+
+    # Default is dry_run = True, retention_hours = 24.0
+    args = parse_args([])
+    assert args.dry_run is True
+    assert args.confirm_retention_exceeded is False
+    assert args.retention_hours == 24.0
+
+    # Explicit execute / delete flags
+    args2 = parse_args(["--execute", "--confirm-retention-exceeded", "--retention-hours", "48.0"])
+    assert args2.dry_run is False
+    assert args2.confirm_retention_exceeded is True
+    assert args2.retention_hours == 48.0
+
+    # Reject retention below 24h
+    with pytest.raises(SystemExit):
+        parse_args(["--retention-hours", "12.0"])
+
+    # Reject --force-delete
+    with pytest.raises(SystemExit):
+        parse_args(["--force-delete"])
+

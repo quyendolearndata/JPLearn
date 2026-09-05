@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 from typing import Any
+import uuid
 
 CHUNK_SIZE = 64 * 1024  # 64 KB
 MAX_MEDIA_BYTES = 500 * 1024 * 1024  # 500 MB max for video per ADR-005
@@ -75,6 +76,7 @@ class LocalFilesystemStorage(StoragePort):
     def __init__(self, root: Path | str) -> None:
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
+        self._probe_semaphore = asyncio.Semaphore(16)
 
     def _resolve(self, key: str) -> Path:
         # Normalize and guard against directory traversal (including sibling prefix, absolute path, and escape)
@@ -171,29 +173,40 @@ class LocalFilesystemStorage(StoragePort):
         for p in self.root.rglob("*"):
             if p.is_file():
                 rel = p.relative_to(self.root).as_posix()
-                if rel.startswith(prefix) and not rel.endswith(".part"):
+                if (
+                    rel.startswith(prefix)
+                    and not rel.endswith(".part")
+                    and not rel.startswith("__probe__/")
+                ):
                     keys.append(rel)
         return keys
 
     async def check_ready(self) -> tuple[bool, str]:
-        probe_key = "__probe__/probe.tmp"
+        probe_key = f"__probe__/probe_{uuid.uuid4().hex}.tmp"
         try:
             probe_path = self._resolve(probe_key)
             probe_path.parent.mkdir(parents=True, exist_ok=True)
             probe_content = b"readiness_probe_active"
 
-            def _sync_probe():
-                with probe_path.open("wb") as f:
-                    f.write(probe_content)
-                    f.flush()
-                    os.fsync(f.fileno())
-                with probe_path.open("rb") as f:
-                    read_back = f.read()
-                if read_back != probe_content:
-                    raise RuntimeError("Readback mismatch during storage probe")
-                probe_path.unlink(missing_ok=True)
+            def _sync_probe() -> None:
+                try:
+                    with probe_path.open("wb") as f:
+                        f.write(probe_content)
+                        f.flush()
+                        os.fsync(f.fileno())
+                    with probe_path.open("rb") as f:
+                        read_back = f.read()
+                    if read_back != probe_content:
+                        raise RuntimeError("Readback mismatch during storage probe")
+                finally:
+                    try:
+                        if probe_path.exists():
+                            probe_path.unlink(missing_ok=True)
+                    except Exception:
+                        pass
 
-            await asyncio.to_thread(_sync_probe)
+            async with self._probe_semaphore:
+                await asyncio.to_thread(_sync_probe)
             return True, "up"
         except Exception as exc:
             return False, f"storage probe failed: {exc}"

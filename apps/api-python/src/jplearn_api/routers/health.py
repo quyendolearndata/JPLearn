@@ -50,17 +50,30 @@ async def ready(
     session: AsyncSession = Depends(get_session),
     storage: StoragePort = Depends(get_storage),
 ) -> ReadyBody:
-    db_ok = True
-    storage_ok = True
-    try:
-        await asyncio.wait_for(session.execute(text("SELECT 1")), timeout=2.0)
-    except Exception:
-        db_ok = False
+    async def _check_db() -> bool:
+        try:
+            await session.execute(text("SELECT 1"))
+            return True
+        except Exception:
+            return False
+
+    async def _check_storage() -> bool:
+        try:
+            probe_ok, _msg = await storage.check_ready()
+            return probe_ok
+        except Exception:
+            return False
 
     try:
-        probe_ok, _msg = await asyncio.wait_for(storage.check_ready(), timeout=2.0)
-        storage_ok = probe_ok
+        results = await asyncio.wait_for(
+            asyncio.gather(_check_db(), _check_storage(), return_exceptions=True),
+            timeout=2.0,
+        )
+        db_res, storage_res = results
+        db_ok = bool(db_res) if not isinstance(db_res, Exception) else False
+        storage_ok = bool(storage_res) if not isinstance(storage_res, Exception) else False
     except Exception:
+        db_ok = False
         storage_ok = False
 
     is_healthy = db_ok and storage_ok
