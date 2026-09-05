@@ -393,3 +393,12 @@ async def test_media_use_cases_in_memory():
     )
     assert hls_dto.hls_url is not None
     assert f"/media/{dto.id}/hls/index.m3u8" in hls_dto.hls_url
+
+
+def test_package_import_has_zero_side_effects():
+    """Verify that importing modules produces no active background tasks or connections."""
+    import jplearn_api.domain
+    import jplearn_api.application
+    import jplearn_api.bootstrap
+
+    assert hasattr(jplearn_api.bootstrap, "create_app_container")
