@@ -1,4 +1,4 @@
-"""Security ports for password hashing and token management (Protocol-based)."""
+"""Security capability ports (Pure Python, protocol-based)."""
 
 from __future__ import annotations
 
@@ -28,4 +28,24 @@ class TokenService(Protocol):
         ...
 
     def decode_access_token(self, token: str, secret: str) -> dict[str, Any]:
+        ...
+
+
+class MediaUrlSigner(Protocol):
+    """Port for signing and verifying media access URLs."""
+
+    def sign_playback_url(self, asset_id: str) -> str:
+        """Generate time-limited signed URL for MP4 playback."""
+        ...
+
+    def sign_hls_url(self, asset_id: str) -> str:
+        """Generate time-limited signed URL for HLS manifest."""
+        ...
+
+    def manifest_url(self, asset_id: str) -> str:
+        """Generate canonical public URL for HLS master manifest."""
+        ...
+
+    def verify_media_sig(self, asset_id: str, exp: int, sig: str) -> bool:
+        """Verify URL signature for asset access."""
         ...

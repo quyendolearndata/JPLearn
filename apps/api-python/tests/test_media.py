@@ -209,7 +209,9 @@ def test_media_upload_db_failure_cleans_up_storage(live_client, monkeypatch):
 
     monkeypatch.setattr(AsyncSession, "commit", fail_commit)
 
-    with pytest.raises(IntegrityError, match="constraint violation"):
+    from jplearn_api.domain.errors import DeterministicAbortError
+
+    with pytest.raises((IntegrityError, DeterministicAbortError), match="constraint violation"):
         live_client.post(
             f"/staff/catalog/{item_id}/media",
             headers={"Authorization": f"Bearer {admin}"},

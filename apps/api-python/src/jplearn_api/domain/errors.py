@@ -41,3 +41,9 @@ class ForbiddenError(DomainError):
 
 class MediaInvariantError(DomainError):
     """Raised when a media asset violates publish or playback invariants."""
+
+
+class DeterministicAbortError(Exception):
+    """Raised when a persistence operation fails deterministically (e.g. constraint violation).
+    The transaction has aborted deterministically, so rollback is confirmed.
+    """

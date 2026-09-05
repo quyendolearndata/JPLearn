@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -65,3 +66,19 @@ class MediaAssetStaffDTO:
     playback_url: str
     hls_url: str | None
     mime: str
+
+
+@dataclass(frozen=True)
+class ByteRange:
+    start: int
+    end: int
+    length: int
+    total_size: int
+
+
+@dataclass(frozen=True)
+class MediaStreamDTO:
+    content_stream: AsyncIterator[bytes]
+    content_type: str
+    total_size: int
+    range: ByteRange | None = None

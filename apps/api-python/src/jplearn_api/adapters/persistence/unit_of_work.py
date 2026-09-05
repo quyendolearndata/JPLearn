@@ -5,9 +5,11 @@ from __future__ import annotations
 from types import TracebackType
 from typing import Callable
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
+from jplearn_api.domain.errors import DeterministicAbortError
 
 
 class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
@@ -49,8 +51,11 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
     async def commit(self) -> None:
         """Commit the current transaction explicitly."""
         if self.session is not None:
-            await self.session.commit()
-            self._committed = True
+            try:
+                await self.session.commit()
+                self._committed = True
+            except IntegrityError as exc:
+                raise DeterministicAbortError(str(exc)) from exc
 
     async def rollback(self) -> None:
         """Roll back pending changes."""

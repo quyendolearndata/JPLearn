@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.application.ports.repositories import MediaRepository
+from jplearn_api.domain.errors import DeterministicAbortError
 from jplearn_api.domain.media import MediaAsset as DomainMediaAsset
 from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem, MediaAsset as OrmMediaAsset
 
@@ -44,7 +46,10 @@ class SqlAlchemyMediaRepository(MediaRepository):
         )
         self._session.add(orm_asset)
         if hasattr(self._session, "flush"):
-            await self._session.flush()
+            try:
+                await self._session.flush()
+            except IntegrityError as exc:
+                raise DeterministicAbortError(str(exc)) from exc
 
     async def update(self, asset: DomainMediaAsset) -> None:
         orm_asset = await self._session.get(OrmMediaAsset, asset.id)

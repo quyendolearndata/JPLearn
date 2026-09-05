@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -22,11 +23,14 @@ async def handle_start_session(
     cmd: StartLearningSessionCommand,
     uow: AsyncUnitOfWork,
     repo: LearningRepository,
+    *,
+    clock: Callable[[], datetime] = _now_naive,
+    id_generator: Callable[[], str] = lambda: str(uuid4()),
 ) -> LearningSessionDTO:
     """Start a learning session, update device last seen, and emit events atomically."""
-    started_at = _now_naive()
+    started_at = clock()
     session = LearningSession(
-        id=str(uuid4()),
+        id=id_generator(),
         user_id=cmd.user_id,
         device_class=cmd.device_class,
         started_at=started_at,
@@ -46,7 +50,7 @@ async def handle_start_session(
             session.id,
             "level_exposed",
             {"ci_level": progress.current_ci_level},
-            _now_naive(),
+            clock(),
         )
         await uow.commit()
 
@@ -63,6 +67,8 @@ async def handle_end_session(
     cmd: EndLearningSessionCommand,
     uow: AsyncUnitOfWork,
     repo: LearningRepository,
+    *,
+    clock: Callable[[], datetime] = _now_naive,
 ) -> LearnerProgressDTO:
     """End a learning session exactly-once with pessimistic row locking and atomic progress/event update."""
     async with uow:
@@ -74,7 +80,7 @@ async def handle_end_session(
             raise ForbiddenError("Forbidden")
 
         # 2. Guard against duplicate termination under lock (domain method raises SessionAlreadyEndedError)
-        ended_at = _now_naive()
+        ended_at = clock()
         duration = session.end(ended_at)
         minutes = minutes_from_duration(duration)
         await repo.update_session(session)

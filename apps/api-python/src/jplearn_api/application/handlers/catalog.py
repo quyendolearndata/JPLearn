@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from uuid import uuid4
 
 from jplearn_api.application.commands import (
@@ -38,6 +39,8 @@ async def handle_create_catalog_item(
     cmd: CreateCatalogItemCommand,
     uow: AsyncUnitOfWork,
     repo: CatalogRepository,
+    *,
+    id_generator: Callable[[], str] = lambda: str(uuid4()),
 ) -> CatalogItemStaffDTO:
     """Create new catalog item in draft status."""
     topic_exists = await repo.topic_exists(cmd.topic_id)
@@ -45,7 +48,7 @@ async def handle_create_catalog_item(
         raise InvalidDomainStateError("Unknown topic_id")
 
     item = CatalogItem(
-        id=str(uuid4()),
+        id=id_generator(),
         topic_id=cmd.topic_id,
         ci_level=cmd.ci_level,
         duration_seconds=cmd.duration_seconds,

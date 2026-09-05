@@ -17,27 +17,16 @@ from jplearn_api.application.handlers.media import (
 )
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_media_repository, create_uow
-from jplearn_api.deps import UUIDPath, get_session, get_storage
+from jplearn_api.deps import UUIDPath, get_media_signer, get_session, get_storage
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.domain.range_parser import RangeNotSatisfiableError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
 from jplearn_api.roles import require_roles
 from jplearn_api.schemas import MediaAssetStaff
 from jplearn_api.security import require_media_access
-from jplearn_api.settings import Settings
 from jplearn_api.storage import StoragePort
 
 router = APIRouter()
-
-
-def _base_url(settings: Settings) -> str:
-    if not settings.api_public_url:
-        raise RuntimeError("API_PUBLIC_URL must be set")
-    return settings.api_public_url.rstrip("/")
-
-
-def _secret(settings: object) -> str:
-    return getattr(settings, "media_signing_secret", None) or getattr(settings, "jwt_secret", None) or "default-secret"
 
 
 @router.post(
@@ -58,9 +47,7 @@ async def upload_media(
 ) -> MediaAssetStaff:
     uow = create_uow(session)
     media_repo = create_media_repository(session)
-    settings = request.app.state.settings
-    base_url = _base_url(settings)
-    secret = _secret(settings)
+    signer = get_media_signer(request)
 
     filename = (file.filename or "").lower().strip()
     content_type = file.content_type
@@ -83,8 +70,7 @@ async def upload_media(
             uow=uow,
             media_repo=media_repo,
             storage=storage,
-            base_url=base_url,
-            secret=secret,
+            signer=signer,
             _grace_seconds=COMMIT_CANCELLATION_GRACE_SECONDS,
         )
     except DomainError as exc:
@@ -114,17 +100,15 @@ async def register_hls(
 ) -> MediaAssetStaff:
     uow = create_uow(session)
     media_repo = create_media_repository(session)
-    settings = request.app.state.settings
-    base_url = _base_url(settings)
-    secret = _secret(settings)
+    signer = get_media_signer(request)
+
     try:
         dto = await handle_register_hls(
             asset_id=id,
             uow=uow,
             media_repo=media_repo,
             storage=storage,
-            base_url=base_url,
-            secret=secret,
+            signer=signer,
         )
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
@@ -164,7 +148,7 @@ async def stream_media(
     media_repo = create_media_repository(session)
     range_header = request.headers.get("range")
     try:
-        stream_iter, _size, mime, status_code, headers = await handle_stream_media(
+        stream_dto = await handle_stream_media(
             asset_id=id,
             media_repo=media_repo,
             storage=storage,
@@ -183,10 +167,26 @@ async def stream_media(
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
 
+    if stream_dto.range is not None:
+        status_code = 206
+        headers = {
+            "Content-Range": f"bytes {stream_dto.range.start}-{stream_dto.range.end}/{stream_dto.range.total_size}",
+            "Content-Length": str(stream_dto.range.length),
+            "Accept-Ranges": "bytes",
+            "X-Content-Type-Options": "nosniff",
+        }
+    else:
+        status_code = 200
+        headers = {
+            "Content-Length": str(stream_dto.total_size),
+            "Accept-Ranges": "bytes",
+            "X-Content-Type-Options": "nosniff",
+        }
+
     return StreamingResponse(
-        stream_iter,
+        stream_dto.content_stream,
         status_code=status_code,
-        media_type=mime,
+        media_type=stream_dto.content_type,
         headers=headers,
     )
 
@@ -236,7 +236,7 @@ async def stream_hls(
 
     range_header = request.headers.get("range")
     try:
-        stream_iter, _size, content_type, status_code, headers = await handle_stream_hls(
+        stream_dto = await handle_stream_hls(
             storage=storage,
             asset_id=id,
             file=file,
@@ -260,9 +260,10 @@ async def stream_hls(
             headers={"X-Content-Type-Options": "nosniff"},
         ) from exc
 
-    if file.endswith(".m3u8") and exp and sig:
+    is_manifest = file.endswith(".m3u8")
+    if is_manifest and exp and sig:
         chunks = []
-        async for chunk in stream_iter:
+        async for chunk in stream_dto.content_stream:
             chunks.append(chunk)
         manifest = b"".join(chunks).decode("utf-8")
         lines = []
@@ -274,16 +275,32 @@ async def stream_hls(
                 lines.append(f"{trimmed}?exp={quote(str(exp))}&sig={quote(sig)}")
         return PlainTextResponse(
             "\n".join(lines),
-            media_type=content_type,
+            media_type=stream_dto.content_type,
             headers={
                 "Accept-Ranges": "none",
                 "X-Content-Type-Options": "nosniff",
             },
         )
 
+    if stream_dto.range is not None:
+        status_code = 206
+        headers = {
+            "Content-Range": f"bytes {stream_dto.range.start}-{stream_dto.range.end}/{stream_dto.range.total_size}",
+            "Content-Length": str(stream_dto.range.length),
+            "Accept-Ranges": "bytes",
+            "X-Content-Type-Options": "nosniff",
+        }
+    else:
+        status_code = 200
+        headers = {
+            "Content-Length": str(stream_dto.total_size),
+            "Accept-Ranges": "bytes" if not is_manifest else "none",
+            "X-Content-Type-Options": "nosniff",
+        }
+
     return StreamingResponse(
-        stream_iter,
+        stream_dto.content_stream,
         status_code=status_code,
-        media_type=content_type,
+        media_type=stream_dto.content_type,
         headers=headers,
     )

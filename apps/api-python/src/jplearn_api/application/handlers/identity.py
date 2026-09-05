@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -25,6 +26,9 @@ async def handle_register(
     user_repo: UserRepository,
     hasher: PasswordHasher,
     token_service: TokenService,
+    *,
+    clock: Callable[[], datetime] = lambda: datetime.now(UTC).replace(tzinfo=None),
+    id_generator: Callable[[], str] = lambda: str(uuid4()),
 ) -> AuthSessionDTO:
     """Atomic registration of user, learner role, and initial progress."""
     if not isinstance(cmd.password, str) or len(cmd.password) < 10:
@@ -34,8 +38,8 @@ async def handle_register(
         raise InvalidDomainStateError("Email is required")
 
     pw_hash = await hasher.hash_password(cmd.password)
-    now = datetime.now(UTC).replace(tzinfo=None)
-    user_id = str(uuid4())
+    now = clock()
+    user_id = id_generator()
 
     user = UserAccount(
         id=user_id,

@@ -17,6 +17,8 @@ from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
 from jplearn_api.adapters.persistence.user_repository import SqlAlchemyUserRepository
 from jplearn_api.adapters.security.argon2 import Argon2PasswordHasher
 from jplearn_api.adapters.security.jwt import JwtTokenService
+from jplearn_api.adapters.security.media_signer import HmacMediaUrlSigner
+from jplearn_api.application.ports.security import MediaUrlSigner
 from jplearn_api.adapters.storage.local import LocalFilesystemStorage, StoragePort
 from jplearn_api.settings import Settings, get_settings
 
@@ -29,6 +31,15 @@ class AppContainer:
     storage: StoragePort
     password_hasher: Argon2PasswordHasher
     token_service: JwtTokenService
+    media_signer: MediaUrlSigner
+
+
+def create_media_signer(settings: Settings | None = None) -> HmacMediaUrlSigner:
+    """Factory creating a Media URL signer adapter."""
+    resolved_settings = settings or get_settings()
+    base_url = resolved_settings.api_public_url or "http://localhost:3001"
+    secret = resolved_settings.media_signing_secret or resolved_settings.jwt_secret or "default-secret"
+    return HmacMediaUrlSigner(base_url=base_url, secret=secret)
 
 
 def create_app_container(
@@ -45,6 +56,7 @@ def create_app_container(
         storage=resolved_storage,
         password_hasher=Argon2PasswordHasher(),
         token_service=JwtTokenService(),
+        media_signer=create_media_signer(resolved_settings),
     )
 
 

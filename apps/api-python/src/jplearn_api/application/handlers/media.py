@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable
 import logging
 from pathlib import Path
 import re
@@ -12,10 +12,12 @@ from typing import Any
 from uuid import uuid4
 
 from jplearn_api.application.ports.repositories import MediaRepository
+from jplearn_api.application.ports.security import MediaUrlSigner
 from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
-from jplearn_api.application.read_models import MediaAssetStaffDTO
+from jplearn_api.application.read_models import ByteRange, MediaAssetStaffDTO, MediaStreamDTO
 from jplearn_api.domain.errors import (
+    DeterministicAbortError,
     EntityNotFoundError,
     InvalidDomainStateError,
 )
@@ -55,13 +57,27 @@ def _signed_hls(asset_id: str, base_url: str, secret: str) -> str:
     )
 
 
-def to_staff_dto(asset: MediaAsset, base_url: str, secret: str) -> MediaAssetStaffDTO:
+def to_staff_dto(
+    asset: MediaAsset,
+    signer: MediaUrlSigner | None = None,
+    base_url: str | None = None,
+    secret: str | None = None,
+) -> MediaAssetStaffDTO:
+    if signer is not None:
+        playback_url = signer.sign_playback_url(asset.id)
+        hls_url = signer.sign_hls_url(asset.id) if asset.hls_url else None
+    elif base_url and secret:
+        playback_url = _signed_playback(asset.id, base_url, secret)
+        hls_url = _signed_hls(asset.id, base_url, secret) if asset.hls_url else None
+    else:
+        raise ValueError("Either signer or (base_url, secret) must be provided")
+
     return MediaAssetStaffDTO(
         id=asset.id,
         catalog_item_id=asset.catalog_item_id,
         storage_key=asset.storage_key,
-        playback_url=_signed_playback(asset.id, base_url, secret),
-        hls_url=_signed_hls(asset.id, base_url, secret) if asset.hls_url else None,
+        playback_url=playback_url,
+        hls_url=hls_url,
         mime=asset.mime,
     )
 
@@ -75,9 +91,11 @@ async def handle_upload_media(
     uow: AsyncUnitOfWork,
     media_repo: MediaRepository,
     storage: StoragePort,
-    base_url: str,
-    secret: str,
+    signer: MediaUrlSigner | None = None,
+    base_url: str | None = None,
+    secret: str | None = None,
     *,
+    id_generator: Callable[[], str] = lambda: str(uuid4()),
     _pre_commit_hook: Any = None,
     _grace_seconds: float = COMMIT_CANCELLATION_GRACE_SECONDS,
 ) -> MediaAssetStaffDTO:
@@ -99,7 +117,7 @@ async def handle_upload_media(
     if first_chunk[4:8] != b"ftyp":
         raise InvalidDomainStateError("Invalid MP4 file signature: expected 'ftyp' box")
 
-    asset_id = str(uuid4())
+    asset_id = id_generator()
     temp_key = f"{asset_id}.part"
     final_key = f"{asset_id}.bin"
 
@@ -163,11 +181,12 @@ async def handle_upload_media(
                 )
 
     try:
+        playback_raw = f"{base_url}/media/{asset_id}" if base_url else f"/media/{asset_id}"
         asset = MediaAsset(
             id=asset_id,
             catalog_item_id=catalog_item_id,
             storage_key=final_key,
-            playback_url=f"{base_url}/media/{asset_id}",
+            playback_url=playback_raw,
             mime="video/mp4",
         )
         await media_repo.add(asset)
@@ -233,9 +252,7 @@ async def handle_upload_media(
             )
         raise
     except Exception as exc:
-        is_deterministic_abort = getattr(exc, "is_deterministic_abort", False) or (
-            "IntegrityError" in [cls.__name__ for cls in type(exc).__mro__]
-        )
+        is_deterministic_abort = isinstance(exc, DeterministicAbortError) or getattr(exc, "is_deterministic_abort", False)
         if is_deterministic_abort:
             rb_ok = False
             try:
@@ -282,7 +299,7 @@ async def handle_upload_media(
             await asyncio.shield(_cleanup_uow())
         raise
 
-    return to_staff_dto(asset, base_url, secret)
+    return to_staff_dto(asset, signer=signer, base_url=base_url, secret=secret)
 
 
 async def handle_register_hls(
@@ -290,8 +307,9 @@ async def handle_register_hls(
     uow: AsyncUnitOfWork,
     media_repo: MediaRepository,
     storage: StoragePort,
-    base_url: str,
-    secret: str,
+    signer: MediaUrlSigner | None = None,
+    base_url: str | None = None,
+    secret: str | None = None,
 ) -> MediaAssetStaffDTO:
     """Register HLS manifest for an existing media asset."""
     asset = await media_repo.get_by_id(asset_id)
@@ -303,12 +321,18 @@ async def handle_register_hls(
     if not exists:
         raise InvalidDomainStateError("HLS manifest missing on disk; run scripts/transcode-hls.sh for this asset first")
 
-    asset.hls_url = f"{base_url}/media/{asset_id}/hls/{HLS_MANIFEST}"
+    if signer is not None:
+        asset.hls_url = signer.manifest_url(asset_id)
+    elif base_url:
+        asset.hls_url = f"{base_url}/media/{asset_id}/hls/{HLS_MANIFEST}"
+    else:
+        asset.hls_url = f"/media/{asset_id}/hls/{HLS_MANIFEST}"
+
     async with uow:
         await media_repo.update(asset)
         await uow.commit()
 
-    return to_staff_dto(asset, base_url, secret)
+    return to_staff_dto(asset, signer=signer, base_url=base_url, secret=secret)
 
 
 async def handle_get_media(asset_id: str, media_repo: MediaRepository) -> MediaAsset:
@@ -324,8 +348,8 @@ async def handle_stream_media(
     media_repo: MediaRepository,
     storage: StoragePort,
     range_header: str | None = None,
-) -> tuple[AsyncIterator[bytes], int, str, int, dict[str, str]]:
-    """Retrieve async byte stream and headers for MP4 playback."""
+) -> MediaStreamDTO:
+    """Retrieve media byte stream and range information for MP4 playback."""
     asset = await handle_get_media(asset_id, media_repo)
     if not await storage.exists(asset.storage_key):
         raise EntityNotFoundError("Media asset not found")
@@ -337,23 +361,17 @@ async def handle_stream_media(
     if range_spec is not None:
         start, end, length = range_spec
         stream_iter = await storage.open_read_range(asset.storage_key, start, length)
-        status_code = 206
-        headers = {
-            "Content-Range": f"bytes {start}-{end}/{total_size}",
-            "Content-Length": str(length),
-            "Accept-Ranges": "bytes",
-            "X-Content-Type-Options": "nosniff",
-        }
+        byte_range = ByteRange(start=start, end=end, length=length, total_size=total_size)
     else:
         stream_iter = await storage.open_read(asset.storage_key)
-        status_code = 200
-        headers = {
-            "Content-Length": str(total_size),
-            "Accept-Ranges": "bytes",
-            "X-Content-Type-Options": "nosniff",
-        }
+        byte_range = None
 
-    return stream_iter, total_size, asset.mime, status_code, headers
+    return MediaStreamDTO(
+        content_stream=stream_iter,
+        content_type=asset.mime,
+        total_size=total_size,
+        range=byte_range,
+    )
 
 
 async def handle_stream_hls(
@@ -361,7 +379,7 @@ async def handle_stream_hls(
     asset_id: str,
     file: str,
     range_header: str | None = None,
-) -> tuple[AsyncIterator[bytes], int, str, int, dict[str, str]]:
+) -> MediaStreamDTO:
     """Retrieve async stream for HLS manifest or segment."""
     if not HLS_FILE_PATTERN.match(file) or ".." in file or "/" in file or "\\" in file:
         raise InvalidDomainStateError("Invalid HLS file name")
@@ -382,20 +400,14 @@ async def handle_stream_hls(
     if range_spec is not None:
         start, end, length = range_spec
         stream_iter = await storage.open_read_range(key, start, length)
-        status_code = 206
-        headers = {
-            "Content-Range": f"bytes {start}-{end}/{total_size}",
-            "Content-Length": str(length),
-            "Accept-Ranges": "bytes",
-            "X-Content-Type-Options": "nosniff",
-        }
+        byte_range = ByteRange(start=start, end=end, length=length, total_size=total_size)
     else:
         stream_iter = await storage.open_read(key)
-        status_code = 200
-        headers = {
-            "Content-Length": str(total_size),
-            "Accept-Ranges": "bytes" if not is_manifest else "none",
-            "X-Content-Type-Options": "nosniff",
-        }
+        byte_range = None
 
-    return stream_iter, total_size, content_type, status_code, headers
+    return MediaStreamDTO(
+        content_stream=stream_iter,
+        content_type=content_type,
+        total_size=total_size,
+        range=byte_range,
+    )
