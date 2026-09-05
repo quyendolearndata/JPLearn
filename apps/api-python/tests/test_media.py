@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 from urllib.parse import urlparse
 
 import asyncpg
@@ -504,5 +505,199 @@ def test_hls_segment_http_byte_range(live_client):
     assert r_seg.headers.get("Content-Range") == f"bytes 0-3/{len(ts_content)}"
     assert r_seg.headers.get("Content-Length") == "4"
     assert r_seg.content == ts_content[0:4]
+
+
+# ==============================================================================
+# 8. R-07: Upload Cancellation & Object Lifecycle Cleanup
+# ==============================================================================
+
+
+@pytest.mark.asyncio
+async def test_stage_stream_cancellation_cleans_up_part_file(tmp_path: Path):
+    """R-07: Cancel during stage_stream must close handle and unlink .part file,
+    preventing orphaned cancel.part files."""
+    storage = LocalFilesystemStorage(tmp_path / "cancel_storage")
+    temp_key = "test_cancel_artifact.part"
+    part_path = storage.root / temp_key
+
+    entered_stream = asyncio.Event()
+    cancel_signal = asyncio.Event()
+
+    async def pausing_stream():
+        yield b"chunk_one_payload_data"
+        entered_stream.set()
+        await cancel_signal.wait()
+        yield b"chunk_two_payload_data"
+
+    task = asyncio.create_task(storage.stage_stream(temp_key, pausing_stream()))
+    await entered_stream.wait()
+
+    # Cancel the upload task while paused in stream
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    # Assert .part file was unlinked and does not remain on disk
+    assert not part_path.exists(), f"Orphaned .part file remained on disk after cancellation: {part_path}"
+
+
+def test_upload_cancellation_before_commit_rolls_back_and_compensates(live_client):
+    """R-07: Cancellation after promote but before DB commit must delete final object
+    and rollback DB transaction."""
+    from fastapi import UploadFile
+    from io import BytesIO
+    from jplearn_api import media_service
+    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.models import MediaAsset
+
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin, title_internal="cancel-pre-commit")
+    storage = live_client.app.state.storage
+
+    async def _run():
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        try:
+            async with sessionmaker() as session:
+                upload_file = UploadFile(
+                    filename="sample.mp4",
+                    file=BytesIO(TINY_MP4),
+                    headers={"content-type": "video/mp4"},
+                )
+
+                # Patch session.commit to simulate cancellation before commit proceeds
+                real_add = session.add
+                intercepted_asset_id = None
+
+                def intercept_add(instance):
+                    nonlocal intercepted_asset_id
+                    if isinstance(instance, MediaAsset):
+                        intercepted_asset_id = instance.id
+                    return real_add(instance)
+
+                session.add = intercept_add
+
+                async def cancel_at_commit():
+                    raise asyncio.CancelledError()
+
+                session.commit = cancel_at_commit
+
+                with pytest.raises(asyncio.CancelledError):
+                    await media_service.upload(session, live_client.app.state.settings, storage, item_id, upload_file)
+
+                assert intercepted_asset_id is not None
+                final_path = storage.root / f"{intercepted_asset_id}.bin"
+                # Final key must be compensated (deleted) because transaction was not committed
+                assert not final_path.exists(), "Final object remained in storage after cancelled commit!"
+
+            # Verify using fresh connection that no orphan row exists in DB
+            async with sessionmaker() as fresh_session:
+                row = await fresh_session.get(MediaAsset, intercepted_asset_id)
+                assert row is None, "Dangling MediaAsset row was created despite cancellation!"
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_run())
+
+
+def test_upload_cancellation_during_commit_preserves_object_if_committed(live_client):
+    """R-07: If transaction actually committed despite cancellation during wait,
+    do NOT delete final object so DB row never points to missing file."""
+    from fastapi import UploadFile
+    from io import BytesIO
+    from jplearn_api import media_service
+    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.models import MediaAsset
+
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin, title_internal="cancel-post-commit")
+    storage = live_client.app.state.storage
+
+    async def _run():
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        try:
+            async with sessionmaker() as session:
+                upload_file = UploadFile(
+                    filename="sample.mp4",
+                    file=BytesIO(TINY_MP4),
+                    headers={"content-type": "video/mp4"},
+                )
+
+                real_commit = session.commit
+
+                async def commit_then_cancel():
+                    await real_commit()
+                    # Simulate cancellation received immediately after commit finishes
+                    raise asyncio.CancelledError()
+
+                session.commit = commit_then_cancel
+
+                with pytest.raises(asyncio.CancelledError):
+                    await media_service.upload(session, live_client.app.state.settings, storage, item_id, upload_file)
+
+            # Check in fresh session: DB row was committed
+            async with sessionmaker() as fresh_session:
+                result = await fresh_session.execute(
+                    MediaAsset.__table__.select().where(MediaAsset.catalog_item_id == item_id)
+                )
+                row = result.fetchone()
+                assert row is not None, "Expected committed row to exist"
+                final_path = storage.root / row.storage_key
+                # The file MUST be preserved because DB points to it!
+                assert final_path.exists(), "Final object was deleted despite successful DB commit!"
+        finally:
+            await engine.dispose()
+
+def test_upload_db_error_at_commit_compensates(live_client):
+    """R-07: If DB commit fails with an error, compensate by rolling back and deleting final object."""
+    from fastapi import UploadFile
+    from io import BytesIO
+    from jplearn_api import media_service
+    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.models import MediaAsset
+
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin, title_internal="db-err-commit")
+    storage = live_client.app.state.storage
+
+    async def _run():
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        try:
+            async with sessionmaker() as session:
+                upload_file = UploadFile(
+                    filename="sample.mp4",
+                    file=BytesIO(TINY_MP4),
+                    headers={"content-type": "video/mp4"},
+                )
+
+                real_add = session.add
+                intercepted_asset_id = None
+
+                def intercept_add(instance):
+                    nonlocal intercepted_asset_id
+                    if isinstance(instance, MediaAsset):
+                        intercepted_asset_id = instance.id
+                    return real_add(instance)
+
+                session.add = intercept_add
+
+                async def error_at_commit():
+                    raise RuntimeError("Simulated DB commit failure")
+
+                session.commit = error_at_commit
+
+                with pytest.raises(RuntimeError, match="Simulated DB commit failure"):
+                    await media_service.upload(session, live_client.app.state.settings, storage, item_id, upload_file)
+
+                assert intercepted_asset_id is not None
+                final_path = storage.root / f"{intercepted_asset_id}.bin"
+                assert not final_path.exists(), "Final object remained in storage after failed commit!"
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_run())
+
+
+
+
 
 

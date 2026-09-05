@@ -124,31 +124,43 @@ class LocalFilesystemStorage(StoragePort):
         temp_path.parent.mkdir(parents=True, exist_ok=True)
         total_bytes = 0
         loop = asyncio.get_running_loop()
+        file_handle = None
+        success = False
 
         try:
             file_handle = await loop.run_in_executor(None, temp_path.open, "wb")
-            try:
-                async for chunk in stream:
-                    if not chunk:
-                        continue
-                    total_bytes += len(chunk)
-                    if total_bytes > max_bytes:
-                        raise ValueError(f"File size exceeds limit of {max_bytes} bytes")
-                    await loop.run_in_executor(None, file_handle.write, chunk)
+            async for chunk in stream:
+                if not chunk:
+                    continue
+                total_bytes += len(chunk)
+                if total_bytes > max_bytes:
+                    raise ValueError(f"File size exceeds limit of {max_bytes} bytes")
+                await loop.run_in_executor(None, file_handle.write, chunk)
 
-                await loop.run_in_executor(None, file_handle.flush)
-                await loop.run_in_executor(None, os.fsync, file_handle.fileno())
-            finally:
-                await loop.run_in_executor(None, file_handle.close)
+            await loop.run_in_executor(None, file_handle.flush)
+            await loop.run_in_executor(None, os.fsync, file_handle.fileno())
 
             if total_bytes == 0:
-                temp_path.unlink(missing_ok=True)
                 raise ValueError("File must not be empty")
 
+            success = True
             return total_bytes
-        except Exception:
-            temp_path.unlink(missing_ok=True)
-            raise
+        finally:
+            async def _cleanup():
+                nonlocal file_handle
+                if file_handle is not None:
+                    try:
+                        await loop.run_in_executor(None, file_handle.close)
+                    except Exception:
+                        pass
+                    file_handle = None
+                if not success:
+                    try:
+                        await loop.run_in_executor(None, lambda: temp_path.unlink(missing_ok=True))
+                    except Exception:
+                        pass
+
+            await asyncio.shield(_cleanup())
 
     async def promote(self, temp_key: str, final_key: str) -> None:
         temp_path = self._resolve(temp_key)

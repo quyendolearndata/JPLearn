@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from pathlib import Path
 import re
@@ -116,9 +117,21 @@ async def upload(
 
     try:
         await storage.promote(temp_key, final_key)
-    except Exception as exc:
-        await storage.delete(temp_key)
-        raise HTTPException(status_code=500, detail="Failed to store media file") from exc
+    except BaseException as exc:
+        async def _clean_promote():
+            try:
+                await storage.delete(temp_key)
+            except Exception:
+                pass
+            try:
+                await storage.delete(final_key)
+            except Exception:
+                pass
+
+        await asyncio.shield(_clean_promote())
+        if isinstance(exc, Exception):
+            raise HTTPException(status_code=500, detail="Failed to store media file") from exc
+        raise
 
     # 4. Insert DB record with rollback and compensation deletion
     asset = MediaAsset(
@@ -130,11 +143,23 @@ async def upload(
         mime="video/mp4",
     )
     session.add(asset)
+    committed = False
     try:
         await session.commit()
-    except Exception:
-        await session.rollback()
-        await storage.delete(final_key)
+        committed = True
+    except BaseException:
+        if not committed and session.in_transaction():
+            async def _compensate_commit():
+                try:
+                    await session.rollback()
+                except Exception:
+                    pass
+                try:
+                    await storage.delete(final_key)
+                except Exception:
+                    pass
+
+            await asyncio.shield(_compensate_commit())
         raise
 
     return to_staff(asset, settings)
