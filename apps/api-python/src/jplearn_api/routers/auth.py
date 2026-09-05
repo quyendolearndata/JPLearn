@@ -1,8 +1,16 @@
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from jplearn_api import auth_service
+from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
+from jplearn_api.adapters.persistence.user_repository import SqlAlchemyUserRepository
+from jplearn_api.adapters.security.argon2 import Argon2PasswordHasher
+from jplearn_api.adapters.security.jwt import JwtTokenService
+from jplearn_api.application.commands import LogoutUserCommand, RegisterUserCommand
+from jplearn_api.application.handlers.identity import handle_login, handle_logout, handle_register
+from jplearn_api.application.queries import AuthenticateUserQuery
 from jplearn_api.deps import get_session
+from jplearn_api.domain.errors import DomainError
+from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
 from jplearn_api.models import User
 from jplearn_api.schemas import AuthSession, LoginBody, RegisterBody, UserPublic
 from jplearn_api.security import require_user
@@ -22,11 +30,27 @@ async def register(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> AuthSession:
-    return await auth_service.register(
-        session,
-        request.app.state.settings.jwt_secret,
-        body.email,
-        body.password,
+    uow = SqlAlchemyUnitOfWork(session)
+    user_repo = SqlAlchemyUserRepository(session)
+    hasher = Argon2PasswordHasher()
+    token_service = JwtTokenService()
+    cmd = RegisterUserCommand(
+        email=body.email,
+        password=body.password,
+        secret=request.app.state.settings.jwt_secret,
+    )
+    try:
+        dto = await handle_register(cmd, uow, user_repo, hasher, token_service)
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
+
+    return AuthSession(
+        access_token=dto.access_token,
+        user=UserPublic(
+            id=dto.user.id,
+            email=dto.user.email,
+            roles=dto.user.roles,
+        ),
     )
 
 
@@ -43,11 +67,26 @@ async def login(
     request: Request,
     session: AsyncSession = Depends(get_session),
 ) -> AuthSession:
-    return await auth_service.login(
-        session,
-        request.app.state.settings.jwt_secret,
-        body.email,
-        body.password,
+    user_repo = SqlAlchemyUserRepository(session)
+    hasher = Argon2PasswordHasher()
+    token_service = JwtTokenService()
+    query = AuthenticateUserQuery(
+        email=body.email,
+        password=body.password,
+        secret=request.app.state.settings.jwt_secret,
+    )
+    try:
+        dto = await handle_login(query, user_repo, hasher, token_service)
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
+
+    return AuthSession(
+        access_token=dto.access_token,
+        user=UserPublic(
+            id=dto.user.id,
+            email=dto.user.email,
+            roles=dto.user.roles,
+        ),
     )
 
 
@@ -65,7 +104,10 @@ async def logout(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(require_user),
 ) -> Response:
-    await auth_service.logout(session, user)
+    uow = SqlAlchemyUnitOfWork(session)
+    user_repo = SqlAlchemyUserRepository(session)
+    cmd = LogoutUserCommand(user_id=user.id)
+    await handle_logout(cmd, uow, user_repo)
     return Response(status_code=204)
 
 
@@ -76,4 +118,9 @@ async def logout(
     openapi_extra={"x-jplearn-fr": ["FR-ID-002", "FR-ID-004"]},
 )
 async def me(user: User = Depends(require_user)) -> UserPublic:
-    return auth_service.to_public(user)
+    user_roles = [getattr(r, "role", r) for r in user.roles]
+    return UserPublic(
+        id=user.id,
+        email=user.email,
+        roles=user_roles,
+    )

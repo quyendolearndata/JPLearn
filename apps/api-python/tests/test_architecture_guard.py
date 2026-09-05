@@ -108,3 +108,58 @@ async def test_flags_use_case_in_memory():
     )
     assert updated["speaking_enabled"] is True
     assert uow.committed is True
+
+
+@pytest.mark.asyncio
+async def test_identity_use_cases_in_memory():
+    """Verify identity use cases run in pure memory with fake ports and zero I/O."""
+    from fakes import FakePasswordHasher, FakeTokenService, FakeUserRepository
+    from jplearn_api.application.commands import LogoutUserCommand, RegisterUserCommand
+    from jplearn_api.application.handlers.identity import (
+        handle_get_current_user,
+        handle_login,
+        handle_logout,
+        handle_register,
+    )
+    from jplearn_api.application.queries import AuthenticateUserQuery, GetCurrentUserQuery
+    from jplearn_api.domain.errors import DuplicateEmailError, InvalidDomainStateError, UnauthorizedError
+
+    uow = FakeUnitOfWork()
+    user_repo = FakeUserRepository()
+    hasher = FakePasswordHasher()
+    tokens = FakeTokenService()
+
+    # 1. Register
+    reg_cmd = RegisterUserCommand(email="test@example.com", password="password123", secret="sec")
+    auth_dto = await handle_register(reg_cmd, uow, user_repo, hasher, tokens)
+    assert auth_dto.user.email == "test@example.com"
+    assert auth_dto.user.roles == ["learner"]
+    assert uow.committed is True
+
+    # 2. Duplicate registration fails closed
+    with pytest.raises(DuplicateEmailError):
+        await handle_register(reg_cmd, uow, user_repo, hasher, tokens)
+
+    # 3. Password length check
+    with pytest.raises(InvalidDomainStateError):
+        await handle_register(RegisterUserCommand(email="a@b.com", password="short", secret="sec"), uow, user_repo, hasher, tokens)
+
+    # 4. Login success
+    login_query = AuthenticateUserQuery(email="test@example.com", password="password123", secret="sec")
+    login_dto = await handle_login(login_query, user_repo, hasher, tokens)
+    assert login_dto.user.id == auth_dto.user.id
+
+    # 5. Login wrong password fails with UnauthorizedError
+    with pytest.raises(UnauthorizedError):
+        await handle_login(AuthenticateUserQuery(email="test@example.com", password="wrong", secret="sec"), user_repo, hasher, tokens)
+
+    # 6. Get current user
+    me_dto = await handle_get_current_user(GetCurrentUserQuery(user_id=auth_dto.user.id), user_repo)
+    assert me_dto.email == "test@example.com"
+
+    # 7. Logout
+    logout_uow = FakeUnitOfWork()
+    await handle_logout(LogoutUserCommand(user_id=auth_dto.user.id), logout_uow, user_repo)
+    assert logout_uow.committed is True
+    updated_user = await user_repo.get_by_id(auth_dto.user.id)
+    assert updated_user.token_version == 1
