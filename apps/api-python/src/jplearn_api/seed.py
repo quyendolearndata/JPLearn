@@ -19,7 +19,7 @@ from uuid import uuid4
 
 import asyncpg
 
-from jplearn_api.migrate import resolve_database_url
+from jplearn_api.env_resolver import resolve_database_url, resolve_environment
 from jplearn_api.password import hash_password
 
 FLAG_KEYS = (
@@ -177,7 +177,7 @@ def main(argv: list[str] | None = None) -> int:
     if not database_url:
         print("DATABASE_URL is required to seed", file=sys.stderr)
         return 2
-    environment = os.environ.get("ENVIRONMENT", "local")
+    environment = resolve_environment()
     try:
         asyncio.run(seed_url(database_url, environment=environment))
     except Exception as error:

@@ -62,3 +62,16 @@ jobs:
         working-directory: apps/api-python
       - run: PYTHONPATH=src uv run python -m jplearn_api.openapi_diff
         working-directory: apps/api-python
+
+  container-verification:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run container verification gate
+        run: apps/api-python/scripts/verify-container.sh
+      - name: Upload container verification manifest
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-verification-manifest
+          path: apps/api-python/container_verification_manifest.json

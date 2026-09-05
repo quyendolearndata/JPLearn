@@ -73,19 +73,24 @@ def load_baseline_schema(explicit_path: Path | str | None = None) -> dict[str, A
     raise RuntimeError("Baseline schema resource 'adr-004-schema-baseline.json' could not be found")
 
 
-def resolve_database_url(explicit: str | None = None) -> str | None:
-    """Environment first, then a local .env — same precedence as Settings."""
-    if explicit:
-        return explicit
-    if os.environ.get("DATABASE_URL"):
-        return os.environ["DATABASE_URL"]
-    env_file = Path.cwd() / ".env"
-    if env_file.exists():
-        for line in env_file.read_text(encoding="utf-8").splitlines():
-            key, separator, value = line.partition("=")
-            if separator and key.strip() == "DATABASE_URL":
-                return value.strip().strip('"').strip("'")
-    return None
+from jplearn_api.env_resolver import (
+    is_destructive_downgrade_allowed,
+    resolve_database_url,
+    resolve_environment,
+)
+
+# Re-export for backward compatibility
+__all__ = [
+    "load_baseline_schema",
+    "resolve_database_url",
+    "resolve_environment",
+    "alembic_config",
+    "upgrade",
+    "downgrade",
+    "stamp",
+    "current",
+    "main",
+]
 
 
 def alembic_config(database_url: str | None = None) -> Config:
@@ -103,15 +108,9 @@ def upgrade(database_url: str | None = None, revision: str = "head") -> None:
 
 
 def downgrade(revision: str, database_url: str | None = None) -> None:
-    env = (os.environ.get("ENVIRONMENT") or "").lower().strip()
-    is_destructive = revision.lower() in ("base", "-1", "-all") or revision.startswith("-")
-    if is_destructive:
-        allow = os.environ.get("ALLOW_DESTRUCTIVE_DOWNGRADE", "").lower() in ("true", "1", "yes")
-        if env not in ("local", "test") and not allow:
-            raise RuntimeError(
-                f"Destructive downgrade to {revision} is blocked in '{env or 'unknown'}' environment "
-                f"without ALLOW_DESTRUCTIVE_DOWNGRADE=true"
-            )
+    allowed, reason = is_destructive_downgrade_allowed(revision)
+    if not allowed:
+        raise RuntimeError(reason)
     command.downgrade(alembic_config(database_url), revision)
 
 

@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "commit_sha": "f388ed35d34f215dfa16ffef98bca7e7d3e18283",
+  "image_tag": "jplearn-api-python:hardened",
+  "image_id": "sha256:a495af354e1128e1f942310383bde03a2ea816c251cfd4262600694fd4a1aaae",
+  "start_time_utc": "2026-09-05T04:58:28Z",
+  "end_time_utc": "2026-09-05T04:58:44Z",
+  "tests": {
+    "non_root_uid": {"uid": 10001, "result": "PASS"},
+    "packaged_resources": {"tables_loaded": 10, "result": "PASS"},
+    "cli_help_and_exit_codes": {"help": 0, "invalid_cmd": 2, "result": "PASS"},
+    "adoption_stamp_safety": {"empty_db_stamp_exit": 1, "alembic_table_untouched": true, "result": "PASS"},
+    "migration_and_seed": {"upgrade": "PASS", "current": "PASS", "seed": "PASS"},
+    "readiness_probe_isolation": {
+      "healthy": {"code": 200, "result": "PASS"},
+      "storage_degraded": {"code": 503, "liveness": 200, "result": "PASS"},
+      "database_degraded": {"code": 503, "result": "PASS"}
+    }
+  }
+}

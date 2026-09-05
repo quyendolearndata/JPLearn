@@ -52,7 +52,7 @@ async def ready(
 ) -> ReadyBody:
     async def _check_db() -> bool:
         try:
-            await session.execute(text("SELECT 1"))
+            await asyncio.wait_for(session.execute(text("SELECT 1")), timeout=1.5)
             return True
         except Exception:
             return False
@@ -76,6 +76,10 @@ async def ready(
         pass
     except Exception:
         pass
+    finally:
+        for t in (db_task, storage_task):
+            if not t.done():
+                t.cancel()
 
     db_ok = (
         db_task.result()
