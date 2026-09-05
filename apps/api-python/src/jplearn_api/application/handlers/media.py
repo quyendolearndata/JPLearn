@@ -57,9 +57,135 @@ def to_staff_dto(
 
 
 class UploadCommitOutcome(str, Enum):
-    COMMITTED = "COMMITTED"
-    ROLLBACK_CONFIRMED = "ROLLBACK_CONFIRMED"
-    OUTCOME_UNKNOWN = "OUTCOME_UNKNOWN"
+    COMMITTED = "committed"
+    ROLLBACK_CONFIRMED = "rollback_confirmed"
+    OUTCOME_UNKNOWN = "outcome_unknown"
+
+
+class UploadTransactionCoordinator:
+    """Single coordinator managing Scope 3 write UoW lifecycle, transaction outcome,
+    and storage compensation under cancellation and error conditions.
+    """
+
+    def __init__(
+        self,
+        uow: AsyncUnitOfWork,
+        storage: StoragePort,
+        asset_id: str,
+        catalog_item_id: str,
+        final_key: str,
+        grace_seconds: float,
+    ) -> None:
+        self.uow = uow
+        self.storage = storage
+        self.asset_id = asset_id
+        self.catalog_item_id = catalog_item_id
+        self.final_key = final_key
+        self.grace_seconds = grace_seconds
+        self.outcome = "pending"  # pending | committed | rollback_confirmed | outcome_unknown
+        self.cleanup_task: asyncio.Task[None] | None = None
+
+    def _mark_uow_settled(self) -> None:
+        """Mark write UoW as settled so __aexit__ does not run concurrent or repeated rollback."""
+        if hasattr(self.uow, "_rolled_back"):
+            try:
+                setattr(self.uow, "_rolled_back", True)
+            except Exception:
+                pass
+        if hasattr(self.uow, "rolled_back"):
+            try:
+                setattr(self.uow, "rolled_back", True)
+            except Exception:
+                pass
+
+    async def settle_rollback_and_cleanup(self, reason: str) -> None:
+        """Execute rollback and storage deletion shielded from cancellation.
+        Drains cleanup task to completion even if caller task receives repeated cancellations.
+        """
+        if self.outcome == "committed":
+            return
+
+        if self.cleanup_task is None:
+            async def _run_cleanup() -> None:
+                rb_ok = getattr(self.uow, "rolled_back", False)
+                if not rb_ok and getattr(self.uow, "committed", False):
+                    self.outcome = "committed"
+                    return
+
+                if not rb_ok:
+                    try:
+                        await self.uow.rollback()
+                        rb_ok = getattr(self.uow, "rolled_back", True)
+                    except Exception as rb_exc:
+                        self.outcome = "outcome_unknown"
+                        self._mark_uow_settled()
+                        logger.warning(
+                            "media_upload_commit_outcome_unknown",
+                            extra={
+                                "asset_id": self.asset_id,
+                                "catalog_item_id": self.catalog_item_id,
+                                "final_key": self.final_key,
+                                "outcome": "outcome_unknown",
+                                "reason": f"rollback_failed_{reason}: {type(rb_exc).__name__}",
+                                "task_state": "rollback_exception",
+                            },
+                        )
+                        return
+                    else:
+                        self._mark_uow_settled()
+
+                if rb_ok:
+                    self.outcome = "rollback_confirmed"
+                    try:
+                        await self.storage.delete(self.final_key)
+                    except Exception as del_exc:
+                        logger.warning(
+                            "media_cleanup_failed",
+                            extra={
+                                "asset_id": self.asset_id,
+                                "catalog_item_id": self.catalog_item_id,
+                                "final_key": self.final_key,
+                                "outcome": "rollback_confirmed",
+                                "reason": f"storage_delete_failed_{reason}: {type(del_exc).__name__}",
+                                "task_state": "delete_exception",
+                            },
+                        )
+
+            self.cleanup_task = asyncio.create_task(_run_cleanup())
+
+        # Drain cleanup_task with timeout budget, absorbing outer cancellations
+        start_t = asyncio.get_event_loop().time()
+        while not self.cleanup_task.done():
+            elapsed = asyncio.get_event_loop().time() - start_t
+            remaining = max(0.01, self.grace_seconds - elapsed)
+            try:
+                await asyncio.wait_for(asyncio.shield(self.cleanup_task), timeout=remaining)
+            except TimeoutError:
+                self.outcome = "outcome_unknown"
+                self._mark_uow_settled()
+                logger.warning(
+                    "media_upload_commit_outcome_unknown",
+                    extra={
+                        "asset_id": self.asset_id,
+                        "catalog_item_id": self.catalog_item_id,
+                        "final_key": self.final_key,
+                        "outcome": "outcome_unknown",
+                        "reason": f"cleanup_drain_timeout_{reason}",
+                        "task_state": "drain_timeout",
+                    },
+                )
+                self.cleanup_task.cancel()
+                break
+            except asyncio.CancelledError:
+                continue
+            except Exception:
+                break
+
+        if self.cleanup_task.done() and not self.cleanup_task.cancelled():
+            try:
+                self.cleanup_task.result()
+            except Exception:
+                pass
 
 
 async def handle_upload_media(
@@ -163,41 +289,24 @@ async def handle_upload_media(
                     "asset_id": asset_id,
                     "catalog_item_id": catalog_item_id,
                     "final_key": final_key,
+                    "outcome": "rollback_confirmed",
                     "reason": f"storage_delete_failed_on_factory_error: {type(del_exc).__name__}",
+                    "task_state": "factory_failed",
                 },
             )
         raise
 
-    async def _safe_rollback_and_cleanup(reason: str) -> None:
-        rb_ok = False
-        try:
-            await write_uow.rollback()
-            rb_ok = getattr(write_uow, "rolled_back", True)
-        except Exception as rb_exc:
-            logger.warning(
-                "media_upload_commit_outcome_unknown",
-                extra={
-                    "asset_id": asset_id,
-                    "catalog_item_id": catalog_item_id,
-                    "final_key": final_key,
-                    "reason": f"rollback_failed_{reason}: {type(rb_exc).__name__}",
-                },
-            )
-        if rb_ok:
-            try:
-                await storage.delete(final_key)
-            except Exception as del_exc:
-                logger.warning(
-                    "media_cleanup_failed",
-                    extra={
-                        "asset_id": asset_id,
-                        "catalog_item_id": catalog_item_id,
-                        "final_key": final_key,
-                        "reason": f"storage_delete_failed: {type(del_exc).__name__}",
-                    },
-                )
+    coordinator = UploadTransactionCoordinator(
+        uow=write_uow,
+        storage=storage,
+        asset_id=asset_id,
+        catalog_item_id=catalog_item_id,
+        final_key=final_key,
+        grace_seconds=resolved_grace_seconds,
+    )
 
     uow_entered = False
+    abort_reason: str | None = None
     try:
         async with write_uow:
             uow_entered = True
@@ -207,11 +316,13 @@ async def handle_upload_media(
             try:
                 catalog_exists = await target_repo.catalog_item_exists(catalog_item_id)
             except BaseException:
-                await _safe_rollback_and_cleanup("recheck_query_failed")
+                abort_reason = "recheck_query_failed"
+                await coordinator.settle_rollback_and_cleanup(abort_reason)
                 raise
 
             if not catalog_exists:
-                await _safe_rollback_and_cleanup("catalog_missing")
+                abort_reason = "catalog_missing"
+                await coordinator.settle_rollback_and_cleanup(abort_reason)
                 raise EntityNotFoundError("Catalog item not found")
 
             # 4. Record staging and run pre-commit hooks
@@ -235,22 +346,22 @@ async def handle_upload_media(
                     if asyncio.iscoroutine(hook_res):
                         await hook_res
             except BaseException:
-                await _safe_rollback_and_cleanup("pre_commit_failed")
+                abort_reason = "pre_commit_failed"
+                await coordinator.settle_rollback_and_cleanup(abort_reason)
                 raise
 
             # 5. Commit with outcome machine
             commit_task = asyncio.create_task(write_uow.commit())
-            committed = False
             try:
                 await asyncio.shield(commit_task)
-                committed = True
+                coordinator.outcome = "committed"
             except asyncio.CancelledError:
                 try:
                     await asyncio.wait_for(
                         asyncio.shield(commit_task),
                         timeout=resolved_grace_seconds,
                     )
-                    committed = True
+                    coordinator.outcome = "committed"
                 except TimeoutError:
                     commit_task.cancel()
                 except asyncio.CancelledError:
@@ -258,7 +369,7 @@ async def handle_upload_media(
                 except Exception:
                     pass
 
-                if not committed:
+                if coordinator.outcome != "committed":
                     while not commit_task.done():
                         try:
                             await asyncio.shield(commit_task)
@@ -272,7 +383,8 @@ async def handle_upload_media(
                     except BaseException:
                         pass
 
-                if not committed:
+                if coordinator.outcome != "committed":
+                    coordinator.outcome = "outcome_unknown"
                     rollback_error = None
                     try:
                         await write_uow.rollback()
@@ -287,22 +399,28 @@ async def handle_upload_media(
                             "asset_id": asset_id,
                             "catalog_item_id": catalog_item_id,
                             "final_key": final_key,
+                            "outcome": "outcome_unknown",
                             "reason": reason,
+                            "task_state": "commit_cancelled",
                         },
                     )
                 raise
             except Exception as exc:
                 is_deterministic_abort = isinstance(exc, DeterministicAbortError) or getattr(exc, "is_deterministic_abort", False)
                 if is_deterministic_abort:
-                    await _safe_rollback_and_cleanup("deterministic_abort")
+                    abort_reason = "deterministic_abort"
+                    await coordinator.settle_rollback_and_cleanup(abort_reason)
                 else:
+                    coordinator.outcome = "outcome_unknown"
                     logger.warning(
                         "media_upload_commit_outcome_unknown",
                         extra={
                             "asset_id": asset_id,
                             "catalog_item_id": catalog_item_id,
                             "final_key": final_key,
+                            "outcome": "outcome_unknown",
                             "reason": f"commit_failed:{type(exc).__name__}",
+                            "task_state": "commit_exception",
                         },
                     )
                     try:
@@ -328,9 +446,13 @@ async def handle_upload_media(
                             "asset_id": asset_id,
                             "catalog_item_id": catalog_item_id,
                             "final_key": final_key,
+                            "outcome": "rollback_confirmed",
                             "reason": f"storage_delete_failed_on_enter_error: {type(del_exc).__name__}",
+                            "task_state": "enter_failed",
                         },
                     )
+        elif uow_entered and coordinator.outcome not in ("committed", "outcome_unknown"):
+            await coordinator.settle_rollback_and_cleanup(abort_reason or "unhandled_scope3_exception")
         raise
 
     return to_staff_dto(asset, signer=signer)
