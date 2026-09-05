@@ -156,6 +156,9 @@ def current(database_url: str | None = None) -> None:
 def main(argv: list[str] | None = None) -> int:
     args = list(argv if argv is not None else sys.argv[1:])
     action = args.pop(0) if args else "upgrade"
+    if action in ("--help", "-h", "help"):
+        print(__doc__)
+        return 0
     try:
         if action == "upgrade":
             upgrade(revision=args[0] if args else "head")
@@ -169,7 +172,7 @@ def main(argv: list[str] | None = None) -> int:
         elif action == "current":
             current()
         else:
-            print(__doc__, file=sys.stderr)
+            print(f"Unknown command: {action}\n\n{__doc__}", file=sys.stderr)
             return 2
     except Exception as error:  # surface a one-line reason, not a stack trace
         print(f"migrate {action} failed: {error}", file=sys.stderr)

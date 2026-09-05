@@ -21,15 +21,46 @@ PY_PORT="${PY_PORT:-$(get_free_port)}"
 WEB_PORT="${WEB_PORT:-$(get_free_port)}"
 RUN_ID="$(date +%Y%m%d%H%M%S)_$RANDOM"
 E2E_PROJECT="jplearn-web-e2e-${RUN_ID}"
-STORAGE="$(mktemp -d /tmp/jplearn-web-e2e-py-storage.XXXXXX)"
+RUN_DIR="/tmp/jplearn-e2e-${RUN_ID}"
+mkdir -p "$RUN_DIR"
+STORAGE="$RUN_DIR/storage"
+mkdir -p "$STORAGE"
+DIST_DIR=".next_${RUN_ID}"
+
 API_PID=""
 WEB_PID=""
+LOCK_PROC_PID=""
 ITEM_ID="00000000-0000-4000-8000-0000000000c1" # seed-ci0-daily-home (draft 30s)
 SOURCE_MP4="$REPO/media/stock/mp4/level-0-wash-hands.mp4"
 
+acquire_runner_lock() {
+  local fifo
+  fifo="$(mktemp -u /tmp/jplearn-web-e2e-fifo.XXXXXX)"
+  mkfifo "$fifo"
+  python3 -c '
+import fcntl, sys
+lock_path = "/tmp/jplearn-web-e2e.lock"
+pipe_path = sys.argv[1]
+f = open(lock_path, "w")
+try:
+    fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+except BlockingIOError:
+    print("== Another E2E run is in progress. Waiting for lock... ==", flush=True)
+    fcntl.flock(f, fcntl.LOCK_EX)
+with open(pipe_path, "w") as p:
+    p.write("READY\n")
+sys.stdin.read()
+' "$fifo" &
+  LOCK_PROC_PID=$!
+  local status
+  read -r status <"$fifo"
+  rm -f "$fifo"
+}
+
 cleanup() {
+  local exit_code=$?
   set +e
-  echo "== Cleaning up E2E resources =="
+  echo "== Cleaning up E2E resources [run=$RUN_ID] =="
   if [[ -n "$WEB_PID" ]] && kill -0 "$WEB_PID" 2>/dev/null; then
     kill "$WEB_PID" 2>/dev/null || true
     wait "$WEB_PID" 2>/dev/null || true
@@ -39,9 +70,20 @@ cleanup() {
     wait "$API_PID" 2>/dev/null || true
   fi
   "$VENV_PY" "$REPO/apps/api-python/differential/db.py" --project "$E2E_PROJECT" down >/dev/null 2>&1 || true
-  rm -rf "$STORAGE"
+  rm -rf "$REPO/apps/web/$DIST_DIR"
+  git checkout -- "$REPO/apps/web/next-env.d.ts" "$REPO/apps/web/tsconfig.json" 2>/dev/null || true
+  if [[ "$exit_code" -eq 0 ]]; then
+    rm -rf "$RUN_DIR"
+  else
+    echo "== E2E run failed (exit $exit_code). Logs preserved at: $RUN_DIR =="
+  fi
+  if [[ -n "$LOCK_PROC_PID" ]]; then
+    kill "$LOCK_PROC_PID" 2>/dev/null || true
+  fi
 }
 trap cleanup EXIT ERR INT TERM
+
+acquire_runner_lock
 
 wait_http() { # url, name
   for _ in $(seq 1 120); do
@@ -66,7 +108,7 @@ echo "== 2/5 FastAPI :$PY_PORT =="
   ENVIRONMENT="test" \
   CORS_ORIGIN_REGEX="^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$" \
   PYTHONPATH=src \
-  exec .venv/bin/uvicorn jplearn_api.main:app --port "$PY_PORT" >/tmp/jplearn-web-e2e-py-api.log 2>&1
+  exec .venv/bin/uvicorn jplearn_api.main:app --port "$PY_PORT" >"$RUN_DIR/api.log" 2>&1
 ) &
 API_PID=$!
 wait_http "http://localhost:$PY_PORT/ready" "FastAPI"
@@ -96,13 +138,16 @@ curl -fsS -X POST "http://localhost:$PY_PORT/staff/media/$ASSET_ID/hls" \
   -H "Authorization: Bearer $TOKEN" >/dev/null
 echo "   published item $ITEM_ID, asset $ASSET_ID (+hls)"
 
-echo "== 4/5 web :$WEB_PORT → API :$PY_PORT =="
+echo "== 4/5 web :$WEB_PORT → API :$PY_PORT [dist=$DIST_DIR] =="
 (
   cd "$REPO/apps/web"
-  NEXT_PUBLIC_API_URL="http://localhost:$PY_PORT" ./node_modules/.bin/next build \
-    >/tmp/jplearn-web-e2e-web-build.log 2>&1
   NEXT_PUBLIC_API_URL="http://localhost:$PY_PORT" \
-  exec ./node_modules/.bin/next start -p "$WEB_PORT" >/tmp/jplearn-web-e2e-py-web.log 2>&1
+  NEXT_DIST_DIR="$DIST_DIR" \
+  ./node_modules/.bin/next build >"$RUN_DIR/web-build.log" 2>&1
+
+  NEXT_PUBLIC_API_URL="http://localhost:$PY_PORT" \
+  NEXT_DIST_DIR="$DIST_DIR" \
+  exec ./node_modules/.bin/next start -p "$WEB_PORT" >"$RUN_DIR/web.log" 2>&1
 ) &
 WEB_PID=$!
 wait_http "http://localhost:$WEB_PORT/login" "Next"
@@ -110,4 +155,6 @@ wait_http "http://localhost:$WEB_PORT/login" "Next"
 echo "== 5/5 playwright $* =="
 cd "$REPO/apps/web"
 PLAYWRIGHT_TEST_BASE_URL="http://localhost:$WEB_PORT" \
+PLAYWRIGHT_OUTPUT_DIR="$RUN_DIR/test-results" \
+PLAYWRIGHT_HTML_REPORT="$RUN_DIR/playwright-report" \
   env -u PLAYWRIGHT_BROWSERS_PATH ./node_modules/.bin/playwright test "$@"

@@ -207,3 +207,25 @@ def test_stamp_fails_on_schema_divergence_and_preserves_clean_state(
     upgrade(isolated_postgres)
     actual = asyncio.run(snapshot_url(isolated_postgres))
     assert not diff(expected, actual), "upgrade after stamp modified the schema!"
+
+
+def test_migrate_cli_help_and_unknown_exit_codes(capsys: pytest.CaptureFixture[str]) -> None:
+    from jplearn_api.migrate import main
+
+    # 1. Help flags return 0
+    assert main(["--help"]) == 0
+    captured = capsys.readouterr()
+    assert "Migration CLI" in captured.out
+
+    assert main(["-h"]) == 0
+    assert main(["help"]) == 0
+
+    # 2. Unknown command returns 2
+    assert main(["invalid_command"]) == 2
+    captured_err = capsys.readouterr()
+    assert "Unknown command: invalid_command" in captured_err.err
+
+    # 3. Missing revision on downgrade returns 2
+    assert main(["downgrade"]) == 2
+    captured_down = capsys.readouterr()
+    assert "downgrade requires a revision" in captured_down.err
