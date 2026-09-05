@@ -45,6 +45,9 @@ async def start_session(
     operation_id="endSession",
     tags=["Session"],
     openapi_extra={"x-jplearn-fr": ["FR-SES-002", "FR-PRG-001", "FR-EVT-001", "FR-EVT-002"]},
+    responses={
+        400: {"description": "Session already ended"},
+    },
 )
 async def end_session(
     id: UUIDPath,

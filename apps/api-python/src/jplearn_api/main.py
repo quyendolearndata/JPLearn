@@ -81,14 +81,73 @@ def create_app(
             return app.openapi_schema
         schema = get_openapi(title=app.title, version=app.version, routes=app.routes)
         schema = normalize_security_scheme_names(schema)
+        components = schema.setdefault("components", {})
+        schemas = components.setdefault("schemas", {})
+        security_schemes = components.setdefault("securitySchemes", {})
+        security_schemes.setdefault(
+            "signedQuery",
+            {
+                "type": "apiKey",
+                "in": "query",
+                "name": "sig",
+                "description": "HMAC-SHA256 signature for media streaming (with exp timestamp)",
+            },
+        )
+
+        schemas["HttpError"] = {
+            "type": "object",
+            "description": "Standard JSON error body (400, 403, 404, 500) per ADR-005",
+            "required": ["statusCode", "message", "error"],
+            "properties": {
+                "statusCode": {"type": "integer"},
+                "message": {
+                    "oneOf": [
+                        {"type": "string"},
+                        {"type": "array", "items": {"type": "string"}},
+                    ]
+                },
+                "error": {"type": "string"},
+            },
+        }
+        schemas["Http401Error"] = {
+            "type": "object",
+            "description": "Distinct 401 Unauthorized JSON error body per ADR-005",
+            "required": ["statusCode", "message"],
+            "properties": {
+                "statusCode": {"type": "integer", "enum": [401]},
+                "message": {"type": "string"},
+            },
+        }
+
         # Strip auto-generated 422 per ADR-005 BA contract (runtime validates to 400 Bad Request)
-        for path_item in schema.get("paths", {}).values():
+        for path_name, path_item in schema.get("paths", {}).items():
             if isinstance(path_item, dict):
                 for op in path_item.values():
                     if isinstance(op, dict) and "responses" in op:
                         op["responses"].pop("422", None)
-        components = schema.get("components", {})
-        schemas = components.get("schemas", {})
+                        for code, resp in op["responses"].items():
+                            if code == "401":
+                                if "content" not in resp:
+                                    resp["content"] = {
+                                        "application/json": {
+                                            "schema": {"$ref": "#/components/schemas/Http401Error"}
+                                        }
+                                    }
+                            elif code in ("400", "403", "404", "500"):
+                                if "content" not in resp:
+                                    resp["content"] = {
+                                        "application/json": {
+                                            "schema": {"$ref": "#/components/schemas/HttpError"}
+                                        }
+                                    }
+                            elif code == "503" and path_name == "/ready":
+                                if "content" not in resp:
+                                    resp["content"] = {
+                                        "application/json": {
+                                            "schema": {"$ref": "#/components/schemas/Ready"}
+                                        }
+                                    }
+
         schemas.pop("HTTPValidationError", None)
         schemas.pop("ValidationError", None)
         app.openapi_schema = schema

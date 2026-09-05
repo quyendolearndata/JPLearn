@@ -33,6 +33,8 @@ REQUIRED_OPERATIONS = {
     ("/staff/media/{id}/hls", "post"),
 }
 
+ALLOWED_MIDDLEWARE_HEADERS = {"x-request-id", "traceparent"}
+
 
 def _ops(spec: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
     found: dict[tuple[str, str], dict[str, Any]] = {}
@@ -55,6 +57,15 @@ def normalize_security_scheme_names(spec: dict[str, Any]) -> dict[str, Any]:
     schemes.setdefault(
         "bearerAuth",
         {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"},
+    )
+    schemes.setdefault(
+        "signedQuery",
+        {
+            "type": "apiKey",
+            "in": "query",
+            "name": "sig",
+            "description": "HMAC-SHA256 signature for media streaming (with exp timestamp)",
+        },
     )
     for item in (spec.get("paths") or {}).values():
         if not isinstance(item, dict):
@@ -101,6 +112,8 @@ def resolve_schema(
     spec: dict[str, Any],
     schema: dict[str, Any] | None,
     seen: set[str] | None = None,
+    problems: list[str] | None = None,
+    ctx: str = "",
 ) -> dict[str, Any]:
     if not schema or not isinstance(schema, dict):
         return {}
@@ -113,12 +126,16 @@ def resolve_schema(
             return {}
         seen.add(ref)
         resolved = lookup_ref(spec, ref)
-        return resolve_schema(spec, resolved, seen)
+        if not resolved:
+            if problems is not None:
+                problems.append(f"{ctx}: undefined $ref {ref!r}")
+            return {}
+        return resolve_schema(spec, resolved, seen, problems, ctx)
 
     if "allOf" in schema:
         merged: dict[str, Any] = {"type": "object", "properties": {}, "required": []}
         for sub in schema["allOf"]:
-            res_sub = resolve_schema(spec, sub, seen)
+            res_sub = resolve_schema(spec, sub, seen, problems, ctx)
             if "properties" in res_sub:
                 merged["properties"].update(res_sub["properties"])
             if "required" in res_sub:
@@ -146,7 +163,7 @@ def resolve_schema(
         has_null = any(isinstance(sub, dict) and sub.get("type") == "null" for sub in any_of)
         non_null_subs = [sub for sub in any_of if not (isinstance(sub, dict) and sub.get("type") == "null")]
         if has_null and len(non_null_subs) == 1:
-            res_inner = resolve_schema(spec, non_null_subs[0], seen)
+            res_inner = resolve_schema(spec, non_null_subs[0], seen, problems, ctx)
             del res["anyOf"]
             res.update(res_inner)
             res["nullable"] = True
@@ -162,8 +179,8 @@ def compare_schemas(
     ctx: str,
 ) -> list[str]:
     problems: list[str] = []
-    h = resolve_schema(h_spec, h_raw)
-    g = resolve_schema(g_spec, g_raw)
+    h = resolve_schema(h_spec, h_raw, problems=problems, ctx=f"{ctx}(handwritten)")
+    g = resolve_schema(g_spec, g_raw, problems=problems, ctx=f"{ctx}(generated)")
 
     if not h:
         return problems
@@ -171,22 +188,30 @@ def compare_schemas(
         problems.append(f"{ctx}: missing schema in generated spec")
         return problems
 
+    # Missing type in schema
+    if "type" not in g and not any(k in g for k in ("anyOf", "oneOf", "allOf", "$ref")):
+        problems.append(f"{ctx}: missing 'type' in generated schema")
+    if "type" not in h and not any(k in h for k in ("anyOf", "oneOf", "allOf", "$ref")):
+        problems.append(f"{ctx}: missing 'type' in handwritten schema")
+
     h_type = h.get("type")
     g_type = g.get("type")
     if h_type and g_type and h_type != g_type:
         problems.append(f"{ctx}: type mismatch: generated {g_type!r} != handwritten {h_type!r}")
 
-    # Enums check
+    # Enums check - case-sensitive and type-preserving
     if "enum" in h:
         if "enum" not in g:
             problems.append(f"{ctx}: missing enum in generated schema")
         else:
-            h_enum = set(str(x).lower() for x in h["enum"])
-            g_enum = set(str(x).lower() for x in g.get("enum", []))
+            h_enum = set(h["enum"])
+            g_enum = set(g.get("enum", []))
             if h_enum != g_enum:
                 problems.append(
-                    f"{ctx}: enum mismatch: generated {sorted(g_enum)} != handwritten {sorted(h_enum)}"
+                    f"{ctx}: enum mismatch: generated {sorted(str(x) for x in g_enum)} != handwritten {sorted(str(x) for x in h_enum)}"
                 )
+    elif "enum" in g:
+        problems.append(f"{ctx}: unexpected enum in generated schema: {g.get('enum')}")
 
     # Minimum check
     if "minimum" in h:
@@ -208,23 +233,23 @@ def compare_schemas(
     elif "maximum" in g:
         problems.append(f"{ctx}: unexpected maximum in generated schema: {g.get('maximum')}")
 
-    # MinLength check
+    # MinLength check: cannot be omitted or loosened
     if "minLength" in h:
         g_min_len = g.get("minLength")
         if g_min_len is None:
             problems.append(f"{ctx}: missing minLength (expected {h['minLength']})")
-        elif g_min_len != h["minLength"]:
-            problems.append(f"{ctx}: minLength mismatch: generated {g_min_len} != handwritten {h['minLength']}")
+        elif g_min_len < h["minLength"]:
+            problems.append(f"{ctx}: minLength loosened: generated {g_min_len} < handwritten {h['minLength']}")
 
-    # MaxLength check
+    # MaxLength check: cannot be omitted or loosened
     if "maxLength" in h:
         g_max_len = g.get("maxLength")
         if g_max_len is None:
             problems.append(f"{ctx}: missing maxLength (expected {h['maxLength']})")
-        elif g_max_len != h["maxLength"]:
-            problems.append(f"{ctx}: maxLength mismatch: generated {g_max_len} != handwritten {h['maxLength']}")
+        elif g_max_len > h["maxLength"]:
+            problems.append(f"{ctx}: maxLength loosened: generated {g_max_len} > handwritten {h['maxLength']}")
 
-    # Pattern check
+    # Pattern check: cannot be omitted or mismatched
     if "pattern" in h:
         g_pattern = g.get("pattern")
         if not g_pattern:
@@ -232,7 +257,7 @@ def compare_schemas(
         elif g_pattern != h["pattern"]:
             problems.append(f"{ctx}: pattern mismatch: generated {g_pattern!r} != handwritten {h['pattern']!r}")
 
-    # Format check (uuid, email, date-time, etc.)
+    # Format check (uuid, email, date-time, uri, etc.)
     if "format" in h and h["format"] not in ("binary",):
         g_fmt = g.get("format")
         if g_fmt != h["format"]:
@@ -243,6 +268,15 @@ def compare_schemas(
     g_null = bool(g.get("nullable", False))
     if h_null != g_null:
         problems.append(f"{ctx}: nullable mismatch: generated {g_null} != handwritten {h_null}")
+
+    # AdditionalProperties check
+    if "additionalProperties" in h:
+        h_add = h["additionalProperties"]
+        g_add = g.get("additionalProperties")
+        if g_add is not None and g_add != h_add:
+            problems.append(f"{ctx}: additionalProperties mismatch: generated {g_add} != handwritten {h_add}")
+        elif h_add is False and g_add is not False:
+            problems.append(f"{ctx}: additionalProperties mismatch: generated {g_add} != handwritten False")
 
     # Required fields check
     h_req = set(h.get("required", []))
@@ -347,10 +381,21 @@ def compare_openapi(handwritten: dict[str, Any], generated: dict[str, Any]) -> l
                     p = lookup_ref(generated, p["$ref"])
                 g_params[(p.get("name", ""), p.get("in", ""))] = p
 
+        # Check for extra parameters in generated spec (bi-directional check)
+        for (p_name, p_in), g_p in g_params.items():
+            if (p_name, p_in) not in h_params:
+                if p_in == "header" and p_name.lower() in ALLOWED_MIDDLEWARE_HEADERS:
+                    continue
+                req_prefix = "required " if g_p.get("required") else ""
+                problems.append(
+                    f"{method.upper()} {path} extra {req_prefix}{p_in} parameter {p_name!r} not in contract"
+                )
+
+        # Check for missing parameters and validate matching parameters
         for (p_name, p_in), h_p in h_params.items():
             if (p_name, p_in) not in g_params:
-                if p_in == "header":
-                    continue  # middleware headers like x-request-id
+                if p_in == "header" and p_name.lower() in ALLOWED_MIDDLEWARE_HEADERS:
+                    continue
                 problems.append(f"{method.upper()} {path} missing parameter {p_name!r} in {p_in}")
                 continue
             g_p = g_params[(p_name, p_in)]
@@ -358,8 +403,8 @@ def compare_openapi(handwritten: dict[str, Any], generated: dict[str, Any]) -> l
             g_req = g_p.get("required", False)
             if h_req != g_req:
                 problems.append(f"{method.upper()} {path} parameter {p_name!r} required {g_req} != {h_req}")
-            h_schema = resolve_schema(handwritten, h_p.get("schema"))
-            g_schema = resolve_schema(generated, g_p.get("schema"))
+            h_schema = resolve_schema(handwritten, h_p.get("schema"), problems=problems, ctx=f"{method.upper()} {path} param({p_name})")
+            g_schema = resolve_schema(generated, g_p.get("schema"), problems=problems, ctx=f"{method.upper()} {path} param({p_name})")
             if p_in == "query" and not h_req:
                 # Query parameters are absent rather than null in URL query strings
                 h_schema.pop("nullable", None)
@@ -399,21 +444,44 @@ def compare_openapi(handwritten: dict[str, Any], generated: dict[str, Any]) -> l
                             f"{method.upper()} {path} requestBody[{c_type}]",
                         )
                     )
+                for c_type in sorted(set(g_content) - set(h_content)):
+                    problems.append(f"{method.upper()} {path} requestBody extra content-type {c_type!r} not in contract")
+        elif g_rb:
+            problems.append(f"{method.upper()} {path} extra requestBody in generated spec")
 
-        # All declared responses comparison
+        # All declared responses comparison (bi-directional content and schema)
         for status_code in sorted(h_statuses & g_statuses):
             h_resp = h_op.get("responses", {}).get(status_code) or {}
             g_resp = g_op.get("responses", {}).get(status_code) or {}
             h_content = (h_resp or {}).get("content", {})
             g_content = (g_resp or {}).get("content", {})
-            for content_type, h_media in h_content.items():
-                if content_type in g_content:
+
+            # Content types comparison
+            missing_ct = sorted(set(h_content) - set(g_content))
+            if missing_ct:
+                problems.append(f"{method.upper()} {path} response({status_code}) missing content-type {missing_ct}")
+            extra_ct = sorted(set(g_content) - set(h_content))
+            if extra_ct:
+                problems.append(f"{method.upper()} {path} response({status_code}) extra content-type {extra_ct} not in contract")
+
+            for content_type in sorted(set(h_content) & set(g_content)):
+                h_schema = h_content[content_type].get("schema")
+                g_schema = g_content[content_type].get("schema")
+                if h_schema is not None and g_schema is None:
+                    problems.append(
+                        f"{method.upper()} {path} response({status_code})[{content_type}]: missing schema in generated spec"
+                    )
+                elif g_schema is not None and h_schema is None:
+                    problems.append(
+                        f"{method.upper()} {path} response({status_code})[{content_type}]: extra schema in generated spec not in contract"
+                    )
+                elif h_schema is not None and g_schema is not None:
                     problems.extend(
                         compare_schemas(
                             handwritten,
                             generated,
-                            h_media.get("schema"),
-                            g_content[content_type].get("schema"),
+                            h_schema,
+                            g_schema,
                             f"{method.upper()} {path} response({status_code})[{content_type}]",
                         )
                     )

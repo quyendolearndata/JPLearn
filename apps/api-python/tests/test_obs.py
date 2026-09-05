@@ -198,7 +198,7 @@ def test_settings_validation():
         )
 
     # 6. Staging/Production with wildcard CORS fails
-    with pytest.raises(ValueError, match="CORS_ORIGINS cannot be empty or contain wildcard"):
+    with pytest.raises(ValueError, match="CORS_ORIGINS cannot be empty"):
         Settings(
             environment="staging",
             database_url="postgresql://user:pass@localhost:5432/db",
@@ -206,6 +206,39 @@ def test_settings_validation():
             api_public_url="https://api.example.com",
             media_signing_secret="b" * 32,
             cors_origins=["*"],
+        )
+
+    # 6b. Staging/Production inheriting default localhost origins fails
+    with pytest.raises(ValueError, match="Explicit HTTPS CORS_ORIGINS required"):
+        Settings(
+            environment="production",
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="a" * 32,
+            api_public_url="https://api.example.com",
+            media_signing_secret="b" * 32,
+        )
+
+    # 6c. Staging/Production with permissive regex fails
+    with pytest.raises(ValueError, match="Broad or unapproved CORS_ORIGIN_REGEX"):
+        Settings(
+            environment="production",
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="a" * 32,
+            api_public_url="https://api.example.com",
+            media_signing_secret="b" * 32,
+            cors_origins=["https://app.example.com"],
+            cors_origin_regex=".*",
+        )
+
+    # 6d. Production with invalid origin URL structure fails
+    with pytest.raises(ValueError, match="CORS origin must not include a path"):
+        Settings(
+            environment="production",
+            database_url="postgresql://user:pass@localhost:5432/db",
+            jwt_secret="a" * 32,
+            api_public_url="https://api.example.com",
+            media_signing_secret="b" * 32,
+            cors_origins=["https://app.example.com/some/path"],
         )
 
     # 7. Production with HTTP CORS origin fails
@@ -321,5 +354,105 @@ def test_alert_queue_overflow_drops_safely() -> None:
         )
         is False
     )
+
+
+def test_production_cors_fail_closed_middleware() -> None:
+    """R-02: Production fails closed for unapproved origins, HTTP, lookalikes, null, exp://."""
+    from jplearn_api.main import create_app
+
+    settings = Settings(
+        environment="production",
+        database_url="postgresql://user:pass@localhost:5432/db",
+        jwt_secret="a" * 32,
+        api_public_url="https://api.jplearn.com",
+        media_signing_secret="b" * 32,
+        cors_origins=["https://app.jplearn.com", "https://cms.jplearn.com"],
+    )
+    app = create_app(settings)
+
+    with TestClient(app) as client:
+        # Preflight OPTIONS request for approved origin
+        resp = client.options(
+            "/health",
+            headers={
+                "Origin": "https://app.jplearn.com",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.headers.get("access-control-allow-origin") == "https://app.jplearn.com"
+        assert resp.headers.get("access-control-allow-credentials") == "true"
+
+        # Preflight OPTIONS request for second approved origin
+        resp2 = client.options(
+            "/health",
+            headers={
+                "Origin": "https://cms.jplearn.com",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert resp2.status_code == 200
+        assert resp2.headers.get("access-control-allow-origin") == "https://cms.jplearn.com"
+
+        # Unapproved origins MUST NOT receive permissive CORS headers
+        unapproved_origins = [
+            "exp://unapproved.example.com",
+            "exp://localhost",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://insecure.jplearn.com",
+            "https://app.jplearn.com.attacker.com",
+            "https://evil-jplearn.com",
+            "null",
+            "*",
+        ]
+        for origin in unapproved_origins:
+            # Preflight
+            preflight = client.options(
+                "/health",
+                headers={
+                    "Origin": origin,
+                    "Access-Control-Request-Method": "GET",
+                },
+            )
+            assert "access-control-allow-origin" not in preflight.headers, f"Leaked CORS header for {origin}"
+
+            # Actual GET request
+            actual = client.get("/health", headers={"Origin": origin})
+            assert "access-control-allow-origin" not in actual.headers, f"Leaked CORS header for {origin} in actual GET"
+
+
+def test_local_test_cors_expo_and_dynamic_ports() -> None:
+    """R-02: Local/test environment permits Expo and dynamic local ports."""
+    from jplearn_api.main import create_app
+
+    settings = Settings(
+        environment="test",
+        database_url="postgresql://user:pass@localhost:5432/db",
+        jwt_secret="a" * 32,
+    )
+    app = create_app(settings)
+
+    with TestClient(app) as client:
+        # Expo origin allowed in test environment
+        resp_expo = client.options(
+            "/health",
+            headers={
+                "Origin": "exp://127.0.0.1:19000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert resp_expo.headers.get("access-control-allow-origin") == "exp://127.0.0.1:19000"
+
+        # Dynamic local dev port allowed in test environment
+        resp_dynamic = client.options(
+            "/health",
+            headers={
+                "Origin": "http://localhost:38291",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+        assert resp_dynamic.headers.get("access-control-allow-origin") == "http://localhost:38291"
+
 
 

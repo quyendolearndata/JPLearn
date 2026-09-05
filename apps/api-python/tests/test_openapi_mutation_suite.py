@@ -1,16 +1,19 @@
-"""Phase 2 Semantic OpenAPI Mutation Gate Suite.
+"""Phase 2 & Hardening Regression Semantic OpenAPI Mutation Gate Suite.
 
 Verifies that compare_openapi and the CLI fail closed (return non-zero, detect exact problem)
-for each mutation in the required matrix:
+for each mutation in the required matrix per ADR-003, ADR-005, and R-01:
 1. ci_level: integer -> string
 2. drop minimum or maximum
 3. add nullable
 4. drop required field
-5. expand device_class enum
-6. change 400 error body to {detail} or inject 422
-7. drop signed-query or bearer security alternative
+5. expand device_class enum (and case sensitivity)
+6. change 400 error body to {detail} while keeping status 400
+7. drop signedQuery or bearerAuth security alternative on media/HLS
 8. add forbidden response field
 9. delete /ready from generated operations
+10. extra required query parameter
+11. missing 'type' in schema
+12. undefined $ref
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ from typing import Any
 
 import pytest
 
+from jplearn_api import openapi_diff
 from jplearn_api.main import create_app
 from jplearn_api.openapi_diff import compare_openapi, load_handwritten_spec
 from jplearn_api.settings import Settings
@@ -40,7 +44,29 @@ def baseline_specs() -> tuple[dict[str, Any], dict[str, Any]]:
     return handwritten, generated
 
 
-def test_mutation_1_ci_level_integer_to_string(baseline_specs) -> None:
+def _run_cli_mutant(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    mutated_spec: dict[str, Any],
+) -> tuple[int, str]:
+    class FakeApp:
+        def openapi(self):
+            return mutated_spec
+
+    monkeypatch.setattr("jplearn_api.main.create_app", lambda settings: FakeApp())
+    exit_code = openapi_diff.main([])
+    captured = capsys.readouterr()
+    return exit_code, captured.out
+
+
+def test_baseline_cli_exits_zero(monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    exit_code = openapi_diff.main([])
+    captured = capsys.readouterr()
+    assert exit_code == 0, f"Expected clean baseline exit 0, got {exit_code}:\n{captured.out}"
+    assert captured.out == ""
+
+
+def test_mutation_1_ci_level_integer_to_string(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -50,8 +76,12 @@ def test_mutation_1_ci_level_integer_to_string(baseline_specs) -> None:
     problems = compare_openapi(handwritten, mutated)
     assert any("type mismatch: generated 'string' != handwritten 'integer'" in p for p in problems)
 
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "type mismatch" in out
 
-def test_mutation_2_drop_minimum_or_maximum(baseline_specs) -> None:
+
+def test_mutation_2_drop_minimum_or_maximum(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     handwritten, generated = baseline_specs
 
     # Drop minimum from current_ci_level in LearnerProgressPublic
@@ -60,15 +90,22 @@ def test_mutation_2_drop_minimum_or_maximum(baseline_specs) -> None:
     problems1 = compare_openapi(handwritten, mutated1)
     assert any("missing minimum (expected 0)" in p for p in problems1)
 
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated1)
+    assert code == 1
+    assert "missing minimum" in out
+
     # Drop maximum from current_ci_level in LearnerProgressPublic
     mutated2 = copy.deepcopy(generated)
     mutated2["components"]["schemas"]["LearnerProgressPublic"]["properties"]["current_ci_level"].pop("maximum", None)
     problems2 = compare_openapi(handwritten, mutated2)
     assert any("missing maximum (expected 4)" in p for p in problems2)
 
+    code2, out2 = _run_cli_mutant(monkeypatch, capsys, mutated2)
+    assert code2 == 1
+    assert "missing maximum" in out2
 
 
-def test_mutation_3_add_nullable(baseline_specs) -> None:
+def test_mutation_3_add_nullable(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -78,8 +115,12 @@ def test_mutation_3_add_nullable(baseline_specs) -> None:
     problems = compare_openapi(handwritten, mutated)
     assert any("nullable mismatch: generated True != handwritten False" in p for p in problems)
 
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "nullable mismatch" in out
 
-def test_mutation_4_drop_required_field(baseline_specs) -> None:
+
+def test_mutation_4_drop_required_field(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -89,8 +130,12 @@ def test_mutation_4_drop_required_field(baseline_specs) -> None:
     problems = compare_openapi(handwritten, mutated)
     assert any("missing required fields" in p and "duration_seconds" in p for p in problems)
 
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "missing required fields" in out
 
-def test_mutation_5_expand_device_class_enum(baseline_specs) -> None:
+
+def test_mutation_5_expand_device_class_enum_and_case(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -100,33 +145,77 @@ def test_mutation_5_expand_device_class_enum(baseline_specs) -> None:
     problems = compare_openapi(handwritten, mutated)
     assert any("enum mismatch" in p for p in problems)
 
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "enum mismatch" in out
 
-def test_mutation_6_inject_422_or_detail_error_body(baseline_specs) -> None:
+    # Test case sensitivity: "WEB" instead of "web"
+    mutated_case = copy.deepcopy(generated)
+    mutated_case["components"]["schemas"]["SessionStartBody"]["properties"]["device_class"]["enum"] = ["WEB", "phone", "ipad"]
+    problems_case = compare_openapi(handwritten, mutated_case)
+    assert any("enum mismatch" in p for p in problems_case)
+
+
+def test_mutation_6_change_400_body_to_detail(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """R-01: Change 400 error body to {detail} while keeping status 400."""
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
-    # Inject 422 into /auth/login
-    mutated["paths"]["/auth/login"]["post"]["responses"]["422"] = {
-        "description": "Validation Error",
-        "content": {"application/json": {"schema": {"type": "object", "properties": {"detail": {"type": "array"}}}}},
+    # Mutate 400 response on POST /sessions/{id}/end to {detail: string}
+    mutated["paths"]["/sessions/{id}/end"]["post"]["responses"]["400"] = {
+        "description": "Bad Request",
+        "content": {
+            "application/json": {
+                "schema": {
+                    "type": "object",
+                    "required": ["detail"],
+                    "properties": {"detail": {"type": "string"}},
+                }
+            }
+        },
     }
 
     problems = compare_openapi(handwritten, mutated)
-    assert any("extra responses ['422'] not in contract" in p for p in problems)
+    assert any("missing required fields" in p and ("statusCode" in p or "message" in p) for p in problems)
+
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "missing required fields" in out
 
 
-def test_mutation_7_drop_security_alternative(baseline_specs) -> None:
+def test_mutation_7_drop_security_alternative_on_media(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """R-01: Drop individual security alternatives directly on media/HLS endpoints."""
     handwritten, generated = baseline_specs
-    mutated = copy.deepcopy(generated)
 
-    # Change /me from [{bearerAuth: []}] to [] (public)
-    mutated["paths"]["/me"]["get"]["security"] = []
+    # 7a: Drop signedQuery from GET /media/{id} (leaving only bearerAuth)
+    mutated1 = copy.deepcopy(generated)
+    mutated1["paths"]["/media/{id}"]["get"]["security"] = [{"bearerAuth": []}]
+    problems1 = compare_openapi(handwritten, mutated1)
+    assert any("GET /media/{id} security mismatch" in p for p in problems1)
+    code1, out1 = _run_cli_mutant(monkeypatch, capsys, mutated1)
+    assert code1 == 1
+    assert "security mismatch" in out1
 
-    problems = compare_openapi(handwritten, mutated)
-    assert any("security mismatch" in p for p in problems)
+    # 7b: Drop bearerAuth from GET /media/{id} (leaving only signedQuery)
+    mutated2 = copy.deepcopy(generated)
+    mutated2["paths"]["/media/{id}"]["get"]["security"] = [{"signedQuery": []}]
+    problems2 = compare_openapi(handwritten, mutated2)
+    assert any("GET /media/{id} security mismatch" in p for p in problems2)
+    code2, out2 = _run_cli_mutant(monkeypatch, capsys, mutated2)
+    assert code2 == 1
+    assert "security mismatch" in out2
+
+    # 7c: Drop all security on GET /media/{id}/hls/{file}
+    mutated3 = copy.deepcopy(generated)
+    mutated3["paths"]["/media/{id}/hls/{file}"]["get"]["security"] = []
+    problems3 = compare_openapi(handwritten, mutated3)
+    assert any("GET /media/{id}/hls/{file} security mismatch" in p for p in problems3)
+    code3, out3 = _run_cli_mutant(monkeypatch, capsys, mutated3)
+    assert code3 == 1
+    assert "security mismatch" in out3
 
 
-def test_mutation_8_add_forbidden_response_field(baseline_specs) -> None:
+def test_mutation_8_add_forbidden_response_field(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -136,8 +225,12 @@ def test_mutation_8_add_forbidden_response_field(baseline_specs) -> None:
     problems = compare_openapi(handwritten, mutated)
     assert any("extra property 'leaked_internal_metric' not in contract" in p for p in problems)
 
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "extra property" in out
 
-def test_mutation_9_delete_ready_operation(baseline_specs) -> None:
+
+def test_mutation_9_delete_ready_operation(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -147,21 +240,61 @@ def test_mutation_9_delete_ready_operation(baseline_specs) -> None:
     problems = compare_openapi(handwritten, mutated)
     assert any("missing required GET /ready" in p for p in problems)
 
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "missing required GET /ready" in out
 
-def test_mutation_gate_cli_fails_closed(monkeypatch: pytest.MonkeyPatch, baseline_specs) -> None:
-    """Proves that the CLI entrypoint exits non-zero on contract mismatches."""
-    from jplearn_api import openapi_diff
 
+def test_mutation_10_extra_required_query_parameter(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """R-01: Extra required query parameter must fail."""
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
-    del mutated["paths"]["/ready"]
 
-    # Monkeypatch create_app to return mutated spec
-    class FakeApp:
-        def openapi(self):
-            return mutated
+    # Inject extra required query parameter into GET /catalog
+    mutated["paths"]["/catalog"]["get"]["parameters"].append({
+        "name": "unexpected_filter",
+        "in": "query",
+        "required": True,
+        "schema": {"type": "string"},
+    })
 
-    monkeypatch.setattr("jplearn_api.main.create_app", lambda settings: FakeApp())
+    problems = compare_openapi(handwritten, mutated)
+    assert any("extra required query parameter 'unexpected_filter' not in contract" in p for p in problems)
 
-    exit_code = openapi_diff.main([])
-    assert exit_code == 1, "CLI must return non-zero exit code on contract failure"
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "extra required query parameter" in out
+
+
+def test_mutation_11_missing_type_in_schema(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """R-01: Missing type in schema must fail."""
+    handwritten, generated = baseline_specs
+    mutated = copy.deepcopy(generated)
+
+    # Delete type from ci_level in CatalogItemPublic
+    del mutated["components"]["schemas"]["CatalogItemPublic"]["properties"]["ci_level"]["type"]
+
+    problems = compare_openapi(handwritten, mutated)
+    assert any("missing 'type' in generated schema" in p for p in problems)
+
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "missing 'type'" in out
+
+
+def test_mutation_12_undefined_ref_fails(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """R-01: Undefined $ref must report error."""
+    handwritten, generated = baseline_specs
+    mutated = copy.deepcopy(generated)
+
+    # Point User to undefined schema ref
+    mutated["components"]["schemas"]["AuthSession"]["properties"]["user"] = {
+        "$ref": "#/components/schemas/NonExistentUserSchema"
+    }
+
+    problems = compare_openapi(handwritten, mutated)
+    assert any("undefined $ref" in p and "NonExistentUserSchema" in p for p in problems)
+
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "undefined $ref" in out

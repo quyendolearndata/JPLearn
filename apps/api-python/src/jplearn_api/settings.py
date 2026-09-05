@@ -22,13 +22,15 @@ class Settings(BaseSettings):
     openapi_ui: bool = False
     port: int = 3002
     cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
-    cors_origin_regex: str | None = r"https?://(localhost|127\.0\.0\.1):3000|exp://.*"
+    cors_origin_regex: str | None = None
     bootstrap_admin_email: str | None = None
     bootstrap_admin_password: str | None = None
     allow_admin_bootstrap: bool = False
 
     @model_validator(mode="after")
     def validate_configuration(self) -> Settings:
+        from urllib.parse import urlparse
+
         if len(self.jwt_secret.encode("utf-8")) < 32:
             raise ValueError(
                 f"JWT_SECRET must be at least 32 bytes (got {len(self.jwt_secret.encode('utf-8'))} bytes)"
@@ -40,6 +42,10 @@ class Settings(BaseSettings):
                 raise ValueError(
                     f"STORAGE_ROOT must be an absolute path, got '{self.storage_root}'"
                 )
+
+        if self.environment in ("local", "test"):
+            if self.cors_origin_regex is None:
+                self.cors_origin_regex = r"https?://(localhost|127\.0\.0\.1)(:\d+)?|exp://.*"
 
         if self.environment in ("staging", "production"):
             if not self.api_public_url or not self.api_public_url.startswith("https://"):
@@ -54,16 +60,50 @@ class Settings(BaseSettings):
                 raise ValueError(
                     f"MEDIA_SIGNING_SECRET must be distinct from JWT_SECRET in {self.environment}"
                 )
-            if not self.cors_origins or any(o.strip() == "*" for o in self.cors_origins):
+
+            # Reject default localhost origins in staging/production
+            default_localhost_origins = {"http://localhost:3000", "http://127.0.0.1:3000"}
+            if set(self.cors_origins) == default_localhost_origins:
                 raise ValueError(
-                    f"CORS_ORIGINS cannot be empty or contain wildcard '*' in {self.environment}"
+                    f"Explicit HTTPS CORS_ORIGINS required in {self.environment} (cannot inherit default localhost origins)"
                 )
-            if self.environment == "production":
-                for origin in self.cors_origins:
-                    if not origin.startswith("https://"):
-                        raise ValueError(
-                            f"CORS_ORIGINS entries must use HTTPS in production, got '{origin}'"
-                        )
+
+            if not self.cors_origins or any(o.strip() in ("*", "null") for o in self.cors_origins):
+                raise ValueError(
+                    f"CORS_ORIGINS cannot be empty, null, or contain wildcard '*' in {self.environment}"
+                )
+
+            for origin in self.cors_origins:
+                parsed = urlparse(origin)
+                if parsed.scheme != "https":
+                    raise ValueError(
+                        f"CORS_ORIGINS entries must use HTTPS in {self.environment}, got '{origin}'"
+                    )
+                if not parsed.netloc:
+                    raise ValueError(
+                        f"Invalid CORS origin netloc in {self.environment}: '{origin}'"
+                    )
+                if parsed.path not in ("", "/"):
+                    raise ValueError(
+                        f"CORS origin must not include a path in {self.environment}: '{origin}'"
+                    )
+                if parsed.params or parsed.query or parsed.fragment:
+                    raise ValueError(
+                        f"CORS origin must not include query or fragment in {self.environment}: '{origin}'"
+                    )
+                if "@" in parsed.netloc:
+                    raise ValueError(
+                        f"CORS origin must not contain user credentials in {self.environment}: '{origin}'"
+                    )
+
+            if self.cors_origin_regex is not None:
+                # Reject permissive regexes in staging/production (must not match exp:// or localhost)
+                broad_tokens = [".*", ".+", "exp://", "localhost", "127.0.0.1", "http://"]
+                if any(tok in self.cors_origin_regex for tok in broad_tokens):
+                    raise ValueError(
+                        f"Broad or unapproved CORS_ORIGIN_REGEX rejected in {self.environment}: '{self.cors_origin_regex}'"
+                    )
+
             if "dev-secret" in self.jwt_secret.lower() or "change-me" in self.jwt_secret.lower():
                 raise ValueError(
                     f"Insecure JWT_SECRET detected in {self.environment} environment"

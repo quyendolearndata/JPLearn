@@ -59,10 +59,23 @@ async def register_hls(
 
 @router.get(
     "/media/{id}",
+    response_class=Response,
     operation_id="streamMedia",
     tags=["Media"],
-    openapi_extra={"x-jplearn-fr": ["FR-CMS-003", "FR-CMS-004"]},
-    responses={401: {"description": "Missing or invalid JWT/signature"}, 404: {"description": "Asset not found"}},
+    openapi_extra={
+        "x-jplearn-fr": ["FR-CMS-003", "FR-CMS-004"],
+        "security": [{"bearerAuth": []}, {"signedQuery": []}],
+    },
+    responses={
+        200: {
+            "description": "Media stream",
+            "content": {
+                "video/mp4": {"schema": {"type": "string", "format": "binary"}},
+            },
+        },
+        401: {"description": "Missing or invalid JWT/signature"},
+        404: {"description": "Asset not found"},
+    },
 )
 async def stream_media(
     id: UUIDPath,
@@ -86,10 +99,21 @@ async def stream_media(
 
 @router.get(
     "/media/{id}/hls/{file:path}",
+    response_class=Response,
     operation_id="streamHls",
     tags=["Media"],
-    openapi_extra={"x-jplearn-fr": ["NFR-PERF-002"]},
+    openapi_extra={
+        "x-jplearn-fr": ["NFR-PERF-002"],
+        "security": [{"bearerAuth": []}, {"signedQuery": []}],
+    },
     responses={
+        200: {
+            "content": {
+                "application/vnd.apple.mpegurl": {},
+                "video/mp2t": {},
+                "video/iso.segment": {},
+            }
+        },
         400: {"description": "Invalid or unsupported file name"},
         401: {"description": "Missing or invalid JWT/signature"},
         404: {"description": "Asset or HLS file not found"},
