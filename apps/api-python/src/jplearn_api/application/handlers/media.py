@@ -85,19 +85,6 @@ class UploadTransactionCoordinator:
         self.outcome = "pending"  # pending | committed | rollback_confirmed | outcome_unknown
         self.cleanup_task: asyncio.Task[None] | None = None
 
-    def _mark_uow_settled(self) -> None:
-        """Mark write UoW as settled so __aexit__ does not run concurrent or repeated rollback."""
-        if hasattr(self.uow, "_rolled_back"):
-            try:
-                setattr(self.uow, "_rolled_back", True)
-            except Exception:
-                pass
-        if hasattr(self.uow, "rolled_back"):
-            try:
-                setattr(self.uow, "rolled_back", True)
-            except Exception:
-                pass
-
     async def settle_rollback_and_cleanup(self, reason: str) -> None:
         """Execute rollback and storage deletion shielded from cancellation.
         Drains cleanup task to completion even if caller task receives repeated cancellations.
@@ -118,7 +105,6 @@ class UploadTransactionCoordinator:
                         rb_ok = getattr(self.uow, "rolled_back", True)
                     except Exception as rb_exc:
                         self.outcome = "outcome_unknown"
-                        self._mark_uow_settled()
                         logger.warning(
                             "media_upload_commit_outcome_unknown",
                             extra={
@@ -131,8 +117,6 @@ class UploadTransactionCoordinator:
                             },
                         )
                         return
-                    else:
-                        self._mark_uow_settled()
 
                 if rb_ok:
                     self.outcome = "rollback_confirmed"
@@ -152,6 +136,7 @@ class UploadTransactionCoordinator:
                         )
 
             self.cleanup_task = asyncio.create_task(_run_cleanup())
+            self.uow.own_cleanup(self.cleanup_task)
 
         # Drain cleanup_task with timeout budget, absorbing outer cancellations
         start_t = asyncio.get_event_loop().time()
@@ -162,7 +147,6 @@ class UploadTransactionCoordinator:
                 await asyncio.wait_for(asyncio.shield(self.cleanup_task), timeout=remaining)
             except TimeoutError:
                 self.outcome = "outcome_unknown"
-                self._mark_uow_settled()
                 logger.warning(
                     "media_upload_commit_outcome_unknown",
                     extra={
@@ -175,6 +159,8 @@ class UploadTransactionCoordinator:
                     },
                 )
                 self.cleanup_task.cancel()
+                # Cancellation is only a request. The UoW retains ownership and
+                # defers close until the task has actually terminated.
                 break
             except asyncio.CancelledError:
                 continue

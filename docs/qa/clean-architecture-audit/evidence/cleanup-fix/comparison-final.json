@@ -1,0 +1,180 @@
+{
+  "status": "REVIEW_REQUIRED",
+  "rows": [
+    {
+      "metric": "auth.register.p50",
+      "baseline": 35.073,
+      "candidate": 31.96,
+      "delta_percent": -8.875773386935816,
+      "status": "INFO"
+    },
+    {
+      "metric": "auth.register.p95",
+      "baseline": 37.707,
+      "candidate": 34.623,
+      "delta_percent": -8.178852732914322,
+      "status": "PASS"
+    },
+    {
+      "metric": "auth.login.p50",
+      "baseline": 29.8,
+      "candidate": 30.8,
+      "delta_percent": 3.3557046979865834,
+      "status": "INFO"
+    },
+    {
+      "metric": "auth.login.p95",
+      "baseline": 30.691,
+      "candidate": 33.741,
+      "delta_percent": 9.937766772017852,
+      "status": "PASS"
+    },
+    {
+      "metric": "auth.token_verify_request.p50",
+      "baseline": 6.543,
+      "candidate": 8.768,
+      "delta_percent": 34.005807733455605,
+      "status": "INFO"
+    },
+    {
+      "metric": "auth.token_verify_request.p95",
+      "baseline": 7.96,
+      "candidate": 9.853,
+      "delta_percent": 23.78140703517588,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "metric": "catalog.catalog_all_10_items.queries",
+      "baseline": 4,
+      "candidate": 4,
+      "delta_percent": 0.0,
+      "status": "PASS"
+    },
+    {
+      "metric": "catalog.catalog_all_10_items.latency.p50",
+      "baseline": 4.866,
+      "candidate": 6.506,
+      "delta_percent": 33.703247020139756,
+      "status": "INFO"
+    },
+    {
+      "metric": "catalog.catalog_all_10_items.latency.p95",
+      "baseline": 5.975,
+      "candidate": 7.853,
+      "delta_percent": 31.430962343096237,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "metric": "catalog.catalog_filtered_ci0.queries",
+      "baseline": 4,
+      "candidate": 4,
+      "delta_percent": 0.0,
+      "status": "PASS"
+    },
+    {
+      "metric": "catalog.catalog_filtered_ci0.latency.p50",
+      "baseline": 4.664,
+      "candidate": 6.501,
+      "delta_percent": 39.38679245283021,
+      "status": "INFO"
+    },
+    {
+      "metric": "catalog.catalog_filtered_ci0.latency.p95",
+      "baseline": 5.429,
+      "candidate": 7.409,
+      "delta_percent": 36.47080493645238,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "metric": "catalog.catalog_filtered_empty.latency.p50",
+      "baseline": 4.058,
+      "candidate": 5.717,
+      "delta_percent": 40.88220798422868,
+      "status": "INFO"
+    },
+    {
+      "metric": "catalog.catalog_filtered_empty.latency.p95",
+      "baseline": 4.98,
+      "candidate": 6.992,
+      "delta_percent": 40.40160642570281,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "metric": "sessions.queries",
+      "baseline": 17,
+      "candidate": 20,
+      "delta_percent": 17.647058823529417,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "metric": "sessions.start.p50",
+      "baseline": 7.039,
+      "candidate": 7.762,
+      "delta_percent": 10.271345361557028,
+      "status": "INFO"
+    },
+    {
+      "metric": "sessions.start.p95",
+      "baseline": 8.202,
+      "candidate": 8.653,
+      "delta_percent": 5.4986588636917855,
+      "status": "PASS"
+    },
+    {
+      "metric": "sessions.end.p50",
+      "baseline": 6.626,
+      "candidate": 8.482,
+      "delta_percent": 28.010866284334423,
+      "status": "INFO"
+    },
+    {
+      "metric": "sessions.end.p95",
+      "baseline": 7.584,
+      "candidate": 9.682,
+      "delta_percent": 27.663502109704652,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "metric": "sessions.full_lifecycle.p50",
+      "baseline": 18.499,
+      "candidate": 21.767,
+      "delta_percent": 17.665819774041847,
+      "status": "INFO"
+    },
+    {
+      "metric": "sessions.full_lifecycle.p95",
+      "baseline": 21.014,
+      "candidate": 24.12,
+      "delta_percent": 14.780622442181413,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "metric": "media_upload_5mb.queries",
+      "baseline": 4,
+      "candidate": 5,
+      "delta_percent": 25.0,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "metric": "media_upload_5mb.peak_rss_mb",
+      "baseline": 220.55,
+      "candidate": 245.22,
+      "delta_percent": 11.185672183178408,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "metric": "media_upload_5mb.duration.p50",
+      "baseline": 21.546,
+      "candidate": 23.928,
+      "delta_percent": 11.05541631857423,
+      "status": "INFO"
+    },
+    {
+      "metric": "media_upload_5mb.duration.p95",
+      "baseline": 22.529,
+      "candidate": 26.875,
+      "delta_percent": 19.29069199698168,
+      "status": "REVIEW_REQUIRED"
+    }
+  ]
+}

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from types import TracebackType
 from typing import Callable, Protocol, TypeVar
 
@@ -38,6 +40,10 @@ class AsyncUnitOfWork(Protocol):
 
     committed: bool
     rolled_back: bool
+
+    def own_cleanup(self, task: asyncio.Task[None]) -> None:
+        """Own pending settlement; exit must not close resources before it ends."""
+        ...
 
     async def commit(self) -> None:
         """Explicitly commit pending mutations."""

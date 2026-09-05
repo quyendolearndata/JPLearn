@@ -6,7 +6,7 @@
 - **Evidence Requalification SHA:** `66abac4`
 - **Branch:** `codex/fastapi-backend-hardening`
 - **Audit Plan Reference:** [`docs/superpowers/plans/2026-09-05-clean-architecture-closure-v4.md`](../../superpowers/plans/2026-09-05-clean-architecture-closure-v4.md)
-- **Status:** **ACCEPTED (Engineering Closure Complete; Operational Milestone 2 on HOLD)**
+- **Status:** **SUPERSEDED — timeout lifecycle and benchmark evidence corrections in progress.** Historical gates below apply only to the listed candidate; they do not accept the current working tree. See `cleanup-fix-verification.md` for current verification. Operational Milestone 2 remains HOLD.
 
 ---
 

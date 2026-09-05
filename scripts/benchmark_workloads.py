@@ -13,6 +13,9 @@ Captures raw per-iteration latency samples, queries per request, and peak RSS me
 from __future__ import annotations
 
 import argparse
+import hashlib
+import subprocess
+from typing import Any
 from datetime import UTC, datetime
 from io import BytesIO
 import json
@@ -20,6 +23,7 @@ import os
 from pathlib import Path
 import platform
 import resource
+import shutil
 import statistics
 import sys
 import tempfile
@@ -32,9 +36,7 @@ def percentile(data: list[float], p: float) -> float:
     k = (len(data) - 1) * (p / 100.0)
     f = int(k)
     c = min(f + 1, len(data) - 1)
-    d0 = data[f] * (c - k)
-    d1 = data[c] * (k - f)
-    return round((d0 + d1), 3)
+    return round(data[f] + (data[c] - data[f]) * (k - f), 3)
 
 
 def compute_stats(samples_ms: list[float]) -> dict[str, Any]:
@@ -63,7 +65,7 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
     sys.path.insert(0, str(app_dir / "src"))
     sys.path.insert(0, str(app_dir / "tests"))
 
-    from pg_harness import ensure_test_database, stop_docker_postgres, seed_database
+    from pg_harness import start_docker_postgres, stop_docker_postgres, seed_database
     from helpers import ensure_topics, grant_role, insert_media, register
     from conftest import _settings
     from jplearn_api.main import create_app
@@ -76,13 +78,21 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
     print(f"Timestamp: {datetime.now(UTC).isoformat()}")
     print("=" * 70)
 
-    db_url, project = ensure_test_database()
+    project = f"jplearn-benchmark-{os.getpid()}"
+    db_url = start_docker_postgres(project)
     print(f"Database: {db_url}")
-    seed_database(db_url)
 
     results = {
         "label": label,
         "metadata": {
+            "tested_sha": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo_dir, text=True).strip(),
+            "source_status": subprocess.check_output(["git", "status", "--porcelain"], cwd=repo_dir, text=True).splitlines(),
+            "runner_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            "source_sha256": hashlib.sha256(b"".join(
+                str(p.relative_to(app_dir)).encode() + b"\0" + p.read_bytes()
+                for p in sorted((app_dir / "src").rglob("*.py"))
+            )).hexdigest(),
+            "warmup_iterations": 5,
             "timestamp": datetime.now(UTC).isoformat(),
             "os": f"{platform.system()} {platform.release()} ({platform.machine()})",
             "python": sys.version.split()[0],
@@ -91,7 +101,9 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
         "metrics": {},
     }
 
+    temp_storage = None
     try:
+        seed_database(db_url)
         temp_storage = tempfile.mkdtemp(prefix=f"jplearn_bench_{label}_")
         os.environ["STORAGE_ROOT"] = temp_storage
         settings = _settings(db_url)
@@ -116,7 +128,7 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
             login_samples = []
             verify_samples = []
 
-            for i in range(25):
+            for i in range(30):
                 email = f"bench_user_{label}_{i}@example.com"
                 password = "Password123!"
 
@@ -138,6 +150,10 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
                 t5 = time.perf_counter()
                 assert p_res.status_code == 200
                 verify_samples.append((t5 - t4) * 1000)
+
+            register_samples = register_samples[5:]
+            login_samples = login_samples[5:]
+            verify_samples = verify_samples[5:]
 
             results["metrics"]["auth"] = {
                 "register": compute_stats(register_samples),
@@ -174,8 +190,14 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
                 assert c_res.status_code == 201
                 item_id = c_res.json()["id"]
                 insert_media(client, item_id)
-                client.post(f"/staff/catalog/{item_id}/submit-qa", headers=admin_headers)
-                client.post(f"/staff/catalog/{item_id}/publish", headers=admin_headers)
+                qa = client.post(f"/staff/catalog/{item_id}/submit-qa", headers=admin_headers)
+                assert qa.status_code in (200, 201), qa.text
+                published = client.post(f"/staff/catalog/{item_id}/publish", headers=admin_headers)
+                assert published.status_code in (200, 201), published.text
+
+            fixture = client.get("/catalog", headers=learner_headers)
+            assert fixture.status_code == 200
+            assert len(fixture.json()["items"]) == 10, "catalog fixture cardinality mismatch"
 
             catalog_all_samples = []
             catalog_filtered_samples = []
@@ -183,12 +205,13 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
             cat_all_queries = []
             cat_filt_queries = []
 
-            for _ in range(40):
+            for _ in range(45):
                 query_counter = 0
                 t0 = time.perf_counter()
                 r_all = client.get("/catalog", headers=learner_headers)
                 t1 = time.perf_counter()
                 assert r_all.status_code == 200
+                assert len(r_all.json()["items"]) == 10
                 catalog_all_samples.append((t1 - t0) * 1000)
                 cat_all_queries.append(query_counter)
 
@@ -197,6 +220,7 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
                 r_filt = client.get("/catalog?ci_level=0", headers=learner_headers)
                 t3 = time.perf_counter()
                 assert r_filt.status_code == 200
+                assert len(r_filt.json()["items"]) == 4
                 catalog_filtered_samples.append((t3 - t2) * 1000)
                 cat_filt_queries.append(query_counter)
 
@@ -204,16 +228,25 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
                 r_empty = client.get("/catalog?ci_level=4", headers=learner_headers)
                 t5 = time.perf_counter()
                 assert r_empty.status_code == 200
+                assert r_empty.json()["items"] == []
                 catalog_empty_samples.append((t5 - t4) * 1000)
+
+            catalog_all_samples = catalog_all_samples[5:]
+            catalog_filtered_samples = catalog_filtered_samples[5:]
+            catalog_empty_samples = catalog_empty_samples[5:]
+            cat_all_queries = cat_all_queries[5:]
+            cat_filt_queries = cat_filt_queries[5:]
 
             results["metrics"]["catalog"] = {
                 "catalog_all_10_items": {
                     "latency": compute_stats(catalog_all_samples),
                     "queries_per_req": round(statistics.mean(cat_all_queries), 1),
+                    "raw_query_counts": cat_all_queries,
                 },
                 "catalog_filtered_ci0": {
                     "latency": compute_stats(catalog_filtered_samples),
                     "queries_per_req": round(statistics.mean(cat_filt_queries), 1),
+                    "raw_query_counts": cat_filt_queries,
                 },
                 "catalog_filtered_empty": {
                     "latency": compute_stats(catalog_empty_samples),
@@ -229,7 +262,7 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
             sess_total_samples = []
             sess_queries = []
 
-            for _ in range(25):
+            for _ in range(30):
                 query_counter = 0
                 t0 = time.perf_counter()
                 s_res = client.post("/sessions", headers=learner_headers, json={"device_class": "web"})
@@ -252,11 +285,17 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
                 sess_total_samples.append((t5 - t0) * 1000)
                 sess_queries.append(query_counter)
 
+            sess_start_samples = sess_start_samples[5:]
+            sess_end_samples = sess_end_samples[5:]
+            sess_total_samples = sess_total_samples[5:]
+            sess_queries = sess_queries[5:]
+
             results["metrics"]["sessions"] = {
                 "start": compute_stats(sess_start_samples),
                 "end": compute_stats(sess_end_samples),
                 "full_lifecycle": compute_stats(sess_total_samples),
                 "queries_per_lifecycle": round(statistics.mean(sess_queries), 1),
+                "raw_query_counts": sess_queries,
             }
             print(f"  Session Start p50: {results['metrics']['sessions']['start']['p50']} ms")
             print(f"  Session End p50: {results['metrics']['sessions']['end']['p50']} ms")
@@ -269,7 +308,7 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
             upload_queries = []
             rss_samples = []
 
-            for i in range(10):
+            for i in range(15):
                 cat_body = {
                     "topic_id": "daily_home",
                     "ci_level": 1,
@@ -295,10 +334,16 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
                 upload_queries.append(query_counter)
                 rss_samples.append(get_peak_rss_mb())
 
+            upload_durations = upload_durations[5:]
+            upload_queries = upload_queries[5:]
+            rss_samples = rss_samples[5:]
+
             results["metrics"]["media_upload_5mb"] = {
                 "duration": compute_stats(upload_durations),
                 "queries_per_upload": round(statistics.mean(upload_queries), 1),
                 "peak_rss_mb": max(rss_samples),
+                "raw_query_counts": upload_queries,
+                "raw_peak_rss_mb": rss_samples,
             }
             print(f"  Upload 5MB p50: {results['metrics']['media_upload_5mb']['duration']['p50']} ms | p95: {results['metrics']['media_upload_5mb']['duration']['p95']} ms")
             print(f"  Queries per upload: {results['metrics']['media_upload_5mb']['queries_per_upload']}")
@@ -308,6 +353,8 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
         if project:
             print("\nTearing down temporary Docker PostgreSQL container...")
             stop_docker_postgres(project)
+        if temp_storage is not None:
+            shutil.rmtree(temp_storage)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(results, indent=2), encoding="utf-8")

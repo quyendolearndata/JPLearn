@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
+
 from types import TracebackType
 from typing import Any, Callable
 
@@ -15,6 +18,19 @@ from jplearn_api.adapters.persistence.media_repository import SqlAlchemyMediaRep
 from jplearn_api.adapters.persistence.user_repository import SqlAlchemyUserRepository
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
 from jplearn_api.domain.errors import DeterministicAbortError
+
+logger = logging.getLogger(__name__)
+# Strong references retain quarantined scopes until settlement AND close finish.
+_quarantined: set[asyncio.Task[None]] = set()
+
+
+async def drain_quarantined_scopes(timeout: float = 5.0) -> None:
+    tasks = {t for t in _quarantined if t.get_loop() is asyncio.get_running_loop()}
+    if tasks:
+        _, pending = await asyncio.wait(tasks, timeout=timeout)
+        if pending:
+            logger.error("uow_shutdown_cleanup_pending", extra={"pending_count": len(pending)})
+            raise RuntimeError("Pending UoW cleanup: refuse concurrent engine/storage disposal")
 
 
 class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
@@ -40,6 +56,10 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
             self.flags = None  # type: ignore[assignment]
         self._committed = False
         self._rolled_back = False
+        self._cleanup: asyncio.Task[None] | None = None
+
+    def own_cleanup(self, task: asyncio.Task[None]) -> None:
+        self._cleanup = task
 
     def _bind_repositories(self, session: AsyncSession) -> None:
         self.users = SqlAlchemyUserRepository(session)
@@ -49,6 +69,8 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
         self.flags = SqlAlchemyFlagsRepository(session)
 
     async def __aenter__(self) -> SqlAlchemyUnitOfWork:
+        if any(t.get_loop() is asyncio.get_running_loop() for t in _quarantined):
+            raise RuntimeError("UoW cleanup quarantined; new transaction admission suspended")
         if self._managed_session and self._session_factory is not None:
             self.session = self._session_factory()
             self._bind_repositories(self.session)
@@ -62,6 +84,43 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
+        if self._cleanup is not None:
+            async def finish() -> None:
+                try:
+                    await self._cleanup
+                except BaseException as error:
+                    logger.warning("uow_cleanup_incomplete", extra={"reason": type(error).__name__})
+                finally:
+                    if self._managed_session and self.session is not None:
+                        await self.session.close()
+
+            # This task alone owns close. Request cancellation cannot race it.
+            task = asyncio.create_task(finish())
+            _quarantined.add(task)
+            def observed(done: asyncio.Task[None]) -> None:
+                _quarantined.discard(done)
+                if not done.cancelled() and done.exception() is not None:
+                    logger.error("uow_deferred_close_failed", extra={"reason": type(done.exception()).__name__})
+            task.add_done_callback(observed)
+            if self._cleanup.done():
+                deadline = asyncio.get_running_loop().time() + 5.0
+                while not task.done():
+                    try:
+                        remaining = deadline - asyncio.get_running_loop().time()
+                        if remaining <= 0:
+                            logger.warning("uow_close_quarantined")
+                            break
+                        await asyncio.wait_for(asyncio.shield(task), remaining)
+                    except TimeoutError:
+                        logger.warning("uow_close_quarantined")
+                        break
+                    except asyncio.CancelledError:
+                        continue
+                    except Exception:
+                        if exc_type is None:
+                            raise
+                        break  # done callback reports close failure; preserve original error
+            return
         try:
             if (exc_type is not None or not self._committed) and not self._rolled_back:
                 await self.rollback()

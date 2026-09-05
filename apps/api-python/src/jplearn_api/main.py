@@ -9,7 +9,7 @@ from fastapi.openapi.utils import get_openapi
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from jplearn_api.alert import alert_worker, drain_alert_queue
-from jplearn_api.bootstrap import create_media_signer
+from jplearn_api.bootstrap import create_media_signer, drain_quarantined_scopes
 from jplearn_api.db import create_engine_and_sessions
 from jplearn_api.errors import (
     http_exception_handler,
@@ -38,6 +38,7 @@ async def lifespan(app: FastAPI):
     worker_task = asyncio.create_task(alert_worker(alert_queue, settings))
     yield
     await drain_alert_queue(alert_queue, worker_task, timeout=3.0)
+    await drain_quarantined_scopes()
     await engine.dispose()
     if hasattr(app.state, "storage") and hasattr(app.state.storage, "close"):
         await app.state.storage.close()

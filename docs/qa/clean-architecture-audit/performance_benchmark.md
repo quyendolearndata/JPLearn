@@ -1,5 +1,7 @@
 # Clean Architecture Rewrite — Performance Benchmark & Operational Drift Analysis
 
+> Historical report, superseded for acceptance. The original summary-only samples and hard-coded comparator statuses cannot establish the claimed regression approval. New measured samples and computed comparison are in `evidence/cleanup-fix/`; see `cleanup-fix-verification.md`. No previous tradeoff approval is automatically applied to new measurements.
+
 - **Baseline Commit:** `2f5e200`
 - **Target Candidate SHA:** `b90ebe4` (on branch `codex/fastapi-backend-hardening`)
 - **Audit Plan Reference:** [`docs/superpowers/plans/2026-09-05-clean-architecture-closure-v4.md`](../../superpowers/plans/2026-09-05-clean-architecture-closure-v4.md) (Phase 5 — Commit 5)
@@ -106,4 +108,3 @@ In the baseline `2f5e200` implementation, media upload held a single long-lived 
 - **Platform Agent:** Implemented 3-scope UoW isolation and single-owner `UploadTransactionCoordinator`. Validated database connection release and bounded settlement.
 - **QA Agent:** Verified reproducible benchmark execution against PostgreSQL 16 via `scripts/benchmark_workloads.py`. Validated raw per-iteration samples in `benchmark_raw_samples.json`.
 - **CTO Agent:** Formally reviewed and accepted the 12.0% (+2.71 ms) upload p95 latency trade-off. Confirmed zero query N+1 drift and zero memory leaks.
-

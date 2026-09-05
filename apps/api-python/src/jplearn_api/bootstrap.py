@@ -13,7 +13,7 @@ from jplearn_api.adapters.persistence.catalog_repository import (
 from jplearn_api.adapters.persistence.flags_repository import SqlAlchemyFlagsRepository
 from jplearn_api.adapters.persistence.learning_repository import SqlAlchemyLearningRepository
 from jplearn_api.adapters.persistence.media_repository import SqlAlchemyMediaRepository
-from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
+from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork, drain_quarantined_scopes
 from jplearn_api.adapters.persistence.user_repository import SqlAlchemyUserRepository
 from jplearn_api.adapters.security.argon2 import Argon2PasswordHasher
 from jplearn_api.adapters.security.jwt import JwtTokenService

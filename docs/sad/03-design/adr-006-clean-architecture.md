@@ -2,7 +2,9 @@
 
 - **Ghế chủ trì:** CTO (`jplearn-cto`)
 - **Ngày:** 2026-09-05
-- **Trạng thái:** Accepted (Engineering Closure Complete; Operational Acceptance on HOLD)
+- **Trạng thái:** Architecture decision Accepted; current engineering acceptance pending performance review. Operational Acceptance on HOLD.
+
+> Verification correction: the Closure v4 sign-off below is historical, not acceptance of the current working tree. Timeout ownership and benchmark tooling were subsequently corrected; current results and limitations are in `docs/qa/clean-architecture-audit/cleanup-fix-verification.md`.
 - **Phối hợp:** BA (`jplearn-ba`), Platform (`jplearn-platform`), QA (`jplearn-qa`), Ops (`jplearn-ops`), Web (`jplearn-web`)
 - **Kế thừa & liên quan:** ADR-001, ADR-003, ADR-004, ADR-005, `docs/superpowers/plans/2026-09-05-fastapi-clean-architecture-rewrite.md`
 
@@ -100,4 +102,3 @@ Mọi write use case đều bắt buộc phải chạy trong phạm vi của m�
   3. In-tree benchmark runner, raw sample measurement, và quyết định chấp thuận đánh đổi +12% (+2.71 ms) upload p95 latency từ CTO để đổi lấy tính an toàn tuyệt đối khi hủy tác vụ và giải phóng kết nối DB trong lúc stream file.
   4. Clean detached worktree qualification với 0 dirty files pre/post và toàn bộ 6 verification gates PASS 100%.
 - **Milestone 2 (Operational Acceptance / R-09):** Tiếp tục duy trì trạng thái **STRICTLY HOLD / BLOCKED** cho đến khi có đủ hạ tầng staging thực tế và quyết định mở traffic từ ghế Ops & CTO.
-

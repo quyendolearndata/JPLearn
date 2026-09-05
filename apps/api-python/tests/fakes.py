@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 import contextvars
+import asyncio
 import copy
 from types import TracebackType
 from typing import Any
@@ -461,6 +462,8 @@ class FakeUnitOfWork(AsyncUnitOfWork):
         self.committed = False
         self.rolled_back = False
         self._reset_token: contextvars.Token | None = None
+        self._cleanup = None
+
 
         resolved_users = users
         resolved_catalog = catalog
@@ -493,6 +496,9 @@ class FakeUnitOfWork(AsyncUnitOfWork):
             if hasattr(p, "bind_uow"):
                 p.bind_uow(self)
 
+    def own_cleanup(self, task: asyncio.Task[None]) -> None:
+        self._cleanup = task
+
     def register(self, participant: Any) -> None:
         if participant not in self.participants:
             self.participants.append(participant)
@@ -515,6 +521,15 @@ class FakeUnitOfWork(AsyncUnitOfWork):
         exc_tb: TracebackType | None,
     ) -> None:
         try:
+            if self._cleanup is not None:
+                while not self._cleanup.done():
+                    try:
+                        await asyncio.shield(self._cleanup)
+                    except asyncio.CancelledError:
+                        continue
+                if not self._cleanup.cancelled():
+                    self._cleanup.result()
+                return
             if (exc_type is not None or not self.committed) and not self.rolled_back:
                 await self.rollback()
         except Exception:
@@ -583,5 +598,4 @@ def create_fake_uow_factory(
         learning=shared_learning,
         flags=shared_flags,
     )
-
 
