@@ -32,6 +32,9 @@ def _state_file(project: str) -> Path:
 def up(project: str = PROJECT) -> int:
     stop_docker_postgres(project)
     url = start_docker_postgres(project, seed=True)
+    from pg_harness import _tracked_docker_projects
+
+    _tracked_docker_projects.discard(project)
     _state_file(project).write_text(json.dumps({"project": project, "databaseUrl": url}), encoding="utf-8")
     print(f"E2E_DB_READY {url}")
     return 0
