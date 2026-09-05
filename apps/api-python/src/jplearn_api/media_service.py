@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
+import logging
 from pathlib import Path
 import re
 from time import time
@@ -9,6 +10,8 @@ from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+
+logger = logging.getLogger("jplearn.media")
 
 from jplearn_api.models import CatalogItem, MediaAsset
 from jplearn_api.schemas import MediaAssetStaff
@@ -72,6 +75,8 @@ async def upload(
     storage: StoragePort,
     catalog_item_id: str,
     file: UploadFile,
+    *,
+    _pre_commit_hook: Any = None,
 ) -> MediaAssetStaff:
     item = await session.get(CatalogItem, catalog_item_id)
     if item is None:
@@ -133,7 +138,7 @@ async def upload(
             raise HTTPException(status_code=500, detail="Failed to store media file") from exc
         raise
 
-    # 4. Insert DB record with rollback and compensation deletion
+    # 4. Insert DB record with explicit commit outcome tracking (ADR-005 / R-07/B)
     asset = MediaAsset(
         id=asset_id,
         catalog_item_id=catalog_item_id,
@@ -143,23 +148,114 @@ async def upload(
         mime="video/mp4",
     )
     session.add(asset)
-    committed = False
-    try:
-        await session.commit()
-        committed = True
-    except BaseException:
-        if not committed and session.in_transaction():
-            async def _compensate_commit():
-                try:
-                    await session.rollback()
-                except Exception:
-                    pass
+
+    # Allow pre-commit hook (e.g. for testing pre-commit cancellation / failure)
+    if _pre_commit_hook is not None:
+        try:
+            hook_res = _pre_commit_hook()
+            if asyncio.iscoroutine(hook_res):
+                await hook_res
+        except BaseException:
+            rb_ok = False
+            try:
+                await session.rollback()
+                rb_ok = True
+            except Exception as rb_exc:
+                logger.warning(
+                    "media_upload_commit_outcome_unknown",
+                    extra={
+                        "asset_id": asset_id,
+                        "catalog_item_id": catalog_item_id,
+                        "final_key": final_key,
+                        "reason": f"rollback_failed: {type(rb_exc).__name__}",
+                    },
+                )
+
+            if rb_ok:
                 try:
                     await storage.delete(final_key)
                 except Exception:
                     pass
+            raise
 
-            await asyncio.shield(_compensate_commit())
+    commit_task = asyncio.create_task(session.commit())
+    committed = False
+
+    try:
+        await asyncio.shield(commit_task)
+        committed = True
+    except asyncio.CancelledError:
+        # Cancelled while commit was in-flight.
+        # Allow commit_task up to 5.0s to complete so we don't race rollback with commit
+        try:
+            await asyncio.wait_for(asyncio.shield(commit_task), timeout=5.0)
+            committed = True
+        except Exception:
+            pass
+        except asyncio.CancelledError:
+            pass
+
+        if not committed:
+            commit_task.cancel()
+            # Commit outcome is indeterminate: preserve final_key to avoid dangling DB rows!
+            logger.warning(
+                "media_upload_commit_outcome_unknown",
+                extra={
+                    "asset_id": asset_id,
+                    "catalog_item_id": catalog_item_id,
+                    "final_key": final_key,
+                    "reason": "cancelled_during_commit",
+                },
+            )
+            async def _cleanup_session():
+                try:
+                    await session.rollback()
+                except Exception:
+                    pass
+            await asyncio.shield(_cleanup_session())
+        raise
+    except Exception as exc:
+        from sqlalchemy.exc import IntegrityError
+        if isinstance(exc, IntegrityError):
+            # Database explicitly rejected the insert (constraint failure)
+            rb_ok = False
+            try:
+                await session.rollback()
+                rb_ok = True
+            except Exception as rb_exc:
+                logger.warning(
+                    "media_upload_commit_outcome_unknown",
+                    extra={
+                        "asset_id": asset_id,
+                        "catalog_item_id": catalog_item_id,
+                        "final_key": final_key,
+                        "reason": f"rollback_failed: {type(rb_exc).__name__}",
+                    },
+                )
+            if rb_ok:
+                try:
+                    await storage.delete(final_key)
+                except Exception:
+                    pass
+        else:
+            # Operational / connection / uncertain error during commit:
+            # Server may have committed before network failure.
+            # Preserve final_key to prevent dangling DB reference!
+            logger.warning(
+                "media_upload_commit_outcome_unknown",
+                extra={
+                    "asset_id": asset_id,
+                    "catalog_item_id": catalog_item_id,
+                    "final_key": final_key,
+                    "reason": type(exc).__name__,
+                },
+            )
+            async def _cleanup_session():
+                try:
+                    await session.rollback()
+                except Exception:
+                    pass
+            await asyncio.shield(_cleanup_session())
         raise
 
     return to_staff(asset, settings)

@@ -201,14 +201,15 @@ def test_media_upload_db_failure_cleans_up_storage(live_client, monkeypatch):
     item_id = _create_item(live_client, admin, title_internal="db-fail-cleanup")
     storage = live_client.app.state.storage
 
+    from sqlalchemy.exc import IntegrityError
     from sqlalchemy.ext.asyncio import AsyncSession
 
     async def fail_commit(self):
-        raise RuntimeError("Simulated DB commit error")
+        raise IntegrityError("INSERT INTO media_assets", {}, Exception("constraint violation"))
 
     monkeypatch.setattr(AsyncSession, "commit", fail_commit)
 
-    with pytest.raises(RuntimeError, match="Simulated DB commit error"):
+    with pytest.raises(IntegrityError, match="constraint violation"):
         live_client.post(
             f"/staff/catalog/{item_id}/media",
             headers={"Authorization": f"Bearer {admin}"},
@@ -579,10 +580,15 @@ def test_upload_cancellation_before_commit_rolls_back_and_compensates(live_clien
                 async def cancel_at_commit():
                     raise asyncio.CancelledError()
 
-                session.commit = cancel_at_commit
-
                 with pytest.raises(asyncio.CancelledError):
-                    await media_service.upload(session, live_client.app.state.settings, storage, item_id, upload_file)
+                    await media_service.upload(
+                        session,
+                        live_client.app.state.settings,
+                        storage,
+                        item_id,
+                        upload_file,
+                        _pre_commit_hook=cancel_at_commit,
+                    )
 
                 assert intercepted_asset_id is not None
                 final_path = storage.root / f"{intercepted_asset_id}.bin"
@@ -647,8 +653,10 @@ def test_upload_cancellation_during_commit_preserves_object_if_committed(live_cl
         finally:
             await engine.dispose()
 
+    asyncio.run(_run())
+
 def test_upload_db_error_at_commit_compensates(live_client):
-    """R-07: If DB commit fails with an error, compensate by rolling back and deleting final object."""
+    """R-07: If DB pre-commit fails with an error, compensate by rolling back and deleting final object."""
     from fastapi import UploadFile
     from io import BytesIO
     from jplearn_api import media_service
@@ -683,10 +691,15 @@ def test_upload_db_error_at_commit_compensates(live_client):
                 async def error_at_commit():
                     raise RuntimeError("Simulated DB commit failure")
 
-                session.commit = error_at_commit
-
                 with pytest.raises(RuntimeError, match="Simulated DB commit failure"):
-                    await media_service.upload(session, live_client.app.state.settings, storage, item_id, upload_file)
+                    await media_service.upload(
+                        session,
+                        live_client.app.state.settings,
+                        storage,
+                        item_id,
+                        upload_file,
+                        _pre_commit_hook=error_at_commit,
+                    )
 
                 assert intercepted_asset_id is not None
                 final_path = storage.root / f"{intercepted_asset_id}.bin"
@@ -697,7 +710,345 @@ def test_upload_db_error_at_commit_compensates(live_client):
     asyncio.run(_run())
 
 
+# ==============================================================================
+# 9. R-07/B: Five Mandatory COMMIT Outcome & Recovery Tests (Real PostgreSQL)
+# ==============================================================================
 
 
+def test_upload_outcome_1_pre_commit_cancellation_compensates(live_client):
+    """Scenario 1: Cancellation before commit -> rollback confirmed -> compensate object."""
+    from fastapi import UploadFile
+    from io import BytesIO
+    from jplearn_api import media_service
+    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.models import MediaAsset
+
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin, title_internal="scen1-pre-commit")
+    storage = live_client.app.state.storage
+
+    async def _run():
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        try:
+            async with sessionmaker() as session:
+                upload_file = UploadFile(
+                    filename="sample.mp4",
+                    file=BytesIO(TINY_MP4),
+                    headers={"content-type": "video/mp4"},
+                )
+
+                intercepted_asset_id = None
+                real_add = session.add
+
+                def intercept_add(instance):
+                    nonlocal intercepted_asset_id
+                    if isinstance(instance, MediaAsset):
+                        intercepted_asset_id = instance.id
+                    return real_add(instance)
+
+                session.add = intercept_add
+
+                async def cancel_pre_commit():
+                    raise asyncio.CancelledError()
+
+                with pytest.raises(asyncio.CancelledError):
+                    await media_service.upload(
+                        session,
+                        live_client.app.state.settings,
+                        storage,
+                        item_id,
+                        upload_file,
+                        _pre_commit_hook=cancel_pre_commit,
+                    )
+
+                assert intercepted_asset_id is not None
+                final_path = storage.root / f"{intercepted_asset_id}.bin"
+                assert not final_path.exists(), "Object was not compensated after pre-commit cancellation!"
+
+            async with sessionmaker() as fresh_session:
+                row = await fresh_session.get(MediaAsset, intercepted_asset_id)
+                assert row is None, "Row exists in DB despite rollback!"
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_run())
 
 
+def test_upload_outcome_2_commit_in_flight_cancelled_preserves_object_and_logs(live_client, monkeypatch):
+    """Scenario 2: Cancellation while COMMIT in-flight -> outcome unknown -> preserve object, log recovery."""
+    from fastapi import UploadFile
+    from io import BytesIO
+    from jplearn_api import media_service
+    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.models import MediaAsset
+
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin, title_internal="scen2-in-flight")
+    storage = live_client.app.state.storage
+
+    logged_warnings = []
+    real_warning = media_service.logger.warning
+
+    def capture_warning(msg, *args, **kwargs):
+        logged_warnings.append((msg, kwargs.get("extra", {})))
+        return real_warning(msg, *args, **kwargs)
+
+    monkeypatch.setattr(media_service.logger, "warning", capture_warning)
+
+    async def _run():
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        try:
+            async with sessionmaker() as session:
+                upload_file = UploadFile(
+                    filename="sample.mp4",
+                    file=BytesIO(TINY_MP4),
+                    headers={"content-type": "video/mp4"},
+                )
+
+                intercepted_asset_id = None
+                real_add = session.add
+
+                def intercept_add(instance):
+                    nonlocal intercepted_asset_id
+                    if isinstance(instance, MediaAsset):
+                        intercepted_asset_id = instance.id
+                    return real_add(instance)
+
+                session.add = intercept_add
+
+                # Simulate commit that hangs / is in-flight when cancelled
+                commit_entered = asyncio.Event()
+
+                async def hanging_commit():
+                    commit_entered.set()
+                    try:
+                        await asyncio.sleep(10.0)
+                    except asyncio.CancelledError:
+                        pass
+
+                session.commit = hanging_commit
+
+                upload_task = asyncio.create_task(
+                    media_service.upload(session, live_client.app.state.settings, storage, item_id, upload_file)
+                )
+
+                await commit_entered.wait()
+                upload_task.cancel()
+
+                with pytest.raises(asyncio.CancelledError):
+                    await upload_task
+
+                assert intercepted_asset_id is not None
+                final_path = storage.root / f"{intercepted_asset_id}.bin"
+                # Object MUST be preserved because commit outcome is unknown
+                assert final_path.exists(), "Object was erroneously deleted when commit was in-flight!"
+
+                # Structured recovery signal must be logged
+                recovery_logs = [w for w in logged_warnings if w[0] == "media_upload_commit_outcome_unknown"]
+                assert len(recovery_logs) >= 1
+                assert recovery_logs[0][1].get("asset_id") == intercepted_asset_id
+
+                # Cleanup test file
+                final_path.unlink(missing_ok=True)
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_run())
+
+
+def test_upload_outcome_3_server_commit_response_lost_preserves_object(live_client, monkeypatch):
+    """Scenario 3: Server committed, but client received network/unknown error -> preserve object."""
+    from fastapi import UploadFile
+    from io import BytesIO
+    from jplearn_api import media_service
+    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.models import MediaAsset
+
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin, title_internal="scen3-response-lost")
+    storage = live_client.app.state.storage
+
+    logged_warnings = []
+    real_warning = media_service.logger.warning
+
+    def capture_warning(msg, *args, **kwargs):
+        logged_warnings.append((msg, kwargs.get("extra", {})))
+        return real_warning(msg, *args, **kwargs)
+
+    monkeypatch.setattr(media_service.logger, "warning", capture_warning)
+
+    async def _run():
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        try:
+            async with sessionmaker() as session:
+                upload_file = UploadFile(
+                    filename="sample.mp4",
+                    file=BytesIO(TINY_MP4),
+                    headers={"content-type": "video/mp4"},
+                )
+
+                intercepted_asset_id = None
+                real_add = session.add
+
+                def intercept_add(instance):
+                    nonlocal intercepted_asset_id
+                    if isinstance(instance, MediaAsset):
+                        intercepted_asset_id = instance.id
+                    return real_add(instance)
+
+                session.add = intercept_add
+
+                real_commit = session.commit
+
+                async def commit_then_error():
+                    await real_commit()
+                    # Simulate disconnect or response loss after commit reached server
+                    raise ConnectionResetError("Connection lost after COMMIT dispatched")
+
+                session.commit = commit_then_error
+
+                with pytest.raises(ConnectionResetError):
+                    await media_service.upload(session, live_client.app.state.settings, storage, item_id, upload_file)
+
+                assert intercepted_asset_id is not None
+                final_path = storage.root / f"{intercepted_asset_id}.bin"
+                # Object MUST be preserved so DB row does not point to missing object
+                assert final_path.exists(), "Object was deleted despite DB transaction committing!"
+
+                # Verify via fresh connection that DB row DOES exist in PostgreSQL!
+                async with sessionmaker() as fresh_session:
+                    row = await fresh_session.get(MediaAsset, intercepted_asset_id)
+                    assert row is not None, "Expected committed row to exist in PostgreSQL!"
+
+                # Structured recovery signal logged
+                recovery_logs = [w for w in logged_warnings if w[0] == "media_upload_commit_outcome_unknown"]
+                assert len(recovery_logs) >= 1
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_run())
+
+
+def test_upload_outcome_4_rollback_failure_preserves_object_and_logs(live_client, monkeypatch):
+    """Scenario 4: Rollback fails with an exception -> outcome unknown -> preserve object, log recovery."""
+    from fastapi import UploadFile
+    from io import BytesIO
+    from jplearn_api import media_service
+    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.models import MediaAsset
+
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin, title_internal="scen4-rb-fail")
+    storage = live_client.app.state.storage
+
+    logged_warnings = []
+    real_warning = media_service.logger.warning
+
+    def capture_warning(msg, *args, **kwargs):
+        logged_warnings.append((msg, kwargs.get("extra", {})))
+        return real_warning(msg, *args, **kwargs)
+
+    monkeypatch.setattr(media_service.logger, "warning", capture_warning)
+
+    async def _run():
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        try:
+            async with sessionmaker() as session:
+                upload_file = UploadFile(
+                    filename="sample.mp4",
+                    file=BytesIO(TINY_MP4),
+                    headers={"content-type": "video/mp4"},
+                )
+
+                intercepted_asset_id = None
+                real_add = session.add
+
+                def intercept_add(instance):
+                    nonlocal intercepted_asset_id
+                    if isinstance(instance, MediaAsset):
+                        intercepted_asset_id = instance.id
+                    return real_add(instance)
+
+                session.add = intercept_add
+
+                async def fail_rollback():
+                    raise RuntimeError("Rollback connection error")
+
+                session.rollback = fail_rollback
+
+                async def error_pre_commit():
+                    raise RuntimeError("Pre-commit validation error")
+
+                with pytest.raises(RuntimeError, match="Pre-commit validation error"):
+                    await media_service.upload(
+                        session,
+                        live_client.app.state.settings,
+                        storage,
+                        item_id,
+                        upload_file,
+                        _pre_commit_hook=error_pre_commit,
+                    )
+
+                assert intercepted_asset_id is not None
+                final_path = storage.root / f"{intercepted_asset_id}.bin"
+                # Because rollback failed, outcome is UNKNOWN -> preserve object
+                assert final_path.exists(), "Object was deleted despite rollback failure!"
+
+                recovery_logs = [w for w in logged_warnings if w[0] == "media_upload_commit_outcome_unknown"]
+                assert len(recovery_logs) >= 1
+                assert "rollback_failed" in recovery_logs[0][1].get("reason", "")
+
+                # Cleanup test file
+                final_path.unlink(missing_ok=True)
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_run())
+
+
+def test_upload_outcome_5_post_commit_cancellation_preserves_object(live_client):
+    """Scenario 5: Post-commit cancellation -> transaction committed -> preserve object."""
+    from fastapi import UploadFile
+    from io import BytesIO
+    from jplearn_api import media_service
+    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.models import MediaAsset
+
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin, title_internal="scen5-post-commit")
+    storage = live_client.app.state.storage
+
+    async def _run():
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        try:
+            async with sessionmaker() as session:
+                upload_file = UploadFile(
+                    filename="sample.mp4",
+                    file=BytesIO(TINY_MP4),
+                    headers={"content-type": "video/mp4"},
+                )
+
+                real_commit = session.commit
+
+                async def commit_then_cancel():
+                    await real_commit()
+                    # Simulates client disconnect immediately after server commits
+                    raise asyncio.CancelledError()
+
+                session.commit = commit_then_cancel
+
+                with pytest.raises(asyncio.CancelledError):
+                    await media_service.upload(session, live_client.app.state.settings, storage, item_id, upload_file)
+
+            async with sessionmaker() as fresh_session:
+                result = await fresh_session.execute(
+                    MediaAsset.__table__.select().where(MediaAsset.catalog_item_id == item_id)
+                )
+                row = result.fetchone()
+                assert row is not None, "Expected committed row to exist in DB"
+                final_path = storage.root / row.storage_key
+                assert final_path.exists(), "Object was deleted despite commit completing!"
+        finally:
+            await engine.dispose()
+
+    asyncio.run(_run())
