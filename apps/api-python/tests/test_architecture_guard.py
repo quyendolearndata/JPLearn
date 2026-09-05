@@ -163,3 +163,79 @@ async def test_identity_use_cases_in_memory():
     assert logout_uow.committed is True
     updated_user = await user_repo.get_by_id(auth_dto.user.id)
     assert updated_user.token_version == 1
+
+
+@pytest.mark.asyncio
+async def test_catalog_use_cases_in_memory():
+    """Verify catalog state transitions in pure memory with fake ports."""
+    from fakes import FakeCatalogRepository, FakeStoragePort
+    from jplearn_api.application.commands import (
+        ArchiveCatalogItemCommand,
+        CreateCatalogItemCommand,
+        PublishCatalogItemCommand,
+        SubmitCatalogForQaCommand,
+        UnpublishCatalogItemCommand,
+    )
+    from jplearn_api.application.handlers.catalog import (
+        handle_archive,
+        handle_create_catalog_item,
+        handle_publish,
+        handle_submit_qa,
+        handle_unpublish,
+    )
+    from jplearn_api.domain.catalog import MediaRef
+    from jplearn_api.domain.errors import InvalidDomainStateError, MediaInvariantError
+
+    repo = FakeCatalogRepository()
+    storage = FakeStoragePort()
+    uow = FakeUnitOfWork()
+
+    # 1. Create draft item
+    cmd = CreateCatalogItemCommand(
+        topic_id="topic_valid",
+        ci_level=1,
+        duration_seconds=120,
+        media_type="video",
+        visual_support="high",
+        title_internal="Test Item",
+        created_by="user1",
+    )
+    item_dto = await handle_create_catalog_item(cmd, uow, repo)
+    assert item_dto.status == "draft"
+    assert uow.committed is True
+
+    # 2. Cannot publish directly from draft
+    with pytest.raises(InvalidDomainStateError):
+        await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, repo, storage)
+
+    # 3. Submit QA
+    qa_dto = await handle_submit_qa(SubmitCatalogForQaCommand(item_id=item_dto.id), uow, repo)
+    assert qa_dto.status == "level_qa"
+
+    # 4. Cannot publish without media
+    with pytest.raises(MediaInvariantError):
+        await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, repo, storage)
+
+    # Attach media ref to domain item
+    domain_item = await repo.get_by_id(item_dto.id)
+    domain_item.media = [MediaRef(id="m1", storage_key="m1.bin")]
+
+    # 5. Cannot publish if file missing on storage
+    with pytest.raises(MediaInvariantError):
+        await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, repo, storage)
+
+    # Stage media to storage
+    storage.keys.add("m1.bin")
+
+    # 6. Publish succeeds
+    pub_dto = await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, repo, storage)
+    assert pub_dto.status == "published"
+
+    # 7. Unpublish reverts to draft
+    unpub_dto = await handle_unpublish(UnpublishCatalogItemCommand(item_id=item_dto.id), uow, repo)
+    assert unpub_dto.status == "draft"
+
+    # 8. Archive
+    await handle_archive(ArchiveCatalogItemCommand(item_id=item_dto.id), uow, repo)
+    archived_item = await repo.get_by_id(item_dto.id)
+    assert archived_item.status == "archived"

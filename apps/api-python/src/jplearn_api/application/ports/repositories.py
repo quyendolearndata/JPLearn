@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Protocol
 
+from jplearn_api.application.read_models import CatalogItemPublicDTO
+from jplearn_api.domain.catalog import CatalogItem
 from jplearn_api.domain.identity import UserAccount
 
 
@@ -41,4 +43,27 @@ class UserRepository(Protocol):
         ...
 
     async def add_initial_progress(self, user_id: str, now: datetime) -> None:
+        ...
+
+
+class CatalogRepository(Protocol):
+    """Port for loading and persisting CatalogItem aggregates."""
+
+    async def get_by_id(self, item_id: str) -> CatalogItem | None:
+        ...
+
+    async def add(self, item: CatalogItem) -> None:
+        ...
+
+    async def update(self, item: CatalogItem) -> None:
+        ...
+
+    async def topic_exists(self, topic_id: str) -> bool:
+        ...
+
+
+class CatalogQueryPort(Protocol):
+    """Port for reading published catalog items."""
+
+    async def list_published(self, ci_level: int | None) -> list[CatalogItemPublicDTO]:
         ...

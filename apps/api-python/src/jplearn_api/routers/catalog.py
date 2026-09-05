@@ -1,13 +1,35 @@
+from dataclasses import asdict
+
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from jplearn_api import catalog_service
+from jplearn_api.adapters.persistence.catalog_repository import (
+    SqlAlchemyCatalogQueryAdapter,
+    SqlAlchemyCatalogRepository,
+)
+from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
+from jplearn_api.application.commands import (
+    CreateCatalogItemCommand,
+    PublishCatalogItemCommand,
+    SubmitCatalogForQaCommand,
+    UnpublishCatalogItemCommand,
+)
+from jplearn_api.application.handlers.catalog import (
+    handle_create_catalog_item,
+    handle_list_published,
+    handle_publish,
+    handle_submit_qa,
+    handle_unpublish,
+)
+from jplearn_api.application.ports.storage import StoragePort
+from jplearn_api.application.queries import ListPublishedCatalogQuery
 from jplearn_api.deps import UUIDPath, get_session, get_storage
+from jplearn_api.domain.errors import DomainError
+from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
 from jplearn_api.models import User
 from jplearn_api.roles import require_roles
-from jplearn_api.schemas import CatalogItemStaff, CatalogItemWrite, CatalogList
+from jplearn_api.schemas import CatalogItemPublic, CatalogItemStaff, CatalogItemWrite, CatalogList
 from jplearn_api.security import require_user
-from jplearn_api.storage import StoragePort
 
 router = APIRouter()
 
@@ -26,7 +48,26 @@ async def list_catalog(
     _user: User = Depends(require_user),
     ci_level: int | None = Query(default=None, ge=0, le=4),
 ) -> CatalogList:
-    return CatalogList(items=await catalog_service.list_published(session, request.app.state.settings, ci_level))
+    query_port = SqlAlchemyCatalogQueryAdapter(session, request.app.state.settings)
+    items_dto = await handle_list_published(
+        ListPublishedCatalogQuery(ci_level=ci_level),
+        query_port,
+    )
+    return CatalogList(
+        items=[
+            CatalogItemPublic(
+                id=dto.id,
+                ci_level=dto.ci_level,
+                duration_seconds=dto.duration_seconds,
+                media_type=dto.media_type,
+                topic_id=dto.topic_id,
+                visual_support=dto.visual_support,
+                playback_url=dto.playback_url,
+                hls_url=dto.hls_url,
+            )
+            for dto in items_dto
+        ]
+    )
 
 
 @router.post(
@@ -44,7 +85,23 @@ async def create_catalog_item(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(require_roles("teacher", "admin")),
 ) -> CatalogItemStaff:
-    return await catalog_service.create(session, request.app.state.settings, body, user.id)
+    uow = SqlAlchemyUnitOfWork(session)
+    repo = SqlAlchemyCatalogRepository(session)
+    cmd = CreateCatalogItemCommand(
+        topic_id=body.topic_id,
+        ci_level=body.ci_level,
+        duration_seconds=body.duration_seconds,
+        media_type=body.media_type,
+        visual_support=body.visual_support,
+        title_internal=body.title_internal,
+        created_by=user.id,
+    )
+    try:
+        dto = await handle_create_catalog_item(cmd, uow, repo)
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
+
+    return CatalogItemStaff(**asdict(dto))
 
 
 @router.post(
@@ -60,7 +117,15 @@ async def submit_level_qa(
     session: AsyncSession = Depends(get_session),
     _user: User = Depends(require_roles("teacher", "admin")),
 ) -> CatalogItemStaff:
-    return await catalog_service.submit_qa(session, request.app.state.settings, id)
+    uow = SqlAlchemyUnitOfWork(session)
+    repo = SqlAlchemyCatalogRepository(session)
+    cmd = SubmitCatalogForQaCommand(item_id=id)
+    try:
+        dto = await handle_submit_qa(cmd, uow, repo)
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
+
+    return CatalogItemStaff(**asdict(dto))
 
 
 @router.post(
@@ -81,7 +146,15 @@ async def publish_catalog_item(
     storage: StoragePort = Depends(get_storage),
     _admin: User = Depends(require_roles("admin")),
 ) -> CatalogItemStaff:
-    return await catalog_service.publish(session, request.app.state.settings, storage, id)
+    uow = SqlAlchemyUnitOfWork(session)
+    repo = SqlAlchemyCatalogRepository(session)
+    cmd = PublishCatalogItemCommand(item_id=id)
+    try:
+        dto = await handle_publish(cmd, uow, repo, storage)
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
+
+    return CatalogItemStaff(**asdict(dto))
 
 
 @router.post(
@@ -102,4 +175,12 @@ async def unpublish_catalog_item(
     session: AsyncSession = Depends(get_session),
     _admin: User = Depends(require_roles("admin")),
 ) -> CatalogItemStaff:
-    return await catalog_service.unpublish(session, request.app.state.settings, id)
+    uow = SqlAlchemyUnitOfWork(session)
+    repo = SqlAlchemyCatalogRepository(session)
+    cmd = UnpublishCatalogItemCommand(item_id=id)
+    try:
+        dto = await handle_unpublish(cmd, uow, repo)
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
+
+    return CatalogItemStaff(**asdict(dto))

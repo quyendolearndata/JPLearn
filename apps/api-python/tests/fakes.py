@@ -126,3 +126,51 @@ class FakeUserRepository:
 
     async def add_initial_progress(self, user_id: str, now) -> None:
         self.progress[user_id] = {"now": now}
+
+
+class FakeStoragePort:
+    """In-memory fake storage port."""
+
+    def __init__(self, existing_keys: set[str] | None = None) -> None:
+        self.keys = set(existing_keys or ())
+
+    async def stage(self, temp_key: str, stream) -> int:
+        self.keys.add(temp_key)
+        return 100
+
+    async def promote(self, temp_key: str, final_key: str) -> None:
+        self.keys.discard(temp_key)
+        self.keys.add(final_key)
+
+    async def delete(self, key: str) -> None:
+        self.keys.discard(key)
+
+    async def exists(self, key: str) -> bool:
+        return key in self.keys
+
+    async def check_readiness(self) -> bool:
+        return True
+
+    async def close(self) -> None:
+        pass
+
+
+class FakeCatalogRepository:
+    """In-memory fake implementation of CatalogRepository."""
+
+    def __init__(self) -> None:
+        self.items: dict[str, object] = {}
+        self.topics: set[str] = {"topic_valid"}
+
+    async def get_by_id(self, item_id: str):
+        return self.items.get(item_id)
+
+    async def add(self, item) -> None:
+        self.items[item.id] = item
+
+    async def update(self, item) -> None:
+        self.items[item.id] = item
+
+    async def topic_exists(self, topic_id: str) -> bool:
+        return topic_id in self.topics
+

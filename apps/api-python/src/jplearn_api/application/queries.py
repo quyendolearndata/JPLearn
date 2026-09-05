@@ -20,3 +20,8 @@ class AuthenticateUserQuery:
 @dataclass(frozen=True)
 class GetCurrentUserQuery:
     user_id: str
+
+
+@dataclass(frozen=True)
+class ListPublishedCatalogQuery:
+    ci_level: int | None = None

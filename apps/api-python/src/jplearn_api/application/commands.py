@@ -20,3 +20,34 @@ class RegisterUserCommand:
 @dataclass(frozen=True)
 class LogoutUserCommand:
     user_id: str
+
+
+@dataclass(frozen=True)
+class CreateCatalogItemCommand:
+    topic_id: str
+    ci_level: int
+    duration_seconds: int
+    media_type: str
+    visual_support: str
+    title_internal: str
+    created_by: str
+
+
+@dataclass(frozen=True)
+class SubmitCatalogForQaCommand:
+    item_id: str
+
+
+@dataclass(frozen=True)
+class PublishCatalogItemCommand:
+    item_id: str
+
+
+@dataclass(frozen=True)
+class UnpublishCatalogItemCommand:
+    item_id: str
+
+
+@dataclass(frozen=True)
+class ArchiveCatalogItemCommand:
+    item_id: str
