@@ -15,9 +15,9 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
 
     def __init__(
         self,
-        session_factory_or_session: async_sessionmaker[AsyncSession] | AsyncSession,
+        session_factory_or_session: async_sessionmaker[AsyncSession] | AsyncSession | Any,
     ) -> None:
-        if isinstance(session_factory_or_session, AsyncSession):
+        if hasattr(session_factory_or_session, "commit"):
             self._session_factory = None
             self.session = session_factory_or_session
             self._managed_session = False

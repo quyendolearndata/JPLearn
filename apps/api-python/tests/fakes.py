@@ -133,26 +133,62 @@ class FakeStoragePort:
 
     def __init__(self, existing_keys: set[str] | None = None) -> None:
         self.keys = set(existing_keys or ())
+        self.files: dict[str, bytes] = {}
 
-    async def stage(self, temp_key: str, stream) -> int:
+    async def stage_stream(self, temp_key: str, stream, *, max_bytes: int = 500 * 1024 * 1024) -> int:
+        total = 0
+        chunks = []
+        async for chunk in stream:
+            total += len(chunk)
+            chunks.append(chunk)
+        self.files[temp_key] = b"".join(chunks)
         self.keys.add(temp_key)
-        return 100
+        return total
 
     async def promote(self, temp_key: str, final_key: str) -> None:
+        if temp_key in self.files:
+            self.files[final_key] = self.files.pop(temp_key)
         self.keys.discard(temp_key)
         self.keys.add(final_key)
 
-    async def delete(self, key: str) -> None:
-        self.keys.discard(key)
+    async def delete(self, key: str) -> bool:
+        self.files.pop(key, None)
+        if key in self.keys:
+            self.keys.discard(key)
+            return True
+        return False
 
     async def exists(self, key: str) -> bool:
         return key in self.keys
+
+    async def check_ready(self) -> tuple[bool, str]:
+        return True, "ok"
 
     async def check_readiness(self) -> bool:
         return True
 
     async def close(self) -> None:
         pass
+
+
+class FakeMediaRepository:
+    """In-memory fake implementation of MediaRepository."""
+
+    def __init__(self, existing_items: set[str] | None = None) -> None:
+        self.assets: dict[str, object] = {}
+        self.catalog_items: set[str] = set(existing_items or ())
+
+    async def get_by_id(self, asset_id: str):
+        return self.assets.get(asset_id)
+
+    async def add(self, asset) -> None:
+        self.assets[asset.id] = asset
+
+    async def update(self, asset) -> None:
+        self.assets[asset.id] = asset
+
+    async def catalog_item_exists(self, catalog_item_id: str) -> bool:
+        return catalog_item_id in self.catalog_items
 
 
 class FakeCatalogRepository:

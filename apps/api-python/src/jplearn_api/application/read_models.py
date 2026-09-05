@@ -55,3 +55,13 @@ class LearningSessionDTO:
 class LearnerProgressDTO:
     minutes_comprehensible: int
     current_ci_level: int
+
+
+@dataclass(frozen=True)
+class MediaAssetStaffDTO:
+    id: str
+    catalog_item_id: str
+    storage_key: str
+    playback_url: str
+    hls_url: str | None
+    mime: str

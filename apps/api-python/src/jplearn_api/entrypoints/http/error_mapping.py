@@ -15,10 +15,21 @@ from jplearn_api.domain.errors import (
     SessionAlreadyEndedError,
     UnauthorizedError,
 )
+from jplearn_api.domain.range_parser import RangeNotSatisfiableError
 
 
 def map_domain_error_to_http(exc: DomainError) -> HTTPException:
     """Map pure Python domain errors to HTTP exceptions adhering to ADR-005 contract."""
+    if isinstance(exc, RangeNotSatisfiableError):
+        return HTTPException(
+            status_code=416,
+            detail="Range Not Satisfiable",
+            headers={
+                "Content-Range": f"bytes */{exc.total_size}",
+                "Accept-Ranges": "bytes",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
     if isinstance(exc, DuplicateEmailError):
         return HTTPException(status_code=409, detail="Email already registered")
     if isinstance(exc, SessionAlreadyEndedError):

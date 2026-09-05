@@ -288,3 +288,108 @@ async def test_learning_use_cases_in_memory():
     # 5. Duplicate end session raises SessionAlreadyEndedError
     with pytest.raises(SessionAlreadyEndedError):
         await handle_end_session(EndLearningSessionCommand(user_id="user_learner", session_id=session_dto.id), uow, repo)
+
+
+@pytest.mark.asyncio
+async def test_media_use_cases_in_memory():
+    """Verify media upload and HLS registration using in-memory fakes without PostgreSQL."""
+    from collections.abc import AsyncIterator
+    from fakes import FakeMediaRepository, FakeStoragePort
+    from jplearn_api.application.handlers.media import (
+        handle_register_hls,
+        handle_upload_media,
+    )
+    from jplearn_api.domain.errors import EntityNotFoundError, InvalidDomainStateError
+    from jplearn_api.domain.range_parser import RangeNotSatisfiableError, parse_byte_range
+
+    # 1. Pure domain range parser matrix
+    assert parse_byte_range("bytes=0-1", 100) == (0, 1, 2)
+    assert parse_byte_range("bytes=10-", 100) == (10, 99, 90)
+    assert parse_byte_range("bytes=-10", 100) == (90, 99, 10)
+    assert parse_byte_range("bytes=0-1, 2-3", 100) is None
+    assert parse_byte_range("invalid", 100) is None
+    with pytest.raises(RangeNotSatisfiableError):
+        parse_byte_range("bytes=200-", 100)
+
+    # 2. Setup media repository and storage
+    media_repo = FakeMediaRepository(existing_items={"cat-item-1"})
+    storage = FakeStoragePort()
+    uow = FakeUnitOfWork()
+
+    async def fake_stream() -> AsyncIterator[bytes]:
+        yield b"additional video payload"
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+    # 3. Upload to nonexistent catalog item raises EntityNotFoundError
+    with pytest.raises(EntityNotFoundError):
+        await handle_upload_media(
+            catalog_item_id="missing-item",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="test.mp4",
+            content_type="video/mp4",
+            uow=uow,
+            media_repo=media_repo,
+            storage=storage,
+            base_url="http://localhost:3001",
+            secret="test-secret-at-least-32-bytes-long",
+        )
+
+    # 4. Upload with invalid extension raises InvalidDomainStateError
+    with pytest.raises(InvalidDomainStateError):
+        await handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="test.avi",
+            content_type="video/mp4",
+            uow=uow,
+            media_repo=media_repo,
+            storage=storage,
+            base_url="http://localhost:3001",
+            secret="test-secret-at-least-32-bytes-long",
+        )
+
+    # 5. Successful upload promotes object and creates record
+    dto = await handle_upload_media(
+        catalog_item_id="cat-item-1",
+        first_chunk=valid_first_chunk,
+        stream=fake_stream(),
+        filename="video.mp4",
+        content_type="video/mp4",
+        uow=uow,
+        media_repo=media_repo,
+        storage=storage,
+        base_url="http://localhost:3001",
+        secret="test-secret-at-least-32-bytes-long",
+    )
+    assert dto.catalog_item_id == "cat-item-1"
+    assert dto.mime == "video/mp4"
+    assert dto.playback_url.startswith("http://localhost:3001/media/")
+    assert uow.committed is True
+    assert await storage.exists(f"{dto.id}.bin")
+
+    # 6. Register HLS without manifest raises InvalidDomainStateError
+    with pytest.raises(InvalidDomainStateError):
+        await handle_register_hls(
+            asset_id=dto.id,
+            uow=uow,
+            media_repo=media_repo,
+            storage=storage,
+            base_url="http://localhost:3001",
+            secret="test-secret-at-least-32-bytes-long",
+        )
+
+    # 7. Register HLS with manifest succeeds
+    storage.keys.add(f"hls/{dto.id}/index.m3u8")
+    hls_dto = await handle_register_hls(
+        asset_id=dto.id,
+        uow=uow,
+        media_repo=media_repo,
+        storage=storage,
+        base_url="http://localhost:3001",
+        secret="test-secret-at-least-32-bytes-long",
+    )
+    assert hls_dto.hls_url is not None
+    assert f"/media/{dto.id}/hls/index.m3u8" in hls_dto.hls_url

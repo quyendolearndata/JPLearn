@@ -7,6 +7,7 @@ from jplearn_api.application.read_models import CatalogItemPublicDTO
 from jplearn_api.domain.catalog import CatalogItem
 from jplearn_api.domain.identity import UserAccount
 from jplearn_api.domain.learning import LearnerProgress, LearningSession
+from jplearn_api.domain.media import MediaAsset
 
 
 class FlagsRepository(Protocol):
@@ -102,4 +103,20 @@ class LearningRepository(Protocol):
         payload: dict,
         created_at: datetime,
     ) -> None:
+        ...
+
+
+class MediaRepository(Protocol):
+    """Port for loading and persisting media asset metadata."""
+
+    async def get_by_id(self, asset_id: str) -> MediaAsset | None:
+        ...
+
+    async def add(self, asset: MediaAsset) -> None:
+        ...
+
+    async def update(self, asset: MediaAsset) -> None:
+        ...
+
+    async def catalog_item_exists(self, catalog_item_id: str) -> bool:
         ...
