@@ -1,10 +1,10 @@
 {
   "status": "PASS",
-  "commit_sha": "f388ed35d34f215dfa16ffef98bca7e7d3e18283",
+  "commit_sha": "a36c8cd60495b6eea9e2e52a8943cbf5c1442aa0",
   "image_tag": "jplearn-api-python:hardened",
-  "image_id": "sha256:a495af354e1128e1f942310383bde03a2ea816c251cfd4262600694fd4a1aaae",
-  "start_time_utc": "2026-09-05T04:58:28Z",
-  "end_time_utc": "2026-09-05T04:58:44Z",
+  "image_id": "sha256:a62edc6cb0020d58e9b42946fbf5d2800aac2d9657915895d9b9fcfd8509e96b",
+  "start_time_utc": "2026-09-05T05:02:31Z",
+  "end_time_utc": "2026-09-05T05:02:47Z",
   "tests": {
     "non_root_uid": {"uid": 10001, "result": "PASS"},
     "packaged_resources": {"tables_loaded": 10, "result": "PASS"},
