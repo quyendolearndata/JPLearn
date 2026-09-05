@@ -209,6 +209,51 @@ def test_stamp_fails_on_schema_divergence_and_preserves_clean_state(
     assert not diff(expected, actual), "upgrade after stamp modified the schema!"
 
 
+def test_destructive_downgrade_unconfigured_env_preserves_data(
+    isolated_postgres: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R-08/A: Real database with populated data must not be dropped when
+    ENVIRONMENT is unconfigured, even with ALLOW_DESTRUCTIVE_DOWNGRADE=true."""
+    # 1. Bring DB to head
+    upgrade(isolated_postgres)
+
+    # 2. Insert test user data
+    async def insert_user() -> str:
+        conn = await asyncpg.connect(isolated_postgres)
+        try:
+            return await conn.fetchval(
+                "INSERT INTO users (id, email, password_hash) VALUES ($1, $2, $3) RETURNING email",
+                "test-user-id",
+                "keepsafe@example.com",
+                "fakehash",
+            )
+        finally:
+            await conn.close()
+
+    async def get_user_count() -> int:
+        conn = await asyncpg.connect(isolated_postgres)
+        try:
+            return await conn.fetchval("SELECT COUNT(*) FROM users WHERE email = 'keepsafe@example.com'")
+        finally:
+            await conn.close()
+
+    user_email = asyncio.run(insert_user())
+    assert user_email == "keepsafe@example.com"
+    assert asyncio.run(get_user_count()) == 1
+
+    # 3. Simulate completely unconfigured environment
+    monkeypatch.delenv("ENVIRONMENT", raising=False)
+    monkeypatch.setenv("ALLOW_DESTRUCTIVE_DOWNGRADE", "true")
+
+    # 4. Attempt destructive downgrade
+    with pytest.raises(RuntimeError, match="environment is not configured"):
+        downgrade("base", isolated_postgres)
+
+    # 5. Verify data is completely intact
+    assert asyncio.run(get_user_count()) == 1
+
+
 def test_migrate_cli_help_and_unknown_exit_codes(capsys: pytest.CaptureFixture[str]) -> None:
     from jplearn_api.migrate import main
 

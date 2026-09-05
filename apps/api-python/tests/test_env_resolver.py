@@ -116,3 +116,25 @@ def test_migrate_downgrade_cli_destructive_safety(monkeypatch: pytest.MonkeyPatc
     with pytest.raises(RuntimeError, match="blocked in 'unknown_env' environment"):
         migrate.downgrade("-1")
 
+
+def test_destructive_downgrade_blocked_when_environment_completely_unconfigured(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    """R-08/A: When neither ENVIRONMENT env var nor .env is present,
+    destructive downgrade must NOT default to local and must be blocked,
+    even when ALLOW_DESTRUCTIVE_DOWNGRADE=true."""
+    monkeypatch.delenv("ENVIRONMENT", raising=False)
+    monkeypatch.setenv("ALLOW_DESTRUCTIVE_DOWNGRADE", "true")
+    dummy_env_file = tmp_path / "nonexistent.env"
+
+    for rev in ("base", "-1", "-all"):
+        allowed, reason = is_destructive_downgrade_allowed(
+            rev,
+            environment=None,
+            env_file_path=dummy_env_file,
+            allow_env_var="true",
+        )
+        assert allowed is False, f"Expected {rev} to be blocked when environment is unconfigured!"
+        assert "unconfigured" in reason or "missing" in reason
+
+

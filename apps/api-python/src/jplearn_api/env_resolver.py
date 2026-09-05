@@ -6,6 +6,7 @@ from typing import Literal
 
 VALID_ENVIRONMENTS = ("local", "test", "staging", "production")
 EnvironmentType = Literal["local", "test", "staging", "production"]
+EnvironmentSource = Literal["explicit", "process_env", "env_file", "none"]
 
 
 def read_env_file(env_file_path: Path | str | None = None) -> dict[str, str]:
@@ -29,6 +30,43 @@ def read_env_file(env_file_path: Path | str | None = None) -> dict[str, str]:
     return result
 
 
+def resolve_configured_environment(
+    explicit: str | None = None,
+    env_file_path: Path | str | None = None,
+) -> tuple[EnvironmentType | None, EnvironmentSource]:
+    """Resolve environment and track its configuration source:
+    1. Explicit argument -> ("explicit", env)
+    2. ENVIRONMENT environment variable -> ("process_env", env)
+    3. .env file -> ("env_file", env)
+    4. Not configured -> ("none", None)
+
+    Raises ValueError if configured value is not in VALID_ENVIRONMENTS.
+    """
+    raw_env: str | None = None
+    source: EnvironmentSource = "none"
+
+    if explicit is not None:
+        raw_env = explicit.strip().lower()
+        source = "explicit"
+    elif "ENVIRONMENT" in os.environ:
+        raw_env = os.environ["ENVIRONMENT"].strip().lower()
+        source = "process_env"
+    else:
+        env_vars = read_env_file(env_file_path)
+        if "ENVIRONMENT" in env_vars:
+            raw_env = env_vars["ENVIRONMENT"].strip().lower()
+            source = "env_file"
+
+    if source == "none" or raw_env is None:
+        return None, "none"
+
+    if raw_env not in VALID_ENVIRONMENTS:
+        raise ValueError(
+            f"Invalid environment '{raw_env}': must be one of {list(VALID_ENVIRONMENTS)}"
+        )
+    return raw_env, source  # type: ignore[return-value]
+
+
 def resolve_environment(
     explicit: str | None = None,
     env_file_path: Path | str | None = None,
@@ -43,23 +81,10 @@ def resolve_environment(
 
     Rejects any unknown environment not in ('local', 'test', 'staging', 'production').
     """
-    raw_env: str | None = None
-    if explicit is not None:
-        raw_env = explicit.strip().lower()
-    elif "ENVIRONMENT" in os.environ:
-        raw_env = os.environ["ENVIRONMENT"].strip().lower()
-    else:
-        env_vars = read_env_file(env_file_path)
-        if "ENVIRONMENT" in env_vars:
-            raw_env = env_vars["ENVIRONMENT"].strip().lower()
-        else:
-            raw_env = default
-
-    if raw_env not in VALID_ENVIRONMENTS:
-        raise ValueError(
-            f"Invalid environment '{raw_env}': must be one of {list(VALID_ENVIRONMENTS)}"
-        )
-    return raw_env  # type: ignore[return-value]
+    env, source = resolve_configured_environment(explicit, env_file_path)
+    if source == "none" or env is None:
+        return default
+    return env
 
 
 def resolve_database_url(
@@ -85,6 +110,7 @@ def is_destructive_downgrade_allowed(
     revision: str,
     environment: str | None = None,
     allow_env_var: str | None = None,
+    env_file_path: Path | str | None = None,
 ) -> tuple[bool, str]:
     """Check whether a migration downgrade is destructive and if it is permitted.
     Returns (is_allowed, reason).
@@ -93,10 +119,11 @@ def is_destructive_downgrade_allowed(
 
     Rules:
     1. Non-destructive downgrades are always allowed.
-    2. Missing or unknown environments NEVER allow destructive downgrade (fail closed),
+    2. Missing or unconfigured environments NEVER allow destructive downgrade (fail closed),
        even if ALLOW_DESTRUCTIVE_DOWNGRADE=true is set.
-    3. In local and test environments, destructive downgrade is permitted.
-    4. In staging and production environments, destructive downgrade requires
+    3. Unknown or invalid environments NEVER allow destructive downgrade.
+    4. In local and test environments, destructive downgrade is permitted.
+    5. In staging and production environments, destructive downgrade requires
        ALLOW_DESTRUCTIVE_DOWNGRADE to be 'true', '1', or 'yes'.
     """
     is_destructive = revision.lower() in ("base", "-1", "-all") or revision.startswith("-")
@@ -109,11 +136,17 @@ def is_destructive_downgrade_allowed(
         else os.environ.get("ALLOW_DESTRUCTIVE_DOWNGRADE", "")
     ).lower() in ("true", "1", "yes")
 
-    # Resolve environment
+    # Resolve configured environment and source
     try:
-        env = resolve_environment(environment)
+        env, source = resolve_configured_environment(environment, env_file_path)
     except Exception:
-        env = None
+        env, source = None, "invalid"  # type: ignore[assignment]
+
+    if source == "none":
+        return False, (
+            f"Destructive downgrade to {revision} is blocked: environment is not configured "
+            "(missing ENVIRONMENT env var and .env file); destructive actions require an explicit environment"
+        )
 
     if env not in VALID_ENVIRONMENTS or env is None:
         raw = environment if environment is not None else (os.environ.get("ENVIRONMENT") or "")
