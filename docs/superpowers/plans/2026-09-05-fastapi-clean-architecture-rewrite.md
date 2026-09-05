@@ -1,6 +1,6 @@
 # FastAPI Clean Architecture Rewrite
 
-> **Trạng thái:** PLAN — chưa bắt đầu implementation  
+> **Trạng thái:** AUDIT GAP CLOSURE — các lát cắt cơ bản đã triển khai tại 4ae7673, đang mở lại và khắc phục các lỗ hổng kiến trúc G0–G6 theo kế hoạch `docs/superpowers/plans/2026-09-05-clean-architecture-audit-gap-closure.md`.  
 > **Baseline:** branch `codex/fastapi-backend-hardening`, commit `2f5e200`  
 > **PR nền:** [#42](https://github.com/quyendolearndata/JPLearn/pull/42)  
 > **Kiến trúc tham chiếu:** *Architecture Patterns with Python* (`python-architecture`)  
@@ -287,15 +287,15 @@ và T-SES/T-PRG/T-EVT đều PASS.
   metadata command đã parse.
 - [x] Giữ StoragePort lifecycle: stage, promote, delete, stream, range, metadata,
   readiness; adapters tự sở hữu file handles/executors.
-- [x] `UploadMedia` thể hiện rõ state machine:
-  `STAGED -> PROMOTED -> COMMITTED | ROLLBACK_CONFIRMED | OUTCOME_UNKNOWN`.
+- [ ] `UploadMedia` thể hiện rõ state machine:
+  `STAGED -> PROMOTED -> COMMITTED | ROLLBACK_CONFIRMED | OUTCOME_UNKNOWN` (Reopened: fault injection vào `media_repo.add()` sau promote).
 - [x] Không rollback đồng thời với COMMIT; unknown outcome giữ object và tạo recovery
   evidence không chứa secret/PII.
-- [x] Reconciliation dùng query/repository ports và giữ 24h retention + recheck trước
-  delete.
+- [ ] Reconciliation dùng query/repository ports và giữ 24h retention + recheck trước
+  delete (Reopened: chuyển reconciliation sang application handler).
 - [x] HTTP Range/HLS/signature policy tách khỏi persistence model.
-- [x] Chuyển media routers/CLI rồi xóa `media_service.py`, `media_access.py` và storage
-  implementation cũ sau khi adapters mới đạt parity.
+- [ ] Chuyển media routers/CLI rồi xóa `media_service.py`, `media_access.py` và storage
+  implementation cũ sau khi adapters mới đạt parity (Reopened: media router vẫn qua `media_service`).
 
 **Exit:** cancellation/fault matrix PASS ở handler và real adapters; playback MP4,
 Range, signed URL, HLS và reconciliation giữ nguyên contract/E2E.
@@ -320,15 +320,15 @@ seed, ready/health và alert tests PASS.
 
 **Owner:** Platform; **Verification:** QA + CTO
 
-- [x] Không còn router/service nhận `AsyncSession` ngoài persistence/entrypoint adapter.
+- [ ] Không còn router/service nhận `AsyncSession` ngoài persistence/entrypoint adapter (Reopened: hoàn tất dependencies wiring).
 - [x] Không còn application/domain import FastAPI/Pydantic/SQLAlchemy/asyncpg.
-- [x] Xóa ORM models khỏi package root; adapter records không được trả ra ngoài.
-- [x] Xóa các service module cũ chỉ sau khi route cuối cùng đã chuyển.
+- [ ] Xóa ORM models khỏi package root; adapter records không được trả ra ngoài (Reopened: dọn `models.py` alias).
+- [ ] Xóa các service module cũ chỉ sau khi route cuối cùng đã chuyển (Reopened: `media_service.py`).
 - [x] Phân loại tests thành `unit/domain`, `unit/application`, `integration`, `e2e`
   mà không xóa characterization coverage.
 - [x] Giảm monkeypatch framework/import path; ưu tiên fake ports và state assertions.
 - [x] Kiểm N+1/query count cho catalog và auth role loading.
-- [x] Cập nhật C4 Level 3, diagrams, ADR, README và walkthrough theo code thực.
+- [ ] Cập nhật C4 Level 3, diagrams, ADR, README và walkthrough theo code thực (Reopened: sửa ADR-006 routes).
 
 **Exit:** architecture guard không có allowlist tạm; tìm kiếm không còn legacy import;
 reviewer trace được entrypoint -> handler -> domain -> port -> adapter -> persistence.
@@ -344,9 +344,9 @@ reviewer trace được entrypoint -> handler -> domain -> port -> adapter -> pe
 - [x] PostgreSQL repository/UoW/mapping/concurrency integration suite PASS.
 - [x] Semantic OpenAPI diff và mutation suite PASS (26/26 PASS).
 - [x] Web E2E Chromium + WebKit 10/10 PASS.
-- [x] Container verification 7/7 PASS từ clean checkout và immutable image digest.
-- [x] So sánh latency/query count/memory với baseline; không nhận regression chưa giải thích.
-- [x] Draft PR được review theo BA/Platform/QA/CTO đúng phạm vi.
+- [ ] Container verification 7/7 PASS từ clean checkout và immutable image digest (Reopened cho clean candidate SHA).
+- [ ] So sánh latency/query count/memory với baseline; không nhận regression chưa giải thích (Reopened).
+- [ ] Draft PR được review theo BA/Platform/QA/CTO đúng phạm vi (Reopened).
 
 **Exit:** engineering rewrite được phép merge. R-09 operational acceptance vẫn là
 gate riêng; local rewrite PASS không tự động mở learner traffic.
@@ -402,14 +402,14 @@ nếu việc đó làm mất khả năng revert từng vertical slice.
 - [x] Mọi HTTP operation hiện tại đi qua application command/query handler.
 - [x] Domain/application độc lập FastAPI, Pydantic, SQLAlchemy, asyncpg và env.
 - [x] Mọi write use case có explicit UoW boundary và rollback-by-default.
-- [x] ORM records, SQL query và transaction implementation chỉ nằm trong adapters.
+- [ ] ORM records, SQL query và transaction implementation chỉ nằm trong adapters (Reopened: dọn models.py alias).
 - [x] Business transition/invariant nằm trong domain; HTTP mapping nằm ở entrypoint.
-- [x] Storage/security/time/ID là explicit ports khi use case cần thay thế hoặc lifecycle.
+- [ ] Storage/security/time/ID là explicit ports khi use case cần thay thế hoặc lifecycle (Reopened: clock/ID injection).
 - [x] Không có generic repository, singleton session/UoW hoặc broker/message bus không cần thiết.
 - [x] DDL baseline, OpenAPI và toàn bộ FR/NFR hiện tại không drift.
 - [x] Test pyramid có domain/application unit, adapter integration và thin E2E.
-- [x] CI từ clean checkout PASS và artifact gắn đúng SHA/digest.
-- [x] Legacy service/root ORM modules đã xóa; architecture guard không có bypass.
+- [ ] CI từ clean checkout PASS và artifact gắn đúng SHA/digest (Reopened).
+- [ ] Legacy service/root ORM modules đã xóa; architecture guard không có bypass (Reopened).
 - [x] `landing_preview.html`, development DB, media và named volume không bị chạm.
 - [x] R-09 chỉ được mở khi staging HTTPS/soak/canary/rollback/native có evidence riêng (STRICTLY HOLD — Milestone 2).
 

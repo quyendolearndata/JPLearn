@@ -65,33 +65,35 @@ Mọi write use case đều bắt buộc phải chạy trong phạm vi của m�
 
 ## 3. Ma trận hành vi các Route (Behavior Matrix)
 
-| Method | Path | Auth / Role | Invariant & Validation | Concurrency & Transaction | Error Response Codes |
-|---|---|---|---|---|---|
-| `POST` | `/auth/register` | Public | Email valid, min password 10 chars | Atomic UoW (user + role + progress) | `400` (Validation), `409` (Duplicate email) |
-| `POST` | `/auth/login` | Public | Valid credentials | Read query + Argon2 verify | `401` (Unauthorized) |
-| `POST` | `/auth/logout` | Authenticated | User exists, token valid | UoW: `token_version += 1`, commit | `401` (Unauthorized) |
-| `GET` | `/auth/me` | Authenticated | Token version match | Read query by user_id | `401` (Unauthorized) |
-| `GET` | `/flags` | Public | Default false | Query flags with ensure_defaults | `200` |
-| `PUT` | `/flags` | Staff/Admin | Boolean flags only | UoW upsert all flags, commit | `401`, `403` |
-| `GET` | `/catalog` | Public | Filter `status=published`, optional `ci_level` | Read query with media relation | `200` |
-| `POST` | `/catalog` | Staff/Admin | Topic exists, duration > 0, L1 false | UoW create draft catalog item | `400`, `401`, `403` |
-| `POST` | `/catalog/{id}/submit-qa` | Staff/Admin | Only `draft` -> `level_qa` | UoW status transition, commit | `400`, `401`, `403`, `404` |
-| `POST` | `/catalog/{id}/publish` | Admin only | Only `level_qa` -> `published`, media exists on storage | UoW status transition, storage existence verify | `400`, `401`, `403`, `404` |
-| `POST` | `/catalog/{id}/unpublish` | Staff/Admin | Only `published` -> `draft` | UoW status transition, commit | `400`, `401`, `403`, `404` |
-| `DELETE` | `/catalog/{id}` | Admin only | Mark `archived` | UoW status transition, commit | `401`, `403`, `404` |
-| `POST` | `/sessions/start` | Learner | Valid device_class | UoW: session + device upsert + 2 events | `400`, `401` |
-| `POST` | `/sessions/{id}/end` | Learner (owner) | Must not already ended, exactly-once | UoW: Row lock session + progress, 2 events | `400` (Already ended), `401`, `403`, `404` |
-| `GET` | `/progress` | Learner | Progress exists | Read query for user | `401`, `404` |
-| `POST` | `/media/upload` | Staff/Admin | MIME `video/mp4`, magic bytes `ftyp` | Storage stage -> promote -> DB UoW | `400`, `401`, `403`, `404` |
-| `POST` | `/media/{id}/hls` | Staff/Admin | HLS master manifest exists | UoW update asset hls_url | `400`, `401`, `403`, `404` |
-| `GET` | `/media/{id}` | Authenticated | Asset exists | Read query asset | `401`, `404` |
-| `GET` | `/media/{id}/stream` | Signed query / Auth | Valid signature or token | Stream with Range header support | `400`, `401`, `403`, `404`, `416` |
-| `GET` | `/health` | Public | Basic process check | No DB query required | `200` |
-| `GET` | `/ready` | Public | Probes DB & storage | Storage probe + DB connection probe | `200`, `503` |
+| Method | Path | Operation ID | Auth / Role | Invariant & Validation | Concurrency & Transaction | Error Codes |
+|---|---|---|---|---|---|---|
+| `POST` | `/auth/register` | `register` | Public | Email valid, min password 10 chars | Atomic UoW (user + role + progress) | `400`, `409` |
+| `POST` | `/auth/login` | `login` | Public | Valid credentials | Read query + Argon2 verify | `401` |
+| `POST` | `/auth/logout` | `logout` | Authenticated | User exists, token valid | UoW: `token_version += 1`, commit | `401` |
+| `GET` | `/auth/me` | `getMe` | Authenticated | Token version match | Read query by user_id | `401` |
+| `GET` | `/flags` | `getFlags` | Public | Default false | Query flags with ensure_defaults | `200` |
+| `PUT` | `/flags` | `patchFlags` | Staff/Admin | Boolean flags only | UoW upsert all flags, commit | `401`, `403` |
+| `GET` | `/catalog` | `listCatalog` | Public | Filter `status=published`, optional `ci_level` | Read query with media relation | `200` |
+| `GET` | `/staff/catalog` | `listCatalogStaff` | Staff/Admin | List draft/level_qa/published items | Read query for staff view | `401`, `403` |
+| `POST` | `/staff/catalog` | `createCatalogItem` | Staff/Admin | Topic exists, duration > 0, L1 false | UoW create draft catalog item | `400`, `401`, `403` |
+| `POST` | `/staff/catalog/{id}/submit-qa` | `submitLevelQa` | Staff/Admin | Only `draft` -> `level_qa` | UoW status transition, commit | `400`, `401`, `403`, `404` |
+| `POST` | `/staff/catalog/{id}/publish` | `publishCatalogItem` | Admin only | Only `level_qa` -> `published`, media exists | UoW status transition, storage verify | `400`, `401`, `403`, `404` |
+| `POST` | `/staff/catalog/{id}/unpublish` | `unpublishCatalogItem` | Staff/Admin | Only `published` -> `draft` | UoW status transition, commit | `400`, `401`, `403`, `404` |
+| `DELETE` | `/staff/catalog/{id}` | `archiveCatalogItem` | Admin only | Mark `archived` | UoW status transition, commit | `401`, `403`, `404` |
+| `POST` | `/staff/catalog/{id}/media` | `uploadMedia` | Staff/Admin | MIME `video/mp4`, magic bytes `ftyp` | Storage stage -> promote -> DB UoW | `400`, `401`, `403`, `404` |
+| `POST` | `/staff/media/{id}/hls` | `registerHls` | Staff/Admin | HLS master manifest exists | UoW update asset hls_url | `400`, `401`, `403`, `404` |
+| `GET` | `/media/{id}` | `streamMedia` | Signed query / Auth | Valid signature or token | Stream with Range header support | `400`, `401`, `403`, `404`, `416` |
+| `GET` | `/media/{id}/hls/{file}` | `streamHls` | Signed query / Auth | Valid signature or token, safe path | Stream manifest or segment | `400`, `401`, `403`, `404`, `416` |
+| `POST` | `/sessions` | `startSession` | Learner | Valid device_class | UoW: session + device upsert + 2 events | `400`, `401` |
+| `POST` | `/sessions/{id}/end` | `endSession` | Learner (owner) | Must not already ended, exactly-once | UoW: Row lock session + progress, 2 events | `400`, `401`, `403`, `404` |
+| `GET` | `/progress` | `getProgress` | Learner | Progress exists | Read query for user | `401`, `404` |
+| `GET` | `/health` | `health` | Public | Basic process check | No DB query required | `200` |
+| `GET` | `/ready` | `ready` | Public | Probes DB & storage | Storage probe + DB connection probe | `200`, `503` |
 
 ---
 
 ## 4. Trạng thái kiểm chứng & Ranh giới vận hành
 
-- **Milestone 1 (Clean Architecture Rewrite):** Toàn bộ các module được tái cấu trúc bảo đảm passing 100% các suite kiểm thử: guard, pytest (164+ tests), OpenAPI parity (zero diff), Web E2E (10/10), container verification (7/7 gates).
+- **Milestone 1 (Clean Architecture Rewrite):** Các lát cắt dọc cơ bản đã triển khai. Hệ thống đang thực hiện kế hoạch đóng lỗ hổng kiểm thử kiến trúc (Audit Gap Closure G0–G6 theo `docs/superpowers/plans/2026-09-05-clean-architecture-audit-gap-closure.md`). Engineering acceptance chỉ được cấp sau khi hoàn thành toàn bộ các block G0–G6 trên clean candidate checkout.
 - **Milestone 2 (Operational Acceptance / R-09):** Tiếp tục duy trì trạng thái **STRICTLY HOLD / BLOCKED** cho đến khi có đủ hạ tầng staging và quyết định mở traffic từ ghế Ops & CTO.
+
