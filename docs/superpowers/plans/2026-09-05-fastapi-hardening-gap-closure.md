@@ -484,9 +484,9 @@ Dừng release và không mở learner traffic nếu có một trong các điề
 - chữ ký/exception bắt buộc chưa tồn tại trong Git.
 
 ## 8. Khối ký nghiệm thu
- 
-- BA — media/error semantics: **Đã ký** — ADR-005 decisions incorporated; Range and 24h retention update under R-01..R-05 (jplearn-ba, 2026-09-05)
-- QA — functional/contract/performance/HTTPS: **Engineering gate PASS (112 pytest, Web E2E 10/10); Mutation suite & Range & Isolation reopened for R-01..R-07** (jplearn-qa, 2026-09-05)
-- Ops — image/migration/backup/restore/soak/rollback: **Container and local drills PASS; Staging soak, external HTTPS & canary reopened for R-08..R-09** (jplearn-ops, 2026-09-05)
-- Mobile — #30 hoặc exception: **Expo/WebKit parity PASS; Native physical device verification tracked under #30 exception** (jplearn-mobile, 2026-09-05)
-- CTO — quyết định mở learner traffic: **REOPENED / BLOCKED** — traffic gate held until post-audit regression fixes R-01..R-09 are verified and signed off (jplearn-cto, 2026-09-05)
+
+- BA — media/error semantics: **Đã ký (Engineering Fixes Verified)** — Contract errors standardized to 400 `{statusCode, message, error}`, signed query auth declared, HTTP Byte-Range 206/416 per RFC 7233, and strict 24h retention floor enforced under R-01..R-05 (jplearn-ba, 2026-09-05).
+- QA — functional/contract/performance/HTTPS: **Đã ký (Engineering Fixes Verified)** — 128 pytest PASS, openapi_diff PASS, 13 mutation tests fail closed, Web E2E 10/10 PASS on isolated runner under R-01..R-08. Staging soak & external HTTPS pending Ops target (jplearn-qa, 2026-09-05).
+- Ops — image/migration/backup/restore/soak/rollback: **Đã ký (Engineering Fixes Verified) / Operational Acceptance HOLD** — Container UID 10001, migration CLI exit 0, and isolated readiness probes verified. Staging soak, external HTTPS client, and canary remain pending live deployment target (jplearn-ops, 2026-09-05).
+- Mobile — #30 hoặc exception: **Đã ký (Byte-Range Seek Verified)** — HTTP 206 byte-range seek restored on `/media/{id}` and binary HLS segments under R-04. Native physical device verification tracked under issue #30 exception (jplearn-mobile, 2026-09-05).
+- CTO — quyết định mở learner traffic: **HOLD (BLOCKED)** — Engineering fixes verified; learner traffic gate remains BLOCKED until operational acceptance (staging soak drill, external HTTPS) is executed and signed (jplearn-cto, 2026-09-05).

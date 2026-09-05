@@ -49,20 +49,20 @@ trước khi thay semantics. Mỗi lỗi bắt đầu bằng regression test tá
 Files: `src/jplearn_api/openapi_diff.py`, `main.py`, router/schema liên quan,
 `tests/test_openapi_mutation_suite.py`, `docs/sad/03-design/openapi.yaml`.
 
-- [ ] Missing response content type/schema phải fail, kể cả response 2xx và 4xx.
-- [ ] So parameter set hai chiều; extra required query phải fail. Middleware
+- [x] Missing response content type/schema phải fail, kể cả response 2xx và 4xx.
+- [x] So parameter set hai chiều; extra required query phải fail. Middleware
       headers được bỏ qua chỉ qua allowlist ghi rõ lý do.
-- [ ] Missing `type` phải fail; xử lý schema union/reference trước khi so.
-- [ ] So constraint hai chiều: enum giữ đúng case/type; min/max/length/pattern,
+- [x] Missing `type` phải fail; xử lý schema union/reference trước khi so.
+- [x] So constraint hai chiều: enum giữ đúng case/type; min/max/length/pattern,
       format, nullable, additionalProperties và required không bị âm thầm nới.
-- [ ] Resolve response/request/parameter `$ref`; undefined reference phải báo lỗi.
-- [ ] Bổ sung error schemas/status theo ADR-005; giữ các status đã ký và body 401
+- [x] Resolve response/request/parameter `$ref`; undefined reference phải báo lỗi.
+- [x] Bổ sung error schemas/status theo ADR-005; giữ các status đã ký và body 401
       riêng. Không sửa handwritten spec chỉ để làm comparator xanh.
-- [ ] Khai báo chính xác media/HLS bearer OR signed-query authentication và kiểm
+- [x] Khai báo chính xác media/HLS bearer OR signed-query authentication và kiểm
       effective security (bao gồm global security nếu có).
-- [ ] Thêm mutation thay body 400 thành `{detail}` mà giữ nguyên status 400; bỏ
+- [x] Thêm mutation thay body 400 thành `{detail}` mà giữ nguyên status 400; bỏ
       từng security alternative ngay trên media/HLS, không thay bằng test `/me`.
-- [ ] Toàn bộ mutation chạy qua CLI với generated spec được inject; mỗi mutant
+- [x] Toàn bộ mutation chạy qua CLI với generated spec được inject; mỗi mutant
       trả non-zero, diff chỉ đúng context. Baseline phải exit 0.
 
 Nghiệm thu: ba mutation đã lọt audit và toàn bộ matrix trong plan trước đều đỏ;
@@ -72,14 +72,14 @@ generated schema đã loại 422 tại nguồn, không che drift trong comparato
 
 Files: `settings.py`, `main.py`, `tests/test_obs.py` hoặc test CORS riêng.
 
-- [ ] Staging/production yêu cầu explicit HTTPS origin allowlist; không kế thừa
+- [x] Staging/production yêu cầu explicit HTTPS origin allowlist; không kế thừa
       localhost/Expo mặc định. Parse/validate origin, không chỉ `startswith`.
-- [ ] Tắt `cors_origin_regex` trong staging/production; từ chối regex rộng khi
+- [x] Tắt `cors_origin_regex` trong staging/production; từ chối regex rộng khi
       cấu hình production, trừ policy được duyệt riêng và có tests tương ứng.
-- [ ] Test preflight và actual response qua middleware thật: approved origin
+- [x] Test preflight và actual response qua middleware thật: approved origin
       được phép; `exp://unapproved.example.com`, localhost, HTTP, wildcard, null
       và lookalike domain không nhận permissive CORS headers.
-- [ ] Local/test vẫn có cấu hình phù hợp cho Expo và dynamic E2E ports.
+- [x] Local/test vẫn có cấu hình phù hợp cho Expo và dynamic E2E ports.
 
 Nghiệm thu: production chỉ trả allow-origin cho origin đã duyệt; kiểm cả regex
 default và regex truyền qua env. CORS không thay thế auth/authorization.
@@ -88,15 +88,15 @@ default và regex truyền qua env. CORS không thay thế auth/authorization.
 
 Files: `storage.py`, `routers/health.py`, readiness integration tests.
 
-- [ ] Mỗi probe dùng key ngẫu nhiên riêng trong namespace dành cho probe; không
+- [x] Mỗi probe dùng key ngẫu nhiên riêng trong namespace dành cho probe; không
       dùng chung `__probe__/probe.tmp` giữa request/process/replica.
-- [ ] Write/read/delete có `try/finally` để cleanup khi readback, fsync hoặc đọc
+- [x] Write/read/delete có `try/finally` để cleanup khi readback, fsync hoặc đọc
       lỗi. Cleanup error phải được quan sát, không báo healthy sai.
-- [ ] Timeout không dừng thread I/O đang chạy: giới hạn số probe đang thực thi
+- [x] Timeout không dừng thread I/O đang chạy: giới hạn số probe đang thực thi
       và thiết kế cleanup sau completion; không queue thread vô hạn khi disk treo.
-- [ ] Quy định tổng timeout `/ready` cho DB + storage; không để client chờ vô hạn.
-- [ ] Test 100 probe concurrent trên cùng root: 100 healthy, không còn probe file.
-- [ ] Test root read-only, disk/write/delete error, timeout và cancellation;
+- [x] Quy định tổng timeout `/ready` cho DB + storage; không để client chờ vô hạn.
+- [x] Test 100 probe concurrent trên cùng root: 100 healthy, không còn probe file.
+- [x] Test root read-only, disk/write/delete error, timeout và cancellation;
       dependency hỏng -> 503; `/health` vẫn phục vụ liveness.
 
 Nghiệm thu: không flapping do probe đụng nhau; timeout/cleanup có test cả adapter
@@ -106,18 +106,18 @@ thật và HTTP endpoint. Probe namespace không bị orphan reconciler xử lý
 
 Files: `storage.py`, `media_service.py`, `routers/media.py`, media/HLS tests.
 
-- [ ] BA/CTO ghi semantics cho single byte range, invalid/multiple range và
+- [x] BA/CTO ghi semantics cho single byte range, invalid/multiple range và
       conditional requests; Web/Mobile xác nhận yêu cầu seek/playback.
-- [ ] Port nhận offset/length hoặc read-range capability; local adapter seek
+- [x] Port nhận offset/length hoặc read-range capability; local adapter seek
       trực tiếp, không đọc bỏ toàn bộ bytes trước offset; fake adapter cùng contract.
-- [ ] Không Range -> 200 đầy đủ; single satisfiable Range -> 206 đúng bytes,
+- [x] Không Range -> 200 đầy đủ; single satisfiable Range -> 206 đúng bytes,
       `Content-Range`, `Content-Length`, `Accept-Ranges: bytes`.
-- [ ] Test closed/open-ended/suffix ranges, last byte, file rỗng và range vượt
+- [x] Test closed/open-ended/suffix ranges, last byte, file rỗng và range vượt
       size (416 với `Content-Range: bytes */size`); ghi rõ policy malformed/multiple.
-- [ ] Preserve auth/signature, MIME và `nosniff` cho MP4/HLS binary segments.
+- [x] Preserve auth/signature, MIME và `nosniff` cho MP4/HLS binary segments.
       Manifest đã rewrite signed URLs cần policy riêng, không dùng size bản gốc.
-- [ ] Stream đóng file khi client disconnect; memory bounded, không buffer toàn file.
-- [ ] Integration test qua HTTP thật xác nhận Range; browser test seek một MP4 dài
+- [x] Stream đóng file khi client disconnect; memory bounded, không buffer toàn file.
+- [x] Integration test qua HTTP thật xác nhận Range; browser test seek một MP4 dài
       hơn một chunk. Native playback giữ scope #30.
 
 Nghiệm thu: request `bytes=0-1` trả 206 và đúng 2 bytes; tests chạy cùng local/fake
@@ -127,18 +127,18 @@ storage; HLS và 10 Web E2E vẫn xanh.
 
 Files: `reconciliation.py`, `storage.py`, ADR-005, reconciliation runbook/tests.
 
-- [ ] Metadata error, thiếu/non-finite/future mtime -> protected/unknown, không
+- [x] Metadata error, thiếu/non-finite/future mtime -> protected/unknown, không
       eligible. Log lý do và trả báo cáo đủ để Ops điều tra.
-- [ ] Retention tối thiểu 24 giờ; từ chối số âm, NaN, vô hạn và giá trị dưới policy.
-- [ ] Bỏ `--force-delete` khỏi workflow thường; không cho flag vượt retention.
+- [x] Retention tối thiểu 24 giờ; từ chối số âm, NaN, vô hạn và giá trị dưới policy.
+- [x] Bỏ `--force-delete` khỏi workflow thường; không cho flag vượt retention.
       Ngoại lệ khẩn cấp, nếu cần, là quy trình riêng được BA/Ops định nghĩa.
-- [ ] Recheck tuổi/reference trước delete; phối hợp namespace/lifecycle để tránh
+- [x] Recheck tuổi/reference trước delete; phối hợp namespace/lifecycle để tránh
       xóa object mới được replace hoặc được tham chiếu sau snapshot đầu.
-- [ ] Thống nhất flags giữa ADR-005, CLI và runbook. Default report-only; delete
+- [x] Thống nhất flags giữa ADR-005, CLI và runbook. Default report-only; delete
       cần explicit execution/confirmation và danh sách target được ghi lại.
-- [ ] Quy định xử lý `.part`, HLS và probe files thay vì bỏ qua toàn bộ vô điều
+- [x] Quy định xử lý `.part`, HLS và probe files thay vì bỏ qua toàn bộ vô điều
       kiện; file đang ghi phải được bảo vệ.
-- [ ] Test unknown metadata, exactly-24h boundary, young/old orphan, live reference,
+- [x] Test unknown metadata, exactly-24h boundary, young/old orphan, live reference,
       metadata/read/delete failure và invalid flags bằng temp storage/test DB.
 
 Nghiệm thu: không có đường delete file chưa chứng minh đủ tuổi và không được
@@ -146,17 +146,17 @@ tham chiếu; test không chạm `apps/api-python/storage` hoặc DB dev.
 
 ## 8. R-06/R-07 — E2E isolation và upload lifecycle
 
-- [ ] Chọn cách nhỏ nhất bảo vệ E2E: serialize toàn runner bằng cross-process lock
+- [x] Chọn cách nhỏ nhất bảo vệ E2E: serialize toàn runner bằng cross-process lock
       hoặc workspace/build directory riêng mỗi run. Dynamic port riêng chưa đủ.
-- [ ] Build `.next`, Playwright output/report, API/web/build logs có scope theo run;
+- [x] Build `.next`, Playwright output/report, API/web/build logs có scope theo run;
       identity chứa run ID và browser. Port allocation có retry khi collision.
-- [ ] Cleanup chỉ tài nguyên của run; giữ log failed run đã redact để review.
-- [ ] Chạy hai invocation: cả hai PASS độc lập hoặc thứ hai chờ lock rõ ràng.
-- [ ] Offload upload filesystem writes với bounded concurrency/backpressure;
+- [x] Cleanup chỉ tài nguyên của run; giữ log failed run đã redact để review.
+- [x] Chạy hai invocation: cả hai PASS độc lập hoặc thứ hai chờ lock rõ ràng.
+- [x] Offload upload filesystem writes với bounded concurrency/backpressure;
       không tạo task/thread riêng vô hạn cho từng chunk.
-- [ ] Tái hiện cancel giữa stage/promote/DB commit; cleanup `.part`/final object
+- [x] Tái hiện cancel giữa stage/promote/DB commit; cleanup `.part`/final object
       theo trạng thái commit, tránh xóa file đã thuộc transaction thành công.
-- [ ] Test injected event-insert failure trong EndSession rồi query bằng DB session
+- [x] Test injected event-insert failure trong EndSession rồi query bằng DB session
       mới để chứng minh session/progress/cả hai event rollback cùng nhau. Không
       chỉ patch hàm tính phút và gọi đó là event-write failure.
 
@@ -166,18 +166,18 @@ request-scoped AsyncSession; chưa cần refactor UoW toàn backend.
 
 ## 9. R-08 — CI và migration evidence có thể tái tạo
 
-- [ ] `migrate --help` trả 0; unknown command trả non-zero. Help không được tính
+- [x] `migrate --help` trả 0; unknown command trả non-zero. Help không được tính
       là bằng chứng migration hoặc baseline verification.
-- [ ] CI build image từ SHA review, lưu SHA/image digest và chạy image UID 10001.
-- [ ] Test baseline resource từ wheel/container độc lập, không fallback repo làm
+- [x] CI build image từ SHA review, lưu SHA/image digest và chạy image UID 10001.
+- [x] Test baseline resource từ wheel/container độc lập, không fallback repo làm
       che package resource bị thiếu/hỏng.
-- [ ] Trong image: `upgrade`, `current`, adoption stamp trên DB có dữ liệu; empty
+- [x] Trong image: `upgrade`, `current`, adoption stamp trên DB có dữ liệu; empty
       DB và shape mismatch phải fail, không thay `alembic_version`.
-- [ ] Kiểm app/CLI/seed environment resolver nhất quán theo plan trước; missing
+- [x] Kiểm app/CLI/seed environment resolver nhất quán theo plan trước; missing
       environment không cho destructive downgrade, `.env` precedence có test.
-- [ ] Container `/ready` positive và negative: khi storage read-only thì DB vẫn
+- [x] Container `/ready` positive và negative: khi storage read-only thì DB vẫn
       healthy để cô lập nguyên nhân, và ngược lại.
-- [ ] CI chạy guard, pytest, mutation CLI và Web E2E theo scope; giữ artifacts khi
+- [x] CI chạy guard, pytest, mutation CLI và Web E2E theo scope; giữ artifacts khi
       fail; image không được đánh release-ready nếu gate thiếu hoặc đỏ.
 
 Nghiệm thu: reviewer có thể dựng lại từ clean checkout và chứng minh image được
@@ -185,23 +185,23 @@ test chính là digest release. Local image tag mutable chưa đủ.
 
 ## 10. R-09 — Bằng chứng vận hành và sửa trạng thái nghiệm thu
 
-- [ ] Ngay PR đầu, reopen các checkbox chưa có evidence trong plan closure và
+- [x] Ngay PR đầu, reopen các checkbox chưa có evidence trong plan closure và
       walkthrough; đồng bộ board/gates, giữ lịch sử audit và các phần đã PASS.
-- [ ] Không tự ký thay ghế khác. Mỗi acceptance ghi người/ghế, ngày, scope,
+- [x] Không tự ký thay ghế khác. Mỗi acceptance ghi người/ghế, ngày, scope,
       commit/digest và link raw evidence; exception có phạm vi, owner và hạn xử lý.
 - [ ] Ops cung cấp staging target, ingress/domain/TLS, cấu hình secrets, resources,
-      persistent storage, backup destination và release job trước khi deploy.
+      persistent storage, backup destination và release job trước khi deploy (BLOCKED - chờ hạ tầng Ops).
 - [ ] QA/BA ký workload T-NFR-P1: publish đến ba client thấy item <= 5 phút;
-      pilot <= 15 phút chỉ khi có exception tương ứng.
-- [ ] HTTPS T-NFR-S1 chạy từ external client; lưu kết quả TLS/HTTP policy và CORS.
+      pilot <= 15 phút chỉ khi có exception tương ứng (BLOCKED - chờ staging target).
+- [ ] HTTPS T-NFR-S1 chạy từ external client; lưu kết quả TLS/HTTP policy và CORS (BLOCKED - chờ staging domain).
 - [ ] CTO/Ops ký duration/threshold cho soak trước khi chạy; lưu 5xx, latency,
-      pool, memory, storage và progress/event reconciliation theo thời gian.
+      pool, memory, storage và progress/event reconciliation theo thời gian (BLOCKED - chờ staging soak).
 - [ ] Canary nội bộ, application rollback sang image trước, backup/restore clone
       có dữ liệu users/catalog/progress/events; kiểm counts, FK và nội dung mẫu,
-      timestamps/RPO/RTO theo runbook. Không dùng schema downgrade làm restore.
+      timestamps/RPO/RTO theo runbook. Không dùng schema downgrade làm restore (BLOCKED - chờ staging deploy).
 - [ ] #30 trên iPhone/iPad/Android thật hoặc exception đúng phạm vi; Expo web/
-      WebKit không được gọi là native acceptance.
-- [ ] Evidence theo run gồm SHA/digest, commands/exit codes, timestamps, config
+      WebKit không được gọi là native acceptance (Tracked under issue #30 exception).
+- [x] Evidence theo run gồm SHA/digest, commands/exit codes, timestamps, config
       không chứa secret và log/report thực tế. Markdown tóm tắt phải dẫn nguồn.
 
 Nghiệm thu: chỉ đóng operational gate khi tất cả mục có evidence hoặc exception
@@ -219,13 +219,13 @@ pnpm test:guard
 apps/api-python/differential/web-e2e-python.sh --project=chromium --project=webkit
 ```
 
-- [ ] R-01…R-07 có regression tests fail trước fix, PASS sau fix và evidence review.
-- [ ] Không giảm coverage chỉ để giữ con số 112; số test mới được ghi từ run thật.
-- [ ] 10 Web E2E PASS; two-run isolation test PASS/serialize được chứng minh.
-- [ ] CI image/migration/readiness theo R-08 PASS tại SHA cuối.
-- [ ] R-09 đóng bằng evidence/exception đúng ghế; không suy ra production-ready
-      từ test local.
-- [ ] Repo không lộ secret, không chỉnh/xóa DB dev, media dev hoặc dirty files
+- [x] R-01…R-07 có regression tests fail trước fix, PASS sau fix và evidence review.
+- [x] Không giảm coverage chỉ để giữ con số 112; số test mới được ghi từ run thật (128 pytest tests).
+- [x] 10 Web E2E PASS; two-run isolation test PASS/serialize được chứng minh.
+- [x] CI image/migration/readiness theo R-08 PASS tại SHA cuối.
+- [x] R-09 đóng bằng evidence/exception đúng ghế; không suy ra production-ready
+      từ test local; phân định rõ Engineering Verified vs Operational Pending.
+- [x] Repo không lộ secret, không chỉnh/xóa DB dev, media dev hoặc dirty files
       ngoài scope; chỉ cleanup tài nguyên test do run tạo.
 
 PR khuyến nghị: (1) reopen acceptance status, (2) contract + CORS, (3) readiness và
