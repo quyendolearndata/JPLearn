@@ -1,31 +1,31 @@
-== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260905211610_2298] ==
-== 2/5 FastAPI :55836 ==
+== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260905215213_3522] ==
+== 2/5 FastAPI :57805 ==
 == 3/5 seed nội dung published + HLS thật ==
-   published item 00000000-0000-4000-8000-0000000000c1, asset 5b5824a4-b7d8-419c-bc21-d246aae895d9 (+hls)
-== 4/5 web :55837 → API :55836 [workspace=/tmp/jplearn-e2e-20260905211610_2298/web] ==
+   published item 00000000-0000-4000-8000-0000000000c1, asset cd506cc8-197e-4a50-8f28-8e126142c31b (+hls)
+== 4/5 web :57806 → API :57805 [workspace=/tmp/jplearn-e2e-20260905215213_3522/web] ==
 == 5/5 playwright  ==
 
 Running 10 tests using 6 workers
 
 No accessibility violations detected!
-  ✓   2 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/hls.spec.ts:3:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (780ms)
 No accessibility violations detected!
-  ✓   3 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (828ms)
-No accessibility violations detected!
-No accessibility violations detected!
-  ✓   4 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/a11y.spec.ts:36:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (955ms)
-  ✓   7 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (228ms)
-No accessibility violations detected!
-  ✓   5 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/hls.spec.ts:3:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (882ms)
-  ✓   8 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (924ms)
+  ✓   1 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (1.1s)
 No accessibility violations detected!
 No accessibility violations detected!
+  ✓   5 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/web/e2e/a11y.spec.ts:36:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (1.2s)
+  ✓   4 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/web/e2e/hls.spec.ts:3:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.2s)
+  ✓   7 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (264ms)
 No accessibility violations detected!
-  ✓   6 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/a11y.spec.ts:36:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (1.1s)
-  ✓  10 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (328ms)
-  ✓   1 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
-  ✓   9 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
+  ✓   3 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/web/e2e/hls.spec.ts:3:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.4s)
+No accessibility violations detected!
+No accessibility violations detected!
+No accessibility violations detected!
+  ✓   6 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/web/e2e/a11y.spec.ts:36:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (1.6s)
+  ✓   8 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (615ms)
+  ✓  10 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (307ms)
+  ✓   2 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
+  ✓   9 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
 
   10 passed (2.2m)
-== Cleaning up E2E resources [run=20260905211610_2298] ==
-== E2E run finished (exit 0). Evidence preserved at: /tmp/jplearn-e2e-20260905211610_2298 ==
+== Cleaning up E2E resources [run=20260905215213_3522] ==
+== E2E run finished (exit 0). Evidence preserved at: /tmp/jplearn-e2e-20260905215213_3522 ==

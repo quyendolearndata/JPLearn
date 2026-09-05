@@ -1,11 +1,11 @@
-   Building jplearn-api @ file:///Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/api-python
-      Built jplearn-api @ file:///Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/api-python
-Uninstalled 1 package in 9ms
+   Building jplearn-api @ file:///Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/api-python
+      Built jplearn-api @ file:///Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/api-python
+Uninstalled 1 package in 0.88ms
 Installed 1 package in 2ms
 ============================= test session starts ==============================
 platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0 -- /Users/quyendo/Documents/Learn/JPLearn/apps/api-python/.venv/bin/python
 cachedir: .pytest_cache
-rootdir: /Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/api-python
+rootdir: /Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/api-python
 configfile: pyproject.toml
 plugins: asyncio-1.4.0, anyio-4.15.0
 asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
@@ -41,4 +41,4 @@ tests/test_architecture_guard.py::test_failure_boundaries_across_use_cases PASSE
     _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-======================== 19 passed, 2 warnings in 0.41s ========================
+======================== 19 passed, 2 warnings in 0.43s ========================
