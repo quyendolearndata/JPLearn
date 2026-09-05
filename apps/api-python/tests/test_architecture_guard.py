@@ -249,23 +249,79 @@ def check_adapters_file(file_path: Path, package_root: Path = ROOT_SRC) -> list[
     return violations
 
 
+FORBIDDEN_ADAPTER_CONSTRUCTORS = {
+    "SqlAlchemyUnitOfWork",
+    "SqlAlchemyUserRepository",
+    "SqlAlchemyCatalogRepository",
+    "SqlAlchemyCatalogQueryAdapter",
+    "SqlAlchemyLearningRepository",
+    "SqlAlchemyMediaRepository",
+    "SqlAlchemyFlagsRepository",
+    "Argon2PasswordHasher",
+    "JwtTokenService",
+    "HmacMediaUrlSigner",
+    "LocalFilesystemStorage",
+}
+
+
+def resolve_adapter_constructors(tree: ast.AST) -> dict[str, str]:
+    """Inspect AST to build a mapping from local variable/import aliases to forbidden adapter names.
+    Handles:
+    - from x import SqlAlchemyUnitOfWork as U
+    - from x import SqlAlchemyUnitOfWork
+    - import x.SqlAlchemyUnitOfWork as U
+    - U = SqlAlchemyUnitOfWork
+    - MyRepo = U
+    """
+    aliases: dict[str, str] = {}
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                parts = alias.name.split(".")
+                for forbidden in FORBIDDEN_ADAPTER_CONSTRUCTORS:
+                    if parts[-1] == forbidden:
+                        asname = alias.asname or alias.name
+                        aliases[asname] = forbidden
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                if alias.name in FORBIDDEN_ADAPTER_CONSTRUCTORS:
+                    asname = alias.asname or alias.name
+                    aliases[asname] = alias.name
+
+    changed = True
+    while changed:
+        changed = False
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Assign):
+                target_names = [t.id for t in node.targets if isinstance(t, ast.Name)]
+                source_name = None
+                if isinstance(node.value, ast.Name):
+                    source_name = node.value.id
+                elif isinstance(node.value, ast.Attribute):
+                    source_name = node.value.attr
+
+                if source_name:
+                    resolved = None
+                    if source_name in FORBIDDEN_ADAPTER_CONSTRUCTORS:
+                        resolved = source_name
+                    elif source_name in aliases:
+                        resolved = aliases[source_name]
+
+                    if resolved:
+                        for tname in target_names:
+                            if tname not in aliases:
+                                aliases[tname] = resolved
+                                changed = True
+    return aliases
+
+
 def check_composition_rules(file_path: Path) -> list[str]:
-    """Enforce Composition rules: routers/entrypoints must not directly construct concrete adapters."""
-    forbidden_adapter_constructors = {
-        "SqlAlchemyUnitOfWork",
-        "SqlAlchemyUserRepository",
-        "SqlAlchemyCatalogRepository",
-        "SqlAlchemyCatalogQueryAdapter",
-        "SqlAlchemyLearningRepository",
-        "SqlAlchemyMediaRepository",
-        "SqlAlchemyFlagsRepository",
-        "Argon2PasswordHasher",
-        "JwtTokenService",
-        "HmacMediaUrlSigner",
-        "LocalFilesystemStorage",
-    }
+    """Enforce Composition rules: routers/entrypoints must not directly construct concrete adapters,
+    even when disguised via import aliases or assignment alias indirection."""
     content = file_path.read_text(encoding="utf-8")
     tree = ast.parse(content, filename=str(file_path))
+    aliases = resolve_adapter_constructors(tree)
     violations: list[str] = []
 
     for node in ast.walk(tree):
@@ -275,10 +331,92 @@ def check_composition_rules(file_path: Path) -> list[str]:
                 name = node.func.id
             elif isinstance(node.func, ast.Attribute):
                 name = node.func.attr
-            if name in forbidden_adapter_constructors:
+
+            resolved = None
+            if name in FORBIDDEN_ADAPTER_CONSTRUCTORS:
+                resolved = name
+            elif name in aliases:
+                resolved = f"{name} (alias of {aliases[name]})"
+
+            if resolved:
                 violations.append(
-                    f"{file_path.name}: directly constructs concrete adapter '{name}' at line {node.lineno}. Use bootstrap factory."
+                    f"{file_path.name}: directly constructs concrete adapter '{resolved}' at line {node.lineno}. Use bootstrap factory."
                 )
+    return violations
+
+
+def check_ports_file(file_path: Path, package_root: Path = ROOT_SRC) -> list[str]:
+    """Enforce Ports rules: must only declare abstract protocols, ABCs, and types.
+    Must never import or re-export concrete adapters or ORM models."""
+    violations = check_application_file(file_path, package_root)
+    content = file_path.read_text(encoding="utf-8")
+    tree = ast.parse(content, filename=str(file_path))
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            for alias in node.names:
+                if alias.name in FORBIDDEN_ADAPTER_CONSTRUCTORS:
+                    violations.append(
+                        f"{file_path.name}: ports module imports/re-exports forbidden adapter '{alias.name}' at line {node.lineno}"
+                    )
+    return violations
+
+
+def build_import_graph(package_root: Path = ROOT_SRC) -> dict[str, set[str]]:
+    """Build a complete module-level dependency graph for all python modules in package_root."""
+    graph: dict[str, set[str]] = {}
+    for file_path in package_root.glob("**/*.py"):
+        try:
+            rel = file_path.relative_to(package_root)
+            parts = [package_root.name] + list(rel.with_suffix("").parts)
+            if parts[-1] == "__init__":
+                parts = parts[:-1]
+            mod_name = ".".join(parts)
+        except ValueError:
+            mod_name = file_path.stem
+
+        if mod_name not in graph:
+            graph[mod_name] = set()
+
+        raw_imports = resolve_imports(file_path, package_root)
+        for imp in raw_imports:
+            graph[mod_name].add(imp)
+    return graph
+
+
+def find_transitive_violations(
+    start_module: str,
+    forbidden_prefixes: tuple[str, ...],
+    graph: dict[str, set[str]],
+) -> list[tuple[str, list[str]]]:
+    """Find all paths from start_module to any module/package matching forbidden_prefixes.
+    Returns list of (violation_target, path).
+    """
+    queue: list[tuple[str, list[str]]] = [(start_module, [start_module])]
+    visited: set[str] = {start_module}
+    violations: list[tuple[str, list[str]]] = []
+
+    while queue:
+        current, path = queue.pop(0)
+        edges = graph.get(current, set())
+        for target in sorted(edges):
+            for forbidden in forbidden_prefixes:
+                if target == forbidden or target.startswith(f"{forbidden}."):
+                    violations.append((target, path + [target]))
+                    break
+
+            next_mod = None
+            if target in graph and target not in visited:
+                next_mod = target
+            else:
+                parts = target.split(".")
+                for i in range(len(parts) - 1, 0, -1):
+                    parent = ".".join(parts[:i])
+                    if parent in graph and parent not in visited:
+                        next_mod = parent
+                        break
+            if next_mod and next_mod not in visited:
+                visited.add(next_mod)
+                queue.append((next_mod, path + [next_mod]))
     return violations
 
 
@@ -296,6 +434,41 @@ def test_domain_layer_dependencies():
     assert not all_violations, "Domain layer violations found:\n" + "\n".join(all_violations)
 
 
+def test_domain_layer_transitive_dependencies():
+    """Domain layer must not depend on outer layers or frameworks directly or transitively."""
+    graph = build_import_graph(ROOT_SRC)
+    forbidden_prefixes = (
+        "jplearn_api.application",
+        "jplearn_api.adapters",
+        "jplearn_api.entrypoints",
+        "jplearn_api.routers",
+        "jplearn_api.models",
+        "jplearn_api.settings",
+        "jplearn_api.bootstrap",
+        "jplearn_api.deps",
+        "jplearn_api.db",
+        "jplearn_api.security",
+        "fastapi",
+        "starlette",
+        "pydantic",
+        "pydantic_settings",
+        "sqlalchemy",
+        "asyncpg",
+        "os",
+        "sys",
+        "subprocess",
+    )
+    violations: list[str] = []
+    domain_modules = [m for m in graph if m.startswith("jplearn_api.domain")]
+    for mod in domain_modules:
+        trans_violations = find_transitive_violations(mod, forbidden_prefixes, graph)
+        for target, path in trans_violations:
+            path_str = " -> ".join(path)
+            violations.append(f"{mod}: transitive leak to '{target}' via {path_str}")
+
+    assert not violations, "Domain transitive violations found:\n" + "\n".join(violations)
+
+
 def test_application_layer_dependencies():
     """Application layer must not import adapters, entrypoints, frameworks, ORMs, or env access."""
     app_dir = ROOT_SRC / "application"
@@ -303,6 +476,45 @@ def test_application_layer_dependencies():
     for file_path in app_dir.glob("**/*.py"):
         all_violations.extend(check_application_file(file_path))
     assert not all_violations, "Application layer violations found:\n" + "\n".join(all_violations)
+
+
+def test_application_layer_transitive_dependencies():
+    """Application layer must not depend on adapters, routers, or frameworks directly or transitively."""
+    graph = build_import_graph(ROOT_SRC)
+    forbidden_prefixes = (
+        "jplearn_api.adapters",
+        "jplearn_api.entrypoints",
+        "jplearn_api.routers",
+        "jplearn_api.models",
+        "jplearn_api.settings",
+        "jplearn_api.bootstrap",
+        "jplearn_api.deps",
+        "jplearn_api.db",
+        "fastapi",
+        "starlette",
+        "sqlalchemy",
+        "asyncpg",
+        "pydantic",
+        "pydantic_settings",
+    )
+    violations: list[str] = []
+    app_modules = [m for m in graph if m.startswith("jplearn_api.application")]
+    for mod in app_modules:
+        trans_violations = find_transitive_violations(mod, forbidden_prefixes, graph)
+        for target, path in trans_violations:
+            path_str = " -> ".join(path)
+            violations.append(f"{mod}: transitive leak to '{target}' via {path_str}")
+
+    assert not violations, "Application transitive violations found:\n" + "\n".join(violations)
+
+
+def test_ports_layer_pure_abstractions():
+    """Application ports must only define abstract protocols and never re-export concrete adapters."""
+    ports_dir = ROOT_SRC / "application" / "ports"
+    all_violations: list[str] = []
+    for file_path in ports_dir.glob("**/*.py"):
+        all_violations.extend(check_ports_file(file_path))
+    assert not all_violations, "Ports layer violations found:\n" + "\n".join(all_violations)
 
 
 def test_adapters_layer_dependencies():
@@ -366,6 +578,74 @@ def test_guard_mutation_catches_violations(tmp_path: Path):
     valid_file.write_text("from dataclasses import dataclass\n@dataclass\nclass E: id: str\n", encoding="utf-8")
     assert not check_domain_file(valid_file, fake_pkg), "Valid file must produce zero violations"
     assert not check_application_file(valid_file, fake_pkg), "Valid file must produce zero violations"
+
+
+def test_guard_mutation_catches_transitive_import_leak(tmp_path: Path):
+    """Verify transitive analyzer catches leak when domain imports a helper that imports an adapter."""
+    pkg = tmp_path / "fake_pkg"
+    pkg.mkdir()
+    (pkg / "__init__.py").write_text("", encoding="utf-8")
+    domain_dir = pkg / "domain"
+    domain_dir.mkdir()
+    (domain_dir / "__init__.py").write_text("", encoding="utf-8")
+    adapters_dir = pkg / "adapters"
+    adapters_dir.mkdir()
+    (adapters_dir / "__init__.py").write_text("", encoding="utf-8")
+
+    (adapters_dir / "storage.py").write_text("class LocalStorage: pass\n", encoding="utf-8")
+    (domain_dir / "helper.py").write_text("from fake_pkg.adapters.storage import LocalStorage\n", encoding="utf-8")
+    (domain_dir / "service.py").write_text("from fake_pkg.domain.helper import LocalStorage\n", encoding="utf-8")
+
+    graph = build_import_graph(pkg)
+    trans_violations = find_transitive_violations("fake_pkg.domain.service", ("fake_pkg.adapters",), graph)
+    assert len(trans_violations) >= 1
+    target, path = trans_violations[0]
+    assert "fake_pkg.adapters" in target
+    assert path[0] == "fake_pkg.domain.service"
+    assert "fake_pkg.domain.helper" in path
+
+
+def test_guard_mutation_catches_aliased_constructor_in_router(tmp_path: Path):
+    """Verify alias analyzer catches adapter construction via import alias or assignment alias."""
+    # Case 1: import alias
+    f1 = tmp_path / "router_import_alias.py"
+    f1.write_text(
+        "from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork as U\n"
+        "def endpoint(session):\n"
+        "    u = U(session)\n",
+        encoding="utf-8",
+    )
+    v1 = check_composition_rules(f1)
+    assert len(v1) == 1
+    assert "SqlAlchemyUnitOfWork" in v1[0]
+    assert "line 3" in v1[0]
+
+    # Case 2: variable assignment alias
+    f2 = tmp_path / "router_assign_alias.py"
+    f2.write_text(
+        "from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork\n"
+        "AliasUoW = SqlAlchemyUnitOfWork\n"
+        "def endpoint(session):\n"
+        "    u = AliasUoW(session)\n",
+        encoding="utf-8",
+    )
+    v2 = check_composition_rules(f2)
+    assert len(v2) == 1
+    assert "SqlAlchemyUnitOfWork" in v2[0]
+    assert "line 4" in v2[0]
+
+
+def test_guard_mutation_catches_symbol_reexport_leak(tmp_path: Path):
+    """Verify ports guard catches concrete adapter imports and re-exports in application/ports."""
+    bad_port = tmp_path / "bad_port.py"
+    bad_port.write_text(
+        "from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork\n"
+        "__all__ = ['SqlAlchemyUnitOfWork']\n",
+        encoding="utf-8",
+    )
+    violations = check_ports_file(bad_port, tmp_path)
+    assert len(violations) >= 1
+    assert any("SqlAlchemyUnitOfWork" in v for v in violations)
 
 
 # ==============================================================================
