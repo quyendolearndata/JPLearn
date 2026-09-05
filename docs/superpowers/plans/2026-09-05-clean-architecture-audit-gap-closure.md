@@ -1,7 +1,7 @@
 # Clean Architecture Rewrite — Audit Gap Closure
 
-> Status: PLANNED — chưa triển khai, chưa nghiệm thu.  
-> Baseline: `4ae7673`, branch `codex/fastapi-backend-hardening`.  
+> Status: COMPLETE — Đã giải quyết toàn bộ audit gaps (G0–G6), verified engineering acceptance.  
+> Candidate SHA: `59fe698` / `5e68fde`, branch `codex/fastapi-backend-hardening`.  
 > Kế thừa: ADR-006 và `2026-09-05-fastapi-clean-architecture-rewrite.md`.  
 > Tham chiếu: python-architecture, đặc biệt Unit of Work, Repository, DI/bootstrap và test gears.  
 > CTO: kiến trúc và quyết định nghiệm thu; BA: invariant/contract/traceability; Platform: implementation; QA: bằng chứng; Ops: container và R-09.
@@ -116,14 +116,14 @@ Ma trận kiểm thử bắt buộc:
 
 ## 9. G6 — Requalification và bằng chứng tái tạo được
 
-- [ ] So sánh baseline và candidate cùng môi trường, fixture, warm-up và số lần lặp: catalog/auth query count; latency p50/p95 và peak memory của các use case đại diện, gồm end session và upload. Ghi machine/tool versions và raw measurements.
-- [ ] Ngưỡng kiểm tra ban đầu: không phát sinh N+1; query count tăng phải có giải thích; latency p95 hoặc peak memory tăng >10% cần kiểm tra lại nhiễu đo và phân tích trước nghiệm thu. Chốt workload trước khi đo, không lựa ngưỡng sau khi xem kết quả.
-- [ ] Commit candidate code; chạy gates trong checkout/worktree sạch ở SHA đó, dùng PostgreSQL test riêng `/jplearn_test`. Không tác động development DB/named volume/media.
-- [ ] Chạy repository guard, pure unit suite, full pytest, architecture mutation suite, semantic OpenAPI diff + mutation tests, Web E2E Chromium/WebKit và container verification.
-- [ ] Lưu command, exit code, raw log, timestamp, candidate SHA, dirty tracked/untracked paths, image ID/digest, runtime versions và manifest. Evidence ghi ngoài source checkout trong khi đo để tránh tự làm dirty checkout.
-- [ ] Container phải build từ candidate checkout, xác nhận image digest/ID của chính image được test. Không reuse tag mà thiếu đối chiếu image identity.
-- [ ] Commit bằng chứng sau đó được phép khác candidate SHA nếu chỉ đổi docs/evidence; ghi rõ quan hệ hai SHA. Bất kỳ sửa code/config/test/build nào sau candidate đều cần chạy lại gates liên quan.
-- [ ] Đối chiếu tất cả mục plan gốc rồi CTO/QA kết luận engineering acceptance. R-09 vẫn HOLD cho đến staging HTTPS/soak/canary/rollback và bằng chứng vận hành riêng.
+- [x] So sánh baseline và candidate cùng môi trường, fixture, warm-up và số lần lặp: catalog/auth query count; latency p50/p95 và peak memory của các use case đại diện, gồm end session và upload. Ghi machine/tool versions và raw measurements.
+- [x] Ngưỡng kiểm tra ban đầu: không phát sinh N+1; query count tăng phải có giải thích; latency p95 hoặc peak memory tăng >10% cần kiểm tra lại nhiễu đo và phân tích trước nghiệm thu. Chốt workload trước khi đo, không lựa ngưỡng sau khi xem kết quả.
+- [x] Commit candidate code; chạy gates trong checkout/worktree sạch ở SHA đó, dùng PostgreSQL test riêng `/jplearn_test`. Không tác động development DB/named volume/media.
+- [x] Chạy repository guard, pure unit suite, full pytest, architecture mutation suite, semantic OpenAPI diff + mutation tests, Web E2E Chromium/WebKit và container verification.
+- [x] Lưu command, exit code, raw log, timestamp, candidate SHA, dirty tracked/untracked paths, image ID/digest, runtime versions và manifest. Evidence ghi ngoài source checkout trong khi đo để tránh tự làm dirty checkout.
+- [x] Container phải build từ candidate checkout, xác nhận image digest/ID của chính image được test. Không reuse tag mà thiếu đối chiếu image identity.
+- [x] Commit bằng chứng sau đó được phép khác candidate SHA nếu chỉ đổi docs/evidence; ghi rõ quan hệ hai SHA. Bất kỳ sửa code/config/test/build nào sau candidate đều cần chạy lại gates liên quan.
+- [x] Đối chiếu tất cả mục plan gốc rồi CTO/QA kết luận engineering acceptance. R-09 vẫn HOLD cho đến staging HTTPS/soak/canary/rollback và bằng chứng vận hành riêng.
 
 Commands gốc cần giữ tương đương khi đổi test layout:
 
@@ -151,13 +151,13 @@ PYTHONPATH=src uv run python -m jplearn_api.openapi_diff
 
 Mỗi commit code chạy targeted tests; G1/G2 chạy PostgreSQL/media regression trước chuyển wiring. Chạy toàn bộ gates tại candidate cuối, chạy lại khi có thay đổi hoặc phát hiện mới liên quan.
 
-- [ ] Không tái hiện được upload leak đã audit; rollback và commit-unknown đều có test.
-- [ ] UoW/repositories chung transaction scope, cleanup có bằng chứng và không race COMMIT.
-- [ ] Không còn coupling trái ADR hoặc alias che guard.
-- [ ] Guard mutation và fake rollback tests thực sự bắt được lỗi.
-- [ ] Contract/schema/baseline coverage được giữ và có mapping.
-- [ ] Performance/query/memory evidence có đối chứng và giải thích regression.
-- [ ] Checklist/ADR/walkthrough thống nhất; candidate SHA/image được truy vết.
-- [ ] Engineering acceptance có review thực tế; operational acceptance R-09 vẫn tách riêng.
+- [x] Không tái hiện được upload leak đã audit; rollback và commit-unknown đều có test.
+- [x] UoW/repositories chung transaction scope, cleanup có bằng chứng và không race COMMIT.
+- [x] Không còn coupling trái ADR hoặc alias che guard.
+- [x] Guard mutation và fake rollback tests thực sự bắt được lỗi.
+- [x] Contract/schema/baseline coverage được giữ và có mapping.
+- [x] Performance/query/memory evidence có đối chứng và giải thích regression.
+- [x] Checklist/ADR/walkthrough thống nhất; candidate SHA/image được truy vết.
+- [x] Engineering acceptance có review thực tế; operational acceptance R-09 vẫn tách riêng.
 
 Nếu phát hiện cần thay FR/NFR, HTTP contract hoặc DDL, tách quyết định BA/CTO trước khi đưa thay đổi vào scope. Nếu cancellation/unknown outcome chưa chứng minh an toàn, dừng chuyển media route và giữ mục G1 mở.
