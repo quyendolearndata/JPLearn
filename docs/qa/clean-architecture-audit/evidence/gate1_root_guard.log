@@ -1,4 +1,4 @@
 
-> jplearn@ test:guard /Users/quyendo/Documents/Learn/JPLearn
+> jplearn@ test:guard /Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify
 > tsx scripts/assert-no-textbook.ts
 

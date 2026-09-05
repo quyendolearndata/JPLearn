@@ -1,32 +1,31 @@
-== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260905204122_16113] ==
-== 2/5 FastAPI :53146 ==
+== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260905211610_2298] ==
+== 2/5 FastAPI :55836 ==
 == 3/5 seed nội dung published + HLS thật ==
-   published item 00000000-0000-4000-8000-0000000000c1, asset 2283e8e2-014f-4005-8006-d6d924185e3c (+hls)
-== 4/5 web :53147 → API :53146 [workspace=/tmp/jplearn-e2e-20260905204122_16113/web] ==
-== 5/5 playwright --project=chromium --project=webkit ==
+   published item 00000000-0000-4000-8000-0000000000c1, asset 5b5824a4-b7d8-419c-bc21-d246aae895d9 (+hls)
+== 4/5 web :55837 → API :55836 [workspace=/tmp/jplearn-e2e-20260905211610_2298/web] ==
+== 5/5 playwright  ==
 
 Running 10 tests using 6 workers
 
 No accessibility violations detected!
-  ✓   2 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/shell.spec.ts:20:5 › login and progress have notimeout waiting for FastAPI at http://localhost:52817/ready
-== Cleaning up E2E resources [run=20260905203937_27538] ==
-== E2E run finished (exit 1). Evidence preserved at: /tmp/jplearn-e2e-20260905203937_27538 ==
-em có hls_url T-NFR-P2 (929ms)
+  ✓   2 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/hls.spec.ts:3:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (780ms)
+No accessibility violations detected!
+  ✓   3 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (828ms)
 No accessibility violations detected!
 No accessibility violations detected!
-  ✓   6 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:36:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (1.0s)
-  ✓   7 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (243ms)
+  ✓   4 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/a11y.spec.ts:36:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (955ms)
+  ✓   7 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (228ms)
 No accessibility violations detected!
-  ✓   8 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (1.0s)
+  ✓   5 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/hls.spec.ts:3:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (882ms)
+  ✓   8 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (924ms)
 No accessibility violations detected!
-  ✓   3 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:3:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.0s)
 No accessibility violations detected!
 No accessibility violations detected!
-  ✓   5 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:36:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (1.2s)
-  ✓  10 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (397ms)
-  ✓   1 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
-  ✓   9 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
+  ✓   6 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/a11y.spec.ts:36:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (1.1s)
+  ✓  10 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (328ms)
+  ✓   1 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
+  ✓   9 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
 
   10 passed (2.2m)
-== Cleaning up E2E resources [run=20260905204122_16113] ==
-== E2E run finished (exit 0). Evidence preserved at: /tmp/jplearn-e2e-20260905204122_16113 ==
+== Cleaning up E2E resources [run=20260905211610_2298] ==
+== E2E run finished (exit 0). Evidence preserved at: /tmp/jplearn-e2e-20260905211610_2298 ==

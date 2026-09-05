@@ -1,8 +1,8 @@
 ========================================================================
  JPLearn FastAPI Container Verification Gate (Hardened R-08/B)
 ========================================================================
-Commit SHA: 608f702e923edd42434a1edde2ad25a3982c2943 (dirty files: 4)
-Started At (UTC): 2026-09-05T13:44:01Z
+Commit SHA: 10583fe7f717bc53a5f409b8cf253fb4d97dba0d (dirty files: 2)
+Started At (UTC): 2026-09-05T14:18:42Z
 
 --- [1/7] Building Container Image: jplearn-api-python:hardened ---
 #0 building with "desktop-linux" instance using docker driver
@@ -12,34 +12,34 @@ Started At (UTC): 2026-09-05T13:44:01Z
 #1 DONE 0.0s
 
 #2 [internal] load metadata for ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff
-#2 DONE 2.0s
+#2 DONE 1.3s
 
 #3 [internal] load metadata for docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
-#3 DONE 2.1s
+#3 DONE 1.6s
 
 #4 [internal] load .dockerignore
 #4 transferring context: 128B done
 #4 DONE 0.0s
 
-#5 [base  1/10] FROM docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
-#5 resolve docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea done
+#5 FROM ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff
+#5 resolve ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff done
 #5 DONE 0.0s
 
-#6 FROM ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff
-#6 resolve ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff done
+#6 [base  1/10] FROM docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+#6 resolve docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea done
 #6 DONE 0.0s
 
 #7 [internal] load build context
-#7 transferring context: 188.51kB 0.0s done
+#7 transferring context: 859.48kB 0.0s done
 #7 DONE 0.0s
 
 #8 [base  4/10] RUN useradd -u 10001 -d /app -s /bin/sh appuser
 #8 CACHED
 
-#9 [base  5/10] COPY pyproject.toml uv.lock README.md ./
+#9 [base  2/10] COPY --from=ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff /uv /uvx /bin/
 #9 CACHED
 
-#10 [base  2/10] COPY --from=ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff /uv /uvx /bin/
+#10 [base  5/10] COPY pyproject.toml uv.lock README.md ./
 #10 CACHED
 
 #11 [base  3/10] WORKDIR /app
@@ -55,31 +55,32 @@ Started At (UTC): 2026-09-05T13:44:01Z
 #14 DONE 0.0s
 
 #15 [base  9/10] RUN uv sync --frozen --no-dev
-#15 0.261    Building jplearn-api @ file:///app
-#15 1.754       Built jplearn-api @ file:///app
-#15 1.755 Prepared 1 package in 1.49s
-#15 1.760 Installed 1 package in 4ms
-#15 1.920 Bytecode compiled 977 files in 160ms
-#15 1.920  + jplearn-api==0.1.0 (from file:///app)
-#15 DONE 2.0s
+#15 0.246    Building jplearn-api @ file:///app
+#15 1.785       Built jplearn-api @ file:///app
+#15 1.787 Prepared 1 package in 1.54s
+#15 1.791 Installed 1 package in 4ms
+#15 1.928 Bytecode compiled 977 files in 136ms
+#15 1.928  + jplearn-api==0.1.0 (from file:///app)
+#15 DONE 1.9s
 
 #16 [base 10/10] RUN mkdir -p /app/storage && chown -R appuser:appuser /app
-#16 DONE 1.6s
+#16 DONE 1.5s
 
 #17 exporting to image
 #17 exporting layers
-#17 exporting layers 1.8s done
-#17 exporting manifest sha256:e15e4a7fd830d386808379ffd68db212317c32464c3e9b5e17ef0cb1b22bad28 done
-#17 exporting config sha256:0da1965f88be3089fe8cbcd8b567cfb1c6190285ca1cee967edd03192c1736d1 done
-#17 exporting attestation manifest sha256:77d255996af59af84706db5bf1b5ea0b5bcabc616785e33bf8cbcbe551688572 done
-#17 exporting manifest list sha256:f3584e6985be34f0dcc53a65a805cf2f17c60f967347346e9f07a6d6e1853a58 done
+#17 exporting layers 1.7s done
+#17 exporting manifest sha256:c7c716f125161117756e0484931241522d9708be146c724b2f0c03cc4e57a162
+#17 exporting manifest sha256:c7c716f125161117756e0484931241522d9708be146c724b2f0c03cc4e57a162 done
+#17 exporting config sha256:b3b2bee40a2858f5d36defd6295c9b6b91d13e2fca18d8e4859da0a7ecda883e done
+#17 exporting attestation manifest sha256:0ce36215b2415691bdfa6fb957216660c3a85d83393d0248f86904e35bb63991 done
+#17 exporting manifest list sha256:4990462ac4ad7e8982b5b51695504d370a74ce6eaab7d2f0a6f4d86e29fca23a done
 #17 naming to docker.io/library/jplearn-api-python:hardened done
 #17 unpacking to docker.io/library/jplearn-api-python:hardened
 #17 unpacking to docker.io/library/jplearn-api-python:hardened 0.3s done
-#17 DONE 2.1s
+#17 DONE 2.0s
 
-View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/3u6l0tq6wxm2bzvy8j2oh6vmi
-Image ID: sha256:f3584e6985be34f0dcc53a65a805cf2f17c60f967347346e9f07a6d6e1853a58
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/ibdaqwywczfpo41eyqwpicaj4
+Image ID: sha256:4990462ac4ad7e8982b5b51695504d370a74ce6eaab7d2f0a6f4d86e29fca23a
 
 --- [2/7] Verifying Non-root Execution (UID 10001) ---
 Container user ID: 10001
@@ -119,9 +120,9 @@ Testing degraded database probe...
 
 ========================================================================
 ✓ ALL CONTAINER VERIFICATION GATES PASSED!
-Manifest written to: /Users/quyendo/Documents/Learn/JPLearn/apps/api-python/container_verification_manifest.json
+Manifest written to: /Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_verify/apps/api-python/container_verification_manifest.json
 ========================================================================
 ==> Cleaning up verification resources...
-jplearn-api-verify-13067
-jplearn-pg-verify-13067
-jplearn-verify-net-13067
+jplearn-api-verify-20695
+jplearn-pg-verify-20695
+jplearn-verify-net-20695
