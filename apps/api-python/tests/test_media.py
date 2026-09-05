@@ -1237,6 +1237,166 @@ async def test_upload_repo_add_failure_after_promote_rolls_back_and_compensates(
 
 
 @pytest.mark.asyncio
+async def test_upload_recheck_catalog_query_error_compensates_storage():
+    """R1 regression test: When catalog recheck query raises after promote,
+    write UoW rolls back, rollback is confirmed, and final object is deleted from storage.
+    """
+    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from jplearn_api.application.handlers.media import handle_upload_media
+
+    uow = FakeUnitOfWork()
+    media_repo = FakeMediaRepository()
+    media_repo.catalog_items.add("cat-item-1")
+    storage = FakeStoragePort()
+    signer = FakeMediaUrlSigner()
+
+    call_count = 0
+    real_catalog_exists = media_repo.catalog_item_exists
+
+    async def flaky_catalog_exists(item_id: str) -> bool:
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            # Scope 1 (preflight) succeeds
+            return await real_catalog_exists(item_id)
+        # Scope 3 (write recheck) raises DB error!
+        raise RuntimeError("Simulated database failure during catalog recheck query")
+
+    media_repo.catalog_item_exists = flaky_catalog_exists
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+    async def fake_stream():
+        yield b"chunk-data"
+
+    with pytest.raises(RuntimeError, match="Simulated database failure during catalog recheck query"):
+        await handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="video.mp4",
+            content_type="video/mp4",
+            uow=uow,
+            media_repo=media_repo,
+            storage=storage,
+            signer=signer,
+        )
+
+    # Invariant: write UoW must be rolled back and final object must NOT remain in storage!
+    assert uow.rolled_back is True, "UoW was not rolled back when recheck query failed!"
+    assert len(storage.keys) == 0, f"Final promoted object leaked in storage: {storage.keys}"
+
+
+@pytest.mark.asyncio
+async def test_upload_write_uow_enter_failure_compensates_storage():
+    """R1 regression test: When write UoW __aenter__ raises after promote,
+    final object is deleted from storage and original exception is preserved.
+    """
+    from fakes import FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from jplearn_api.application.handlers.media import handle_upload_media
+
+    storage = FakeStoragePort()
+    signer = FakeMediaUrlSigner()
+
+    uow1 = FakeUnitOfWork()
+    uow1.media.catalog_items.add("cat-item-1")
+
+    class FailingEnterUoW(FakeUnitOfWork):
+        async def __aenter__(self):
+            raise ConnectionError("Failed to acquire DB session on enter")
+
+    uow2 = FailingEnterUoW()
+    scopes = [uow1, uow2]
+
+    def uow_factory():
+        return scopes.pop(0)
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+    async def fake_stream():
+        yield b"chunk-data"
+
+    with pytest.raises(ConnectionError, match="Failed to acquire DB session on enter"):
+        await handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="video.mp4",
+            content_type="video/mp4",
+            uow_factory=uow_factory,
+            storage=storage,
+            signer=signer,
+        )
+
+    # Invariant: promoted object was cleaned up from storage!
+    assert len(storage.keys) == 0, f"Promoted object leaked: {storage.keys}"
+
+
+@pytest.mark.asyncio
+async def test_upload_rollback_failure_retains_storage_object_and_logs_unknown_outcome(monkeypatch):
+    """R1 fault matrix: When rollback fails after error, outcome is unknown,
+    final object is retained for safety, and warning is logged.
+    """
+    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from jplearn_api.application.handlers.media import handle_upload_media, logger
+
+    storage = FakeStoragePort()
+    signer = FakeMediaUrlSigner()
+
+    uow1 = FakeUnitOfWork()
+    uow1.media.catalog_items.add("cat-item-1")
+
+    uow2 = FakeUnitOfWork()
+    uow2.media.catalog_items.add("cat-item-1")
+
+    async def fail_add(asset):
+        raise RuntimeError("Database error on add")
+
+    async def fail_rollback():
+        raise RuntimeError("DB network down during rollback")
+
+    uow2.media.add = fail_add
+    uow2.rollback = fail_rollback
+
+    scopes = [uow1, uow2]
+
+    def uow_factory():
+        return scopes.pop(0)
+
+    logged_warnings = []
+    real_warning = logger.warning
+
+    def capture_warning(msg, *args, **kwargs):
+        logged_warnings.append((msg, kwargs.get("extra", {})))
+        return real_warning(msg, *args, **kwargs)
+
+    monkeypatch.setattr(logger, "warning", capture_warning)
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+    async def fake_stream():
+        yield b"chunk-data"
+
+    with pytest.raises(RuntimeError, match="Database error on add"):
+        await handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="video.mp4",
+            content_type="video/mp4",
+            uow_factory=uow_factory,
+            storage=storage,
+            signer=signer,
+        )
+
+    # Invariant: Because rollback failed, outcome is UNKNOWN! Final object MUST be retained.
+    assert len(storage.keys) == 1, f"Expected final object retained on unknown rollback, got {storage.keys}"
+    unknown_warnings = [w for w in logged_warnings if w[0] == "media_upload_commit_outcome_unknown"]
+    assert len(unknown_warnings) >= 1
+    assert "rollback_failed" in unknown_warnings[0][1].get("reason", "")
+
+
+@pytest.mark.asyncio
 async def test_upload_pre_commit_storage_delete_failure_preserves_original_exception_and_logs_warning(monkeypatch):
     """G1: If storage.delete fails during pre-commit compensation, original error is preserved and warning is logged."""
     from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork

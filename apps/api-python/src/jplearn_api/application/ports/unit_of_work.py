@@ -36,12 +36,15 @@ class AsyncUnitOfWork(Protocol):
     ) -> None:
         ...
 
+    committed: bool
+    rolled_back: bool
+
     async def commit(self) -> None:
         """Explicitly commit pending mutations."""
         ...
 
     async def rollback(self) -> None:
-        """Roll back pending mutations."""
+        """Roll back pending changes."""
         ...
 
 

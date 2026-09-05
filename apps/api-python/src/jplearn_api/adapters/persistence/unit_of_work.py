@@ -72,6 +72,14 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
             if self._managed_session and self.session is not None:
                 await self.session.close()
 
+    @property
+    def committed(self) -> bool:
+        return self._committed
+
+    @property
+    def rolled_back(self) -> bool:
+        return self._rolled_back
+
     async def commit(self) -> None:
         """Commit the current transaction explicitly."""
         if self.session is not None:
@@ -83,9 +91,9 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
 
     async def rollback(self) -> None:
         """Roll back pending changes."""
-        self._rolled_back = True
         if self.session is not None:
             await self.session.rollback()
+        self._rolled_back = True
 
 
 def create_uow_factory(

@@ -515,8 +515,11 @@ class FakeUnitOfWork(AsyncUnitOfWork):
         exc_tb: TracebackType | None,
     ) -> None:
         try:
-            if exc_type is not None or not self.committed:
+            if (exc_type is not None or not self.committed) and not self.rolled_back:
                 await self.rollback()
+        except Exception:
+            if exc_type is None:
+                raise
         finally:
             if self._reset_token is not None:
                 _active_fake_uow.reset(self._reset_token)
@@ -529,10 +532,10 @@ class FakeUnitOfWork(AsyncUnitOfWork):
                 p.commit_transaction()
 
     async def rollback(self) -> None:
-        self.rolled_back = True
         for p in self.participants:
             if hasattr(p, "rollback_transaction"):
                 p.rollback_transaction()
+        self.rolled_back = True
 
 
 class FakeMediaUrlSigner(MediaUrlSigner):
