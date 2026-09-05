@@ -1,0 +1,250 @@
+{
+  "version": "1.0",
+  "workload_hash": "sha256:7e8a94b26090e9d6b2c8a14d5e9b72f10d48f766e4a233b8a1c9019b88c42ff1",
+  "environment": {
+    "os": "Darwin 25.6.0 (arm64)",
+    "python": "3.12.13",
+    "database": "PostgreSQL 16.2 (Docker container via pg_harness)",
+    "schema_drift": "0 DDL drift against Prisma reference"
+  },
+  "baseline_2f5e200": {
+    "label": "baseline_2f5e200",
+    "metadata": {
+      "timestamp": "2026-09-05T14:12:36.316313+00:00",
+      "os": "Darwin 25.6.0 (arm64)",
+      "python": "3.12.13",
+      "database_url": "postgresql://jplearn_test:jplearn_test@127.0.0.1:55336/jplearn_test"
+    },
+    "metrics": {
+      "auth": {
+        "register": {
+          "count": 25,
+          "min": 29.722,
+          "p50": 31.844,
+          "p95": 36.916,
+          "p99": 54.285,
+          "max": 59.664,
+          "mean": 33.581
+        },
+        "login": {
+          "count": 25,
+          "min": 26.58,
+          "p50": 28.275,
+          "p95": 31.353,
+          "p99": 32.368,
+          "max": 32.616,
+          "mean": 28.618
+        },
+        "token_verify_request": {
+          "count": 25,
+          "min": 3.61,
+          "p50": 4.297,
+          "p95": 8.439,
+          "p99": 11.813,
+          "max": 12.826,
+          "mean": 5.184
+        }
+      },
+      "catalog": {
+        "catalog_all_10_items": {
+          "latency": {
+            "count": 40,
+            "min": 3.557,
+            "p50": 3.902,
+            "p95": 5.58,
+            "p99": 6.59,
+            "max": 7.016,
+            "mean": 4.235
+          },
+          "queries_per_req": 4
+        },
+        "catalog_filtered_ci0": {
+          "latency": {
+            "count": 40,
+            "min": 3.443,
+            "p50": 3.7,
+            "p95": 5.838,
+            "p99": 7.381,
+            "max": 7.816,
+            "mean": 4.047
+          },
+          "queries_per_req": 4
+        },
+        "catalog_filtered_empty": {
+          "latency": {
+            "count": 40,
+            "min": 2.875,
+            "p50": 3.177,
+            "p95": 4.132,
+            "p99": 5.0,
+            "max": 5.084,
+            "mean": 3.349
+          }
+        }
+      },
+      "sessions": {
+        "start": {
+          "count": 25,
+          "min": 4.523,
+          "p50": 5.351,
+          "p95": 6.682,
+          "p99": 10.42,
+          "max": 11.564,
+          "mean": 5.568
+        },
+        "end": {
+          "count": 25,
+          "min": 4.404,
+          "p50": 5.025,
+          "p95": 5.786,
+          "p99": 8.05,
+          "max": 8.76,
+          "mean": 5.131
+        },
+        "full_lifecycle": {
+          "count": 25,
+          "min": 12.384,
+          "p50": 13.602,
+          "p95": 16.171,
+          "p99": 22.029,
+          "max": 23.804,
+          "mean": 14.075
+        },
+        "queries_per_lifecycle": 17
+      },
+      "media_upload_5mb": {
+        "duration": {
+          "count": 10,
+          "min": 17.801,
+          "p50": 18.548,
+          "p95": 22.575,
+          "p99": 24.75,
+          "max": 25.293,
+          "mean": 19.187
+        },
+        "queries_per_upload": 4,
+        "peak_rss_mb": 236.86
+      }
+    }
+  },
+  "candidate_b90ebe4": {
+    "label": "candidate",
+    "metadata": {
+      "timestamp": "2026-09-05T14:12:21.377442+00:00",
+      "os": "Darwin 25.6.0 (arm64)",
+      "python": "3.12.13",
+      "database_url": "postgresql://jplearn_test:jplearn_test@127.0.0.1:55315/jplearn_test"
+    },
+    "metrics": {
+      "auth": {
+        "register": {
+          "count": 25,
+          "min": 27.32,
+          "p50": 29.206,
+          "p95": 32.628,
+          "p99": 47.777,
+          "max": 52.552,
+          "mean": 30.537
+        },
+        "login": {
+          "count": 25,
+          "min": 27.01,
+          "p50": 28.342,
+          "p95": 31.411,
+          "p99": 33.522,
+          "max": 34.128,
+          "mean": 28.695
+        },
+        "token_verify_request": {
+          "count": 25,
+          "min": 4.966,
+          "p50": 6.652,
+          "p95": 10.494,
+          "p99": 11.476,
+          "max": 11.756,
+          "mean": 7.246
+        }
+      },
+      "catalog": {
+        "catalog_all_10_items": {
+          "latency": {
+            "count": 40,
+            "min": 4.938,
+            "p50": 5.365,
+            "p95": 6.465,
+            "p99": 6.592,
+            "max": 6.632,
+            "mean": 5.49
+          },
+          "queries_per_req": 4
+        },
+        "catalog_filtered_ci0": {
+          "latency": {
+            "count": 40,
+            "min": 4.812,
+            "p50": 5.099,
+            "p95": 7.979,
+            "p99": 9.693,
+            "max": 10.707,
+            "mean": 5.487
+          },
+          "queries_per_req": 4
+        },
+        "catalog_filtered_empty": {
+          "latency": {
+            "count": 40,
+            "min": 4.308,
+            "p50": 4.612,
+            "p95": 5.31,
+            "p99": 6.184,
+            "max": 6.371,
+            "mean": 4.713
+          }
+        }
+      },
+      "sessions": {
+        "start": {
+          "count": 25,
+          "min": 6.315,
+          "p50": 6.58,
+          "p95": 10.188,
+          "p99": 12.95,
+          "max": 13.767,
+          "mean": 7.355
+        },
+        "end": {
+          "count": 25,
+          "min": 6.927,
+          "p50": 7.288,
+          "p95": 11.102,
+          "p99": 11.935,
+          "max": 12.125,
+          "mean": 7.844
+        },
+        "full_lifecycle": {
+          "count": 25,
+          "min": 17.737,
+          "p50": 18.447,
+          "p95": 28.475,
+          "p99": 29.559,
+          "max": 29.755,
+          "mean": 20.061
+        },
+        "queries_per_lifecycle": 20
+      },
+      "media_upload_5mb": {
+        "duration": {
+          "count": 10,
+          "min": 21.418,
+          "p50": 22.381,
+          "p95": 25.284,
+          "p99": 26.17,
+          "max": 26.392,
+          "mean": 22.929
+        },
+        "queries_per_upload": 5,
+        "peak_rss_mb": 234.11
+      }
+    }
+  }
+}

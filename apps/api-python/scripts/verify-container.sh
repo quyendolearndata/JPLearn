@@ -17,7 +17,7 @@ NETWORK_NAME="jplearn-verify-net-$$"
 PG_CONTAINER="jplearn-pg-verify-$$"
 API_CONTAINER="jplearn-api-verify-$$"
 HOST_PORT="${HOST_PORT:-3392}"
-EVIDENCE_FILE="${EVIDENCE_FILE:-$REPO_ROOT/apps/api-python/container_verification_manifest.json}"
+EVIDENCE_FILE="${EVIDENCE_FILE:-${OUTPUT_DIR:-$REPO_ROOT/apps/api-python}/container_verification_manifest.json}"
 
 # Invalidate existing manifest so old PASS artifact cannot be mistakenly reused on failure
 rm -f "$EVIDENCE_FILE"
@@ -363,6 +363,7 @@ assert data.get('storage') == 'up', f'Expected storage=up, got {data.get(\"stora
 echo "✓ Database probe degradation verified: ready=503 (db:down, storage:up), liveness=200"
 
 END_TIME_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+POST_DIRTY_COUNT="$(git -C "$REPO_ROOT" status --porcelain | wc -l | tr -d '[:space:]')"
 
 # Write Manifest with measured evidence using Python json.dump for strict validity
 python3 -c "
@@ -371,7 +372,13 @@ import json, sys
 manifest = {
     'status': 'PASS',
     'commit_sha': sys.argv[1],
-    'git_dirty_files': int(sys.argv[2]),
+    'provenance': {
+        'source_status_pre': 'CLEAN' if int(sys.argv[2]) == 0 else f'DIRTY ({sys.argv[2]} files)',
+        'source_status_post': 'CLEAN' if int(sys.argv[26]) == 0 else f'DIRTY ({sys.argv[26]} files)',
+        'git_dirty_files_pre': int(sys.argv[2]),
+        'git_dirty_files_post': int(sys.argv[26]),
+        'worktree_clean': int(sys.argv[2]) == 0 and int(sys.argv[26]) == 0
+    },
     'image_tag': sys.argv[3],
     'image_id': sys.argv[4],
     'start_time_utc': sys.argv[5],
@@ -404,7 +411,7 @@ with open(sys.argv[25], 'w') as f:
   "$RUN_UID" "$CORRUPT_EXIT" "$INVALID_EXIT" "$STAMP_EMPTY_EXIT" "$DIVERGENCE_EXIT" \
   "$VERSION_NUM" "$USER_COUNT_BEFORE" "$USER_COUNT_AFTER" "$CATALOG_COUNT_BEFORE" "$CATALOG_COUNT_AFTER" \
   "$READY_CODE" "$READY_BODY" "$STORAGE_DOWN_CODE" "$STORAGE_DOWN_BODY" "$LIVENESS_CODE_STORAGE_DOWN" \
-  "$DB_DOWN_CODE" "$DB_DOWN_BODY" "$LIVENESS_CODE_DB_DOWN" "$EVIDENCE_FILE"
+  "$DB_DOWN_CODE" "$DB_DOWN_BODY" "$LIVENESS_CODE_DB_DOWN" "$EVIDENCE_FILE" "$POST_DIRTY_COUNT"
 
 echo ""
 echo "========================================================================"
