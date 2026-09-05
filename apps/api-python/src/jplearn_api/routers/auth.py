@@ -1,13 +1,16 @@
 from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from jplearn_api.adapters.security.argon2 import Argon2PasswordHasher
-from jplearn_api.adapters.security.jwt import JwtTokenService
 from jplearn_api.application.commands import LogoutUserCommand, RegisterUserCommand
 from jplearn_api.application.handlers.identity import handle_login, handle_logout, handle_register
 from jplearn_api.application.queries import AuthenticateUserQuery
 from jplearn_api.application.read_models import UserDTO
-from jplearn_api.bootstrap import create_uow, create_user_repository
+from jplearn_api.bootstrap import (
+    create_password_hasher,
+    create_token_service,
+    create_uow,
+    create_user_repository,
+)
 from jplearn_api.deps import get_session
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
@@ -31,8 +34,8 @@ async def register(
 ) -> AuthSession:
     uow = create_uow(session)
     user_repo = create_user_repository(session)
-    hasher = Argon2PasswordHasher()
-    token_service = JwtTokenService()
+    hasher = create_password_hasher()
+    token_service = create_token_service()
     cmd = RegisterUserCommand(
         email=body.email,
         password=body.password,
@@ -67,8 +70,8 @@ async def login(
     session: AsyncSession = Depends(get_session),
 ) -> AuthSession:
     user_repo = create_user_repository(session)
-    hasher = Argon2PasswordHasher()
-    token_service = JwtTokenService()
+    hasher = create_password_hasher()
+    token_service = create_token_service()
     query = AuthenticateUserQuery(
         email=body.email,
         password=body.password,

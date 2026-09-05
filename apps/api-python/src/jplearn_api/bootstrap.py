@@ -18,7 +18,7 @@ from jplearn_api.adapters.persistence.user_repository import SqlAlchemyUserRepos
 from jplearn_api.adapters.security.argon2 import Argon2PasswordHasher
 from jplearn_api.adapters.security.jwt import JwtTokenService
 from jplearn_api.adapters.security.media_signer import HmacMediaUrlSigner
-from jplearn_api.application.ports.security import MediaUrlSigner
+from jplearn_api.application.ports.security import MediaUrlSigner, PasswordHasher, TokenService
 from jplearn_api.adapters.storage.local import LocalFilesystemStorage, StoragePort
 from jplearn_api.settings import Settings, get_settings
 
@@ -32,6 +32,16 @@ class AppContainer:
     password_hasher: Argon2PasswordHasher
     token_service: JwtTokenService
     media_signer: MediaUrlSigner
+
+
+def create_password_hasher() -> PasswordHasher:
+    """Factory creating a password hasher adapter."""
+    return Argon2PasswordHasher()
+
+
+def create_token_service() -> TokenService:
+    """Factory creating a token service adapter."""
+    return JwtTokenService()
 
 
 def create_media_signer(settings: Settings | None = None) -> HmacMediaUrlSigner:
