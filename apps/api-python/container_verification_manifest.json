@@ -1,20 +1,79 @@
 {
   "status": "PASS",
-  "commit_sha": "a36c8cd60495b6eea9e2e52a8943cbf5c1442aa0",
+  "commit_sha": "4268f226402bc0824d4a5a69e01d137a9a548501",
+  "git_dirty_files": 4,
   "image_tag": "jplearn-api-python:hardened",
-  "image_id": "sha256:a62edc6cb0020d58e9b42946fbf5d2800aac2d9657915895d9b9fcfd8509e96b",
-  "start_time_utc": "2026-09-05T05:02:31Z",
-  "end_time_utc": "2026-09-05T05:02:47Z",
+  "image_id": "sha256:0c16e350101a0a45f398fd1c4731e106abae96522a7e410a67efdd198ce69688",
+  "start_time_utc": "2026-09-05T05:35:05Z",
+  "end_time_utc": "2026-09-05T05:35:18Z",
   "tests": {
-    "non_root_uid": {"uid": 10001, "result": "PASS"},
-    "packaged_resources": {"tables_loaded": 10, "result": "PASS"},
-    "cli_help_and_exit_codes": {"help": 0, "invalid_cmd": 2, "result": "PASS"},
-    "adoption_stamp_safety": {"empty_db_stamp_exit": 1, "alembic_table_untouched": true, "result": "PASS"},
-    "migration_and_seed": {"upgrade": "PASS", "current": "PASS", "seed": "PASS"},
+    "non_root_uid": {
+      "uid": 10001,
+      "result": "PASS"
+    },
+    "packaged_resources": {
+      "tables_loaded": 10,
+      "corrupt_exit": 1,
+      "result": "PASS"
+    },
+    "cli_exit_codes": {
+      "help": 0,
+      "invalid_cmd": 2,
+      "result": "PASS"
+    },
+    "empty_db_stamp_safety": {
+      "exit_code": 1,
+      "alembic_table_untouched": true,
+      "result": "PASS"
+    },
+    "schema_divergence_safety": {
+      "exit_code": 1,
+      "reason_matched": true,
+      "result": "PASS"
+    },
+    "populated_db_baseline_adoption": {
+      "version": "0001_prisma_baseline",
+      "user_count_before": 1,
+      "user_count_after": 1,
+      "catalog_count_before": 2,
+      "catalog_count_after": 2,
+      "result": "PASS"
+    },
+    "migration_and_seed": {
+      "upgrade": "PASS",
+      "current": "PASS",
+      "seed": "PASS"
+    },
     "readiness_probe_isolation": {
-      "healthy": {"code": 200, "result": "PASS"},
-      "storage_degraded": {"code": 503, "liveness": 200, "result": "PASS"},
-      "database_degraded": {"code": 503, "result": "PASS"}
+      "healthy": {
+        "code": 200,
+        "body": {
+          "ok": true,
+          "database": "up",
+          "storage": "up"
+        },
+        "result": "PASS"
+      },
+      "storage_degraded": {
+        "code": 503,
+        "body": {
+          "ok": false,
+          "database": "up",
+          "storage": "down"
+        },
+        "liveness_code": 200,
+        "result": "PASS"
+      },
+      "database_degraded": {
+        "code": 503,
+        "body": {
+          "ok": false,
+          "database": "down",
+          "storage": "up"
+        },
+        "liveness_code": 200,
+        "result": "PASS"
+      }
     }
   }
 }
