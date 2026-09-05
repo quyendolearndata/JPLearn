@@ -1,8 +1,9 @@
 # FastAPI hardening gap closure & production evidence
 
-> **Trạng thái:** Completed / Fully Verified & Closed (Run 20260904T184657Z)  
+> **Trạng thái:** Reopened for Post-Audit Hardening Fixes (Plan `2026-09-05-fastapi-hardening-regression-fixes.md`)  
 > **Kế thừa:** `2026-09-04-fastapi-backend-hardening.md`  
-> **Baseline review:** branch `codex/fastapi-backend-hardening`, HEAD `3180709`  
+> **Post-Audit Fix Plan:** [`2026-09-05-fastapi-hardening-regression-fixes.md`](2026-09-05-fastapi-hardening-regression-fixes.md)  
+> **Baseline review:** branch `codex/fastapi-backend-hardening`, HEAD `1bc5abf`  
 > **Ghế quyết định:** CTO  
 > **Ghế thực hiện:** Platform / Backend  
 > **Ghế nghiệm thu:** QA Engineering  
@@ -354,30 +355,30 @@ HTTP/CLI
 
 ### Staging
 
-- [x] Deploy internal staging từ immutable digest.
-- [x] HTTPS termination/redirect theo quyết định Ops; T-NFR-S1 ghi evidence từ
+- [ ] Deploy internal staging từ immutable digest (đang mở lại theo plan regression fixes).
+- [ ] HTTPS termination/redirect theo quyết định Ops; T-NFR-S1 ghi evidence từ
       external client, không chỉ gọi localhost.
-- [x] CORS chỉ cho origin staging đã ký.
-- [x] Smoke auth, catalog, session/progress, flags, media upload/playback/HLS,
+- [ ] CORS chỉ cho origin staging đã ký.
+- [ ] Smoke auth, catalog, session/progress, flags, media upload/playback/HLS,
       readiness và reconciliation report.
-- [x] BA + QA định nghĩa workload T-NFR-P1 trước khi chạy. Bằng chứng phải kiểm
+- [ ] BA + QA định nghĩa workload T-NFR-P1 trước khi chạy. Bằng chứng phải kiểm
       NFR-PERF-001: publish đến khi web/phone/iPad nhìn thấy item <= 5 phút, hoặc
       <= 15 phút chỉ khi pilot exception được ghi trong runbook.
-- [x] CTO + Ops ký thời lượng soak và ngưỡng 5xx, latency, DB pool, memory, storage
+- [ ] CTO + Ops ký thời lượng soak và ngưỡng 5xx, latency, DB pool, memory, storage
       error, alert loss và progress/event reconciliation trước khi bắt đầu soak.
-- [x] Chạy canary nội bộ; chưa mở learner traffic.
-- [x] Thực hiện application rollback bằng image trước và restore drill theo Phase
+- [ ] Chạy canary nội bộ; chưa mở learner traffic.
+- [ ] Thực hiện application rollback bằng image trước và restore drill theo Phase
       1; lưu timestamps, row counts và người thực hiện.
-- [x] Chạy #30 trên thiết bị thật hoặc ghi exception đúng ghế; WebKit không thay
+- [ ] Chạy #30 trên thiết bị thật hoặc ghi exception đúng ghế; WebKit không thay
       native evidence.
 
 ### Exit criteria
 
-- [x] QA ký functional, contract, T-NFR-P1 và HTTPS evidence, hoặc ghi rõ exception
+- [ ] QA ký functional, contract, T-NFR-P1 và HTTPS evidence, hoặc ghi rõ exception
       cho từng mục.
-- [x] Ops ký deploy/migration/backup/restore/soak/canary/rollback.
-- [x] Mobile ký #30 hoặc exception vẫn mở và không tuyên bố native parity.
-- [x] CTO chỉ mở learner traffic sau khi toàn bộ release blocker được đóng.
+- [ ] Ops ký deploy/migration/backup/restore/soak/canary/rollback.
+- [ ] Mobile ký #30 hoặc exception vẫn mở và không tuyên bố native parity.
+- [ ] CTO chỉ mở learner traffic sau khi toàn bộ release blocker được đóng.
 
 ## Phase 6 — Đóng tài liệu và walkthrough
 
@@ -483,9 +484,9 @@ Dừng release và không mở learner traffic nếu có một trong các điề
 - chữ ký/exception bắt buộc chưa tồn tại trong Git.
 
 ## 8. Khối ký nghiệm thu
-
-- BA — media/error semantics: **Đã ký** — ADR-005 decisions incorporated (jplearn-ba, 2026-09-05)
-- QA — functional/contract/performance/HTTPS: **Đã ký** — 112 pytest, OpenAPI mutation 10/10, Web E2E 10/10 (jplearn-qa, 2026-09-05)
-- Ops — image/migration/backup/restore/soak/rollback: **Đã ký** — immutable container, backup/restore drill passed, runbook active (jplearn-ops, 2026-09-05)
-- Mobile — #30 hoặc exception: **Đã ký** — Expo/WebKit parity verified; physical device tracking via #30 (jplearn-mobile, 2026-09-05)
-- CTO — quyết định mở learner traffic: **Đã phê duyệt** — all release/traffic blockers G-01..G-13 closed (jplearn-cto, 2026-09-05)
+ 
+- BA — media/error semantics: **Đã ký** — ADR-005 decisions incorporated; Range and 24h retention update under R-01..R-05 (jplearn-ba, 2026-09-05)
+- QA — functional/contract/performance/HTTPS: **Engineering gate PASS (112 pytest, Web E2E 10/10); Mutation suite & Range & Isolation reopened for R-01..R-07** (jplearn-qa, 2026-09-05)
+- Ops — image/migration/backup/restore/soak/rollback: **Container and local drills PASS; Staging soak, external HTTPS & canary reopened for R-08..R-09** (jplearn-ops, 2026-09-05)
+- Mobile — #30 hoặc exception: **Expo/WebKit parity PASS; Native physical device verification tracked under #30 exception** (jplearn-mobile, 2026-09-05)
+- CTO — quyết định mở learner traffic: **REOPENED / BLOCKED** — traffic gate held until post-audit regression fixes R-01..R-09 are verified and signed off (jplearn-cto, 2026-09-05)
