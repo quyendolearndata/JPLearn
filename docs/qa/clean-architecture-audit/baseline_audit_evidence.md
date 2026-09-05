@@ -3,33 +3,52 @@
 - **Commit Baseline:** `4ae7673` (`docs(api): record rewrite evidence and remaining R-09 hold`)
 - **Final Candidate SHA:** `59fe698` / `5e68fde`
 - **Branch:** `codex/fastapi-backend-hardening`
-- **Audit Plan:** [`docs/superpowers/plans/2026-09-05-clean-architecture-audit-gap-closure.md`](../../superpowers/plans/2026-09-05-clean-architecture-audit-gap-closure.md)
-- **Status:** **ACCEPTED (Engineering Acceptance Verified)**
+- **Audit Plan:** [`docs/superpowers/plans/2026-09-05-clean-architecture-remaining-gaps-v2.md`](../../superpowers/plans/2026-09-05-clean-architecture-remaining-gaps-v2.md)
+- **Status:** **VERIFICATION PENDING (Remaining Gaps v2 Reopened)**
 
 ---
 
-## 1. Initial State & Dirty Working Tree Inspection
+## 1. Initial State & Scope Context
 
 - **Initial State:** 6 audit gaps identified across error handling, wiring, clock/ID injection, relative AST import resolution, and verification evidence.
+- **Current HEAD:** `b565b7b` (container cleanup fix applied).
 - **Untracked Boundary:** `landing_preview.html` preserved intact and strictly uncommitted.
+- **Operational Gate:** Milestone 2 (R-09 Operational Acceptance) remains strictly **HOLD / BLOCKED**.
 
 ---
 
-## 2. Gap Closure Implementation Summary (G0 – G6)
+## 2. Gap Closure Implementation Summary (G0 – G6 / V0 – V6)
 
-| Gap ID | Focus | Target Files | Outcome |
-|---|---|---|---|
-| **G0** | Scope lock & status correction | `docs/superpowers/plans/*`, `ADR-006` | **RESOLVED** (`e9e0929`) |
-| **G1** | Upload pre-commit compensation & outcome machine | `application/handlers/media.py`, `tests/test_media.py` | **RESOLVED** (`ae55c77`) |
-| **G2** | Composition root, reconciliation handler, remove legacy aliases | `bootstrap.py`, `routers/media.py`, `models.py`, `media_service.py` | **RESOLVED** (`7f14bec`) |
-| **G3** | Explicit runtime capabilities, MediaUrlSigner, DeterministicAbortError | `domain/errors.py`, `application/handlers/*`, `routers/media.py` | **RESOLVED** (`2e21780`) |
-| **G4** | AST relative/mutation guard, subprocess check, transactional fakes | `tests/test_architecture_guard.py`, `tests/fakes.py` | **RESOLVED** (`650a048`) |
-| **G5** | Test mapping, C4 diagrams, README, walkthrough update | `docs/*`, `README.md`, `walkthrough.md` | **RESOLVED** (`59fe698`) |
-| **G6** | Candidate requalification on clean worktree | All verification gates | **RESOLVED** (`5e68fde`) |
+| Gap ID | Focus | Target Files | Status | Reviewer / Seat | Review Artifact |
+|---|---|---|---|---|---|
+| **V0** | Scope lock & status reopening | `docs/*`, `ADR-006` | **IN PROGRESS** | CTO + BA + QA | `docs/qa/clean-architecture-audit/baseline_audit_evidence.md` |
+| **V1 (G1)** | UoW repository ownership & upload short scopes | `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py`, `application/handlers/media.py` | **VERIFICATION PENDING** | Platform (Review: CTO, QA) | PostgreSQL concurrency & cancellation harness |
+| **V2 (G3)** | Complete signing fallback removal & injected capabilities | `application/handlers/media.py`, `routers/media.py`, `security.py` | **VERIFICATION PENDING** | Platform + CTO (Verify: QA) | Pure unit fake signer & vector tests |
+| **V3 (G4)** | Transitive import resolution & aliased composition guard | `tests/test_architecture_guard.py`, `src/jplearn_api/architecture_guard.py` | **VERIFICATION PENDING** | QA + Platform (Review: CTO) | Mutation test suite & import graph traces |
+| **V4 (G5)** | Per-test node ID mapping & reconciliation | `docs/qa/clean-architecture-audit/test_mapping_and_reconciliation.md` | **VERIFICATION PENDING** | QA + BA | Generated JSON/CSV test inventory |
+| **V5 (G6)** | Performance benchmark with raw reproducible metrics | `docs/qa/clean-architecture-audit/performance_benchmark.md` | **VERIFICATION PENDING** | QA + Platform (Review: CTO) | Raw latency samples, query counts, memory RSS |
+| **V6 (G6)** | Clean candidate requalification with external evidence | All verification gates | **VERIFICATION PENDING** | QA + Ops (Review: CTO, BA) | Candidate SHA logs & container manifest |
 
 ---
 
-## 3. Final Requalification Gate Results (Candidate SHA `59fe698` / `5e68fde`)
+## 2.1 Traceability Matrix: Requirement → Code → Test → Raw Evidence
+
+| Requirement | Code Implementation | Test Verification | Raw Evidence | Status |
+|---|---|---|---|---|
+| **UoW Ownership**: Handlers get repos strictly via `uow.*`, single session scope | `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py` | `tests/test_unit_of_work.py`, `tests/test_postgres_concurrency.py` | Transaction boundary verification logs | Pending V1 |
+| **Upload Short Scopes**: 3 separate scopes (preflight read -> streaming -> metadata write) | `application/handlers/media.py`, `routers/media.py` | Barrier test verifying DB connections released during stage | `pg_stat_activity` query logs during stage barrier | Pending V1 |
+| **Signing Fallback Removal**: No `(base_url, secret)` in handlers; `MediaUrlSigner` mandatory | `application/handlers/media.py`, `routers/media.py` | `tests/test_media.py`, `tests/test_security_vectors.py` | AST signature assertion & fake signer tests | Pending V2 |
+| **AST Transitive & Alias Guard**: Trace root helper leaks, import aliases `Class as U` | `tests/test_architecture_guard.py` | Mutation fixtures for transitive imports and constructor aliases | Mutation pytest outputs failing closed | Pending V3 |
+| **Per-Test Mapping**: Node IDs mapped from 164 baseline to candidate | Inventory generator script | Invariant assertion comparison across versions | `test_mapping_and_reconciliation.md` | Pending V4 |
+| **Raw Performance Metrics**: Baseline vs Candidate query count, latency, memory | Benchmark harness script | Multi-iteration warmup + sampling (auth, catalog, sessions, upload) | `performance_benchmark.md` raw tables | Pending V5 |
+| **Clean Candidate Gates**: 6 gates executed on isolated candidate | All test runners | `pnpm test:guard`, pytest, openapi_diff, web-e2e, verify-container | External manifest & gate stdout/stderr | Pending V6 |
+
+---
+
+## 3. Previous Intermediate Gate Results (Run on SHA `59fe698` / `5e68fde`)
+
+> [!NOTE]
+> The following results represent the intermediate audit gate run prior to reopening V0–V6. Full requalification will be executed on the final candidate SHA in V6.
 
 | Check | Command | Exit Code | Result | Details |
 |---|---|---|---|---|
@@ -43,7 +62,7 @@
 
 ---
 
-## 4. Container Manifest Verification
+## 4. Container Manifest Verification (Intermediate Baseline)
 
 - **Image Tag:** `jplearn-api-python:hardened`
 - **Image ID:** `sha256:d56950949f7981d4c9b0f05a353e253a83b8f785540f43740b9dceb497731297`
@@ -54,7 +73,11 @@
 
 ## 5. Engineering Acceptance & Operational Governance
 
-- **CTO (`jplearn-cto`):** Architecture boundaries verified: zero framework/ORM leakage, explicit composition root, protocol-based security and storage capabilities.
-- **BA (`jplearn-ba`):** Business rules and behavior matrix verified: 22 HTTP operations, MP4 magic bytes inspection, 24h grace window reconciliation.
-- **QA (`jplearn-qa`):** Test pyramid verified: 179 total tests (all 164 baseline cases preserved + 15 hardened architecture/transaction tests).
-- **Ops (`jplearn-ops`):** Container verification verified. Milestone 2 (Operational Acceptance / R-09) remains **STRICTLY HOLD / BLOCKED** pending staging infrastructure and HTTPS soak testing.
+- **Current Status:** Reopened for V0–V6 gap closure. Formal sign-off is held pending full verification of V1–V6.
+- **Seat Roles & Responsibilities:**
+  - **CTO (`jplearn-cto`):** Overseeing architecture boundaries, UoW scoping, regression thresholds, and final sign-off.
+  - **BA (`jplearn-ba`):** Verifying business invariants, route matrix, and catalog transition preservation.
+  - **Platform (`jplearn-platform`):** Implementing UoW repository scoping, short-scoped upload transactions, and signing capability injection.
+  - **QA (`jplearn-qa`):** Implementing transitive AST guard, mutation fixtures, per-node test mapping, and raw performance benchmarks.
+  - **Ops (`jplearn-ops`):** Verifying container image build, probes, and enforcing Milestone 2 (R-09) strictly **HOLD / BLOCKED**.
+

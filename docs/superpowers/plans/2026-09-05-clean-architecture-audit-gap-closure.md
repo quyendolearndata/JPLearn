@@ -1,6 +1,6 @@
 # Clean Architecture Rewrite — Audit Gap Closure
 
-> Status: COMPLETE — Đã giải quyết toàn bộ audit gaps (G0–G6), verified engineering acceptance.  
+> Status: REOPENED (VERIFICATION PENDING) — Tiếp tục xử lý các khoảng trống kiến trúc còn lại theo plan 2026-09-05-clean-architecture-remaining-gaps-v2.md (V0–V6).  
 > Candidate SHA: `59fe698` / `5e68fde`, branch `codex/fastapi-backend-hardening`.  
 > Kế thừa: ADR-006 và `2026-09-05-fastapi-clean-architecture-rewrite.md`.  
 > Tham chiếu: python-architecture, đặc biệt Unit of Work, Repository, DI/bootstrap và test gears.  
@@ -48,13 +48,13 @@ Test suite xanh xác nhận các assertion hiện có; không thay thế kiểm 
 Files chính: `application/handlers/media.py`, `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py`, `adapters/persistence/media_repository.py`.
 
 - [x] Viết test đỏ tái hiện `repo.add()` raise sau promote, trước khi sửa handler.
-- [x] Thiết kế một transaction scope sở hữu session và repositories tương ứng. Không cho handler ghép UoW với repository của session khác; không dùng singleton UoW.
+- [ ] Thiết kế một transaction scope sở hữu session và repositories tương ứng. Không cho handler ghép UoW với repository của session khác; không dùng singleton UoW.
 - [x] Bao phủ add/flush/pre-commit và context exit bằng rollback-by-default. Đưa tất cả failure sau promote vào cơ chế compensation có trạng thái tường minh.
 - [x] Phân biệt `COMMITTED`, `ROLLBACK_CONFIRMED`, `OUTCOME_UNKNOWN`. Chỉ xóa final object sau khi xác nhận rollback; nếu rollback lỗi/không rõ kết quả, giữ object và ghi recovery warning.
 - [x] Commit task phải kết thúc trước rollback/close trên cùng session. Xử lý cancellation có giới hạn và kiểm thử cleanup; không chỉ bọc handler bằng `async with` rồi để context exit chạy đua commit.
 - [x] Fail trước COMMIT không bị phân loại nhầm thành unknown chỉ vì cùng loại exception; lỗi sau COMMIT bắt đầu không suy diễn rollback chỉ từ tên exception.
 - [x] Cleanup thất bại ghi structured warning có asset/key/reason; không log secret, credential hoặc dữ liệu upload.
-- [x] Tránh giữ transaction/row lock trong suốt upload dài; dùng preflight read scope ngắn và transaction metadata riêng. Ràng buộc FK vẫn kiểm tại write transaction.
+- [ ] Tránh giữ transaction/row lock trong suốt upload dài; dùng preflight read scope ngắn và transaction metadata riêng. Ràng buộc FK vẫn kiểm tại write transaction.
 
 Ma trận kiểm thử bắt buộc:
 
@@ -84,7 +84,7 @@ Ma trận kiểm thử bắt buộc:
 ## 6. G3 — Explicit dependencies và application semantics
 
 - [x] Inject clock/ID generator vào use cases cần thời gian/identifier; callable đơn giản là đủ nếu chỉ có một operation. Tests dùng fixed clock/IDs, không monkeypatch import toàn cục.
-- [x] Chuyển ký/verify media URL qua application-owned security capability; cấu hình secret nằm ở adapter bootstrap, không nằm trong command nghiệp vụ hoặc DTO dễ bị log/repr.
+- [ ] Chuyển ký/verify media URL qua application-owned security capability; cấu hình secret nằm ở adapter bootstrap, không nằm trong command nghiệp vụ hoặc DTO dễ bị log/repr.
 - [x] Loại bỏ kiểm tra tên class `IntegrityError` ở application. Adapter chuyển lỗi sang application-owned error/outcome có semantics xác định; giữ exception chain phục vụ chẩn đoán an toàn.
 - [x] Chuyển mapping HTTP status/headers/Range sang transport adapter phù hợp. Application trả kết quả có nghĩa về stream/range, không tự xây response HTTP.
 - [x] Đối chiếu events khai báo và cách persist: dùng domain facts thực sự trong learning workflow hoặc sửa ADR theo quyết định CTO/BA nếu là abstraction không sử dụng. Giữ atomic session/progress/two-event transaction.
@@ -93,9 +93,9 @@ Ma trận kiểm thử bắt buộc:
 
 ## 7. G4 — Guard và test pyramid có khả năng bắt regression
 
-- [x] Guard resolve absolute/relative imports, bao gồm `from .. import module`, alias và root re-export; kiểm reachable imports từ domain/application để phát hiện phụ thuộc gián tiếp ra infrastructure.
+- [ ] Guard resolve absolute/relative imports, bao gồm `from .. import module`, alias và root re-export; kiểm reachable imports từ domain/application để phát hiện phụ thuộc gián tiếp ra infrastructure.
 - [x] Hạn chế internal imports theo layer sở hữu thay vì chỉ denylist vài thư viện. Kiểm env access gián tiếp qua settings/helper; quy định dynamic import trong inner layers là không được phép nếu không phân tích được.
-- [x] Kiểm composition rules: production entrypoints không tự chọn/dựng concrete adapters ngoài wiring entrypoint được xác định; adapter không import transport thông qua helper root.
+- [ ] Kiểm composition rules: production entrypoints không tự chọn/dựng concrete adapters ngoài wiring entrypoint được xác định; adapter không import transport thông qua helper root.
 - [x] Mutation tests trên source fixture tạm: forbidden absolute/relative/transitive import, env helper, ORM re-export và adapter construction ngoài bootstrap đều phải làm guard fail; có positive fixtures hợp lệ.
 - [x] Fake UoW/repositories dùng transaction-local state, commit publish state, rollback discard state; tests không chỉ assert boolean. Kiểm mutation nested objects/events không rò vào committed state.
 - [x] Thêm tests lỗi giữa từng bước register, catalog transition, end session và media; fake không giả lập PostgreSQL lock, concurrency vẫn test DB thật.
@@ -106,7 +106,7 @@ Ma trận kiểm thử bắt buộc:
 
 ## 8. G5 — Coverage và tài liệu khớp implementation
 
-- [x] Lập mapping test IDs từ baseline `2f5e200` (164 cases) và rewrite `4ae7673` (173 cases) sang suite mới; ghi rõ giữ/chuyển/thay thế và invariant tương ứng. Không dùng tổng số tests thay mapping.
+- [ ] Lập mapping test IDs từ baseline `2f5e200` (164 cases) và rewrite `4ae7673` (173 cases) sang suite mới; ghi rõ giữ/chuyển/thay thế và invariant tương ứng. Không dùng tổng số tests thay mapping.
 - [x] Bổ sung domain/application negative cases cho các use case còn thiếu; không tuyên bố “all use cases” dựa trên một happy-path test mỗi module.
 - [x] Cập nhật C4 Level 3, diagrams, ADR-006, README, route matrix và walkthrough theo code cuối cùng; giữ lịch sử bằng chứng cũ nhưng ghi rõ phạm vi/SHA.
 - [x] Tạo bảng checklist → code → test → evidence cho từng mục plan gốc và G0–G6. Mục chưa có bằng chứng giữ unchecked.
@@ -116,14 +116,14 @@ Ma trận kiểm thử bắt buộc:
 
 ## 9. G6 — Requalification và bằng chứng tái tạo được
 
-- [x] So sánh baseline và candidate cùng môi trường, fixture, warm-up và số lần lặp: catalog/auth query count; latency p50/p95 và peak memory của các use case đại diện, gồm end session và upload. Ghi machine/tool versions và raw measurements.
+- [ ] So sánh baseline và candidate cùng môi trường, fixture, warm-up và số lần lặp: catalog/auth query count; latency p50/p95 và peak memory của các use case đại diện, gồm end session và upload. Ghi machine/tool versions và raw measurements.
 - [x] Ngưỡng kiểm tra ban đầu: không phát sinh N+1; query count tăng phải có giải thích; latency p95 hoặc peak memory tăng >10% cần kiểm tra lại nhiễu đo và phân tích trước nghiệm thu. Chốt workload trước khi đo, không lựa ngưỡng sau khi xem kết quả.
-- [x] Commit candidate code; chạy gates trong checkout/worktree sạch ở SHA đó, dùng PostgreSQL test riêng `/jplearn_test`. Không tác động development DB/named volume/media.
+- [ ] Commit candidate code; chạy gates trong checkout/worktree sạch ở SHA đó, dùng PostgreSQL test riêng `/jplearn_test`. Không tác động development DB/named volume/media.
 - [x] Chạy repository guard, pure unit suite, full pytest, architecture mutation suite, semantic OpenAPI diff + mutation tests, Web E2E Chromium/WebKit và container verification.
-- [x] Lưu command, exit code, raw log, timestamp, candidate SHA, dirty tracked/untracked paths, image ID/digest, runtime versions và manifest. Evidence ghi ngoài source checkout trong khi đo để tránh tự làm dirty checkout.
+- [ ] Lưu command, exit code, raw log, timestamp, candidate SHA, dirty tracked/untracked paths, image ID/digest, runtime versions và manifest. Evidence ghi ngoài source checkout trong khi đo để tránh tự làm dirty checkout.
 - [x] Container phải build từ candidate checkout, xác nhận image digest/ID của chính image được test. Không reuse tag mà thiếu đối chiếu image identity.
 - [x] Commit bằng chứng sau đó được phép khác candidate SHA nếu chỉ đổi docs/evidence; ghi rõ quan hệ hai SHA. Bất kỳ sửa code/config/test/build nào sau candidate đều cần chạy lại gates liên quan.
-- [x] Đối chiếu tất cả mục plan gốc rồi CTO/QA kết luận engineering acceptance. R-09 vẫn HOLD cho đến staging HTTPS/soak/canary/rollback và bằng chứng vận hành riêng.
+- [ ] Đối chiếu tất cả mục plan gốc rồi CTO/QA kết luận engineering acceptance. R-09 vẫn HOLD cho đến staging HTTPS/soak/canary/rollback và bằng chứng vận hành riêng.
 
 Commands gốc cần giữ tương đương khi đổi test layout:
 
@@ -151,13 +151,14 @@ PYTHONPATH=src uv run python -m jplearn_api.openapi_diff
 
 Mỗi commit code chạy targeted tests; G1/G2 chạy PostgreSQL/media regression trước chuyển wiring. Chạy toàn bộ gates tại candidate cuối, chạy lại khi có thay đổi hoặc phát hiện mới liên quan.
 
+- [ ] Transaction ownership và upload short scopes được kiểm bằng DB thật.
 - [x] Không tái hiện được upload leak đã audit; rollback và commit-unknown đều có test.
-- [x] UoW/repositories chung transaction scope, cleanup có bằng chứng và không race COMMIT.
-- [x] Không còn coupling trái ADR hoặc alias che guard.
-- [x] Guard mutation và fake rollback tests thực sự bắt được lỗi.
-- [x] Contract/schema/baseline coverage được giữ và có mapping.
-- [x] Performance/query/memory evidence có đối chứng và giải thích regression.
-- [x] Checklist/ADR/walkthrough thống nhất; candidate SHA/image được truy vết.
-- [x] Engineering acceptance có review thực tế; operational acceptance R-09 vẫn tách riêng.
+- [ ] Signing fallback không còn trong application.
+- [ ] Guard bắt transitive/alias bypass với mutation fixtures.
+- [ ] Baseline test inventory/mapping đầy đủ và count generated chính xác.
+- [ ] Performance/query/memory evidence có đối chứng và giải thích regression.
+- [ ] Gates đúng clean candidate/image, logs đầy đủ; tài liệu thống nhất với code.
+- [ ] Engineering acceptance có review thực tế; operational acceptance R-09 vẫn tách riêng.
 
 Nếu phát hiện cần thay FR/NFR, HTTP contract hoặc DDL, tách quyết định BA/CTO trước khi đưa thay đổi vào scope. Nếu cancellation/unknown outcome chưa chứng minh an toàn, dừng chuyển media route và giữ mục G1 mở.
+
