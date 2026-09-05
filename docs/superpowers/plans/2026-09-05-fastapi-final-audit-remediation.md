@@ -1,7 +1,7 @@
 # FastAPI — sửa lỗi và hoàn thiện kiểm chứng sau audit b10572a
 
 > Trạng thái: Milestone 1 (Engineering Fixes) HOÀN TẤT & ĐÃ NGHIỆM THU — Milestone 2 (Operational Acceptance / R-09) STRICTLY HOLD  
-> Baseline: `codex/fastapi-backend-hardening`, commit range `b10572a` -> HEAD `7caff26`  
+> Baseline: `codex/fastapi-backend-hardening`, engineering commit range `b10572a` -> `f0afdde`  
 > Kế thừa: `2026-09-05-fastapi-remaining-regressions.md`  
 > Chủ trì: CTO (`jplearn-cto` - nghiệm thu engineering acceptance); thực hiện: Platform/Backend (`jplearn-platform`); nghiệm thu: QA (`jplearn-qa`)  
 > Phối hợp: Ops (`jplearn-ops` - migration/CI), Web (`jplearn-web` - runner), BA (`jplearn-ba` - media failure semantics)
@@ -12,16 +12,16 @@
 runner/container còn thiếu. Giữ ID R-06/R-07/R-08 từ các plan trước. Tên file
 không có nghĩa đây đã là lần audit cuối hoặc các mục đã được nghiệm thu.
 
-Kết quả nghiệm thu: 161 pytest PASS, 2 warning; guard/OpenAPI command PASS;
+Kết quả nghiệm thu sau follow-up audit: 164 pytest PASS, 2 warning; guard/OpenAPI command PASS;
 Web E2E 10/10 PASS (Chromium + WebKit); container verification script 7/7 PASS.
 R-09 operational acceptance tiếp tục HOLD chờ hạ tầng staging.
 
 | Mục | Bằng chứng | Trạng thái sau remediation |
 |---|---|---|
 | R-08/A | Không ENVIRONMENT và không .env: downgrade base bị chặn fail-closed | ĐÃ SỬA (`ccb51a8`) |
-| R-07/A | Cancel khi executor đang mở/ghi file: không rò handle, không mồ côi `.part` | ĐÃ SỬA (`56d3517`) |
-| R-07/B | COMMIT không rõ kết quả: giữ final object và log structured recovery | ĐÃ SỬA (`49e9f7f`) |
-| R-06 | Supervisor test gọi CLI production với stdin=DEVNULL và signal escalation | ĐÃ HOÀN THIỆN (`4268f22`) |
+| R-07/A | Cancel khi executor đang mở/ghi file: không rò handle, không đóng/xóa đua với write vượt timeout | ĐÃ SỬA (`f0afdde`) |
+| R-07/B | COMMIT không rõ kết quả: giữ final object, chờ commit task terminal trước rollback | ĐÃ SỬA (`f0afdde`) |
+| R-06 | Supervisor test gọi CLI production; dọn cả process group khi leader đã thoát | ĐÃ HOÀN THIỆN (`f0afdde`) |
 | R-08/B | Container gate single-response JSON, DB adoption live, manifest chuẩn | ĐÃ HOÀN THIỆN (`7caff26`) |
 
 ## 2. R-08/A — Không suy missing environment thành local cho downgrade
@@ -148,6 +148,8 @@ manifest được cập nhật với commit và run data thực.
 5. Supervisor integration tests và lifecycle corrections (`4268f22` - Web/QA review). (HOÀN TẤT)
 6. Container evidence assertions + CI artifacts (`7caff26` - Ops/QA review). (HOÀN TẤT)
 7. Chạy lại gates và cập nhật plan/walkthrough đúng evidence cuối. (HOÀN TẤT)
+8. Follow-up audit tái hiện và đóng ba nhánh ngoài coverage cũ: write vượt drain timeout,
+   rollback đua với COMMIT, và grandchild sống sau group leader. (HOÀN TẤT — `f0afdde`)
 
 ## 8. Definition of Done
 
@@ -157,7 +159,7 @@ manifest được cập nhật với commit và run data thực.
 - [x] Supervisor thật qua tests normal/failure/signal và hai E2E run.
 - [x] Container tests assert body/reason/schema/data và artifact mới theo run.
 - [x] Guard, pytest, OpenAPI diff, Web E2E và container gate PASS tại SHA review;
-      số test ghi từ run thật (161 pytest PASS, 10 Playwright E2E PASS, 7/7 Container PASS).
+      số test ghi từ run thật (164 pytest PASS, 10 Playwright E2E PASS, 7/7 Container PASS).
 - [x] Không chỉnh DB/media dev, secret hoặc user files ngoài scope (`landing_preview.html` uncommitted & untouched).
 - [x] QA/BA/Ops/Web/CTO xác nhận đúng phạm vi; không tự ký thay ghế khác.
 - [x] R-09 vẫn HOLD cho tới evidence staging/HTTPS/soak/canary/rollback/native
@@ -165,7 +167,18 @@ manifest được cập nhật với commit và run data thực.
 
 ### Kết quả chạy kiểm chứng Baseline:
 - `pnpm test:guard`: PASS (exit 0)
-- `uv run pytest -q`: 161 passed, 2 warnings (exit 0)
+- `uv run pytest -q`: 164 passed, 2 warnings (exit 0)
 - `PYTHONPATH=src uv run python -m jplearn_api.openapi_diff`: PASS (exit 0, schema identical)
 - `apps/api-python/differential/web-e2e-python.sh --project=chromium --project=webkit`: 10 passed across 6 workers (exit 0)
 - `apps/api-python/scripts/verify-container.sh`: 7/7 gates PASS, generated valid manifest (exit 0)
+
+### Follow-up regression evidence sau audit `4e43588`
+
+- `test_staging_cleanup_defers_close_and_unlink_after_drain_timeout`: cleanup trả quyền
+  finalize cho worker; handle và `.part` chỉ được đóng/xóa sau khi write kết thúc.
+- `test_upload_does_not_rollback_while_cancelled_commit_is_still_running`: rollback chưa
+  được gọi khi COMMIT task còn active; object vẫn được giữ ở outcome unknown.
+- `test_supervisor_kills_grandchild_before_releasing_lock`: process leader có thể chết trước,
+  nhưng supervisor vẫn TERM/KILL toàn process group rồi mới nhả lock.
+- Container evidence của follow-up: `apps/api-python/container_verification_manifest.json`;
+  raw E2E log local: `/tmp/jplearn-e2e-remediation.log`. R-09 vẫn cần staging evidence riêng.
