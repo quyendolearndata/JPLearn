@@ -94,6 +94,6 @@ Mọi write use case đều bắt buộc phải chạy trong phạm vi của m�
 
 ## 4. Trạng thái kiểm chứng & Ranh giới vận hành
 
-- **Milestone 1 (Clean Architecture Rewrite):** Hoàn thành và được nghiệm thu kỹ thuật đồng thuận bởi tất cả các ghế (Accepted Across All Seats — Candidate SHA `97b0088`). Toàn bộ 6 cổng kiểm chứng đạt chuẩn tuyệt đối (192 unit/integration tests, 19 AST guard tests, 26 OpenAPI contract & mutation tests, 10 Web E2E tests, 7 container verification gates), 0 rò rỉ container, 0 trôi DDL/OpenAPI contract, hiệu năng tiệm cận baseline trên PostgreSQL native.
+- **Milestone 1 (Clean Architecture Rewrite):** Đang thực hiện kế hoạch đóng các lỗ hổng kỹ thuật cuối cùng (Closure v4 theo `docs/superpowers/plans/2026-09-05-clean-architecture-closure-v4.md`: repeated cancellation cleanup ownership, baseline assertion mapping, reproducible benchmark raw samples và clean candidate provenance). Engineering acceptance cấp sau khi hoàn thành C1–C4 trên clean checkout.
 - **Milestone 2 (Operational Acceptance / R-09):** Tiếp tục duy trì trạng thái **STRICTLY HOLD / BLOCKED** cho đến khi có đủ hạ tầng staging và quyết định mở traffic từ ghế Ops & CTO.
 

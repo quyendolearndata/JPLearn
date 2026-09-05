@@ -1,33 +1,34 @@
 # Clean Architecture Rewrite — Hardening & Engineering Acceptance Evidence
 
 - **Commit Baseline:** `2f5e200` (164 test cases)
-- **Hardened Final Candidate SHA:** `97b0088`
+- **Current Audit Baseline:** `48523da`
 - **Branch:** `codex/fastapi-backend-hardening`
-- **Audit Plan Reference:** [`docs/superpowers/plans/2026-09-05-clean-architecture-final-closure-v3.md`](../../superpowers/plans/2026-09-05-clean-architecture-final-closure-v3.md)
-- **Status:** **VERIFIED AND ACCEPTED (ALL SEATS SIGNED OFF)**
+- **Audit Plan Reference:** [`docs/superpowers/plans/2026-09-05-clean-architecture-closure-v4.md`](../../superpowers/plans/2026-09-05-clean-architecture-closure-v4.md)
+- **Status:** **VERIFICATION PENDING (Closure v4 in progress)**
 
 ---
 
 ## 1. Initial State & Scope Context
 
-- **Audit Trigger:** Verification gaps identified in transaction scoping (post-promote compensation leak on recheck query error), upload handler API ownership (`media_repo` bypass), raw test inventory collection across revisions, and measured baseline performance data.
-- **Current Candidate:** `97b0088` (All 6 verification gates certified passing in a clean detached worktree with external evidence logs).
+- **Audit Trigger:** Identification of four remaining engineering gaps in Closure v4:
+  1. Repeated cancellation during rollback cleanup causing final storage object leak.
+  2. Baseline assertion diff review and machine-readable mapping from `2f5e200`.
+  3. In-tree benchmark runner, raw per-iteration samples, and upload p95 regression evaluation.
+  4. Clean candidate provenance (0 dirty files in isolated worktree) and external log artifacts.
 - **Untracked Boundary:** `landing_preview.html` preserved intact and strictly uncommitted.
 - **Operational Gate:** Milestone 2 (R-09 Operational Acceptance) remains strictly **HOLD / BLOCKED**.
 
 ---
 
-## 2. Gap Closure Implementation Summary (V0 – V6 Status)
+## 2. Closure v4 Gap Implementation Summary (C0 – C4 Status)
 
 | Gap ID | Focus | Target Files | Status | Reviewer / Seat | Evidence / Artifact |
 |---|---|---|---|---|---|
-| **V0** | Scope lock & status reopening | `docs/*`, `ADR-006` | **VERIFIED** | CTO + BA + QA | `a06de61` — Baseline audit reopened and finalized with traceability matrix |
-| **V1** | UoW repository ownership & upload compensation | `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py`, `application/handlers/media.py` | **VERIFIED** | Platform (Review: CTO, QA) | `2b6e45e`, `8015d99` — Full post-promote compensation coverage, scoped UoW factory identity, zero pool checkout during streaming |
-| **V2** | Complete signing fallback removal & injected capabilities | `application/handlers/media.py`, `routers/media.py`, `security.py`, `bootstrap.py` | **VERIFIED** | Platform + CTO (Verify: QA) | `e0c7529` — Zero `(base_url, secret)` fallbacks in application layer; `MediaUrlSigner` required |
-| **V3** | Transitive import resolution & aliased composition guard | `tests/test_architecture_guard.py` | **VERIFIED** | QA + Platform (Review: CTO) | `c398715` — Transitive import graph analyzer, constructor alias resolver, mutation fixtures |
-| **V4** | Per-test node ID mapping & reconciliation | `docs/qa/clean-architecture-audit/test_mapping_and_reconciliation.md` | **VERIFIED** | QA + BA | `9854e03` — Automated pytest collection across 5 revisions (`2f5e200` to `9854e03`), 164 baseline tests 100% preserved |
-| **V5** | Performance benchmark with raw reproducible metrics | `docs/qa/clean-architecture-audit/performance_benchmark.md` | **VERIFIED** | QA + Platform (Review: CTO) | `10583fe` — Real measured PostgreSQL metrics comparing baseline `2f5e200` vs candidate across 4 workloads ([`benchmark_raw_metrics.json`](evidence/benchmark_raw_metrics.json)) |
-| **V6** | Clean candidate requalification with external evidence | All verification gates | **VERIFIED** | QA + Ops (Review: CTO, BA) | `97b0088` — 6 verification gates passed in clean detached worktree with external evidence logs and container manifest |
+| **C0** | Reopen remaining gaps & traceability matrix | `baseline_audit_evidence.md`, `ADR-006` | **IN PROGRESS** | CTO + BA + QA | Closure v4 plan committed and tracked |
+| **C1** | Repeated cancellation cleanup ownership & bounded drain | `application/handlers/media.py`, `application/ports/unit_of_work.py`, `test_media.py` | **PENDING** | Platform (Review: CTO, QA) | Pending red reproducer and single-owner cleanup machine |
+| **C2** | Machine-readable baseline mapping & assertion diff review | `docs/qa/clean-architecture-audit/test_mapping_and_reconciliation.md` | **PENDING** | QA + BA | Pending 1-to-1 mapping of 164 baseline node IDs and assertion review |
+| **C3** | Benchmark reproducibility, raw samples & regression decision | `docs/qa/clean-architecture-audit/performance_benchmark.md`, `scripts/benchmark_workloads.py` | **PENDING** | QA + Platform (Review: CTO) | Pending in-tree runner, raw sample collection, and p95 decision |
+| **C4** | Clean candidate qualification & verifiable provenance | All verification gates | **PENDING** | Ops + QA (Review: CTO, BA) | Pending clean isolated worktree run (0 dirty files) and updated manifest |
 
 ---
 
@@ -35,18 +36,18 @@
 
 | Requirement | Code Location | Test ID | Raw Artifact | Reviewer | Status |
 |---|---|---|---|---|---|
-| **Post-Promote Full Compensation**: Wrap write UoW creation, enter, recheck, add, hook, commit; delete final on rollback | `application/handlers/media.py` | `test_media.py::test_upload_recheck_catalog_query_error_compensates_storage` | `gate3_full_pytest.log` | Platform (QA, CTO) | **VERIFIED** |
-| **UoW Ownership**: Mandatory factory only, no `media_repo` or instance fallback; scope-bound repos | `application/handlers/media.py`, `application/ports/unit_of_work.py` | `test_media.py::test_upload_uow_factory_scopes_and_repository_identity` | `gate3_full_pytest.log` | Platform + CTO | **VERIFIED** |
-| **Signing Capability Injection**: Protocol `MediaUrlSigner` mandatory in handlers | `application/handlers/media.py`, `adapters/security/media_signer.py` | `test_media.py`, `test_architecture_guard.py` | `gate2_architecture_guard.log` | Platform + CTO | **VERIFIED** |
-| **AST Transitive & Alias Guard**: Multi-hop imports and aliased constructor resolution | `tests/test_architecture_guard.py` | `test_guard_mutation_catches_aliased_constructor_in_router` | `gate2_architecture_guard.log` | QA + Platform | **VERIFIED** |
-| **Automated Revision Inventory**: Collect pytest node IDs from revisions `2f5e200`..candidate | Pytest collector script | `pytest --collect-only -q` | [`evidence/test_inventories/`](evidence/test_inventories/) | QA + BA | **VERIFIED** |
-| **Measured Baseline Benchmark**: Real measured metrics on `2f5e200` vs candidate | `scratch/benchmark_runner.py` | Standalone benchmark suite | [`evidence/benchmark_raw_metrics.json`](evidence/benchmark_raw_metrics.json) | QA + Platform | **VERIFIED** |
-| **Clean Candidate Qualification**: 6 gates executed in clean detached worktree | Verification scripts | 6 quality gates | [`evidence/gate[1-6]*.log`](evidence/), manifest | QA + Ops | **VERIFIED** |
+| **Repeated Cancellation Cleanup**: Cancel recheck query, then cancel rollback; single owner must ensure delete completes | `application/handlers/media.py` | `test_media.py::test_upload_repeated_cancellation_preserves_cleanup_and_deletes_object` | Pytest stdout / log | Platform (Review: CTO, QA) | **PENDING (C1)** |
+| **Single Outcome & Task Drain**: Explicit states (`COMMITTED`, `ROLLBACK_CONFIRMED`, `OUTCOME_UNKNOWN`); no concurrent rollback/close | `application/handlers/media.py` | `test_media.py::test_upload_cancel_during_storage_delete_observed_without_orphaned_task` | Pytest stdout / log | Platform + CTO | **PENDING (C1)** |
+| **Baseline 1-to-1 Node ID Mapping**: Machine-readable mapping of all 164 baseline tests to candidate with assertion diff review | `test_mapping_and_reconciliation.md` | Automated verification script | `evidence/test_inventories/baseline_mapping.json` | QA + BA | **PENDING (C2)** |
+| **In-tree Benchmark Runner & Raw Samples**: Commit runner to repo, capture raw per-iteration samples, evaluate upload p95 regression | `scripts/benchmark_workloads.py` | Standalone benchmark suite | `evidence/benchmark_raw_samples.json`, `performance_benchmark.md` | QA + Platform (Review: CTO) | **PENDING (C3)** |
+| **Clean Candidate Requalification**: Execute Gates 1–6 from clean detached worktree with 0 dirty files and verifiable provenance | Root & test scripts | Gates 1–6 | `evidence/gate[1-6]*.log`, `container_verification_manifest.json` | Ops + QA | **PENDING (C4)** |
 | **Operational Boundary**: Milestone 2 (R-09) strictly on HOLD | `ADR-006`, policies | N/A | Manifest notes | Ops + CTO | **HOLD (CONTROLLED)** |
 
 ---
 
-## 3. Candidate Verification Gate Results (Run on SHA `97b0088`)
+## 3. Historical Candidate Verification Gate Results (SHA `97b0088`)
+
+*Note: The following gate results reflect the historical test run prior to Closure v4. Re-qualification will be conducted under C4 upon candidate finalization.*
 
 | Gate | Check / Command | Exit Code | Result | Details & Evidence Log |
 |---|---|---|---|---|---|
@@ -59,7 +60,7 @@
 
 ---
 
-## 4. Container Manifest Verification (Final Candidate)
+## 4. Container Manifest Verification (Historical Run)
 
 - **Image Tag:** `jplearn-api-python:hardened`
 - **Image ID:** `sha256:4990462ac4ad7e8982b5b51695504d370a74ce6eaab7d2f0a6f4d86e29fca23a`
@@ -72,49 +73,14 @@
 
 ---
 
-## 5. Engineering Acceptance & Seat Sign-Offs
+## 5. Engineering Acceptance & Seat Sign-Offs (Closure v4 Pending)
 
-All formal seats defined in `AGENTS.md` and `.cursor/agents/README.md` have reviewed and approved the hardened candidate:
-
-### 1. Chief Technology Officer (`jplearn-cto`) — APPROVED
-- **Review Scope:** Architecture boundaries, Unit of Work transaction model, contract preservation, and drift policy.
-- **Findings:**
-  - Strict hexagonal boundary enforced: Domain layer has zero dependencies on outer layers or external frameworks.
-  - Unit of Work owns repository property bindings (`uow.users`, `uow.catalog`, `uow.media`, `uow.learning`, `uow.flags`) within single session scopes.
-  - Public contract drift is exactly 0 across all 22 routes. DDL drift against Prisma reference is 0.
-  - Scoped UoW factories enforced: `handle_upload_media` strictly receives `uow_factory: UnitOfWorkFactory` with no repository instance bypass.
-- **Sign-off:** **APPROVED**
-
-### 2. Business Analyst (`jplearn-ba`) — APPROVED
-- **Review Scope:** Business invariants, functional requirements, user journey preservation.
-- **Findings:**
-  - All functional requirements verified intact: FR-ID-001..003 (Identity & Auth), FR-CAT-001..005 (Catalog state transitions), FR-CMS-001..004 (Media management & streaming), FR-FLG-001..003 (Feature flags), UC-L06 (Cross-device sync).
-  - 100% of the 164 baseline test invariants from `2f5e200` are preserved verbatim with zero deleted or skipped tests.
-- **Sign-off:** **APPROVED**
-
-### 3. Platform Engineer (`jplearn-platform`) — APPROVED
-- **Review Scope:** Concurrency, transaction scoping, security port injection, database connection lifecycle.
-- **Findings:**
-  - 3-scope upload transaction isolation verified: database connections are released during 5MB binary streaming (`engine.pool.checkedout() == 0`, `pg_stat_activity` active transactions == 0).
-  - Full post-promote storage cleanup machine covers write UoW enter, recheck, add, hook, and commit failures. Rollback flag timing corrected.
-  - All URL signing fallbacks (`(base_url, secret)`) eliminated; runtime `MediaUrlSigner` injection enforced across handlers and routes.
-- **Sign-off:** **APPROVED**
-
-### 4. Quality Assurance (`jplearn-qa`) — APPROVED
-- **Review Scope:** Test execution, mutation test suites, AST guard enforcement, performance parity.
-- **Findings:**
-  - Complete suite passes: 192 unit/integration tests (`192 passed, 0 failed, 0 skipped`), 19 AST guard tests, 26 OpenAPI contract and mutation tests, 10 Web E2E Playwright tests.
-  - Authentic test node inventories extracted across 5 revisions and 1-to-1 mapping recorded.
-  - Performance benchmark on live PostgreSQL shows negligible latency delta (+0.067 ms on login, 0% SQL query drift on catalog and sessions, 234 MB RSS).
-- **Sign-off:** **APPROVED**
-
-### 5. Operations Engineer (`jplearn-ops`) — APPROVED
-- **Review Scope:** Docker containerization, non-root execution, fail-closed migrations, zero-orphan container discipline.
-- **Findings:**
-  - Container runs as UID 10001 (`appuser`), loads packaged wheel resources, and passes all 7 container verification gates.
-  - Docker cleanup verification confirmed: zero orphaned containers remain after test execution (`docker ps --filter name=jplearn` is empty).
-  - Milestone 2 (R-09 Operational Acceptance) remains strictly gated on HOLD.
-- **Sign-off:** **APPROVED**
+Status is currently **PENDING** while C1–C4 tasks are being executed. Formal sign-offs will be recorded in Phase C4 upon successful verification across all 5 seats:
+- CTO (`jplearn-cto`): Pending review of single-owner cleanup lifecycle, upload p95 regression decision, and candidate provenance.
+- BA (`jplearn-ba`): Pending review of machine-readable 1-to-1 baseline test mapping and assertion diff verification.
+- Platform (`jplearn-platform`): Pending implementation of repeated-cancellation cleanup and in-tree benchmark runner.
+- QA (`jplearn-qa`): Pending execution of repeated-cancellation test matrix and raw benchmark sample verification.
+- Ops (`jplearn-ops`): Pending qualification in clean detached worktree with 0 dirty files and zero orphaned containers.
 
 ---
 
@@ -123,4 +89,4 @@ All formal seats defined in `AGENTS.md` and `.cursor/agents/README.md` have revi
 > [!IMPORTANT]
 > **Operational Acceptance (R-09) Status:** **STRICTLY HOLD / BLOCKED**
 >
-> Engineering acceptance of the Clean Architecture rewrite (Milestone 1) is fully granted. Production and Staging deployment gates (Milestone 2 / R-09) remain strictly blocked until production infrastructure provisioning and explicit joint release authorization from CTO and Ops.
+> Engineering acceptance of the Clean Architecture rewrite is under final audit. Production and Staging deployment gates (Milestone 2 / R-09) remain strictly blocked until production infrastructure provisioning and explicit joint release authorization from CTO and Ops.
