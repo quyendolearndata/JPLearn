@@ -11,6 +11,12 @@
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
+
+# If not running under supervisor holding lock descriptor, re-exec via supervisor (R-06)
+if [[ -z "${JPLEARN_E2E_SUPERVISED:-}" ]]; then
+  exec python3 "$REPO/apps/api-python/differential/web_e2e_runner.py" "$@"
+fi
+
 VENV_PY="$REPO/apps/api-python/.venv/bin/python"
 
 get_free_port() {
@@ -25,40 +31,32 @@ RUN_DIR="/tmp/jplearn-e2e-${RUN_ID}"
 mkdir -p "$RUN_DIR"
 STORAGE="$RUN_DIR/storage"
 mkdir -p "$STORAGE"
-DIST_DIR=".next_${RUN_ID}"
+
+# Workspace isolation: execute Next.js build inside an ephemeral snapshot
+# so user files in $REPO/apps/web are never modified or reverted (R-06).
+WEB_WORKSPACE="$RUN_DIR/web"
+mkdir -p "$WEB_WORKSPACE"
+cp "$REPO/apps/web/package.json" "$WEB_WORKSPACE/"
+cp "$REPO/apps/web/next.config.ts" "$WEB_WORKSPACE/"
+cp "$REPO/apps/web/tsconfig.json" "$WEB_WORKSPACE/"
+cp "$REPO/apps/web/next-env.d.ts" "$WEB_WORKSPACE/"
+cp "$REPO/apps/web/playwright.config.ts" "$WEB_WORKSPACE/"
+ln -s "$REPO/apps/web/src" "$WEB_WORKSPACE/src"
+ln -s "$REPO/apps/web/e2e" "$WEB_WORKSPACE/e2e"
+ln -s "$REPO/apps/web/node_modules" "$WEB_WORKSPACE/node_modules"
 
 API_PID=""
 WEB_PID=""
-LOCK_PROC_PID=""
 ITEM_ID="00000000-0000-4000-8000-0000000000c1" # seed-ci0-daily-home (draft 30s)
 SOURCE_MP4="$REPO/media/stock/mp4/level-0-wash-hands.mp4"
 
-acquire_runner_lock() {
-  local fifo
-  fifo="$(mktemp -u /tmp/jplearn-web-e2e-fifo.XXXXXX)"
-  mkfifo "$fifo"
-  python3 -c '
-import fcntl, sys
-lock_path = "/tmp/jplearn-web-e2e.lock"
-pipe_path = sys.argv[1]
-f = open(lock_path, "w")
-try:
-    fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-except BlockingIOError:
-    print("== Another E2E run is in progress. Waiting for lock... ==", flush=True)
-    fcntl.flock(f, fcntl.LOCK_EX)
-with open(pipe_path, "w") as p:
-    p.write("READY\n")
-sys.stdin.read()
-' "$fifo" &
-  LOCK_PROC_PID=$!
-  local status
-  read -r status <"$fifo"
-  rm -f "$fifo"
-}
-
+CLEANUP_DONE=0
 cleanup() {
   local exit_code=$?
+  if [[ "$CLEANUP_DONE" -eq 1 ]]; then
+    return
+  fi
+  CLEANUP_DONE=1
   set +e
   echo "== Cleaning up E2E resources [run=$RUN_ID] =="
   if [[ -n "$WEB_PID" ]] && kill -0 "$WEB_PID" 2>/dev/null; then
@@ -70,20 +68,10 @@ cleanup() {
     wait "$API_PID" 2>/dev/null || true
   fi
   "$VENV_PY" "$REPO/apps/api-python/differential/db.py" --project "$E2E_PROJECT" down >/dev/null 2>&1 || true
-  rm -rf "$REPO/apps/web/$DIST_DIR"
-  git checkout -- "$REPO/apps/web/next-env.d.ts" "$REPO/apps/web/tsconfig.json" 2>/dev/null || true
-  if [[ "$exit_code" -eq 0 ]]; then
-    rm -rf "$RUN_DIR"
-  else
-    echo "== E2E run failed (exit $exit_code). Logs preserved at: $RUN_DIR =="
-  fi
-  if [[ -n "$LOCK_PROC_PID" ]]; then
-    kill "$LOCK_PROC_PID" 2>/dev/null || true
-  fi
+  # Evidence and logs are preserved in RUN_DIR for post-run review (R-06)
+  echo "== E2E run finished (exit $exit_code). Evidence preserved at: $RUN_DIR =="
 }
-trap cleanup EXIT ERR INT TERM
-
-acquire_runner_lock
+trap cleanup EXIT INT TERM
 
 wait_http() { # url, name
   for _ in $(seq 1 120); do
@@ -138,22 +126,22 @@ curl -fsS -X POST "http://localhost:$PY_PORT/staff/media/$ASSET_ID/hls" \
   -H "Authorization: Bearer $TOKEN" >/dev/null
 echo "   published item $ITEM_ID, asset $ASSET_ID (+hls)"
 
-echo "== 4/5 web :$WEB_PORT → API :$PY_PORT [dist=$DIST_DIR] =="
+echo "== 4/5 web :$WEB_PORT → API :$PY_PORT [workspace=$WEB_WORKSPACE] =="
 (
-  cd "$REPO/apps/web"
+  cd "$WEB_WORKSPACE"
   NEXT_PUBLIC_API_URL="http://localhost:$PY_PORT" \
-  NEXT_DIST_DIR="$DIST_DIR" \
+  NEXT_DIST_DIR=".next" \
   ./node_modules/.bin/next build >"$RUN_DIR/web-build.log" 2>&1
 
   NEXT_PUBLIC_API_URL="http://localhost:$PY_PORT" \
-  NEXT_DIST_DIR="$DIST_DIR" \
+  NEXT_DIST_DIR=".next" \
   exec ./node_modules/.bin/next start -p "$WEB_PORT" >"$RUN_DIR/web.log" 2>&1
 ) &
 WEB_PID=$!
 wait_http "http://localhost:$WEB_PORT/login" "Next"
 
 echo "== 5/5 playwright $* =="
-cd "$REPO/apps/web"
+cd "$WEB_WORKSPACE"
 PLAYWRIGHT_TEST_BASE_URL="http://localhost:$WEB_PORT" \
 PLAYWRIGHT_OUTPUT_DIR="$RUN_DIR/test-results" \
 PLAYWRIGHT_HTML_REPORT="$RUN_DIR/playwright-report" \
