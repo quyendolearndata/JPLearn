@@ -38,32 +38,31 @@ def _to_staff_dto(item: CatalogItem) -> CatalogItemStaffDTO:
 async def handle_create_catalog_item(
     cmd: CreateCatalogItemCommand,
     uow: AsyncUnitOfWork,
-    repo: CatalogRepository,
     *,
     id_generator: Callable[[], str] = lambda: str(uuid4()),
 ) -> CatalogItemStaffDTO:
     """Create new catalog item in draft status."""
-    topic_exists = await repo.topic_exists(cmd.topic_id)
-    if not topic_exists:
-        raise InvalidDomainStateError("Unknown topic_id")
-
-    item = CatalogItem(
-        id=id_generator(),
-        topic_id=cmd.topic_id,
-        ci_level=cmd.ci_level,
-        duration_seconds=cmd.duration_seconds,
-        media_type=cmd.media_type,
-        visual_support=cmd.visual_support,
-        title_internal=cmd.title_internal,
-        created_by=cmd.created_by,
-        has_l1_translation=False,
-        spoken_language="ja",
-        status="draft",
-        media=[],
-    )
-
     async with uow:
-        await repo.add(item)
+        topic_exists = await uow.catalog.topic_exists(cmd.topic_id)
+        if not topic_exists:
+            raise InvalidDomainStateError("Unknown topic_id")
+
+        item = CatalogItem(
+            id=id_generator(),
+            topic_id=cmd.topic_id,
+            ci_level=cmd.ci_level,
+            duration_seconds=cmd.duration_seconds,
+            media_type=cmd.media_type,
+            visual_support=cmd.visual_support,
+            title_internal=cmd.title_internal,
+            created_by=cmd.created_by,
+            has_l1_translation=False,
+            spoken_language="ja",
+            status="draft",
+            media=[],
+        )
+
+        await uow.catalog.add(item)
         await uow.commit()
 
     return _to_staff_dto(item)
@@ -72,15 +71,14 @@ async def handle_create_catalog_item(
 async def handle_submit_qa(
     cmd: SubmitCatalogForQaCommand,
     uow: AsyncUnitOfWork,
-    repo: CatalogRepository,
 ) -> CatalogItemStaffDTO:
     """Submit a draft item for QA."""
     async with uow:
-        item = await repo.get_by_id(cmd.item_id)
+        item = await uow.catalog.get_by_id(cmd.item_id)
         if item is None:
             raise EntityNotFoundError("Catalog item not found")
         item.submit_for_qa()
-        await repo.update(item)
+        await uow.catalog.update(item)
         await uow.commit()
 
     return _to_staff_dto(item)
@@ -89,31 +87,29 @@ async def handle_submit_qa(
 async def handle_publish(
     cmd: PublishCatalogItemCommand,
     uow: AsyncUnitOfWork,
-    repo: CatalogRepository,
     storage: StoragePort,
 ) -> CatalogItemStaffDTO:
     """Publish a level_qa item ensuring media presence and storage availability."""
-    item = await repo.get_by_id(cmd.item_id)
-    if item is None:
-        raise EntityNotFoundError("Catalog item not found")
-
-    if item.status != "level_qa":
-        raise InvalidDomainStateError("Only level_qa items can be published")
-
-    if not item.media:
-        raise MediaInvariantError("Cannot publish without media: upload a playback source first (FR-CAT-002)")
-
-    for asset in item.media:
-        exists = await storage.exists(asset.storage_key)
-        if not exists:
-            raise MediaInvariantError(
-                f"Cannot publish: media file missing from storage for asset {asset.id} (FR-CAT-002)",
-            )
-
-    item.publish()
-
     async with uow:
-        await repo.update(item)
+        item = await uow.catalog.get_by_id(cmd.item_id)
+        if item is None:
+            raise EntityNotFoundError("Catalog item not found")
+
+        if item.status != "level_qa":
+            raise InvalidDomainStateError("Only level_qa items can be published")
+
+        if not item.media:
+            raise MediaInvariantError("Cannot publish without media: upload a playback source first (FR-CAT-002)")
+
+        for asset in item.media:
+            exists = await storage.exists(asset.storage_key)
+            if not exists:
+                raise MediaInvariantError(
+                    f"Cannot publish: media file missing from storage for asset {asset.id} (FR-CAT-002)",
+                )
+
+        item.publish()
+        await uow.catalog.update(item)
         await uow.commit()
 
     return _to_staff_dto(item)
@@ -122,15 +118,14 @@ async def handle_publish(
 async def handle_unpublish(
     cmd: UnpublishCatalogItemCommand,
     uow: AsyncUnitOfWork,
-    repo: CatalogRepository,
 ) -> CatalogItemStaffDTO:
     """Unpublish a published item back to draft."""
     async with uow:
-        item = await repo.get_by_id(cmd.item_id)
+        item = await uow.catalog.get_by_id(cmd.item_id)
         if item is None:
             raise EntityNotFoundError("Catalog item not found")
         item.unpublish()
-        await repo.update(item)
+        await uow.catalog.update(item)
         await uow.commit()
 
     return _to_staff_dto(item)
@@ -139,15 +134,14 @@ async def handle_unpublish(
 async def handle_archive(
     cmd: ArchiveCatalogItemCommand,
     uow: AsyncUnitOfWork,
-    repo: CatalogRepository,
 ) -> None:
     """Archive a catalog item."""
     async with uow:
-        item = await repo.get_by_id(cmd.item_id)
+        item = await uow.catalog.get_by_id(cmd.item_id)
         if item is None:
             raise EntityNotFoundError("Catalog item not found")
         item.archive()
-        await repo.update(item)
+        await uow.catalog.update(item)
         await uow.commit()
 
 

@@ -15,9 +15,10 @@ from jplearn_api.application.handlers.media import (
     handle_stream_media,
     handle_upload_media,
 )
+from jplearn_api.application.ports.unit_of_work import UnitOfWorkFactory
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_media_repository, create_uow
-from jplearn_api.deps import UUIDPath, get_media_signer, get_session, get_storage
+from jplearn_api.deps import UUIDPath, get_media_signer, get_session, get_storage, get_uow_factory
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.domain.range_parser import RangeNotSatisfiableError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
@@ -41,12 +42,10 @@ async def upload_media(
     id: UUIDPath,
     request: Request,
     file: UploadFile,
-    session: AsyncSession = Depends(get_session),
     storage: StoragePort = Depends(get_storage),
+    uow_factory: UnitOfWorkFactory = Depends(get_uow_factory),
     _user: UserDTO = Depends(require_roles("teacher", "admin")),
 ) -> MediaAssetStaff:
-    uow = create_uow(session)
-    media_repo = create_media_repository(session)
     signer = get_media_signer(request)
 
     filename = (file.filename or "").lower().strip()
@@ -67,8 +66,7 @@ async def upload_media(
             stream=stream_rest(),
             filename=filename,
             content_type=content_type,
-            uow=uow,
-            media_repo=media_repo,
+            uow=uow_factory,
             storage=storage,
             signer=signer,
             _grace_seconds=COMMIT_CANCELLATION_GRACE_SECONDS,
@@ -99,14 +97,12 @@ async def register_hls(
     _user: UserDTO = Depends(require_roles("teacher", "admin")),
 ) -> MediaAssetStaff:
     uow = create_uow(session)
-    media_repo = create_media_repository(session)
     signer = get_media_signer(request)
 
     try:
         dto = await handle_register_hls(
             asset_id=id,
             uow=uow,
-            media_repo=media_repo,
             storage=storage,
             signer=signer,
         )

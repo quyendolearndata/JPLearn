@@ -17,7 +17,6 @@ _bearer = HTTPBearer(auto_error=False, scheme_name="bearerAuth")
 
 async def require_user(
     request: Request,
-    session: AsyncSession = Depends(get_session),
     creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> UserDTO:
     if creds is None or creds.scheme.lower() != "bearer":
@@ -26,10 +25,14 @@ async def require_user(
         payload = decode_access_token(creds.credentials, request.app.state.settings.jwt_secret)
     except Exception:
         raise HTTPException(status_code=401, detail="Unauthorized") from None
-    result = await session.execute(
-        select(User).options(selectinload(User.roles)).where(User.id == payload["sub"]),
-    )
-    user = result.scalar_one_or_none()
+
+    sessionmaker = request.app.state.sessionmaker
+    async with sessionmaker() as session:
+        result = await session.execute(
+            select(User).options(selectinload(User.roles)).where(User.id == payload["sub"]),
+        )
+        user = result.scalar_one_or_none()
+
     if user is None or payload["ver"] != user.token_version:
         raise HTTPException(status_code=401, detail="Unauthorized")
     user_dto = UserDTO(
@@ -43,17 +46,18 @@ async def require_user(
 
 async def require_media_access(
     request: Request,
-    session: AsyncSession = Depends(get_session),
 ) -> None:
     settings = request.app.state.settings
     header = request.headers.get("authorization")
     if header and header.startswith("Bearer "):
         try:
             payload = decode_access_token(header[7:], settings.jwt_secret)
-            result = await session.execute(
-                select(User).options(selectinload(User.roles)).where(User.id == payload["sub"]),
-            )
-            user = result.scalar_one_or_none()
+            sessionmaker = request.app.state.sessionmaker
+            async with sessionmaker() as session:
+                result = await session.execute(
+                    select(User).options(selectinload(User.roles)).where(User.id == payload["sub"]),
+                )
+                user = result.scalar_one_or_none()
             if user is None or payload["ver"] != user.token_version:
                 raise HTTPException(status_code=401, detail="Unauthorized")
             user_dto = UserDTO(

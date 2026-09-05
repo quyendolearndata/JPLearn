@@ -41,10 +41,9 @@ async def start_session(
     if body.device_class not in DEVICE_CLASSES:
         raise HTTPException(status_code=400, detail="device_class is required")
     uow = create_uow(session)
-    repo = create_learning_repository(session)
     cmd = StartLearningSessionCommand(user_id=user.id, device_class=body.device_class)
     try:
-        dto = await handle_start_session(cmd, uow, repo)
+        dto = await handle_start_session(cmd, uow)
     except EntityNotFoundError:
         raise HTTPException(status_code=500, detail="Missing learner progress")
 
@@ -73,10 +72,9 @@ async def end_session(
     user: UserDTO = Depends(require_user),
 ) -> LearnerProgressPublic:
     uow = create_uow(session)
-    repo = create_learning_repository(session)
     cmd = EndLearningSessionCommand(user_id=user.id, session_id=id)
     try:
-        dto = await handle_end_session(cmd, uow, repo)
+        dto = await handle_end_session(cmd, uow)
     except SessionAlreadyEndedError:
         raise HTTPException(status_code=400, detail="Session already ended")
     except ForbiddenError:

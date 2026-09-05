@@ -23,7 +23,6 @@ def _to_user_dto(user: UserAccount) -> UserDTO:
 async def handle_register(
     cmd: RegisterUserCommand,
     uow: AsyncUnitOfWork,
-    user_repo: UserRepository,
     hasher: PasswordHasher,
     token_service: TokenService,
     *,
@@ -51,9 +50,9 @@ async def handle_register(
     )
 
     async with uow:
-        await user_repo.add(user)
-        await user_repo.add_role(user.id, "learner")
-        await user_repo.add_initial_progress(user.id, now)
+        await uow.users.add(user)
+        await uow.users.add_role(user.id, "learner")
+        await uow.users.add_initial_progress(user.id, now)
         await uow.commit()
 
     user.roles = ["learner"]
@@ -100,14 +99,13 @@ async def handle_login(
 async def handle_logout(
     cmd: LogoutUserCommand,
     uow: AsyncUnitOfWork,
-    user_repo: UserRepository,
 ) -> None:
     """Logout by incrementing token version in an atomic transaction."""
     async with uow:
-        user = await user_repo.get_by_id(cmd.user_id)
+        user = await uow.users.get_by_id(cmd.user_id)
         if user is not None:
             user.increment_token_version()
-            await user_repo.update(user)
+            await uow.users.update(user)
             await uow.commit()
 
 

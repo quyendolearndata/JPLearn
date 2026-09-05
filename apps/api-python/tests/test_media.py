@@ -967,13 +967,16 @@ async def test_upload_does_not_rollback_while_cancelled_commit_is_still_running(
     )
 
     await commit_entered.wait()
+    rollback_called.clear()
     task.cancel()
-    await asyncio.sleep(0.05)
+    try:
+        await asyncio.sleep(0.05)
 
-    assert rollback_called.is_set() is False
-    assert task.done() is False
+        assert rollback_called.is_set() is False
+        assert task.done() is False
+    finally:
+        commit_release.set()
 
-    commit_release.set()
     with pytest.raises(asyncio.CancelledError):
         await task
 
@@ -1096,8 +1099,15 @@ def test_upload_outcome_4_rollback_failure_preserves_object_and_logs(live_client
 
                 session.add = intercept_add
 
+                rollback_count = 0
+                real_rollback = session.rollback
+
                 async def fail_rollback():
-                    raise RuntimeError("Rollback connection error")
+                    nonlocal rollback_count
+                    rollback_count += 1
+                    if rollback_count > 1:
+                        raise RuntimeError("Rollback connection error")
+                    return await real_rollback()
 
                 session.rollback = fail_rollback
 
@@ -1271,5 +1281,139 @@ async def test_upload_pre_commit_storage_delete_failure_preserves_original_excep
     assert len(cleanup_warnings) == 1
     assert "PermissionError" in cleanup_warnings[0][1].get("reason", "")
     assert "secret" not in str(cleanup_warnings[0][1])
+
+
+def test_upload_byte_stream_barrier_releases_db_connection(live_client, live_database_url):
+    """V1 barrier test: verify that during byte streaming, DB connection has been returned to pool
+    and zero open transactions exist in pg_stat_activity for the request.
+    """
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin, title_internal="barrier-test")
+    storage = live_client.app.state.storage
+
+    barrier_active = asyncio.Event()
+    barrier_release = asyncio.Event()
+    inspected_tx_count = -1
+
+    async def _run():
+        nonlocal inspected_tx_count
+        from jplearn_api.bootstrap import create_uow_factory
+        from jplearn_api.db import create_engine_and_sessions
+        from jplearn_api.application.handlers.media import handle_upload_media
+
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        uow_factory = create_uow_factory(sessionmaker)
+
+        async def stream_with_barrier():
+            barrier_active.set()
+            await barrier_release.wait()
+            yield b"streaming payload chunk"
+
+        async def staging_barrier():
+            # In Scope 2: query pg_stat_activity using an isolated connection
+            conn = await asyncpg.connect(live_database_url)
+            try:
+                # Count open or idle-in-transaction connections on jplearn_test
+                rows = await conn.fetch(
+                    """
+                    SELECT pid, state, query, xact_start
+                    FROM pg_stat_activity
+                    WHERE datname = 'jplearn_test'
+                      AND pid != pg_backend_pid()
+                      AND state in ('idle in transaction', 'active')
+                    """
+                )
+                nonlocal inspected_tx_count
+                inspected_tx_count = len(rows)
+            finally:
+                await conn.close()
+
+        first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+        dto = await handle_upload_media(
+            catalog_item_id=item_id,
+            first_chunk=first_chunk,
+            stream=stream_with_barrier(),
+            filename="barrier.mp4",
+            content_type="video/mp4",
+            uow_factory=uow_factory,
+            storage=storage,
+            base_url="http://localhost:3001",
+            secret="test-secret-at-least-32-bytes-long",
+            _staging_barrier=staging_barrier,
+        )
+
+        await engine.dispose()
+        return dto
+
+    async def _coordinator():
+        upload_task = asyncio.create_task(_run())
+        await barrier_active.wait()
+        barrier_release.set()
+        return await upload_task
+
+    dto = asyncio.run(_coordinator())
+    assert inspected_tx_count == 0, f"Expected 0 active transactions during byte staging, found {inspected_tx_count}"
+    assert dto.id is not None
+    assert (storage.root / f"{dto.id}.bin").exists()
+
+
+def test_upload_catalog_deleted_between_preflight_and_write_compensates(live_client, live_database_url):
+    """V1 compensation test: when catalog item is deleted between preflight and write,
+    write UoW rolls back, deletes promoted file from storage, and leaves no orphan asset.
+    """
+    admin = _admin(live_client)
+    item_id = _create_item(live_client, admin, title_internal="deleted-item-test")
+    storage = live_client.app.state.storage
+
+    async def _run():
+        from jplearn_api.bootstrap import create_uow_factory
+        from jplearn_api.db import create_engine_and_sessions
+        from jplearn_api.application.handlers.media import handle_upload_media
+        from jplearn_api.domain.errors import EntityNotFoundError
+
+        engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
+        uow_factory = create_uow_factory(sessionmaker)
+
+        async def delete_catalog_during_staging():
+            # Delete the catalog item between Scope 1 (preflight) and Scope 3 (write)
+            conn = await asyncpg.connect(live_database_url)
+            try:
+                await conn.execute("DELETE FROM catalog_items WHERE id = $1", item_id)
+            finally:
+                await conn.close()
+
+        first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+        async def payload_stream():
+            yield b"payload bytes for media item"
+
+        with pytest.raises(EntityNotFoundError, match="Catalog item not found"):
+            await handle_upload_media(
+                catalog_item_id=item_id,
+                first_chunk=first_chunk,
+                stream=payload_stream(),
+                filename="deleted_cat.mp4",
+                content_type="video/mp4",
+                uow_factory=uow_factory,
+                storage=storage,
+                base_url="http://localhost:3001",
+                secret="test-secret-at-least-32-bytes-long",
+                _staging_barrier=delete_catalog_during_staging,
+            )
+
+        # Verify DB has 0 media assets for this deleted catalog item
+        conn = await asyncpg.connect(live_database_url)
+        try:
+            row_count = await conn.fetchval(
+                "SELECT count(*) FROM media_assets WHERE catalog_item_id = $1",
+                item_id,
+            )
+            assert row_count == 0
+        finally:
+            await conn.close()
+        await engine.dispose()
+
+    asyncio.run(_run())
+
 
 

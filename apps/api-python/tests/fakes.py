@@ -26,59 +26,6 @@ _active_fake_uow: contextvars.ContextVar[FakeUnitOfWork | None] = contextvars.Co
 )
 
 
-class FakeUnitOfWork(AsyncUnitOfWork):
-    """In-memory Unit of Work recording commit/rollback actions with transactional state isolation."""
-
-    def __init__(self, *participants: Any) -> None:
-        self.participants: list[Any] = list(participants)
-        self.committed = False
-        self.rolled_back = False
-        self._reset_token: contextvars.Token | None = None
-        for p in self.participants:
-            if hasattr(p, "bind_uow"):
-                p.bind_uow(self)
-
-    def register(self, participant: Any) -> None:
-        if participant not in self.participants:
-            self.participants.append(participant)
-            if hasattr(participant, "bind_uow"):
-                participant.bind_uow(self)
-
-    async def __aenter__(self) -> FakeUnitOfWork:
-        self.committed = False
-        self.rolled_back = False
-        self._reset_token = _active_fake_uow.set(self)
-        for p in self.participants:
-            if hasattr(p, "begin_transaction"):
-                p.begin_transaction()
-        return self
-
-    async def __aexit__(
-        self,
-        exc_type: type[BaseException] | None,
-        exc_val: BaseException | None,
-        exc_tb: TracebackType | None,
-    ) -> None:
-        try:
-            if exc_type is not None or not self.committed:
-                await self.rollback()
-        finally:
-            if self._reset_token is not None:
-                _active_fake_uow.reset(self._reset_token)
-                self._reset_token = None
-
-    async def commit(self) -> None:
-        self.committed = True
-        for p in self.participants:
-            if hasattr(p, "commit_transaction"):
-                p.commit_transaction()
-
-    async def rollback(self) -> None:
-        self.rolled_back = True
-        for p in self.participants:
-            if hasattr(p, "rollback_transaction"):
-                p.rollback_transaction()
-
 
 class FakeFlagsRepository(FlagsRepository):
     """In-memory fake implementation of FlagsRepository with transaction isolation."""
@@ -495,3 +442,93 @@ class FakeMediaRepository(MediaRepository):
     async def storage_key_exists(self, storage_key: str) -> bool:
         self._auto_register()
         return any(getattr(a, "storage_key", None) == storage_key for a in self.assets.values())
+
+
+class FakeUnitOfWork(AsyncUnitOfWork):
+    """In-memory Unit of Work recording commit/rollback actions with transactional state isolation."""
+
+    def __init__(
+        self,
+        *participants: Any,
+        users: UserRepository | None = None,
+        catalog: CatalogRepository | None = None,
+        media: MediaRepository | None = None,
+        learning: LearningRepository | None = None,
+        flags: FlagsRepository | None = None,
+    ) -> None:
+        self.participants: list[Any] = list(participants)
+        self.committed = False
+        self.rolled_back = False
+        self._reset_token: contextvars.Token | None = None
+
+        resolved_users = users
+        resolved_catalog = catalog
+        resolved_media = media
+        resolved_learning = learning
+        resolved_flags = flags
+
+        for p in self.participants:
+            if isinstance(p, FakeUserRepository) and resolved_users is None:
+                resolved_users = p
+            elif isinstance(p, FakeCatalogRepository) and resolved_catalog is None:
+                resolved_catalog = p
+            elif isinstance(p, FakeMediaRepository) and resolved_media is None:
+                resolved_media = p
+            elif isinstance(p, FakeLearningRepository) and resolved_learning is None:
+                resolved_learning = p
+            elif isinstance(p, FakeFlagsRepository) and resolved_flags is None:
+                resolved_flags = p
+
+        self.users = resolved_users or FakeUserRepository()
+        self.catalog = resolved_catalog or FakeCatalogRepository()
+        self.media = resolved_media or FakeMediaRepository()
+        self.learning = resolved_learning or FakeLearningRepository()
+        self.flags = resolved_flags or FakeFlagsRepository()
+
+        for repo in (self.users, self.catalog, self.media, self.learning, self.flags):
+            self.register(repo)
+
+        for p in self.participants:
+            if hasattr(p, "bind_uow"):
+                p.bind_uow(self)
+
+    def register(self, participant: Any) -> None:
+        if participant not in self.participants:
+            self.participants.append(participant)
+            if hasattr(participant, "bind_uow"):
+                participant.bind_uow(self)
+
+    async def __aenter__(self) -> FakeUnitOfWork:
+        self.committed = False
+        self.rolled_back = False
+        self._reset_token = _active_fake_uow.set(self)
+        for p in self.participants:
+            if hasattr(p, "begin_transaction"):
+                p.begin_transaction()
+        return self
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
+        try:
+            if exc_type is not None or not self.committed:
+                await self.rollback()
+        finally:
+            if self._reset_token is not None:
+                _active_fake_uow.reset(self._reset_token)
+                self._reset_token = None
+
+    async def commit(self) -> None:
+        self.committed = True
+        for p in self.participants:
+            if hasattr(p, "commit_transaction"):
+                p.commit_transaction()
+
+    async def rollback(self) -> None:
+        self.rolled_back = True
+        for p in self.participants:
+            if hasattr(p, "rollback_transaction"):
+                p.rollback_transaction()

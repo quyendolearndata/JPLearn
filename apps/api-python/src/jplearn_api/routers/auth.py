@@ -33,7 +33,6 @@ async def register(
     session: AsyncSession = Depends(get_session),
 ) -> AuthSession:
     uow = create_uow(session)
-    user_repo = create_user_repository(session)
     hasher = create_password_hasher()
     token_service = create_token_service()
     cmd = RegisterUserCommand(
@@ -42,7 +41,7 @@ async def register(
         secret=request.app.state.settings.jwt_secret,
     )
     try:
-        dto = await handle_register(cmd, uow, user_repo, hasher, token_service)
+        dto = await handle_register(cmd, uow, hasher, token_service)
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
 
@@ -107,9 +106,8 @@ async def logout(
     user: UserDTO = Depends(require_user),
 ) -> Response:
     uow = create_uow(session)
-    user_repo = create_user_repository(session)
     cmd = LogoutUserCommand(user_id=user.id)
-    await handle_logout(cmd, uow, user_repo)
+    await handle_logout(cmd, uow)
     return Response(status_code=204)
 
 

@@ -82,7 +82,6 @@ async def create_catalog_item(
     user: UserDTO = Depends(require_roles("teacher", "admin")),
 ) -> CatalogItemStaff:
     uow = create_uow(session)
-    repo = create_catalog_repository(session)
     cmd = CreateCatalogItemCommand(
         topic_id=body.topic_id,
         ci_level=body.ci_level,
@@ -93,7 +92,7 @@ async def create_catalog_item(
         created_by=user.id,
     )
     try:
-        dto = await handle_create_catalog_item(cmd, uow, repo)
+        dto = await handle_create_catalog_item(cmd, uow)
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
 
@@ -114,10 +113,9 @@ async def submit_level_qa(
     _user: UserDTO = Depends(require_roles("teacher", "admin")),
 ) -> CatalogItemStaff:
     uow = create_uow(session)
-    repo = create_catalog_repository(session)
     cmd = SubmitCatalogForQaCommand(item_id=id)
     try:
-        dto = await handle_submit_qa(cmd, uow, repo)
+        dto = await handle_submit_qa(cmd, uow)
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
 
@@ -143,10 +141,9 @@ async def publish_catalog_item(
     _admin: UserDTO = Depends(require_roles("admin")),
 ) -> CatalogItemStaff:
     uow = create_uow(session)
-    repo = create_catalog_repository(session)
     cmd = PublishCatalogItemCommand(item_id=id)
     try:
-        dto = await handle_publish(cmd, uow, repo, storage)
+        dto = await handle_publish(cmd, uow, storage)
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
 
@@ -172,10 +169,9 @@ async def unpublish_catalog_item(
     _admin: UserDTO = Depends(require_roles("admin")),
 ) -> CatalogItemStaff:
     uow = create_uow(session)
-    repo = create_catalog_repository(session)
     cmd = UnpublishCatalogItemCommand(item_id=id)
     try:
-        dto = await handle_unpublish(cmd, uow, repo)
+        dto = await handle_unpublish(cmd, uow)
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
 

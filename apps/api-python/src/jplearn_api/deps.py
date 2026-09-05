@@ -5,7 +5,8 @@ from fastapi import Depends, Path, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.application.ports.security import MediaUrlSigner
-from jplearn_api.bootstrap import create_media_signer
+from jplearn_api.application.ports.unit_of_work import UnitOfWorkFactory
+from jplearn_api.bootstrap import create_media_signer, create_uow_factory
 from jplearn_api.storage import StoragePort
 
 UUIDPath = Annotated[str, Path(json_schema_extra={"format": "uuid"})]
@@ -15,6 +16,10 @@ async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
     factory = request.app.state.sessionmaker
     async with factory() as session:
         yield session
+
+
+def get_uow_factory(request: Request) -> UnitOfWorkFactory:
+    return create_uow_factory(request.app.state.sessionmaker)
 
 
 def get_storage(request: Request) -> StoragePort:

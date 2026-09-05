@@ -45,18 +45,15 @@ def _events_for(client, session_id: str) -> list[tuple[str, dict]]:
 
 
 async def _end_session(session, user_id: str, session_id: str):
-    from jplearn_api.adapters.persistence.learning_repository import SqlAlchemyLearningRepository
     from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
     from jplearn_api.application.commands import EndLearningSessionCommand
     from jplearn_api.application.handlers.learning import handle_end_session
     from jplearn_api.schemas import LearnerProgressPublic
 
     uow = SqlAlchemyUnitOfWork(session)
-    repo = SqlAlchemyLearningRepository(session)
     dto = await handle_end_session(
         EndLearningSessionCommand(user_id=user_id, session_id=session_id),
         uow,
-        repo,
     )
     return LearnerProgressPublic(
         minutes_comprehensible=dto.minutes_comprehensible,

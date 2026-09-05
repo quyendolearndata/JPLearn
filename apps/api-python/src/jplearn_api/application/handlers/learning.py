@@ -22,7 +22,6 @@ def _now_naive() -> datetime:
 async def handle_start_session(
     cmd: StartLearningSessionCommand,
     uow: AsyncUnitOfWork,
-    repo: LearningRepository,
     *,
     clock: Callable[[], datetime] = _now_naive,
     id_generator: Callable[[], str] = lambda: str(uuid4()),
@@ -37,15 +36,15 @@ async def handle_start_session(
     )
 
     async with uow:
-        await repo.create_session(session)
-        await repo.upsert_device(cmd.user_id, cmd.device_class, started_at)
+        await uow.learning.create_session(session)
+        await uow.learning.upsert_device(cmd.user_id, cmd.device_class, started_at)
 
-        progress = await repo.get_progress(cmd.user_id)
+        progress = await uow.learning.get_progress(cmd.user_id)
         if progress is None:
             raise EntityNotFoundError("Missing learner progress")
 
-        await repo.record_event(cmd.user_id, session.id, "session_started", {}, started_at)
-        await repo.record_event(
+        await uow.learning.record_event(cmd.user_id, session.id, "session_started", {}, started_at)
+        await uow.learning.record_event(
             cmd.user_id,
             session.id,
             "level_exposed",
@@ -66,14 +65,13 @@ async def handle_start_session(
 async def handle_end_session(
     cmd: EndLearningSessionCommand,
     uow: AsyncUnitOfWork,
-    repo: LearningRepository,
     *,
     clock: Callable[[], datetime] = _now_naive,
 ) -> LearnerProgressDTO:
     """End a learning session exactly-once with pessimistic row locking and atomic progress/event update."""
     async with uow:
         # 1. Lock and load session
-        session = await repo.lock_and_get_session(cmd.session_id)
+        session = await uow.learning.lock_and_get_session(cmd.session_id)
         if session is None:
             raise EntityNotFoundError("Session not found")
         if session.user_id != cmd.user_id:
@@ -83,19 +81,19 @@ async def handle_end_session(
         ended_at = clock()
         duration = session.end(ended_at)
         minutes = minutes_from_duration(duration)
-        await repo.update_session(session)
+        await uow.learning.update_session(session)
 
         # 3. Lock user progress row to prevent concurrent lost updates
-        progress = await repo.lock_and_get_progress(cmd.user_id)
+        progress = await uow.learning.lock_and_get_progress(cmd.user_id)
         if progress is None:
             raise EntityNotFoundError("Missing learner progress")
 
         progress.add_minutes(minutes, ended_at)
-        await repo.update_progress(progress)
+        await uow.learning.update_progress(progress)
 
         # 4. Emit exactly one session_ended and one minutes_comprehensible event
-        await repo.record_event(cmd.user_id, session.id, "session_ended", {}, ended_at)
-        await repo.record_event(
+        await uow.learning.record_event(cmd.user_id, session.id, "session_ended", {}, ended_at)
+        await uow.learning.record_event(
             cmd.user_id,
             session.id,
             "minutes_comprehensible",

@@ -41,7 +41,6 @@ async def patch_flags(
     _admin: UserDTO = Depends(require_roles("admin")),
 ) -> Flags:
     uow = create_uow(session)
-    repo = create_flags_repository(session)
     cmd = UpdateFlagsCommand(flags=body.model_dump())
-    updated = await handle_update_flags(cmd, uow, repo)
+    updated = await handle_update_flags(cmd, uow)
     return Flags.model_validate(updated)

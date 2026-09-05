@@ -15,10 +15,9 @@ async def handle_get_flags(repo: FlagsRepository) -> dict[str, bool]:
 async def handle_update_flags(
     cmd: UpdateFlagsCommand,
     uow: AsyncUnitOfWork,
-    repo: FlagsRepository,
 ) -> dict[str, bool]:
     """Atomically update feature flags inside a Unit of Work."""
     async with uow:
-        updated = await repo.update_flags(cmd.flags)
+        updated = await uow.flags.update_flags(cmd.flags)
         await uow.commit()
     return updated

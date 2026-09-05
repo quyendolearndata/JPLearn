@@ -448,7 +448,7 @@ async def test_fake_uow_isolation_and_rollback():
     faulty_repo = FaultyUserRepo()
     uow_faulty = FakeUnitOfWork(faulty_repo)
     with pytest.raises(RuntimeError, match="DB connection dropped"):
-        await handle_register(reg_cmd, uow_faulty, faulty_repo, hasher, tokens)
+        await handle_register(reg_cmd, uow_faulty, hasher, tokens)
 
     assert uow_faulty.rolled_back is True
     assert "isolated@example.com" not in faulty_repo.email_index
@@ -467,7 +467,6 @@ async def test_flags_use_case_in_memory():
     updated = await handle_update_flags(
         UpdateFlagsCommand(flags={"speaking_enabled": True}),
         uow=uow,
-        repo=repo,
     )
     assert updated["speaking_enabled"] is True
     assert uow.committed is True
@@ -477,14 +476,14 @@ async def test_flags_use_case_in_memory():
 @pytest.mark.asyncio
 async def test_identity_use_cases_in_memory():
     """Verify identity use cases run in pure memory with fake ports and zero I/O."""
-    uow = FakeUnitOfWork()
     user_repo = FakeUserRepository()
+    uow = FakeUnitOfWork(user_repo)
     hasher = FakePasswordHasher()
     tokens = FakeTokenService()
 
     # 1. Register
     reg_cmd = RegisterUserCommand(email="test@example.com", password="password123", secret="sec")
-    auth_dto = await handle_register(reg_cmd, uow, user_repo, hasher, tokens)
+    auth_dto = await handle_register(reg_cmd, uow, hasher, tokens)
     assert auth_dto.user.email == "test@example.com"
     assert auth_dto.user.roles == ["learner"]
     assert uow.committed is True
@@ -492,11 +491,11 @@ async def test_identity_use_cases_in_memory():
 
     # 2. Duplicate registration fails closed
     with pytest.raises(DuplicateEmailError):
-        await handle_register(reg_cmd, uow, user_repo, hasher, tokens)
+        await handle_register(reg_cmd, uow, hasher, tokens)
 
     # 3. Password length check
     with pytest.raises(InvalidDomainStateError):
-        await handle_register(RegisterUserCommand(email="a@b.com", password="short", secret="sec"), uow, user_repo, hasher, tokens)
+        await handle_register(RegisterUserCommand(email="a@b.com", password="short", secret="sec"), uow, hasher, tokens)
 
     # 4. Login success
     login_query = AuthenticateUserQuery(email="test@example.com", password="password123", secret="sec")
@@ -512,8 +511,8 @@ async def test_identity_use_cases_in_memory():
     assert me_dto.email == "test@example.com"
 
     # 7. Logout
-    logout_uow = FakeUnitOfWork()
-    await handle_logout(LogoutUserCommand(user_id=auth_dto.user.id), logout_uow, user_repo)
+    logout_uow = FakeUnitOfWork(user_repo)
+    await handle_logout(LogoutUserCommand(user_id=auth_dto.user.id), logout_uow)
     assert logout_uow.committed is True
     updated_user = await user_repo.get_by_id(auth_dto.user.id)
     assert updated_user.token_version == 1
@@ -536,22 +535,22 @@ async def test_catalog_use_cases_in_memory():
         title_internal="Test Item",
         created_by="user1",
     )
-    item_dto = await handle_create_catalog_item(cmd, uow, repo)
+    item_dto = await handle_create_catalog_item(cmd, uow)
     assert item_dto.status == "draft"
     assert uow.committed is True
     assert repo._committed_items[item_dto.id].status == "draft"
 
     # 2. Cannot publish directly from draft
     with pytest.raises(InvalidDomainStateError):
-        await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, repo, storage)
+        await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, storage)
 
     # 3. Submit QA
-    qa_dto = await handle_submit_qa(SubmitCatalogForQaCommand(item_id=item_dto.id), uow, repo)
+    qa_dto = await handle_submit_qa(SubmitCatalogForQaCommand(item_id=item_dto.id), uow)
     assert qa_dto.status == "level_qa"
 
     # 4. Cannot publish without media
     with pytest.raises(MediaInvariantError):
-        await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, repo, storage)
+        await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, storage)
 
     # Attach media ref to domain item
     domain_item = await repo.get_by_id(item_dto.id)
@@ -561,22 +560,22 @@ async def test_catalog_use_cases_in_memory():
 
     # 5. Cannot publish if file missing on storage
     with pytest.raises(MediaInvariantError):
-        await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, repo, storage)
+        await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, storage)
 
     # Stage media to storage
     storage.keys.add("m1.bin")
 
     # 6. Publish succeeds
-    pub_dto = await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, repo, storage)
+    pub_dto = await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, storage)
     assert pub_dto.status == "published"
     assert repo._committed_items[item_dto.id].status == "published"
 
     # 7. Unpublish reverts to draft
-    unpub_dto = await handle_unpublish(UnpublishCatalogItemCommand(item_id=item_dto.id), uow, repo)
+    unpub_dto = await handle_unpublish(UnpublishCatalogItemCommand(item_id=item_dto.id), uow)
     assert unpub_dto.status == "draft"
 
     # 8. Archive
-    await handle_archive(ArchiveCatalogItemCommand(item_id=item_dto.id), uow, repo)
+    await handle_archive(ArchiveCatalogItemCommand(item_id=item_dto.id), uow)
     archived_item = await repo.get_by_id(item_dto.id)
     assert archived_item.status == "archived"
 
@@ -590,7 +589,7 @@ async def test_learning_use_cases_in_memory():
 
     # 1. Start session
     start_cmd = StartLearningSessionCommand(user_id="user_learner", device_class="phone")
-    session_dto = await handle_start_session(start_cmd, uow, repo)
+    session_dto = await handle_start_session(start_cmd, uow)
     assert session_dto.device_class == "phone"
     assert session_dto.ended_at is None
     assert uow.committed is True
@@ -608,16 +607,16 @@ async def test_learning_use_cases_in_memory():
 
     # 3. End session by wrong user raises ForbiddenError
     with pytest.raises(ForbiddenError):
-        await handle_end_session(EndLearningSessionCommand(user_id="other_user", session_id=session_dto.id), uow, repo)
+        await handle_end_session(EndLearningSessionCommand(user_id="other_user", session_id=session_dto.id), uow)
 
     # 4. End session by owner succeeds exactly-once
-    end_dto = await handle_end_session(EndLearningSessionCommand(user_id="user_learner", session_id=session_dto.id), uow, repo)
+    end_dto = await handle_end_session(EndLearningSessionCommand(user_id="user_learner", session_id=session_dto.id), uow)
     assert end_dto.minutes_comprehensible == 13  # 10 + 3 minutes
     assert len(repo._committed_events) == 4  # + session_ended and minutes_comprehensible
 
     # 5. Duplicate end session raises SessionAlreadyEndedError
     with pytest.raises(SessionAlreadyEndedError):
-        await handle_end_session(EndLearningSessionCommand(user_id="user_learner", session_id=session_dto.id), uow, repo)
+        await handle_end_session(EndLearningSessionCommand(user_id="user_learner", session_id=session_dto.id), uow)
 
 
 @pytest.mark.asyncio
@@ -636,6 +635,7 @@ async def test_media_use_cases_in_memory():
     media_repo = FakeMediaRepository(existing_items={"cat-item-1"})
     storage = FakeStoragePort()
     uow = FakeUnitOfWork(media_repo)
+    uow_factory = lambda: uow
 
     async def fake_stream() -> AsyncIterator[bytes]:
         yield b"additional video payload"
@@ -650,8 +650,7 @@ async def test_media_use_cases_in_memory():
             stream=fake_stream(),
             filename="test.mp4",
             content_type="video/mp4",
-            uow=uow,
-            media_repo=media_repo,
+            uow_factory=uow_factory,
             storage=storage,
             base_url="http://localhost:3001",
             secret="test-secret-at-least-32-bytes-long",
@@ -665,8 +664,7 @@ async def test_media_use_cases_in_memory():
             stream=fake_stream(),
             filename="test.avi",
             content_type="video/mp4",
-            uow=uow,
-            media_repo=media_repo,
+            uow_factory=uow_factory,
             storage=storage,
             base_url="http://localhost:3001",
             secret="test-secret-at-least-32-bytes-long",
@@ -679,8 +677,7 @@ async def test_media_use_cases_in_memory():
         stream=fake_stream(),
         filename="video.mp4",
         content_type="video/mp4",
-        uow=uow,
-        media_repo=media_repo,
+        uow_factory=uow_factory,
         storage=storage,
         base_url="http://localhost:3001",
         secret="test-secret-at-least-32-bytes-long",
@@ -709,7 +706,6 @@ async def test_media_use_cases_in_memory():
         await handle_register_hls(
             asset_id=dto.id,
             uow=uow,
-            media_repo=media_repo,
             storage=storage,
             base_url="http://localhost:3001",
             secret="test-secret-at-least-32-bytes-long",
@@ -720,7 +716,6 @@ async def test_media_use_cases_in_memory():
     hls_dto = await handle_register_hls(
         asset_id=dto.id,
         uow=uow,
-        media_repo=media_repo,
         storage=storage,
         base_url="http://localhost:3001",
         secret="test-secret-at-least-32-bytes-long",
@@ -752,7 +747,6 @@ async def test_failure_boundaries_across_use_cases():
         await handle_register(
             RegisterUserCommand(email="failstep@example.com", password="password123", secret="sec"),
             uow,
-            user_repo,
             FakePasswordHasher(),
             FakeTokenService(),
         )
@@ -771,7 +765,6 @@ async def test_failure_boundaries_across_use_cases():
     start_dto = await handle_start_session(
         StartLearningSessionCommand(user_id="learner_fail", device_class="desktop"),
         learn_uow,
-        learn_repo,
     )
     learn_uow.committed = False
 
@@ -779,7 +772,6 @@ async def test_failure_boundaries_across_use_cases():
         await handle_end_session(
             EndLearningSessionCommand(user_id="learner_fail", session_id=start_dto.id),
             learn_uow,
-            learn_repo,
         )
     assert learn_uow.rolled_back is True
     assert learn_repo._committed_progress["learner_fail"].minutes_comprehensible == 10
@@ -806,8 +798,7 @@ async def test_failure_boundaries_across_use_cases():
             stream=single_stream(),
             filename="video.mp4",
             content_type="video/mp4",
-            uow=media_uow,
-            media_repo=media_repo,
+            uow_factory=lambda: media_uow,
             storage=media_storage,
             base_url="http://localhost:3001",
             secret="test-secret-at-least-32-bytes-long",
@@ -815,4 +806,5 @@ async def test_failure_boundaries_across_use_cases():
     assert media_uow.rolled_back is True
     assert not media_repo._committed_assets
     assert len(media_storage.keys) == 0  # Promoted file was cleanly removed!
+
 

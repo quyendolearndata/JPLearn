@@ -75,6 +75,11 @@ def create_uow(session: Any) -> SqlAlchemyUnitOfWork:
     return SqlAlchemyUnitOfWork(session)
 
 
+def create_uow_factory(sessionmaker: Any) -> Callable[[], SqlAlchemyUnitOfWork]:
+    """Factory creating a new Unit of Work factory for write transactions."""
+    return lambda: SqlAlchemyUnitOfWork(sessionmaker)
+
+
 def create_user_repository(session: Any) -> SqlAlchemyUserRepository:
     """Factory creating a User repository adapter."""
     return SqlAlchemyUserRepository(session)
