@@ -64,17 +64,29 @@ async def ready(
         except Exception:
             return False
 
+    db_task = asyncio.create_task(_check_db())
+    storage_task = asyncio.create_task(_check_storage())
+
     try:
-        results = await asyncio.wait_for(
-            asyncio.gather(_check_db(), _check_storage(), return_exceptions=True),
+        await asyncio.wait_for(
+            asyncio.gather(db_task, storage_task, return_exceptions=True),
             timeout=2.0,
         )
-        db_res, storage_res = results
-        db_ok = bool(db_res) if not isinstance(db_res, Exception) else False
-        storage_ok = bool(storage_res) if not isinstance(storage_res, Exception) else False
+    except (TimeoutError, asyncio.TimeoutError):
+        pass
     except Exception:
-        db_ok = False
-        storage_ok = False
+        pass
+
+    db_ok = (
+        db_task.result()
+        if db_task.done() and not db_task.cancelled() and not db_task.exception()
+        else False
+    )
+    storage_ok = (
+        storage_task.result()
+        if storage_task.done() and not storage_task.cancelled() and not storage_task.exception()
+        else False
+    )
 
     is_healthy = db_ok and storage_ok
     if not is_healthy:

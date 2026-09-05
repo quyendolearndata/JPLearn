@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_vali
 
 class RegisterBody(BaseModel):
     email: str = Field(json_schema_extra={"format": "email"})
-    password: str = Field(min_length=10)
+    password: str = Field(json_schema_extra={"minLength": 10})
 
     @field_validator("email")
     @classmethod
@@ -14,6 +14,13 @@ class RegisterBody(BaseModel):
         v = v.strip()
         if not v or "@" not in v:
             raise ValueError("Invalid email format")
+        return v
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_length(cls, v: str) -> str:
+        if len(v) < 10:
+            raise ValueError("Password must be at least 10 characters")
         return v
 
 

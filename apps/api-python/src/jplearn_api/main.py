@@ -38,6 +38,8 @@ async def lifespan(app: FastAPI):
     yield
     await drain_alert_queue(alert_queue, worker_task, timeout=3.0)
     await engine.dispose()
+    if hasattr(app.state, "storage") and hasattr(app.state.storage, "close"):
+        await app.state.storage.close()
 
 
 def create_app(

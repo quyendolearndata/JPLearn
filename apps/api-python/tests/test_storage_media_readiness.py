@@ -327,6 +327,74 @@ async def test_storage_probe_cleanup_on_failure(tmp_path: Path, monkeypatch):
         assert len(remaining) == 0, f"Leaked probe files after failure: {remaining}"
 
 
+@pytest.mark.asyncio
+async def test_readiness_probe_unlink_permission_error_fails(tmp_path: Path, monkeypatch):
+    """R-03: When probe unlink raises PermissionError, check_ready must fail (ok=False)
+    and not swallow the error or leak the local filesystem path."""
+    storage = LocalFilesystemStorage(tmp_path / "probe_unlink_err")
+    real_unlink = Path.unlink
+
+    def faulty_unlink(path_obj, *args, **kwargs):
+        if "__probe__" in str(path_obj):
+            raise PermissionError("EACCES: permission denied to delete probe file")
+        return real_unlink(path_obj, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "unlink", faulty_unlink)
+
+    ok, msg = await storage.check_ready()
+    assert ok is False, f"Probe reported healthy ({ok}) despite cleanup failure!"
+    assert "PermissionError" in msg or "cleanup failed" in msg.lower()
+    # Local path must not be leaked
+    assert str(tmp_path) not in msg
+
+
+@pytest.mark.asyncio
+async def test_readiness_bounded_workers_under_timeout_cancel(tmp_path: Path, monkeypatch):
+    """R-03: Worker threads cannot exceed max capacity when coroutines timeout/cancel."""
+    import threading
+
+    storage = LocalFilesystemStorage(tmp_path / "bounded_workers")
+    block_event = threading.Event()
+    real_open = Path.open
+    active_workers = 0
+    max_active_observed = 0
+    lock = threading.Lock()
+
+    def blocked_open(path_obj, mode="r", *args, **kwargs):
+        nonlocal active_workers, max_active_observed
+        if "__probe__" in str(path_obj) and mode == "wb":
+            with lock:
+                active_workers += 1
+                if active_workers > max_active_observed:
+                    max_active_observed = active_workers
+            block_event.wait(timeout=5)
+            with lock:
+                active_workers -= 1
+        return real_open(path_obj, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", blocked_open)
+
+    try:
+        # Launch 3 consecutive batches of 16 requests that timeout after 0.05s
+        async def run_with_timeout():
+            try:
+                await asyncio.wait_for(storage.check_ready(), timeout=0.05)
+            except (TimeoutError, asyncio.TimeoutError):
+                pass
+
+        for _ in range(3):
+            tasks = [asyncio.create_task(run_with_timeout()) for _ in range(16)]
+            await asyncio.gather(*tasks)
+
+        # Workers running concurrently in background must NOT exceed bounded capacity (16)
+        with lock:
+            assert max_active_observed <= 16, f"Worker explosion: {max_active_observed} workers exceeded limit 16!"
+    finally:
+        block_event.set()
+        # Allow background workers to drain
+        await asyncio.sleep(0.1)
+
+
 def test_readiness_probe_db_timeout_liveness_intact(live_client: TestClient, monkeypatch):
     from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -345,6 +413,24 @@ def test_readiness_probe_db_timeout_liveness_intact(live_client: TestClient, mon
     ready_data = ready_resp.json()
     assert ready_data["ok"] is False
     assert ready_data["database"] == "down"
+
+
+def test_readiness_probe_storage_timeout_db_intact(live_client: TestClient, monkeypatch):
+    """R-03: Storage probe timeout must report storage: 'down' while keeping database: 'up'."""
+    storage = live_client.app.state.storage
+
+    async def slow_check_ready():
+        await asyncio.sleep(3.0)
+        return True, "up"
+
+    monkeypatch.setattr(storage, "check_ready", slow_check_ready)
+
+    ready_resp = live_client.get("/ready")
+    assert ready_resp.status_code == 503
+    ready_data = ready_resp.json()
+    assert ready_data["ok"] is False
+    assert ready_data["database"] == "up"
+    assert ready_data["storage"] == "down"
 
 
 # ==============================================================================

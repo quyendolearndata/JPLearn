@@ -3,14 +3,20 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 import asyncio
 from collections.abc import AsyncIterator
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import logging
 import os
 from pathlib import Path
+import threading
 from typing import Any
 import uuid
 
+logger = logging.getLogger("jplearn.storage")
+
 CHUNK_SIZE = 64 * 1024  # 64 KB
 MAX_MEDIA_BYTES = 500 * 1024 * 1024  # 500 MB max for video per ADR-005
+MAX_PROBE_WORKERS = 16
 
 
 @dataclass(frozen=True)
@@ -80,12 +86,23 @@ class StoragePort(ABC):
         """Verify storage write, read, and delete capability. Returns (ok, message)."""
         ...
 
+    async def close(self) -> None:
+        """Release underlying executor resources upon shutdown."""
+        pass
+
 
 class LocalFilesystemStorage(StoragePort):
     def __init__(self, root: Path | str) -> None:
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
-        self._probe_semaphore = asyncio.Semaphore(16)
+        self._probe_executor = ThreadPoolExecutor(
+            max_workers=MAX_PROBE_WORKERS,
+            thread_name_prefix="jplearn-storage-probe",
+        )
+        self._active_probe_permits = threading.Semaphore(MAX_PROBE_WORKERS)
+
+    async def close(self) -> None:
+        self._probe_executor.shutdown(wait=False, cancel_futures=True)
 
     def _resolve(self, key: str) -> Path:
         # Normalize and guard against directory traversal (including sibling prefix, absolute path, and escape)
@@ -228,6 +245,10 @@ class LocalFilesystemStorage(StoragePort):
         return keys
 
     async def check_ready(self) -> tuple[bool, str]:
+        acquired = self._active_probe_permits.acquire(blocking=False)
+        if not acquired:
+            return False, "storage probe capacity exhausted"
+
         probe_key = f"__probe__/probe_{uuid.uuid4().hex}.tmp"
         try:
             probe_path = self._resolve(probe_key)
@@ -235,24 +256,44 @@ class LocalFilesystemStorage(StoragePort):
             probe_content = b"readiness_probe_active"
 
             def _sync_probe() -> None:
+                probe_err = None
+                cleanup_err = None
                 try:
-                    with probe_path.open("wb") as f:
-                        f.write(probe_content)
-                        f.flush()
-                        os.fsync(f.fileno())
-                    with probe_path.open("rb") as f:
-                        read_back = f.read()
-                    if read_back != probe_content:
-                        raise RuntimeError("Readback mismatch during storage probe")
-                finally:
                     try:
-                        if probe_path.exists():
-                            probe_path.unlink(missing_ok=True)
-                    except Exception:
-                        pass
+                        with probe_path.open("wb") as f:
+                            f.write(probe_content)
+                            f.flush()
+                            os.fsync(f.fileno())
+                        with probe_path.open("rb") as f:
+                            read_back = f.read()
+                        if read_back != probe_content:
+                            raise RuntimeError("Readback mismatch during storage probe")
+                    except Exception as exc:
+                        probe_err = exc
+                    finally:
+                        try:
+                            if probe_path.exists():
+                                probe_path.unlink()
+                        except Exception as exc:
+                            cleanup_err = exc
+                            logger.error(
+                                "storage_probe_cleanup_failed",
+                                extra={"error_class": type(exc).__name__},
+                            )
 
-            async with self._probe_semaphore:
-                await asyncio.to_thread(_sync_probe)
+                    if probe_err and cleanup_err:
+                        raise RuntimeError(
+                            f"Storage probe failed ({type(probe_err).__name__}) and cleanup failed ({type(cleanup_err).__name__})"
+                        )
+                    elif probe_err:
+                        raise probe_err
+                    elif cleanup_err:
+                        raise RuntimeError(f"Storage probe cleanup failed: {type(cleanup_err).__name__}")
+                finally:
+                    self._active_probe_permits.release()
+
+            loop = asyncio.get_running_loop()
+            await loop.run_in_executor(self._probe_executor, _sync_probe)
             return True, "up"
         except Exception as exc:
             return False, f"storage probe failed: {exc}"
