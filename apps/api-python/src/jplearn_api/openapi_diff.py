@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import argparse
 import copy
+import json
 import os
 from pathlib import Path
 import sys
@@ -199,16 +201,16 @@ def compare_schemas(
     if h_type and g_type and h_type != g_type:
         problems.append(f"{ctx}: type mismatch: generated {g_type!r} != handwritten {h_type!r}")
 
-    # Enums check - case-sensitive and type-preserving
+    # Enums check - case-sensitive and type-preserving (distinguish bool from int)
     if "enum" in h:
         if "enum" not in g:
             problems.append(f"{ctx}: missing enum in generated schema")
         else:
-            h_enum = set(h["enum"])
-            g_enum = set(g.get("enum", []))
+            h_enum = set((type(x).__name__, x) for x in h["enum"])
+            g_enum = set((type(x).__name__, x) for x in g.get("enum", []))
             if h_enum != g_enum:
                 problems.append(
-                    f"{ctx}: enum mismatch: generated {sorted(str(x) for x in g_enum)} != handwritten {sorted(str(x) for x in h_enum)}"
+                    f"{ctx}: enum mismatch: generated {sorted(f'{t}:{v}' for t, v in g_enum)} != handwritten {sorted(f'{t}:{v}' for t, v in h_enum)}"
                 )
     elif "enum" in g:
         problems.append(f"{ctx}: unexpected enum in generated schema: {g.get('enum')}")
@@ -233,21 +235,25 @@ def compare_schemas(
     elif "maximum" in g:
         problems.append(f"{ctx}: unexpected maximum in generated schema: {g.get('maximum')}")
 
-    # MinLength check: cannot be omitted or loosened
+    # MinLength check: bi-directional exact comparison
     if "minLength" in h:
         g_min_len = g.get("minLength")
         if g_min_len is None:
             problems.append(f"{ctx}: missing minLength (expected {h['minLength']})")
-        elif g_min_len < h["minLength"]:
-            problems.append(f"{ctx}: minLength loosened: generated {g_min_len} < handwritten {h['minLength']}")
+        elif g_min_len != h["minLength"]:
+            problems.append(f"{ctx}: minLength mismatch: generated {g_min_len} != handwritten {h['minLength']}")
+    elif "minLength" in g:
+        problems.append(f"{ctx}: unexpected minLength in generated schema: {g.get('minLength')}")
 
-    # MaxLength check: cannot be omitted or loosened
+    # MaxLength check: bi-directional exact comparison
     if "maxLength" in h:
         g_max_len = g.get("maxLength")
         if g_max_len is None:
             problems.append(f"{ctx}: missing maxLength (expected {h['maxLength']})")
-        elif g_max_len > h["maxLength"]:
-            problems.append(f"{ctx}: maxLength loosened: generated {g_max_len} > handwritten {h['maxLength']}")
+        elif g_max_len != h["maxLength"]:
+            problems.append(f"{ctx}: maxLength mismatch: generated {g_max_len} != handwritten {h['maxLength']}")
+    elif "maxLength" in g:
+        problems.append(f"{ctx}: unexpected maxLength in generated schema: {g.get('maxLength')}")
 
     # Pattern check: cannot be omitted or mismatched
     if "pattern" in h:
@@ -256,6 +262,8 @@ def compare_schemas(
             problems.append(f"{ctx}: missing pattern (expected {h['pattern']!r})")
         elif g_pattern != h["pattern"]:
             problems.append(f"{ctx}: pattern mismatch: generated {g_pattern!r} != handwritten {h['pattern']!r}")
+    elif "pattern" in g:
+        problems.append(f"{ctx}: unexpected pattern in generated schema: {g.get('pattern')!r}")
 
     # Format check (uuid, email, date-time, uri, etc.)
     if "format" in h and h["format"] not in ("binary",):
@@ -516,16 +524,33 @@ def load_handwritten_spec(path: Path | None = None) -> dict[str, Any]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    del argv
-    from jplearn_api.main import create_app
-    from jplearn_api.settings import Settings
+    parser = argparse.ArgumentParser(description="Compare handwritten and generated OpenAPI specs.")
+    parser.add_argument("--handwritten", type=str, default=None, help="Path to handwritten openapi.yaml")
+    parser.add_argument("--generated", type=str, default=None, help="Path to generated openapi spec")
+    args, _ = parser.parse_known_args(argv if argv is not None else sys.argv[1:])
 
-    settings = Settings(
-        database_url="postgresql://jplearn_test:jplearn_test@127.0.0.1:5432/jplearn_test",
-        jwt_secret="test-secret-at-least-32-bytes-long-for-pyjwt-security",
-        openapi_ui=False,
-    )
-    problems = compare_openapi(load_handwritten_spec(), create_app(settings).openapi())
+    handwritten_path = Path(args.handwritten) if args.handwritten else handwritten_spec_path()
+    handwritten = load_handwritten_spec(handwritten_path)
+
+    if args.generated:
+        gen_path = Path(args.generated)
+        with gen_path.open(encoding="utf-8") as f:
+            if gen_path.suffix in (".yaml", ".yml"):
+                generated = yaml.safe_load(f)
+            else:
+                generated = json.load(f)
+    else:
+        from jplearn_api.main import create_app
+        from jplearn_api.settings import Settings
+
+        settings = Settings(
+            database_url="postgresql://jplearn_test:jplearn_test@127.0.0.1:5432/jplearn_test",
+            jwt_secret="test-secret-at-least-32-bytes-long-for-pyjwt-security",
+            openapi_ui=False,
+        )
+        generated = create_app(settings).openapi()
+
+    problems = compare_openapi(handwritten, generated)
     for problem in problems:
         print(problem)
     return 1 if problems else 0

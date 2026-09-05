@@ -298,3 +298,104 @@ def test_mutation_12_undefined_ref_fails(baseline_specs, monkeypatch: pytest.Mon
     code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
     assert code == 1
     assert "undefined $ref" in out
+
+
+def test_mutation_13_password_min_length_100_fails(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """R-01: Increasing password minLength from 10 to 100 must fail."""
+    handwritten, generated = baseline_specs
+    mutated = copy.deepcopy(generated)
+
+    mutated["components"]["schemas"]["RegisterBody"]["properties"]["password"]["minLength"] = 100
+
+    problems = compare_openapi(handwritten, mutated)
+    assert any("minLength mismatch: generated 100 != handwritten 10" in p for p in problems)
+
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "minLength mismatch" in out
+
+
+def test_mutation_14_password_min_length_1_fails(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """R-01: Decreasing password minLength from 10 to 1 must fail."""
+    handwritten, generated = baseline_specs
+    mutated = copy.deepcopy(generated)
+
+    mutated["components"]["schemas"]["RegisterBody"]["properties"]["password"]["minLength"] = 1
+
+    problems = compare_openapi(handwritten, mutated)
+    assert any("minLength mismatch: generated 1 != handwritten 10" in p for p in problems)
+
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "minLength mismatch" in out
+
+
+def test_mutation_15_password_min_length_dropped_fails(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+    """R-01: Dropping password minLength must fail."""
+    handwritten, generated = baseline_specs
+    mutated = copy.deepcopy(generated)
+
+    del mutated["components"]["schemas"]["RegisterBody"]["properties"]["password"]["minLength"]
+
+    problems = compare_openapi(handwritten, mutated)
+    assert any("missing minLength (expected 10)" in p for p in problems)
+
+    code, out = _run_cli_mutant(monkeypatch, capsys, mutated)
+    assert code == 1
+    assert "missing minLength" in out
+
+
+def test_mutation_16_max_length_variations_fail(baseline_specs) -> None:
+    """R-01: MaxLength increased, decreased, dropped, or unexpectedly added must fail."""
+    from jplearn_api.openapi_diff import compare_schemas
+
+    h_spec = {}
+    g_spec = {}
+
+    h_schema = {"type": "string", "maxLength": 100}
+
+    # 1. Increased maxLength
+    g_increased = {"type": "string", "maxLength": 200}
+    p1 = compare_schemas(h_spec, g_spec, h_schema, g_increased, "ctx")
+    assert any("maxLength mismatch: generated 200 != handwritten 100" in p for p in p1)
+
+    # 2. Decreased maxLength
+    g_decreased = {"type": "string", "maxLength": 50}
+    p2 = compare_schemas(h_spec, g_spec, h_schema, g_decreased, "ctx")
+    assert any("maxLength mismatch: generated 50 != handwritten 100" in p for p in p2)
+
+    # 3. Dropped maxLength
+    g_dropped = {"type": "string"}
+    p3 = compare_schemas(h_spec, g_spec, h_schema, g_dropped, "ctx")
+    assert any("missing maxLength (expected 100)" in p for p in p3)
+
+    # 4. Unexpected maxLength added
+    h_no_max = {"type": "string"}
+    g_added = {"type": "string", "maxLength": 100}
+    p4 = compare_schemas(h_spec, g_spec, h_no_max, g_added, "ctx")
+    assert any("unexpected maxLength in generated schema: 100" in p for p in p4)
+
+
+def test_mutation_17_unexpected_min_length_added_fails(baseline_specs) -> None:
+    """R-01: Unexpected minLength added when not in contract must fail."""
+    from jplearn_api.openapi_diff import compare_schemas
+
+    h_spec, g_spec = {}, {}
+    h_schema = {"type": "string"}
+    g_schema = {"type": "string", "minLength": 5}
+
+    problems = compare_schemas(h_spec, g_spec, h_schema, g_schema, "ctx")
+    assert any("unexpected minLength in generated schema: 5" in p for p in problems)
+
+
+def test_mutation_18_enum_type_bool_vs_int_fails(baseline_specs) -> None:
+    """R-01: Enum distinguishing bool and int types (e.g. [True] vs [1])."""
+    from jplearn_api.openapi_diff import compare_schemas
+
+    h_spec, g_spec = {}, {}
+    h_schema = {"enum": [True]}
+    g_schema = {"enum": [1]}
+
+    problems = compare_schemas(h_spec, g_spec, h_schema, g_schema, "ctx")
+    assert any("enum mismatch" in p for p in problems)
+

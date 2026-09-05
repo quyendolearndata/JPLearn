@@ -4,28 +4,22 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
-EmailType = Annotated[
-    str,
-    StringConstraints(strip_whitespace=True, pattern=r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"),
-    Field(json_schema_extra={"format": "email"}),
-]
-
-
 class RegisterBody(BaseModel):
-    email: EmailType
-    password: str = Field(json_schema_extra={"minLength": 10})
+    email: str = Field(json_schema_extra={"format": "email"})
+    password: str = Field(min_length=10)
 
-    @field_validator("password")
+    @field_validator("email")
     @classmethod
-    def validate_password_length(cls, v: str) -> str:
-        if len(v) < 10:
-            raise ValueError("Password must be at least 10 characters")
+    def validate_email(cls, v: str) -> str:
+        v = v.strip()
+        if not v or "@" not in v:
+            raise ValueError("Invalid email format")
         return v
 
 
 class LoginBody(BaseModel):
-    email: str = Field(min_length=1)
-    password: str = Field(min_length=1)
+    email: str
+    password: str
 
 
 class UserPublic(BaseModel):
@@ -50,12 +44,12 @@ class Flags(BaseModel):
 
 
 class CatalogItemWrite(BaseModel):
-    topic_id: str = Field(min_length=1)
+    topic_id: str
     ci_level: int
-    duration_seconds: int = Field(gt=0)
+    duration_seconds: int
     media_type: Literal["video", "audio"]
     visual_support: Literal["high", "medium", "low"]
-    title_internal: str = Field(min_length=1)
+    title_internal: str
 
 
 class CatalogItemPublic(BaseModel):
