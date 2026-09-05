@@ -14,7 +14,7 @@ from jplearn_api.domain.learning import (
     LearnerProgress as DomainLearnerProgress,
     LearningSession as DomainLearningSession,
 )
-from jplearn_api.models import (
+from jplearn_api.adapters.persistence.models import (
     Device,
     LearnerProgress as OrmLearnerProgress,
     LearningEvent as OrmLearningEvent,

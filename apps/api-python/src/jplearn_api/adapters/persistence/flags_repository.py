@@ -7,7 +7,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.application.ports.repositories import FlagsRepository
-from jplearn_api.models import FeatureFlag
+from jplearn_api.adapters.persistence.models import FeatureFlag
 
 FLAG_KEYS = (
     "speaking_enabled",

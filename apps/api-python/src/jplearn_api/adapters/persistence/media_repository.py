@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.application.ports.repositories import MediaRepository
 from jplearn_api.domain.media import MediaAsset as DomainMediaAsset
-from jplearn_api.models import CatalogItem as OrmCatalogItem, MediaAsset as OrmMediaAsset
+from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem, MediaAsset as OrmMediaAsset
 
 
 def _to_domain(orm_asset: OrmMediaAsset) -> DomainMediaAsset:

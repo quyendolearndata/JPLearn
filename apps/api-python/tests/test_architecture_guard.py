@@ -32,6 +32,7 @@ def test_domain_layer_dependencies():
         "jplearn_api.application",
         "jplearn_api.adapters",
         "jplearn_api.entrypoints",
+        "jplearn_api.models",
         "fastapi",
         "starlette",
         "pydantic",
@@ -57,6 +58,7 @@ def test_application_layer_dependencies():
     forbidden_prefixes = (
         "jplearn_api.adapters",
         "jplearn_api.entrypoints",
+        "jplearn_api.models",
         "fastapi",
         "starlette",
         "pydantic",
