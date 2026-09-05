@@ -182,7 +182,7 @@ sequenceDiagram
 ```mermaid
 flowchart LR
   Dev[Laptop] --> Compose[docker compose Postgres]
-  Dev --> API[API :3001]
+  Dev --> API[FastAPI :3002]
   Dev --> Web[Web :3000]
   Dev --> Expo[Expo]
   API --> Compose
@@ -191,4 +191,5 @@ flowchart LR
   Staging --> TF[TestFlight / internal Android]
 ```
 
-Prod không nằm trong Q1.
+Prod không nằm trong Q1. Phần staging trong sơ đồ là topology mục tiêu, không phải
+bằng chứng hạ tầng đã provision/nghiệm thu; R-09 vẫn HOLD, xem [deployment.md](deployment.md).

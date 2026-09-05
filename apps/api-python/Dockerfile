@@ -36,4 +36,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 EXPOSE 3002
 
-CMD ["uvicorn", "jplearn_api.main:app", "--host", "0.0.0.0", "--port", "3002"]
+CMD ["uvicorn", "jplearn_api.entrypoints.http.app:app", "--host", "0.0.0.0", "--port", "3002"]

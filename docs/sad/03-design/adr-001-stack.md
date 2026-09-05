@@ -5,6 +5,11 @@
 
 ## Quyết định
 
+Phần quyết định gốc dưới đây là lịch sử. Runtime hiện hành là FastAPI/Python,
+DDL Alembic (ADR-003/004), cấu trúc ADR-006; web/mobile vẫn TypeScript. Storage
+adapter hiện tại là filesystem local, không phải object-storage service đã triển khai.
+Xem [backend docs](../../backend/README.md) để sử dụng/phát triển/vận hành.
+
 Monorepo TypeScript: Next.js (web + CMS route), Expo (iOS, iPad, Android), NestJS API, PostgreSQL, object storage cho media.
 
 Từ chối Hướng B (Swift+Kotlin tách) vì chi phí team. Từ chối Hướng C (PWA-only) vì iPad/phone media và layout.

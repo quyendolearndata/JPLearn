@@ -19,8 +19,8 @@ from pathlib import Path
 import asyncpg
 import pytest
 
-from jplearn_api.migrate import downgrade, stamp, upgrade
-from jplearn_api.schema_snapshot import diff, snapshot_url
+from jplearn_api.entrypoints.cli.migrate import downgrade, stamp, upgrade
+from jplearn_api.adapters.persistence.schema_snapshot import diff, snapshot_url
 from pg_harness import (
     seed_database,
     start_docker_postgres,

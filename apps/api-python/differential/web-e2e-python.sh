@@ -96,7 +96,7 @@ echo "== 2/5 FastAPI :$PY_PORT =="
   ENVIRONMENT="test" \
   CORS_ORIGIN_REGEX="^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$" \
   PYTHONPATH=src \
-  exec .venv/bin/uvicorn jplearn_api.main:app --port "$PY_PORT" >"$RUN_DIR/api.log" 2>&1
+  exec .venv/bin/uvicorn jplearn_api.entrypoints.http.app:app --port "$PY_PORT" >"$RUN_DIR/api.log" 2>&1
 ) &
 API_PID=$!
 wait_http "http://localhost:$PY_PORT/ready" "FastAPI"

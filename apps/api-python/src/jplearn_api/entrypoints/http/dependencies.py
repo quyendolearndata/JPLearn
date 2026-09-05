@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from jplearn_api.application.ports.security import MediaUrlSigner
 from jplearn_api.application.ports.unit_of_work import UnitOfWorkFactory
 from jplearn_api.bootstrap import create_media_signer, create_uow_factory
-from jplearn_api.storage import StoragePort
+from jplearn_api.adapters.storage.local import StoragePort
 
 UUIDPath = Annotated[str, Path(json_schema_extra={"format": "uuid"})]
 

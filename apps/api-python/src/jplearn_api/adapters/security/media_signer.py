@@ -6,7 +6,7 @@ from collections.abc import Callable
 from time import time
 
 from jplearn_api.application.ports.security import MediaUrlSigner
-from jplearn_api.signed_url import sign_hls_url, sign_media_url, verify_media_sig
+from jplearn_api.adapters.security.signed_url import sign_hls_url, sign_media_url, verify_media_sig
 
 
 class HmacMediaUrlSigner(MediaUrlSigner):

@@ -8,9 +8,9 @@ from sqlalchemy.orm import selectinload
 
 from jplearn_api.adapters.persistence.models import User
 from jplearn_api.application.read_models import UserDTO
-from jplearn_api.deps import get_session
-from jplearn_api.signed_url import verify_media_sig
-from jplearn_api.tokens import decode_access_token
+from jplearn_api.entrypoints.http.dependencies import get_session
+from jplearn_api.adapters.security.signed_url import verify_media_sig
+from jplearn_api.adapters.security.tokens import decode_access_token
 
 _bearer = HTTPBearer(auto_error=False, scheme_name="bearerAuth")
 

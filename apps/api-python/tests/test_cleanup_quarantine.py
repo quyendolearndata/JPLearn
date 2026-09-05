@@ -65,7 +65,7 @@ async def test_rollback_failure_never_sets_confirmed_flag_and_close_is_observed(
 @pytest.mark.asyncio
 async def test_postgres_quarantined_rollback_keeps_connection_until_settled(live_database_url):
     from sqlalchemy import text
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from conftest import _settings
     engine, factory = create_engine_and_sessions(_settings(live_database_url))
     release = asyncio.Event()

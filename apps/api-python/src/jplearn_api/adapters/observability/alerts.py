@@ -10,9 +10,10 @@ from typing import Any
 
 import httpx
 
-from jplearn_api.sanitizer import sanitize_message
+from jplearn_api.adapters.observability.sanitizer import sanitize_message
 from jplearn_api.settings import Settings
 
+# Keep the operational logger name stable across package relocation.
 logger = logging.getLogger("jplearn_api.alert")
 
 ALERT_QUEUE_MAX_SIZE = 1000

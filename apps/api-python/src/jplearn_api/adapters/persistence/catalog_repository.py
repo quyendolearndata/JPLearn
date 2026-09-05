@@ -13,7 +13,7 @@ from jplearn_api.application.read_models import CatalogItemPublicDTO
 from jplearn_api.domain.catalog import CatalogItem as DomainCatalogItem, MediaRef
 from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem, Topic
 from jplearn_api.settings import Settings
-from jplearn_api.signed_url import sign_hls_url, sign_media_url
+from jplearn_api.adapters.security.signed_url import sign_hls_url, sign_media_url
 
 
 def _to_domain(orm_item: OrmCatalogItem) -> DomainCatalogItem:

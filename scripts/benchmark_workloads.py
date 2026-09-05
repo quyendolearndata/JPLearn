@@ -67,8 +67,8 @@ def run_bench(repo_dir: Path, out_path: Path, label: str) -> dict[str, Any]:
 
     from pg_harness import start_docker_postgres, stop_docker_postgres, seed_database
     from helpers import ensure_topics, grant_role, insert_media, register
-    from conftest import _settings
-    from jplearn_api.main import create_app
+    # Each revision's test harness owns its app import path (including pre-layout baselines).
+    from conftest import _settings, create_app
     from fastapi.testclient import TestClient
     from sqlalchemy import event
 

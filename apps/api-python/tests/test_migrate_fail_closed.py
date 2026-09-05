@@ -17,8 +17,8 @@ from pathlib import Path
 import asyncpg
 import pytest
 
-from jplearn_api.migrate import downgrade, load_baseline_schema, stamp, upgrade
-from jplearn_api.schema_snapshot import diff, snapshot_url
+from jplearn_api.entrypoints.cli.migrate import downgrade, load_baseline_schema, stamp, upgrade
+from jplearn_api.adapters.persistence.schema_snapshot import diff, snapshot_url
 from pg_harness import start_docker_postgres, stop_docker_postgres
 
 
@@ -255,7 +255,7 @@ def test_destructive_downgrade_unconfigured_env_preserves_data(
 
 
 def test_migrate_cli_help_and_unknown_exit_codes(capsys: pytest.CaptureFixture[str]) -> None:
-    from jplearn_api.migrate import main
+    from jplearn_api.entrypoints.cli.migrate import main
 
     # 1. Help flags return 0
     assert main(["--help"]) == 0

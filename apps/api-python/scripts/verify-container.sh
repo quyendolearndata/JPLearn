@@ -74,7 +74,7 @@ echo "✓ Non-root UID 10001 verified"
 echo ""
 echo "--- [3/7] Verifying Packaged Wheel Resources ---"
 docker run --rm "$IMAGE_TAG" python -c "
-from jplearn_api.migrate import load_baseline_schema
+from jplearn_api.entrypoints.cli.migrate import load_baseline_schema
 schema = load_baseline_schema()
 assert 'users' in schema['tables'], 'Missing users table in schema'
 assert len(schema['tables']) == 10, f'Expected 10 tables, got {len(schema[\"tables\"])}'
@@ -82,7 +82,7 @@ print(f'Successfully loaded {len(schema[\"tables\"])} baseline tables without re
 "
 # Test fail-closed on corrupted/missing resource path
 set +e
-docker run --rm -e SCHEMA_BASELINE_PATH=/nonexistent "$IMAGE_TAG" python -c "from jplearn_api.migrate import load_baseline_schema; load_baseline_schema()" 2>/dev/null
+docker run --rm -e SCHEMA_BASELINE_PATH=/nonexistent "$IMAGE_TAG" python -c "from jplearn_api.entrypoints.cli.migrate import load_baseline_schema; load_baseline_schema()" 2>/dev/null
 CORRUPT_EXIT=$?
 set -e
 if [ "$CORRUPT_EXIT" -eq 0 ]; then

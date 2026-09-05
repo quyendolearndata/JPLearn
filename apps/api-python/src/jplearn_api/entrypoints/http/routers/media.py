@@ -18,14 +18,14 @@ from jplearn_api.application.handlers.media import (
 from jplearn_api.application.ports.unit_of_work import UnitOfWorkFactory
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_media_repository, create_uow
-from jplearn_api.deps import UUIDPath, get_media_signer, get_session, get_storage, get_uow_factory
+from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_media_signer, get_session, get_storage, get_uow_factory
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.domain.range_parser import RangeNotSatisfiableError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
-from jplearn_api.roles import require_roles
-from jplearn_api.schemas import MediaAssetStaff
-from jplearn_api.security import require_media_access
-from jplearn_api.storage import StoragePort
+from jplearn_api.entrypoints.http.roles import require_roles
+from jplearn_api.entrypoints.http.schemas import MediaAssetStaff
+from jplearn_api.entrypoints.http.security import require_media_access
+from jplearn_api.adapters.storage.local import StoragePort
 
 router = APIRouter()
 

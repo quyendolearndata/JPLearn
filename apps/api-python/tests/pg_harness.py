@@ -44,7 +44,7 @@ def assert_test_database_url(database_url: str) -> None:
 
 def migrate_database(database_url: str, *, seed: bool = False) -> None:
     assert_test_database_url(database_url)
-    from jplearn_api.migrate import upgrade
+    from jplearn_api.entrypoints.cli.migrate import upgrade
 
     upgrade(database_url)
     if seed:
@@ -58,7 +58,7 @@ def seed_database(database_url: str) -> None:
     os.environ.setdefault("BOOTSTRAP_ADMIN_EMAIL", "admin@jplearn.local")
     os.environ.setdefault("BOOTSTRAP_ADMIN_PASSWORD", "password10")
 
-    from jplearn_api.seed import seed_url
+    from jplearn_api.entrypoints.cli.seed import seed_url
 
     asyncio.run(seed_url(database_url))
 

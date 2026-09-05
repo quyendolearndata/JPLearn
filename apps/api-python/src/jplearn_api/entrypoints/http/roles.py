@@ -3,7 +3,7 @@ from collections.abc import Callable
 from fastapi import Depends, HTTPException
 
 from jplearn_api.application.read_models import UserDTO
-from jplearn_api.security import require_user
+from jplearn_api.entrypoints.http.security import require_user
 
 
 def require_roles(*roles: str) -> Callable[..., UserDTO]:

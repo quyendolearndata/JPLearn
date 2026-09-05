@@ -15,7 +15,7 @@ import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
 
-from jplearn_api.main import create_app
+from jplearn_api.entrypoints.http.app import create_app
 from jplearn_api.settings import Settings
 
 
@@ -309,7 +309,7 @@ def test_slow_webhook_does_not_block_client_response() -> None:
 
 def test_alert_queue_overflow_drops_safely() -> None:
     import asyncio
-    from jplearn_api.alert import enqueue_alert
+    from jplearn_api.adapters.observability.alerts import enqueue_alert
 
     small_queue: asyncio.Queue = asyncio.Queue(maxsize=2)
     settings = Settings(
@@ -358,7 +358,7 @@ def test_alert_queue_overflow_drops_safely() -> None:
 
 def test_production_cors_fail_closed_middleware() -> None:
     """R-02: Production fails closed for unapproved origins, HTTP, lookalikes, null, exp://."""
-    from jplearn_api.main import create_app
+    from jplearn_api.entrypoints.http.app import create_app
 
     settings = Settings(
         environment="production",
@@ -424,7 +424,7 @@ def test_production_cors_fail_closed_middleware() -> None:
 
 def test_local_test_cors_expo_and_dynamic_ports() -> None:
     """R-02: Local/test environment permits Expo and dynamic local ports."""
-    from jplearn_api.main import create_app
+    from jplearn_api.entrypoints.http.app import create_app
 
     settings = Settings(
         environment="test",

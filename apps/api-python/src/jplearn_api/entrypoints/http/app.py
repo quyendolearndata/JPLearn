@@ -8,19 +8,19 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
-from jplearn_api.alert import alert_worker, drain_alert_queue
+from jplearn_api.adapters.observability.alerts import alert_worker, drain_alert_queue
 from jplearn_api.bootstrap import create_media_signer, drain_quarantined_scopes
-from jplearn_api.db import create_engine_and_sessions
-from jplearn_api.errors import (
+from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
+from jplearn_api.entrypoints.http.errors import (
     http_exception_handler,
     unhandled_exception_handler,
     validation_exception_handler,
 )
-from jplearn_api.middleware import RequestIdMiddleware
-from jplearn_api.openapi_diff import normalize_security_scheme_names
-from jplearn_api.routers import auth, catalog, flags, health, media, sessions
+from jplearn_api.entrypoints.http.middleware import RequestIdMiddleware
+from jplearn_api.entrypoints.http.openapi import normalize_security_scheme_names
+from jplearn_api.entrypoints.http.routers import auth, catalog, flags, health, media, sessions
 from jplearn_api.settings import Settings, get_settings
-from jplearn_api.storage import LocalFilesystemStorage, StoragePort
+from jplearn_api.adapters.storage.local import LocalFilesystemStorage, StoragePort
 
 
 @asynccontextmanager

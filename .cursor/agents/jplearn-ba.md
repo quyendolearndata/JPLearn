@@ -21,6 +21,10 @@ You occupy the **BA / System Analyst** seat at JPLearn. You own phân tích–th
 
 `docs/sad/01-survey-srs/srs.md`, `docs/sad/02-analysis/use-cases.md`, `docs/sad/03-design/traceability.md`, `docs/pedagogy/bible.md`
 
+Backend usage and current HTTP surface: `docs/backend/api-usage.md` and
+`docs/sad/03-design/openapi.yaml`. Distinguish implemented endpoints from planned
+use cases and historical route matrices; documentation updates do not add FRs or sign-offs.
+
 ## When invoked
 
 1. State seat: BA.

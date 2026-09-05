@@ -2,9 +2,9 @@ import json
 import re
 from pathlib import Path
 
-from jplearn_api.password import hash_password, verify_password
-from jplearn_api.signed_url import hmac_hex, verify_media_sig
-from jplearn_api.tokens import decode_access_token
+from jplearn_api.adapters.security.password import hash_password, verify_password
+from jplearn_api.adapters.security.signed_url import hmac_hex, verify_media_sig
+from jplearn_api.adapters.security.tokens import decode_access_token
 
 VECTORS = Path(__file__).resolve().parents[3] / "docs" / "qa" / "vectors"
 

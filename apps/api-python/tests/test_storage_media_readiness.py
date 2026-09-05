@@ -10,8 +10,8 @@ import pytest
 
 from helpers import ensure_topics, grant_role, register
 from jplearn_api.adapters.persistence.models import MediaAsset
-from jplearn_api.reconciliation import reconcile_orphans
-from jplearn_api.storage import InMemoryStorage, LocalFilesystemStorage
+from jplearn_api.entrypoints.cli.reconciliation import reconcile_orphans
+from jplearn_api.adapters.storage.local import InMemoryStorage, LocalFilesystemStorage
 
 VALID_MP4 = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom" + b"payload_bytes"
 
@@ -212,7 +212,7 @@ def test_readiness_probe_active_checks(live_client: TestClient, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_reconciliation_24h_grace_retention(live_client: TestClient):
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
 
     storage = live_client.app.state.storage
     engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
@@ -440,7 +440,7 @@ def test_readiness_probe_storage_timeout_db_intact(live_client: TestClient, monk
 
 @pytest.mark.asyncio
 async def test_reconciliation_retention_policy_validation(live_client: TestClient):
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
 
     storage = live_client.app.state.storage
     engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
@@ -464,7 +464,7 @@ async def test_reconciliation_retention_policy_validation(live_client: TestClien
 
 def test_reconciliation_metadata_protection_and_race_prevention(live_client: TestClient):
     import os
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
 
     admin = _admin(live_client)
     item_id = _create_item(live_client, admin)
@@ -548,7 +548,7 @@ def test_reconciliation_metadata_protection_and_race_prevention(live_client: Tes
 
 
 def test_reconciliation_cli_args_parsing():
-    from jplearn_api.reconciliation import parse_args
+    from jplearn_api.entrypoints.cli.reconciliation import parse_args
 
     # Default is dry_run = True, retention_hours = 24.0
     args = parse_args([])
@@ -639,7 +639,7 @@ async def test_stage_stream_cancellation_during_in_flight_write(tmp_path: Path):
     write_started = threading.Event()
     allow_write_finish = threading.Event()
 
-    from jplearn_api.storage import _StagingSession
+    from jplearn_api.adapters.storage.local import _StagingSession
 
     real_sync_write = _StagingSession.sync_write
     written_successfully = []
@@ -684,7 +684,7 @@ def test_staging_cleanup_defers_close_and_unlink_after_drain_timeout(
     """R-07/A: timeout transfers cleanup ownership to the active I/O worker."""
     import threading
 
-    from jplearn_api import storage as storage_mod
+    from jplearn_api.adapters.storage import local as storage_mod
 
     temp_path = tmp_path / "deferred.part"
     temp_path.touch()
@@ -743,7 +743,7 @@ async def test_stage_stream_cleanup_failure_logging(tmp_path: Path, monkeypatch:
     monkeypatch.setattr(Path, "unlink", faulty_unlink)
 
     logged_errors = []
-    from jplearn_api import storage as storage_mod
+    from jplearn_api.adapters.storage import local as storage_mod
 
     real_error = storage_mod.logger.error
 

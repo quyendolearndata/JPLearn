@@ -11,11 +11,11 @@ from jplearn_api.bootstrap import (
     create_uow,
     create_user_repository,
 )
-from jplearn_api.deps import get_session
+from jplearn_api.entrypoints.http.dependencies import get_session
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
-from jplearn_api.schemas import AuthSession, LoginBody, RegisterBody, UserPublic
-from jplearn_api.security import require_user
+from jplearn_api.entrypoints.http.schemas import AuthSession, LoginBody, RegisterBody, UserPublic
+from jplearn_api.entrypoints.http.security import require_user
 
 router = APIRouter(tags=["Identity"])
 

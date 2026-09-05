@@ -23,9 +23,9 @@ from typing import Any
 
 import pytest
 
-from jplearn_api import openapi_diff
-from jplearn_api.main import create_app
-from jplearn_api.openapi_diff import compare_openapi, load_handwritten_spec
+from jplearn_api.tooling import openapi_diff
+from jplearn_api.entrypoints.http.app import create_app
+from jplearn_api.tooling.openapi_diff import compare_openapi, load_handwritten_spec
 from jplearn_api.settings import Settings
 
 
@@ -53,7 +53,7 @@ def _run_cli_mutant(
         def openapi(self):
             return mutated_spec
 
-    monkeypatch.setattr("jplearn_api.main.create_app", lambda settings: FakeApp())
+    monkeypatch.setattr("jplearn_api.entrypoints.http.app.create_app", lambda settings: FakeApp())
     exit_code = openapi_diff.main([])
     captured = capsys.readouterr()
     return exit_code, captured.out
@@ -347,7 +347,7 @@ def test_mutation_15_password_min_length_dropped_fails(baseline_specs, monkeypat
 
 def test_mutation_16_max_length_variations_fail(baseline_specs) -> None:
     """R-01: MaxLength increased, decreased, dropped, or unexpectedly added must fail."""
-    from jplearn_api.openapi_diff import compare_schemas
+    from jplearn_api.tooling.openapi_diff import compare_schemas
 
     h_spec = {}
     g_spec = {}
@@ -378,7 +378,7 @@ def test_mutation_16_max_length_variations_fail(baseline_specs) -> None:
 
 def test_mutation_17_unexpected_min_length_added_fails(baseline_specs) -> None:
     """R-01: Unexpected minLength added when not in contract must fail."""
-    from jplearn_api.openapi_diff import compare_schemas
+    from jplearn_api.tooling.openapi_diff import compare_schemas
 
     h_spec, g_spec = {}, {}
     h_schema = {"type": "string"}
@@ -390,7 +390,7 @@ def test_mutation_17_unexpected_min_length_added_fails(baseline_specs) -> None:
 
 def test_mutation_18_enum_type_bool_vs_int_fails(baseline_specs) -> None:
     """R-01: Enum distinguishing bool and int types (e.g. [True] vs [1])."""
-    from jplearn_api.openapi_diff import compare_schemas
+    from jplearn_api.tooling.openapi_diff import compare_schemas
 
     h_spec, g_spec = {}, {}
     h_schema = {"enum": [True]}

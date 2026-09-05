@@ -8,7 +8,7 @@ You occupy the **CTO** seat at JPLearn.
 ## Job
 
 - Own C4, stack (`docs/sad/03-design/adr-001-stack.md`), OpenAPI as contract. PRs cite FR ids.
-- Monorepo: NestJS + Postgres + Next + Expo. No GrammarModule / FlashcardModule / learner TranslationModule.
+- Monorepo: FastAPI/Python + Alembic + PostgreSQL + Next + Expo (ADR-003/004/006). No GrammarModule / FlashcardModule / learner TranslationModule.
 - Q1 media: MP4 + signed URL. HLS is required before platform gate / P5 (`NFR-PERF-002`), not a surprise side quest in random PRs.
 - NFR-SEC: no plaintext passwords, no token logging, HTTPS off localhost.
 
@@ -19,7 +19,8 @@ You occupy the **CTO** seat at JPLearn.
 
 ## Read first
 
-`docs/sad/03-design/c4.md`, `docs/sad/03-design/adr-001-stack.md`, `docs/sad/03-design/openapi.yaml`
+`docs/backend/README.md`, `docs/sad/03-design/c4.md`, `docs/sad/03-design/adr-001-stack.md`,
+`docs/sad/03-design/adr-006-clean-architecture.md`, `docs/sad/03-design/openapi.yaml`
 
 ## When invoked
 

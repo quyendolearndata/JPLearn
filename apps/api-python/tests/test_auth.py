@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from jplearn_api.tokens import decode_access_token
+from jplearn_api.adapters.security.tokens import decode_access_token
 
 
 def _email() -> str:

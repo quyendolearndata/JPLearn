@@ -10,15 +10,15 @@ from jplearn_api.application.handlers.learning import (
 from jplearn_api.application.queries import GetLearnerProgressQuery
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_learning_repository, create_uow
-from jplearn_api.datetime_adapt import to_json_z
-from jplearn_api.deps import UUIDPath, get_session
+from jplearn_api.entrypoints.http.datetime_adapt import to_json_z
+from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_session
 from jplearn_api.domain.errors import (
     EntityNotFoundError,
     ForbiddenError,
     SessionAlreadyEndedError,
 )
-from jplearn_api.schemas import LearnerProgressPublic, LearningSessionPublic, SessionStartBody
-from jplearn_api.security import require_user
+from jplearn_api.entrypoints.http.schemas import LearnerProgressPublic, LearningSessionPublic, SessionStartBody
+from jplearn_api.entrypoints.http.security import require_user
 
 router = APIRouter(tags=["Session", "Progress"])
 

@@ -48,7 +48,7 @@ async def _end_session(session, user_id: str, session_id: str):
     from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
     from jplearn_api.application.commands import EndLearningSessionCommand
     from jplearn_api.application.handlers.learning import handle_end_session
-    from jplearn_api.schemas import LearnerProgressPublic
+    from jplearn_api.entrypoints.http.schemas import LearnerProgressPublic
 
     uow = SqlAlchemyUnitOfWork(session)
     dto = await handle_end_session(
@@ -210,7 +210,7 @@ async def test_concurrent_end_same_session_exactly_once(live_database_url: str):
 
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-    from jplearn_api.db import async_database_url
+    from jplearn_api.adapters.persistence.connection import async_database_url
     from jplearn_api.domain.learning import SessionAlreadyEnded
     end = _end_session
 
@@ -264,7 +264,7 @@ async def test_concurrent_end_different_sessions_no_lost_update(live_database_ur
 
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-    from jplearn_api.db import async_database_url
+    from jplearn_api.adapters.persistence.connection import async_database_url
     end = _end_session
 
     conn = await asyncpg.connect(live_database_url)
@@ -307,7 +307,7 @@ async def test_end_session_failure_rolls_back_atomically(live_database_url: str)
 
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-    from jplearn_api.db import async_database_url
+    from jplearn_api.adapters.persistence.connection import async_database_url
     end = _end_session
 
     conn = await asyncpg.connect(live_database_url)

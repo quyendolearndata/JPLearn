@@ -1,6 +1,9 @@
 # Ma trận truy vết
 
-Test ID sẽ dùng khi có repo test. Cột Test = tên dự kiến.
+Test IDs là mã truy vết yêu cầu, không phải pytest node IDs. Backend tests hiện
+nằm trong `apps/api-python/tests/`; xem [development](../../backend/development.md)
+và [mapping theo revision](../../qa/clean-architecture-audit/test_mapping_and_reconciliation.md).
+Không suy ra mọi hàng PASS từ việc tồn tại file test; trạng thái cổng cần evidence đúng revision.
 
 Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-cases.md](../02-analysis/use-cases.md). Quan hệ UML: [diagrams.md](../02-analysis/diagrams.md) mục 1b. SAD-2 đã có class diagram (mục 6) và state diagram cho `CatalogItem.status` + `LearningSession` (mục 7). Không đổi FR id hay Test id trong bảng dưới.
 
@@ -28,7 +31,7 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | FR-CMS-004 | UC-A01 | URL từ API (không CDN hardcode) | T-CMS-004 |
 | FR-FLG-001 | UC-A02 | GET /flags defaults false | T-FLG-001 |
 | FR-FLG-002 | UC-A02 | UI ẩn | T-FLG-002 client |
-| FR-EVT-001 | UC-L03, UC-L04 | events table | T-EVT-001 |
+| FR-EVT-001 | UC-L03, UC-L04 | learning_events table | T-EVT-001 |
 | FR-EVT-002 | UC-L04 | minutes event | T-EVT-002 |
 | FR-EVT-003 | UC-L03 | level_exposed on start | T-EVT-003 |
 | FR-NEG-001 | — | không route flashcard | T-NEG-001 |

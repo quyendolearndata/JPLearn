@@ -19,8 +19,8 @@ from uuid import uuid4
 
 import asyncpg
 
-from jplearn_api.env_resolver import resolve_database_url, resolve_environment
-from jplearn_api.password import hash_password
+from jplearn_api.config.env_resolver import resolve_database_url, resolve_environment
+from jplearn_api.adapters.security.password import hash_password
 
 FLAG_KEYS = (
     "speaking_enabled",

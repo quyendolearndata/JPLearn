@@ -6,7 +6,7 @@ os.environ.setdefault("ENVIRONMENT", "test")
 import pytest
 from fastapi.testclient import TestClient
 
-from jplearn_api.main import create_app
+from jplearn_api.entrypoints.http.app import create_app
 from jplearn_api.settings import Settings
 
 from pg_harness import ensure_test_database, stop_docker_postgres

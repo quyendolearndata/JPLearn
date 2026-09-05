@@ -19,9 +19,9 @@ dependencies = [
 ]
 
 [project.scripts]
-jplearn-openapi-diff = "jplearn_api.openapi_diff:main"
-jplearn-migrate = "jplearn_api.migrate:main"
-jplearn-seed = "jplearn_api.seed:main"
+jplearn-openapi-diff = "jplearn_api.tooling.openapi_diff:main"
+jplearn-migrate = "jplearn_api.entrypoints.cli.migrate:main"
+jplearn-seed = "jplearn_api.entrypoints.cli.seed:main"
 
 [dependency-groups]
 dev = [

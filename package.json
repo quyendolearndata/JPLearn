@@ -6,11 +6,11 @@
     "test:guard": "tsx scripts/assert-no-textbook.ts",
     "test": "pnpm test:guard && pnpm -r test",
     "test:api": "cd apps/api-python && uv run pytest",
-    "dev:api": "cd apps/api-python && PYTHONPATH=src uv run uvicorn jplearn_api.main:app --reload --port 3002",
+    "dev:api": "cd apps/api-python && PYTHONPATH=src uv run uvicorn jplearn_api.entrypoints.http.app:app --reload --port 3002",
     "dev:web": "pnpm --filter @jplearn/web dev",
     "dev:mobile": "pnpm --filter @jplearn/mobile start",
-    "db:migrate": "cd apps/api-python && PYTHONPATH=src uv run python -m jplearn_api.migrate upgrade",
-    "db:seed": "cd apps/api-python && PYTHONPATH=src uv run python -m jplearn_api.seed"
+    "db:migrate": "cd apps/api-python && PYTHONPATH=src uv run python -m jplearn_api.entrypoints.cli.migrate upgrade",
+    "db:seed": "cd apps/api-python && PYTHONPATH=src uv run python -m jplearn_api.entrypoints.cli.seed"
   },
   "devDependencies": {
     "tsx": "^4.19.2"

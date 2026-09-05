@@ -1,7 +1,7 @@
 import copy
 
-from jplearn_api.main import create_app
-from jplearn_api.openapi_diff import compare_openapi, load_handwritten_spec, main
+from jplearn_api.entrypoints.http.app import create_app
+from jplearn_api.tooling.openapi_diff import compare_openapi, load_handwritten_spec, main
 from jplearn_api.settings import Settings
 
 
@@ -73,7 +73,7 @@ def test_negative_extra_endpoint_fails_diff():
 
 
 def test_main_cli_returns_non_zero_on_mismatch(monkeypatch):
-    import jplearn_api.openapi_diff as diff_mod
+    import jplearn_api.tooling.openapi_diff as diff_mod
 
     # Patch compare_openapi to return a problem
     monkeypatch.setattr(diff_mod, "compare_openapi", lambda _h, _g: ["synthetic error"])

@@ -20,12 +20,12 @@ from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.queries import ListPublishedCatalogQuery
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_catalog_query, create_catalog_repository, create_uow
-from jplearn_api.deps import UUIDPath, get_session, get_storage
+from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_session, get_storage
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
-from jplearn_api.roles import require_roles
-from jplearn_api.schemas import CatalogItemPublic, CatalogItemStaff, CatalogItemWrite, CatalogList
-from jplearn_api.security import require_user
+from jplearn_api.entrypoints.http.roles import require_roles
+from jplearn_api.entrypoints.http.schemas import CatalogItemPublic, CatalogItemStaff, CatalogItemWrite, CatalogList
+from jplearn_api.entrypoints.http.security import require_user
 
 router = APIRouter()
 

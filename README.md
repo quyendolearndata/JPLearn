@@ -16,26 +16,34 @@ xem [ADR-003](docs/sad/03-design/adr-003-runtime-python.md) và
 
 ```bash
 docker compose up -d db
-cp apps/api-python/.env.example apps/api-python/.env
+test -e apps/api-python/.env || cp apps/api-python/.env.example apps/api-python/.env
 pnpm install
-uv --directory apps/api-python sync
+uv --directory apps/api-python sync --frozen
 pnpm db:migrate
 pnpm db:seed
 ```
 
-Seed admin: `admin@jplearn.local` / `password10`
+Seed không có mật khẩu admin mặc định. Để tạo admin **local dùng thử**:
+
+```bash
+ENVIRONMENT=local BOOTSTRAP_ADMIN_EMAIL=admin@jplearn.local \
+BOOTSTRAP_ADMIN_PASSWORD=local-admin-password10 pnpm db:seed
+```
+
+Email đã tồn tại không được reset mật khẩu/nâng quyền; xem
+[hướng dẫn phát triển](docs/backend/development.md).
 
 DB đã có schema từ Prisma (trước ADR-004) thì nhận nó thay vì dựng lại:
 
 ```bash
-cd apps/api-python && PYTHONPATH=src uv run python -m jplearn_api.migrate stamp 0001_prisma_baseline
+cd apps/api-python && PYTHONPATH=src uv run python -m jplearn_api.entrypoints.cli.migrate stamp 0001_prisma_baseline
 ```
 
 ## Run
 
 ```bash
 # API :3002
-export JWT_SECRET=dev-only-change-me DATABASE_URL=postgresql://jplearn:jplearn@localhost:5432/jplearn API_PUBLIC_URL=http://localhost:3002
+# Dùng .env local đã chuẩn bị ở trên; shell env nếu có sẽ ghi đè .env.
 pnpm dev:api
 
 pnpm dev:web          # http://localhost:3000
@@ -70,4 +78,13 @@ Evidence parity Nest↔FastAPI (40/40) đóng băng ở
 [`docs/qa/differential/2026-09-04T071945Z-parity.json`](docs/qa/differential/2026-09-04T071945Z-parity.json);
 chạy lại `differential/run_parity.py` cần checkout commit còn `apps/api`.
 
-Media Q1 is MP4 on local disk, not HLS. See [docs/sad/03-design/runbook-publish.md](docs/sad/03-design/runbook-publish.md).
+Media hiện hỗ trợ MP4 và HLS trên filesystem local; HLS cần bước tạo offline và
+đăng ký riêng. Xem [runbook publish](docs/sad/03-design/runbook-publish.md).
+
+## Tài liệu backend
+
+[Mục lục hiện hành](docs/backend/README.md) · [Sử dụng API](docs/backend/api-usage.md) ·
+[Phát triển](docs/backend/development.md) · [Vận hành](docs/ops/runbook-backend.md) ·
+[Backup/restore](docs/ops/runbook-backup-restore.md).
+
+R-09 vẫn HOLD; test local/Docker xanh không đồng nghĩa được mở traffic production.

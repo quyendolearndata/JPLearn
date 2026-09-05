@@ -5,8 +5,8 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
-from jplearn_api.alert import enqueue_alert
-from jplearn_api.sanitizer import sanitize_message
+from jplearn_api.adapters.observability.alerts import enqueue_alert
+from jplearn_api.adapters.observability.sanitizer import sanitize_message
 from jplearn_api.settings import Settings
 
 

@@ -7,8 +7,8 @@ from uuid import uuid4
 import asyncpg
 import pytest
 
-from jplearn_api.password import hash_password, verify_password
-from jplearn_api.seed import bootstrap_admin, seed, seed_reference_data
+from jplearn_api.adapters.security.password import hash_password, verify_password
+from jplearn_api.entrypoints.cli.seed import bootstrap_admin, seed, seed_reference_data
 
 
 @pytest.mark.asyncio

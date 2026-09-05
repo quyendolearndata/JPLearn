@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from jplearn_api.deps import get_session, get_storage
-from jplearn_api.storage import StoragePort
+from jplearn_api.entrypoints.http.dependencies import get_session, get_storage
+from jplearn_api.adapters.storage.local import StoragePort
 
 
 class HealthBody(BaseModel):

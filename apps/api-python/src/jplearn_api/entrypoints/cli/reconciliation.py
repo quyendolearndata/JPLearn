@@ -16,7 +16,7 @@ from jplearn_api.application.handlers.reconciliation import (
     MIN_RETENTION_SECONDS,
     handle_reconcile_orphans,
 )
-from jplearn_api.storage import StoragePort
+from jplearn_api.adapters.storage.local import StoragePort
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 async def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     from jplearn_api.bootstrap import create_app_container, create_media_repository
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.settings import get_settings
 
     settings = get_settings()

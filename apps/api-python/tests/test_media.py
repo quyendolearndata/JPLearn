@@ -8,8 +8,8 @@ import asyncpg
 import pytest
 from helpers import ensure_topics, grant_role, insert_media, register
 
-from jplearn_api.reconciliation import reconcile_orphans
-from jplearn_api.storage import LocalFilesystemStorage
+from jplearn_api.entrypoints.cli.reconciliation import reconcile_orphans
+from jplearn_api.adapters.storage.local import LocalFilesystemStorage
 
 TINY_MP4 = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom" + b"tiny media"
 
@@ -270,7 +270,7 @@ def test_orphan_reconciliation(live_client):
     missing_key = f"test/{item_id}.mp4"
     (storage.root / missing_key).unlink()
 
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
 
     async def _run_recon():
         engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
@@ -364,7 +364,7 @@ def test_parse_byte_range_matrix():
 @pytest.mark.asyncio
 async def test_storage_adapters_open_read_range(tmp_path):
     from pathlib import Path
-    from jplearn_api.storage import InMemoryStorage, LocalFilesystemStorage
+    from jplearn_api.adapters.storage.local import InMemoryStorage, LocalFilesystemStorage
 
     data = b"0123456789abcdefghijklmnopqrstuvwxyz" * 10
     total = len(data)
@@ -596,7 +596,7 @@ def test_upload_cancellation_before_commit_rolls_back_and_compensates(live_clien
     and rollback DB transaction."""
     from fastapi import UploadFile
     from io import BytesIO
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
     admin = _admin(live_client)
@@ -658,7 +658,7 @@ def test_upload_cancellation_during_commit_preserves_object_if_committed(live_cl
     do NOT delete final object so DB row never points to missing file."""
     from fastapi import UploadFile
     from io import BytesIO
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
     admin = _admin(live_client)
@@ -706,7 +706,7 @@ def test_upload_db_error_at_commit_compensates(live_client):
     """R-07: If DB pre-commit fails with an error, compensate by rolling back and deleting final object."""
     from fastapi import UploadFile
     from io import BytesIO
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
     admin = _admin(live_client)
@@ -765,7 +765,7 @@ def test_upload_outcome_1_pre_commit_cancellation_compensates(live_client):
     """Scenario 1: Cancellation before commit -> rollback confirmed -> compensate object."""
     from fastapi import UploadFile
     from io import BytesIO
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
     admin = _admin(live_client)
@@ -824,7 +824,7 @@ def test_upload_outcome_2_commit_in_flight_cancelled_preserves_object_and_logs(l
     from fastapi import UploadFile
     from io import BytesIO
     import jplearn_api.application.handlers.media as media_handlers
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
     admin = _admin(live_client)
@@ -995,7 +995,7 @@ def test_upload_outcome_3_server_commit_response_lost_preserves_object(live_clie
     from fastapi import UploadFile
     from io import BytesIO
     import jplearn_api.application.handlers.media as media_handlers
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
     admin = _admin(live_client)
@@ -1068,7 +1068,7 @@ def test_upload_outcome_4_rollback_failure_preserves_object_and_logs(live_client
     from fastapi import UploadFile
     from io import BytesIO
     import jplearn_api.application.handlers.media as media_handlers
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
     admin = _admin(live_client)
@@ -1151,7 +1151,7 @@ def test_upload_outcome_5_post_commit_cancellation_preserves_object(live_client)
     """Scenario 5: Post-commit cancellation -> transaction committed -> preserve object."""
     from fastapi import UploadFile
     from io import BytesIO
-    from jplearn_api.db import create_engine_and_sessions
+    from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
     admin = _admin(live_client)
@@ -1801,7 +1801,7 @@ def test_upload_byte_stream_barrier_releases_db_connection(live_client, live_dat
     async def _run():
         nonlocal inspected_tx_count
         from jplearn_api.bootstrap import create_uow_factory
-        from jplearn_api.db import create_engine_and_sessions
+        from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
         from jplearn_api.application.handlers.media import handle_upload_media
 
         engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
@@ -1871,7 +1871,7 @@ def test_upload_catalog_deleted_between_preflight_and_write_compensates(live_cli
 
     async def _run():
         from jplearn_api.bootstrap import create_media_signer, create_uow_factory
-        from jplearn_api.db import create_engine_and_sessions
+        from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
         from jplearn_api.application.handlers.media import handle_upload_media
         from jplearn_api.domain.errors import EntityNotFoundError
 
@@ -1985,7 +1985,7 @@ async def test_upload_http_barrier_releases_connection_and_pool_checkout(live_da
     import uuid
     import httpx
     from conftest import _settings
-    from jplearn_api.main import create_app
+    from jplearn_api.entrypoints.http.app import create_app
 
     with tempfile.TemporaryDirectory() as storage_dir:
         settings = _settings(live_database_url)

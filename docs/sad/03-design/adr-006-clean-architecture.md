@@ -67,21 +67,23 @@ Mọi write use case đều bắt buộc phải chạy trong phạm vi của m�
 
 ## 3. Ma trận hành vi các Route (Behavior Matrix)
 
+Đối chiếu code + OpenAPI ngày 2026-09-05: **20 operations**. Ma trận này mô tả
+runtime hiện có; domain handler chưa có route không được tính là HTTP operation.
+Hướng dẫn gọi API: [api-usage.md](../../backend/api-usage.md).
+
 | Method | Path | Operation ID | Auth / Role | Invariant & Validation | Concurrency & Transaction | Error Codes |
 |---|---|---|---|---|---|---|
 | `POST` | `/auth/register` | `register` | Public | Email valid, min password 10 chars | Atomic UoW (user + role + progress) | `400`, `409` |
 | `POST` | `/auth/login` | `login` | Public | Valid credentials | Read query + Argon2 verify | `401` |
 | `POST` | `/auth/logout` | `logout` | Authenticated | User exists, token valid | UoW: `token_version += 1`, commit | `401` |
-| `GET` | `/auth/me` | `getMe` | Authenticated | Token version match | Read query by user_id | `401` |
-| `GET` | `/flags` | `getFlags` | Public | Default false | Query flags with ensure_defaults | `200` |
-| `PUT` | `/flags` | `patchFlags` | Staff/Admin | Boolean flags only | UoW upsert all flags, commit | `401`, `403` |
-| `GET` | `/catalog` | `listCatalog` | Public | Filter `status=published`, optional `ci_level` | Read query with media relation | `200` |
-| `GET` | `/staff/catalog` | `listCatalogStaff` | Staff/Admin | List draft/level_qa/published items | Read query for staff view | `401`, `403` |
-| `POST` | `/staff/catalog` | `createCatalogItem` | Staff/Admin | Topic exists, duration > 0, L1 false | UoW create draft catalog item | `400`, `401`, `403` |
+| `GET` | `/me` | `getMe` | Authenticated | Token version match | Read query by user_id | `401` |
+| `GET` | `/flags` | `getFlags` | Authenticated | Default false | Query flags with ensure_defaults | `200`, `401` |
+| `PATCH` | `/staff/flags` | `patchFlags` | Admin only | Four booleans per contract | UoW upsert all flags, commit | `401`, `403` |
+| `GET` | `/catalog` | `listCatalog` | Authenticated | Filter published; query ci_level 0–4 | Read query with media relation | `200`, `400`, `401` |
+| `POST` | `/staff/catalog` | `createCatalogItem` | Teacher/Admin | Topic exists; write integers follow v1 contract; L1 false | UoW create draft catalog item | `400`, `401`, `403` |
 | `POST` | `/staff/catalog/{id}/submit-qa` | `submitLevelQa` | Staff/Admin | Only `draft` -> `level_qa` | UoW status transition, commit | `400`, `401`, `403`, `404` |
 | `POST` | `/staff/catalog/{id}/publish` | `publishCatalogItem` | Admin only | Only `level_qa` -> `published`, media exists | UoW status transition, storage verify | `400`, `401`, `403`, `404` |
-| `POST` | `/staff/catalog/{id}/unpublish` | `unpublishCatalogItem` | Staff/Admin | Only `published` -> `draft` | UoW status transition, commit | `400`, `401`, `403`, `404` |
-| `DELETE` | `/staff/catalog/{id}` | `archiveCatalogItem` | Admin only | Mark `archived` | UoW status transition, commit | `401`, `403`, `404` |
+| `POST` | `/staff/catalog/{id}/unpublish` | `unpublishCatalogItem` | Admin only | Only `published` -> `draft` | UoW status transition, commit | `400`, `401`, `403`, `404` |
 | `POST` | `/staff/catalog/{id}/media` | `uploadMedia` | Staff/Admin | MIME `video/mp4`, magic bytes `ftyp` | Storage stage -> promote -> DB UoW | `400`, `401`, `403`, `404` |
 | `POST` | `/staff/media/{id}/hls` | `registerHls` | Staff/Admin | HLS master manifest exists | UoW update asset hls_url | `400`, `401`, `403`, `404` |
 | `GET` | `/media/{id}` | `streamMedia` | Signed query / Auth | Valid signature or token | Stream with Range header support | `400`, `401`, `403`, `404`, `416` |
@@ -95,6 +97,18 @@ Mọi write use case đều bắt buộc phải chạy trong phạm vi của m�
 ---
 
 ## 4. Trạng thái kiểm chứng & Ranh giới vận hành
+
+### Hiện hành
+
+Package layout, đường ASGI/CLI và test imports đã cập nhật; xem
+[backend docs](../../backend/README.md) và [package-layout verification](../../qa/package-layout-refactor.md).
+Root chỉ còn bootstrap/settings/package marker; HTTP/CLI ở entrypoints, hạ tầng
+ở adapters, config/tooling nằm ngoài inner layers. Việc gom thư mục không chứng
+minh mọi boundary HTTP đã loại ORM; auth dependency và một số query vẫn nằm ở ngoài.
+Review hiệu năng hiện còn mở theo [cleanup verification](../../qa/clean-architecture-audit/cleanup-fix-verification.md).
+R-09 vẫn HOLD. Bản cập nhật tài liệu không cấp lại chữ ký nghiệm thu.
+
+### Bản ghi Closure v4 lịch sử — không áp dụng cho candidate hiện hành
 
 - **Milestone 1 (Clean Architecture Rewrite):** Đã hoàn thành nghiệm thu kỹ thuật (Engineering Closure Complete) theo Closure v4 ([`2026-09-05-clean-architecture-closure-v4.md`](../../superpowers/plans/2026-09-05-clean-architecture-closure-v4.md)). Cả 5 ghế kỹ thuật (CTO, BA, Platform, QA, Ops) đã ký duyệt sau khi giải quyết trọn vẹn 4 lỗ hổng cốt lõi:
   1. `UploadTransactionCoordinator` bảo đảm single-owner cleanup khi bị repeated cancellation mà không orphan task hay gây double-rollback context exit.

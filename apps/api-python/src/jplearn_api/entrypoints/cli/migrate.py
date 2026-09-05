@@ -22,7 +22,7 @@ from typing import Any
 from alembic import command
 from alembic.config import Config
 
-MIGRATIONS_DIR = Path(__file__).resolve().parent / "migrations"
+MIGRATIONS_DIR = Path(importlib.resources.files("jplearn_api").joinpath("migrations"))
 
 
 def load_baseline_schema(explicit_path: Path | str | None = None) -> dict[str, Any]:
@@ -59,7 +59,7 @@ def load_baseline_schema(explicit_path: Path | str | None = None) -> dict[str, A
 
     # 3. Walk parent directories looking for docs/qa/adr-004-schema-baseline.json
     curr = Path(__file__).resolve().parent
-    for _ in range(6):
+    while True:
         candidate = curr / "docs" / "qa" / "adr-004-schema-baseline.json"
         if candidate.is_file():
             try:
@@ -73,7 +73,7 @@ def load_baseline_schema(explicit_path: Path | str | None = None) -> dict[str, A
     raise RuntimeError("Baseline schema resource 'adr-004-schema-baseline.json' could not be found")
 
 
-from jplearn_api.env_resolver import (
+from jplearn_api.config.env_resolver import (
     is_destructive_downgrade_allowed,
     resolve_database_url,
     resolve_environment,
@@ -127,7 +127,7 @@ def stamp(
 
     if verify_baseline and revision in ("0001_prisma_baseline", "head"):
         import asyncio
-        from jplearn_api.schema_snapshot import diff, snapshot_url
+        from jplearn_api.adapters.persistence.schema_snapshot import diff, snapshot_url
 
         expected = load_baseline_schema(baseline_path)
         actual = asyncio.run(snapshot_url(url))

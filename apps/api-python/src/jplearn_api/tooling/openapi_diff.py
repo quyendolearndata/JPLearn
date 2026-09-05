@@ -10,6 +10,8 @@ from typing import Any
 
 import yaml
 
+from jplearn_api.entrypoints.http.openapi import normalize_security_scheme_names
+
 METHODS = ("get", "post", "put", "patch", "delete")
 
 REQUIRED_OPERATIONS = {
@@ -48,41 +50,6 @@ def _ops(spec: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
             if isinstance(operation, dict):
                 found[(path, method)] = operation
     return found
-
-
-def normalize_security_scheme_names(spec: dict[str, Any]) -> dict[str, Any]:
-    """FastAPI HTTPBearer defaults to scheme name HTTPBearer; contract uses bearerAuth."""
-    components = spec.setdefault("components", {})
-    schemes = components.setdefault("securitySchemes", {})
-    if "HTTPBearer" in schemes:
-        schemes.setdefault("bearerAuth", schemes.pop("HTTPBearer"))
-    schemes.setdefault(
-        "bearerAuth",
-        {"type": "http", "scheme": "bearer", "bearerFormat": "JWT"},
-    )
-    schemes.setdefault(
-        "signedQuery",
-        {
-            "type": "apiKey",
-            "in": "query",
-            "name": "sig",
-            "description": "HMAC-SHA256 signature for media streaming (with exp timestamp)",
-        },
-    )
-    for item in (spec.get("paths") or {}).values():
-        if not isinstance(item, dict):
-            continue
-        for operation in item.values():
-            if not isinstance(operation, dict) or "security" not in operation:
-                continue
-            remapped = []
-            for entry in operation["security"]:
-                if isinstance(entry, dict) and "HTTPBearer" in entry:
-                    remapped.append({"bearerAuth": entry["HTTPBearer"]})
-                else:
-                    remapped.append(entry)
-            operation["security"] = remapped
-    return spec
 
 
 def normalize_security(security_list: list[dict[str, list[str]]] | None) -> list[dict[str, list[str]]]:
@@ -504,7 +471,7 @@ def handwritten_spec_path() -> Path:
         if p.exists():
             return p
     curr = Path(__file__).resolve().parent
-    for _ in range(6):
+    while True:
         candidate = curr / "docs" / "sad" / "03-design" / "openapi.yaml"
         if candidate.is_file():
             return candidate
@@ -540,7 +507,7 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 generated = json.load(f)
     else:
-        from jplearn_api.main import create_app
+        from jplearn_api.entrypoints.http.app import create_app
         from jplearn_api.settings import Settings
 
         settings = Settings(

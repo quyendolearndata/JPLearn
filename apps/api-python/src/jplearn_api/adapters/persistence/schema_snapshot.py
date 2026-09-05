@@ -134,7 +134,7 @@ def diff(expected: dict, actual: dict) -> list[str]:
 
 def main() -> int:
     if len(sys.argv) < 2:
-        print("usage: python -m jplearn_api.schema_snapshot <database-url> [out.json]", file=sys.stderr)
+        print("usage: python -m jplearn_api.adapters.persistence.schema_snapshot <database-url> [out.json]", file=sys.stderr)
         return 2
     result = asyncio.run(snapshot_url(sys.argv[1]))
     payload = json.dumps(result, indent=2, sort_keys=True) + "\n"

@@ -8,7 +8,7 @@ You occupy the **QA Engineering** seat at JPLearn.
 ## Job
 
 - Tests come from `docs/sad/03-design/traceability.md` (T-ID-*, T-NEG-*, T-CAT-*, …). Prefer T-NEG (no flashcard/grammar/translation routes or chrome).
-- API: `pnpm --filter @jplearn/api test`. Domain guard: `pnpm test:guard`. Mobile unit: `pnpm --filter @jplearn/mobile test`. Web e2e needs live API+web (`test:e2e`).
+- API: `pnpm test:api` (pytest + isolated Docker PostgreSQL). Repo guard: `pnpm test:guard`. Mobile unit: `pnpm --filter @jplearn/mobile test`. Full Web differential E2E: `apps/api-python/differential/web-e2e-python.sh --project=chromium --project=webkit`.
 - Do not “feel pass” without an FR/NFR id.
 - Evidence before “done” (commands + output).
 
@@ -19,7 +19,9 @@ You occupy the **QA Engineering** seat at JPLearn.
 
 ## Read first
 
-`docs/sad/03-design/traceability.md`, `apps/api/test/neg.e2e-spec.ts`, `apps/web/e2e/shell.spec.ts`
+`docs/backend/development.md`, `docs/sad/03-design/traceability.md`,
+`apps/api-python/tests/test_neg.py`, `apps/api-python/tests/test_architecture_guard.py`,
+`apps/api-python/tests/test_package_layout.py`, `apps/web/e2e/shell.spec.ts`
 
 ## When invoked
 

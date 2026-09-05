@@ -172,13 +172,15 @@ def check_domain_file(file_path: Path, package_root: Path = ROOT_SRC) -> list[st
         "jplearn_api.application",
         "jplearn_api.adapters",
         "jplearn_api.entrypoints",
-        "jplearn_api.routers",
+        "jplearn_api.entrypoints.http.routers",
         "jplearn_api.models",
         "jplearn_api.settings",
+        "jplearn_api.config",
+        "jplearn_api.tooling",
         "jplearn_api.bootstrap",
-        "jplearn_api.deps",
-        "jplearn_api.db",
-        "jplearn_api.security",
+        "jplearn_api.entrypoints.http.dependencies",
+        "jplearn_api.adapters.persistence.connection",
+        "jplearn_api.entrypoints.http.security",
         "fastapi",
         "starlette",
         "pydantic",
@@ -206,12 +208,14 @@ def check_application_file(file_path: Path, package_root: Path = ROOT_SRC) -> li
     forbidden_prefixes = (
         "jplearn_api.adapters",
         "jplearn_api.entrypoints",
-        "jplearn_api.routers",
+        "jplearn_api.entrypoints.http.routers",
         "jplearn_api.models",
         "jplearn_api.settings",
+        "jplearn_api.config",
+        "jplearn_api.tooling",
         "jplearn_api.bootstrap",
-        "jplearn_api.deps",
-        "jplearn_api.db",
+        "jplearn_api.entrypoints.http.dependencies",
+        "jplearn_api.adapters.persistence.connection",
         "fastapi",
         "starlette",
         "pydantic",
@@ -235,8 +239,8 @@ def check_adapters_file(file_path: Path, package_root: Path = ROOT_SRC) -> list[
     """Enforce Adapters Layer rules: must not depend on entrypoints or routers."""
     forbidden_prefixes = (
         "jplearn_api.entrypoints",
-        "jplearn_api.routers",
-        "jplearn_api.main",
+        "jplearn_api.entrypoints.http.routers",
+        "jplearn_api.entrypoints.http.app",
         "fastapi.testclient",
         "starlette.testclient",
     )
@@ -441,13 +445,15 @@ def test_domain_layer_transitive_dependencies():
         "jplearn_api.application",
         "jplearn_api.adapters",
         "jplearn_api.entrypoints",
-        "jplearn_api.routers",
+        "jplearn_api.entrypoints.http.routers",
         "jplearn_api.models",
         "jplearn_api.settings",
+        "jplearn_api.config",
+        "jplearn_api.tooling",
         "jplearn_api.bootstrap",
-        "jplearn_api.deps",
-        "jplearn_api.db",
-        "jplearn_api.security",
+        "jplearn_api.entrypoints.http.dependencies",
+        "jplearn_api.adapters.persistence.connection",
+        "jplearn_api.entrypoints.http.security",
         "fastapi",
         "starlette",
         "pydantic",
@@ -484,12 +490,14 @@ def test_application_layer_transitive_dependencies():
     forbidden_prefixes = (
         "jplearn_api.adapters",
         "jplearn_api.entrypoints",
-        "jplearn_api.routers",
+        "jplearn_api.entrypoints.http.routers",
         "jplearn_api.models",
         "jplearn_api.settings",
+        "jplearn_api.config",
+        "jplearn_api.tooling",
         "jplearn_api.bootstrap",
-        "jplearn_api.deps",
-        "jplearn_api.db",
+        "jplearn_api.entrypoints.http.dependencies",
+        "jplearn_api.adapters.persistence.connection",
         "fastapi",
         "starlette",
         "sqlalchemy",
@@ -528,11 +536,21 @@ def test_adapters_layer_dependencies():
 
 def test_routers_composition_rules():
     """Routers must obtain capabilities via bootstrap factories or DI, not direct adapter instantiation."""
-    routers_dir = ROOT_SRC / "routers"
+    routers_dir = ROOT_SRC / "entrypoints" / "http" / "routers"
+    router_files = list(routers_dir.glob("**/*.py"))
+    assert any(p.name != "__init__.py" for p in router_files), "No routers checked"
     all_violations: list[str] = []
-    for file_path in routers_dir.glob("**/*.py"):
+    for file_path in router_files:
         all_violations.extend(check_composition_rules(file_path))
     assert not all_violations, "Router composition violations found:\n" + "\n".join(all_violations)
+
+
+def test_package_root_contains_only_composition_and_settings():
+    """Transport, infrastructure and CLI implementations belong in named packages."""
+    assert {p.name for p in ROOT_SRC.glob("*.py")} == {
+        "__init__.py", "bootstrap.py", "settings.py",
+    }
+    assert not (ROOT_SRC / "routers").exists()
 
 
 # ==============================================================================
@@ -565,6 +583,12 @@ def test_guard_mutation_catches_violations(tmp_path: Path):
     app_bad_dyn = fake_pkg / "app_bad_dyn.py"
     app_bad_dyn.write_text("import importlib\nmod = importlib.import_module('sys')\n", encoding="utf-8")
     assert check_application_file(app_bad_dyn, fake_pkg), "Should catch dynamic import in application"
+
+    for module in ("jplearn_api.config.env_resolver", "jplearn_api.tooling.openapi_diff"):
+        outer_import = fake_pkg / "outer_import.py"
+        outer_import.write_text(f"import {module}\n", encoding="utf-8")
+        assert check_domain_file(outer_import, fake_pkg)
+        assert check_application_file(outer_import, fake_pkg)
 
     adapter_bad = fake_pkg / "adapter_bad.py"
     adapter_bad.write_text("from jplearn_api.entrypoints.http import app\n", encoding="utf-8")
@@ -681,6 +705,12 @@ import jplearn_api.application.handlers.identity
 import jplearn_api.application.handlers.flags
 import jplearn_api.application.handlers.reconciliation
 import jplearn_api.bootstrap
+import jplearn_api.entrypoints.http.app
+assert "jplearn_api.tooling.openapi_diff" not in sys.modules
+import jplearn_api.entrypoints.cli.migrate
+import jplearn_api.entrypoints.cli.seed
+import jplearn_api.entrypoints.cli.reconciliation
+import jplearn_api.tooling.openapi_diff
 
 print("CLEAN_IMPORT_SUCCESS")
 """
@@ -1082,5 +1112,3 @@ async def test_failure_boundaries_across_use_cases():
     assert media_uow.rolled_back is True
     assert not media_repo._committed_assets
     assert len(media_storage.keys) == 0  # Promoted file was cleanly removed!
-
-
