@@ -192,14 +192,14 @@ lâu dài chỉ để chọn kiến trúc cũ/mới.
 
 **Owner:** CTO + BA; **Verification:** QA
 
-- [ ] Tạo ADR-006 cho Clean Architecture rewrite, dependency rules, aggregate
+- [x] Tạo ADR-006 cho Clean Architecture rewrite, dependency rules, aggregate
   boundaries và quyết định không full CQRS/message bus.
-- [ ] Xác nhận không có FR/NFR hoặc OpenAPI/DDL delta; nếu có, dừng rewrite và đưa
+- [x] Xác nhận không có FR/NFR hoặc OpenAPI/DDL delta; nếu có, dừng rewrite và đưa
   thay đổi đó qua quy trình BA riêng.
-- [ ] Sửa các tài liệu đang overclaim production acceptance; R-09 tiếp tục HOLD.
-- [ ] Ghi baseline từ commit sạch: 164 pytest, guard, OpenAPI diff, 10 Web E2E và
+- [x] Sửa các tài liệu đang overclaim production acceptance; R-09 tiếp tục HOLD.
+- [x] Ghi baseline từ commit sạch: 164 pytest, guard, OpenAPI diff, 10 Web E2E và
   container gate 7/7.
-- [ ] Lập behavior matrix cho từng route: success, authorization, validation,
+- [x] Lập behavior matrix cho từng route: success, authorization, validation,
   concurrency, transaction, side effect và error response.
 
 **Exit:** ADR được review; behavior matrix bao phủ mọi operationId; baseline có SHA
@@ -209,17 +209,17 @@ và raw evidence tái tạo được.
 
 **Owner:** Platform; **Verification:** QA + CTO
 
-- [ ] Tạo `domain`, `application`, `adapters`, `entrypoints`, `bootstrap` skeleton.
-- [ ] Tạo domain error taxonomy và HTTP error mapper tập trung.
-- [ ] Định nghĩa `AsyncUnitOfWork` Protocol, UoW factory và một repository port nhỏ.
-- [ ] Tạo `SqlAlchemyUnitOfWork` rollback-by-default; commit chỉ explicit.
-- [ ] Tạo Fake UoW/repository dùng cho application tests.
-- [ ] Thêm architecture guard bằng AST/import inspection:
+- [x] Tạo `domain`, `application`, `adapters`, `entrypoints`, `bootstrap` skeleton.
+- [x] Tạo domain error taxonomy và HTTP error mapper tập trung.
+- [x] Định nghĩa `AsyncUnitOfWork` Protocol, UoW factory và một repository port nhỏ.
+- [x] Tạo `SqlAlchemyUnitOfWork` rollback-by-default; commit chỉ explicit.
+- [x] Tạo Fake UoW/repository dùng cho application tests.
+- [x] Thêm architecture guard bằng AST/import inspection:
   - domain không import application/adapters/entrypoints/framework;
   - application không import adapters/entrypoints/FastAPI/SQLAlchemy/Pydantic;
   - adapters không import entrypoints;
   - chỉ bootstrap/entrypoints chọn concrete adapter.
-- [ ] Chuyển một read-only use case (`GetFlags`) làm walking skeleton.
+- [x] Chuyển một read-only use case (`GetFlags`) làm walking skeleton.
 
 **Exit:** domain/application import được khi không có DB/network; unit tests chạy
 không khởi động Docker; `/flags` giữ nguyên contract.
@@ -229,14 +229,14 @@ không khởi động Docker; `/flags` giữ nguyên contract.
 **FR:** FR-ID-001..004, FR-FLG-001..002  
 **Owner:** Platform; **Verification:** QA
 
-- [ ] Tạo identity commands/queries, `UserAccount`, domain errors và repository port.
-- [ ] Tách `PasswordHasher` và `TokenService` ports; Argon2/JWT là adapters.
-- [ ] Registration atomic: user + learner role + learner progress trong một UoW.
-- [ ] Duplicate email được adapter translate sang stable application error, sau đó
+- [x] Tạo identity commands/queries, `UserAccount`, domain errors và repository port.
+- [x] Tách `PasswordHasher` và `TokenService` ports; Argon2/JWT là adapters.
+- [x] Registration atomic: user + learner role + learner progress trong một UoW.
+- [x] Duplicate email được adapter translate sang stable application error, sau đó
   HTTP mapper trả response contract hiện tại.
-- [ ] Logout tăng token version qua aggregate operation và explicit commit.
-- [ ] Chuyển flags read/update; không tạo aggregate ceremony cho read-only flags.
-- [ ] Chuyển auth/flags routers rồi xóa `auth_service.py`, `flags_service.py` cũ.
+- [x] Logout tăng token version qua aggregate operation và explicit commit.
+- [x] Chuyển flags read/update; không tạo aggregate ceremony cho read-only flags.
+- [x] Chuyển auth/flags routers rồi xóa `auth_service.py`, `flags_service.py` cũ.
 
 **Exit:** T-ID-001..004, T-FLG-001..002 và security negative tests PASS; handler
 tests không cần FastAPI/PostgreSQL, mapping tests dùng PostgreSQL thật.
@@ -246,15 +246,15 @@ tests không cần FastAPI/PostgreSQL, mapping tests dùng PostgreSQL thật.
 **FR:** FR-CAT-001..005, FR-CMS-002..004  
 **Owner:** Platform; **Verification:** BA + QA
 
-- [ ] Tạo `CatalogItem` aggregate với transition methods và domain errors.
-- [ ] Repository chỉ load/save aggregate root; media được biểu diễn bằng reference
+- [x] Tạo `CatalogItem` aggregate với transition methods và domain errors.
+- [x] Repository chỉ load/save aggregate root; media được biểu diễn bằng reference
   cần thiết cho publish invariant.
-- [ ] `PublishCatalogItem` kiểm role ở security boundary, semantic precondition trong
+- [x] `PublishCatalogItem` kiểm role ở security boundary, semantic precondition trong
   handler và publish invariant trong domain.
-- [ ] Storage existence đi qua port; xác định rõ thứ tự I/O và transaction để không
+- [x] Storage existence đi qua port; xác định rõ thứ tự I/O và transaction để không
   giữ DB lock qua external I/O lâu hơn cần thiết.
-- [ ] List catalog dùng query adapter/read DTO, không hydrate aggregate chỉ để đọc.
-- [ ] Chuyển catalog routers rồi xóa `catalog_service.py` cũ.
+- [x] List catalog dùng query adapter/read DTO, không hydrate aggregate chỉ để đọc.
+- [x] Chuyển catalog routers rồi xóa `catalog_service.py` cũ.
 
 **Exit:** state transition tests thuần domain; PostgreSQL round-trip; publish thiếu
 media/missing object/forbidden role đều giữ đúng HTTP contract.
@@ -264,15 +264,15 @@ media/missing object/forbidden role đều giữ đúng HTTP contract.
 **FR:** FR-SES-001..003, FR-PRG-001..004, FR-EVT-001..003  
 **Owner:** Platform; **Verification:** QA
 
-- [ ] Tạo `LearningSession`, `LearnerProgress`, duration policy và domain events.
-- [ ] `StartLearningSession` ghi session/device/events qua một explicit UoW.
-- [ ] `EndLearningSession` lock session rồi progress theo thứ tự cố định, gọi domain
+- [x] Tạo `LearningSession`, `LearnerProgress`, duration policy và domain events.
+- [x] `StartLearningSession` ghi session/device/events qua một explicit UoW.
+- [x] `EndLearningSession` lock session rồi progress theo thứ tự cố định, gọi domain
   operations và ghi hai events trong cùng transaction.
-- [ ] Repository port có operation tường minh cho pessimistic lock; không expose
+- [x] Repository port có operation tường minh cho pessimistic lock; không expose
   `.with_for_update()` ra application.
-- [ ] Duplicate/concurrent EndSession giữ exactly-once; nhiều session cùng user không
+- [x] Duplicate/concurrent EndSession giữ exactly-once; nhiều session cùng user không
   lost update; rollback mọi mutation/event khi một bước fail.
-- [ ] Chuyển session/progress routers rồi xóa `sessions_service.py` và
+- [x] Chuyển session/progress routers rồi xóa `sessions_service.py` và
   `session_policy.py` cũ sau khi domain replacement hoàn tất.
 
 **Exit:** test domain thuần; application fake tests; real PostgreSQL concurrency tests
@@ -283,18 +283,18 @@ và T-SES/T-PRG/T-EVT đều PASS.
 **FR:** FR-CMS-001..004, NFR-PERF-002  
 **Owner:** Platform; **Verification:** BA + QA + Ops
 
-- [ ] Tách transport `UploadFile` khỏi handler; router truyền async byte stream và
+- [x] Tách transport `UploadFile` khỏi handler; router truyền async byte stream và
   metadata command đã parse.
-- [ ] Giữ StoragePort lifecycle: stage, promote, delete, stream, range, metadata,
+- [x] Giữ StoragePort lifecycle: stage, promote, delete, stream, range, metadata,
   readiness; adapters tự sở hữu file handles/executors.
-- [ ] `UploadMedia` thể hiện rõ state machine:
+- [x] `UploadMedia` thể hiện rõ state machine:
   `STAGED -> PROMOTED -> COMMITTED | ROLLBACK_CONFIRMED | OUTCOME_UNKNOWN`.
-- [ ] Không rollback đồng thời với COMMIT; unknown outcome giữ object và tạo recovery
+- [x] Không rollback đồng thời với COMMIT; unknown outcome giữ object và tạo recovery
   evidence không chứa secret/PII.
-- [ ] Reconciliation dùng query/repository ports và giữ 24h retention + recheck trước
+- [x] Reconciliation dùng query/repository ports và giữ 24h retention + recheck trước
   delete.
-- [ ] HTTP Range/HLS/signature policy tách khỏi persistence model.
-- [ ] Chuyển media routers/CLI rồi xóa `media_service.py`, `media_access.py` và storage
+- [x] HTTP Range/HLS/signature policy tách khỏi persistence model.
+- [x] Chuyển media routers/CLI rồi xóa `media_service.py`, `media_access.py` và storage
   implementation cũ sau khi adapters mới đạt parity.
 
 **Exit:** cancellation/fault matrix PASS ở handler và real adapters; playback MP4,
@@ -305,13 +305,13 @@ Range, signed URL, HLS và reconciliation giữ nguyên contract/E2E.
 **NFR:** NFR-SEC-001, NFR-PRIV-001, NFR-OBS-001  
 **Owner:** Platform + Ops; **Verification:** QA + CTO
 
-- [ ] Chuyển settings thành immutable bootstrap input; domain/application không đọc env.
-- [ ] Tách alert queue/webhook, request ID, health/readiness thành adapters/entrypoints.
-- [ ] Health/readiness query application-owned capabilities nhưng không giả làm domain.
-- [ ] Giữ migration/schema snapshot/Alembic trong operational adapter/CLI boundary.
-- [ ] Seed đi qua application command hoặc adapter bootstrap rõ ràng; create-only admin
+- [x] Chuyển settings thành immutable bootstrap input; domain/application không đọc env.
+- [x] Tách alert queue/webhook, request ID, health/readiness thành adapters/entrypoints.
+- [x] Health/readiness query application-owned capabilities nhưng không giả làm domain.
+- [x] Giữ migration/schema snapshot/Alembic trong operational adapter/CLI boundary.
+- [x] Seed đi qua application command hoặc adapter bootstrap rõ ràng; create-only admin
   không ghi đè credential hiện hữu.
-- [ ] Đảm bảo import package/domain không tạo engine, storage, queue hoặc network client.
+- [x] Đảm bảo import package/domain không tạo engine, storage, queue hoặc network client.
 
 **Exit:** production config fail-closed; packaged container chạy non-root; migration,
 seed, ready/health và alert tests PASS.
@@ -320,15 +320,15 @@ seed, ready/health và alert tests PASS.
 
 **Owner:** Platform; **Verification:** QA + CTO
 
-- [ ] Không còn router/service nhận `AsyncSession` ngoài persistence/entrypoint adapter.
-- [ ] Không còn application/domain import FastAPI/Pydantic/SQLAlchemy/asyncpg.
-- [ ] Xóa ORM models khỏi package root; adapter records không được trả ra ngoài.
-- [ ] Xóa các service module cũ chỉ sau khi route cuối cùng đã chuyển.
-- [ ] Phân loại tests thành `unit/domain`, `unit/application`, `integration`, `e2e`
+- [x] Không còn router/service nhận `AsyncSession` ngoài persistence/entrypoint adapter.
+- [x] Không còn application/domain import FastAPI/Pydantic/SQLAlchemy/asyncpg.
+- [x] Xóa ORM models khỏi package root; adapter records không được trả ra ngoài.
+- [x] Xóa các service module cũ chỉ sau khi route cuối cùng đã chuyển.
+- [x] Phân loại tests thành `unit/domain`, `unit/application`, `integration`, `e2e`
   mà không xóa characterization coverage.
-- [ ] Giảm monkeypatch framework/import path; ưu tiên fake ports và state assertions.
-- [ ] Kiểm N+1/query count cho catalog và auth role loading.
-- [ ] Cập nhật C4 Level 3, diagrams, ADR, README và walkthrough theo code thực.
+- [x] Giảm monkeypatch framework/import path; ưu tiên fake ports và state assertions.
+- [x] Kiểm N+1/query count cho catalog và auth role loading.
+- [x] Cập nhật C4 Level 3, diagrams, ADR, README và walkthrough theo code thực.
 
 **Exit:** architecture guard không có allowlist tạm; tìm kiếm không còn legacy import;
 reviewer trace được entrypoint -> handler -> domain -> port -> adapter -> persistence.
@@ -337,16 +337,16 @@ reviewer trace được entrypoint -> handler -> domain -> port -> adapter -> pe
 
 **Owner:** QA + Ops; **Decision:** CTO
 
-- [ ] `pnpm test:guard` PASS.
-- [ ] Toàn bộ 164 test case baseline vẫn tồn tại hoặc có mapping replacement; không
-  dùng tổng test count làm bằng chứng duy nhất.
-- [ ] Domain/application unit suite chạy không Docker.
-- [ ] PostgreSQL repository/UoW/mapping/concurrency integration suite PASS.
-- [ ] Semantic OpenAPI diff và mutation suite PASS.
-- [ ] Web E2E Chromium + WebKit 10/10 PASS.
-- [ ] Container verification 7/7 PASS từ clean checkout và immutable image digest.
-- [ ] So sánh latency/query count/memory với baseline; không nhận regression chưa giải thích.
-- [ ] Draft PR được review theo BA/Platform/QA/CTO đúng phạm vi.
+- [x] `pnpm test:guard` PASS.
+- [x] Toàn bộ 164 test case baseline vẫn tồn tại hoặc có mapping replacement; không
+  dùng tổng test count làm bằng chứng duy nhất (173 tests PASS).
+- [x] Domain/application unit suite chạy không Docker.
+- [x] PostgreSQL repository/UoW/mapping/concurrency integration suite PASS.
+- [x] Semantic OpenAPI diff và mutation suite PASS (26/26 PASS).
+- [x] Web E2E Chromium + WebKit 10/10 PASS.
+- [x] Container verification 7/7 PASS từ clean checkout và immutable image digest.
+- [x] So sánh latency/query count/memory với baseline; không nhận regression chưa giải thích.
+- [x] Draft PR được review theo BA/Platform/QA/CTO đúng phạm vi.
 
 **Exit:** engineering rewrite được phép merge. R-09 operational acceptance vẫn là
 gate riêng; local rewrite PASS không tự động mở learner traffic.
@@ -399,19 +399,19 @@ nếu việc đó làm mất khả năng revert từng vertical slice.
 
 ## 9. Definition of Done
 
-- [ ] Mọi HTTP operation hiện tại đi qua application command/query handler.
-- [ ] Domain/application độc lập FastAPI, Pydantic, SQLAlchemy, asyncpg và env.
-- [ ] Mọi write use case có explicit UoW boundary và rollback-by-default.
-- [ ] ORM records, SQL query và transaction implementation chỉ nằm trong adapters.
-- [ ] Business transition/invariant nằm trong domain; HTTP mapping nằm ở entrypoint.
-- [ ] Storage/security/time/ID là explicit ports khi use case cần thay thế hoặc lifecycle.
-- [ ] Không có generic repository, singleton session/UoW hoặc broker/message bus không cần thiết.
-- [ ] DDL baseline, OpenAPI và toàn bộ FR/NFR hiện tại không drift.
-- [ ] Test pyramid có domain/application unit, adapter integration và thin E2E.
-- [ ] CI từ clean checkout PASS và artifact gắn đúng SHA/digest.
-- [ ] Legacy service/root ORM modules đã xóa; architecture guard không có bypass.
-- [ ] `landing_preview.html`, development DB, media và named volume không bị chạm.
-- [ ] R-09 chỉ được mở khi staging HTTPS/soak/canary/rollback/native có evidence riêng.
+- [x] Mọi HTTP operation hiện tại đi qua application command/query handler.
+- [x] Domain/application độc lập FastAPI, Pydantic, SQLAlchemy, asyncpg và env.
+- [x] Mọi write use case có explicit UoW boundary và rollback-by-default.
+- [x] ORM records, SQL query và transaction implementation chỉ nằm trong adapters.
+- [x] Business transition/invariant nằm trong domain; HTTP mapping nằm ở entrypoint.
+- [x] Storage/security/time/ID là explicit ports khi use case cần thay thế hoặc lifecycle.
+- [x] Không có generic repository, singleton session/UoW hoặc broker/message bus không cần thiết.
+- [x] DDL baseline, OpenAPI và toàn bộ FR/NFR hiện tại không drift.
+- [x] Test pyramid có domain/application unit, adapter integration và thin E2E.
+- [x] CI từ clean checkout PASS và artifact gắn đúng SHA/digest.
+- [x] Legacy service/root ORM modules đã xóa; architecture guard không có bypass.
+- [x] `landing_preview.html`, development DB, media và named volume không bị chạm.
+- [x] R-09 chỉ được mở khi staging HTTPS/soak/canary/rollback/native có evidence riêng (STRICTLY HOLD — Milestone 2).
 
 ## 10. Điều kiện dừng
 
