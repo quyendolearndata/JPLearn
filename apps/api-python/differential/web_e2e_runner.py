@@ -17,6 +17,8 @@ import sys
 import time
 
 LOCK_PATH = Path(os.environ.get("JPLEARN_E2E_LOCK_PATH", "/tmp/jplearn-web-e2e.lock"))
+TERM_GRACE_SECONDS = float(os.environ.get("JPLEARN_E2E_TERM_GRACE_SECONDS", "5.0"))
+KILL_GRACE_SECONDS = float(os.environ.get("JPLEARN_E2E_KILL_GRACE_SECONDS", "2.0"))
 
 
 def acquire_flock(lock_fd: int) -> None:
@@ -32,6 +34,47 @@ def acquire_flock(lock_fd: int) -> None:
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
         else:
             raise
+
+
+def process_group_exists(pgid: int) -> bool:
+    try:
+        os.killpg(pgid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
+
+
+def wait_for_process_group_exit(child: subprocess.Popen, pgid: int, timeout: float) -> bool:
+    deadline = time.monotonic() + timeout
+    while process_group_exists(pgid) and time.monotonic() < deadline:
+        child.poll()  # reap the direct child as soon as it exits
+        time.sleep(0.05)
+    child.poll()
+    return not process_group_exists(pgid)
+
+
+def terminate_process_group(
+    child: subprocess.Popen,
+    pgid: int,
+    *,
+    term_already_sent: bool = False,
+) -> bool:
+    if not term_already_sent and process_group_exists(pgid):
+        try:
+            os.killpg(pgid, signal.SIGTERM)
+        except ProcessLookupError:
+            return True
+
+    if wait_for_process_group_exit(child, pgid, TERM_GRACE_SECONDS):
+        return True
+
+    try:
+        os.killpg(pgid, signal.SIGKILL)
+    except ProcessLookupError:
+        return True
+    return wait_for_process_group_exit(child, pgid, KILL_GRACE_SECONDS)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -65,6 +108,7 @@ def main(argv: list[str] | None = None) -> int:
                 env=env,
                 preexec_fn=os.setsid,
             )
+            child_pgid = child.pid
         except Exception as start_err:
             print(f"Failed to launch supervised command {cmd}: {start_err}", file=sys.stderr)
             return 1
@@ -74,38 +118,41 @@ def main(argv: list[str] | None = None) -> int:
         def handle_signal(signum, frame):
             signalled[0] = int(signum)
             try:
-                pgid = os.getpgid(child.pid)
-                os.killpg(pgid, signal.SIGTERM)
+                os.killpg(child_pgid, signal.SIGTERM)
             except (ProcessLookupError, OSError):
                 pass
 
         signal.signal(signal.SIGINT, handle_signal)
         signal.signal(signal.SIGTERM, handle_signal)
 
-        # Monitor child and handle graceful termination / escalation if signalled
-        while child.poll() is None:
-            if signalled[0] is not None:
-                # Wait up to 5.0 seconds for child group to terminate under SIGTERM
-                deadline = time.time() + 5.0
-                while child.poll() is None and time.time() < deadline:
-                    time.sleep(0.05)
-                # Escalate to SIGKILL if child is still alive
-                if child.poll() is None:
-                    try:
-                        pgid = os.getpgid(child.pid)
-                        os.killpg(pgid, signal.SIGKILL)
-                    except (ProcessLookupError, OSError):
-                        pass
-                    deadline_kill = time.time() + 2.0
-                    while child.poll() is None and time.time() < deadline_kill:
-                        time.sleep(0.05)
-                return 128 + signalled[0]
+        # Monitor the direct child, but keep ownership of its entire process
+        # group until every descendant has exited.
+        while child.poll() is None and signalled[0] is None:
             time.sleep(0.05)
 
         if signalled[0] is not None:
+            cleaned = terminate_process_group(
+                child,
+                child_pgid,
+                term_already_sent=True,
+            )
+            if not cleaned:
+                print(
+                    f"Failed to terminate child process group {child_pgid}",
+                    file=sys.stderr,
+                )
             return 128 + signalled[0]
 
-        return child.returncode
+        returncode = child.returncode
+        if process_group_exists(child_pgid):
+            cleaned = terminate_process_group(child, child_pgid)
+            if not cleaned:
+                print(
+                    f"Failed to terminate orphaned child process group {child_pgid}",
+                    file=sys.stderr,
+                )
+                return 1
+        return returncode
     finally:
         try:
             fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)

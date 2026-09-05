@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 import re
 from time import time
+from typing import Any
 from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
@@ -28,6 +29,7 @@ HLS_CONTENT_TYPES = {
     ".vtt": "text/vtt",
 }
 HLS_FILE_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+COMMIT_CANCELLATION_GRACE_SECONDS = 5.0
 
 
 def _secret(settings: Settings) -> str:
@@ -186,33 +188,59 @@ async def upload(
         committed = True
     except asyncio.CancelledError:
         # Cancelled while commit was in-flight.
-        # Allow commit_task up to 5.0s to complete so we don't race rollback with commit
+        # Give COMMIT a grace period, then cancel it and retain ownership until
+        # it reaches a terminal state. AsyncSession must never see COMMIT and
+        # ROLLBACK running concurrently.
         try:
-            await asyncio.wait_for(asyncio.shield(commit_task), timeout=5.0)
+            await asyncio.wait_for(
+                asyncio.shield(commit_task),
+                timeout=COMMIT_CANCELLATION_GRACE_SECONDS,
+            )
             committed = True
-        except Exception:
-            pass
+        except TimeoutError:
+            commit_task.cancel()
         except asyncio.CancelledError:
+            commit_task.cancel()
+        except Exception:
+            # A commit error is an unknown outcome until the session is reset.
             pass
 
         if not committed:
-            commit_task.cancel()
+            # Await task termination even if the driver needs time to unwind a
+            # cancelled COMMIT. This is the ownership barrier before rollback.
+            while not commit_task.done():
+                try:
+                    await asyncio.shield(commit_task)
+                except asyncio.CancelledError:
+                    if not commit_task.done():
+                        continue
+                except Exception:
+                    break
+            try:
+                commit_task.result()
+            except BaseException:
+                # The outcome remains unknown; retrieving the result prevents
+                # an unobserved task exception after ownership has settled.
+                pass
+
             # Commit outcome is indeterminate: preserve final_key to avoid dangling DB rows!
+            rollback_error = None
+            try:
+                await session.rollback()
+            except Exception as exc:
+                rollback_error = exc
+            reason = "cancelled_during_commit"
+            if rollback_error is not None:
+                reason += f"_rollback_failed:{type(rollback_error).__name__}"
             logger.warning(
                 "media_upload_commit_outcome_unknown",
                 extra={
                     "asset_id": asset_id,
                     "catalog_item_id": catalog_item_id,
                     "final_key": final_key,
-                    "reason": "cancelled_during_commit",
+                    "reason": reason,
                 },
             )
-            async def _cleanup_session():
-                try:
-                    await session.rollback()
-                except Exception:
-                    pass
-            await asyncio.shield(_cleanup_session())
         raise
     except Exception as exc:
         from sqlalchemy.exc import IntegrityError

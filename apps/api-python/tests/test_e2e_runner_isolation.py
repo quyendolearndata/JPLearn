@@ -227,7 +227,12 @@ def test_supervisor_escalates_to_sigkill_on_unresponsive_child(tmp_path: Path) -
     barrier_child_ready = tmp_path / "child_ignoring_ready"
     timing_b = tmp_path / "b_after_kill"
 
-    env = {**os.environ, "JPLEARN_E2E_LOCK_PATH": str(lock_file)}
+    env = {
+        **os.environ,
+        "JPLEARN_E2E_LOCK_PATH": str(lock_file),
+        "JPLEARN_E2E_TERM_GRACE_SECONDS": "0.2",
+        "JPLEARN_E2E_KILL_GRACE_SECONDS": "0.5",
+    }
 
     child_ignoring_code = f"""
 import signal, time
@@ -280,6 +285,64 @@ while True:
     proc_b = subprocess.run(cmd_b, stdin=subprocess.DEVNULL, capture_output=True, env=env, timeout=5.0)
     assert proc_b.returncode == 0
     assert timing_b.exists() and timing_b.read_text().strip() == "freed"
+
+
+def test_supervisor_kills_grandchild_before_releasing_lock(tmp_path: Path) -> None:
+    """R-06: a dead group leader must not hide a surviving grandchild."""
+    lock_file = tmp_path / "test_grandchild.lock"
+    grandchild_pid_file = tmp_path / "grandchild.pid"
+    env = {
+        **os.environ,
+        "JPLEARN_E2E_LOCK_PATH": str(lock_file),
+        "JPLEARN_E2E_TERM_GRACE_SECONDS": "0.2",
+        "JPLEARN_E2E_KILL_GRACE_SECONDS": "0.5",
+    }
+
+    grandchild_code = f"""
+import os, signal, time
+from pathlib import Path
+signal.signal(signal.SIGTERM, signal.SIG_IGN)
+Path({str(grandchild_pid_file)!r}).write_text(str(os.getpid()))
+while True:
+    time.sleep(0.1)
+"""
+    parent_code = f"""
+import subprocess, sys, time
+subprocess.Popen([sys.executable, "-c", {grandchild_code!r}])
+while True:
+    time.sleep(0.1)
+"""
+    proc = subprocess.Popen(
+        [sys.executable, str(RUNNER_PATH), "--", sys.executable, "-c", parent_code],
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        env=env,
+        preexec_fn=os.setsid,
+    )
+    grandchild_pid = None
+    try:
+        deadline = time.time() + 5.0
+        while not grandchild_pid_file.exists() and time.time() < deadline:
+            time.sleep(0.05)
+        assert grandchild_pid_file.exists()
+        grandchild_pid = int(grandchild_pid_file.read_text())
+
+        os.kill(proc.pid, signal.SIGTERM)
+        proc.wait(timeout=3.0)
+
+        with pytest.raises(ProcessLookupError):
+            os.kill(grandchild_pid, 0)
+        assert proc.returncode == 143
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait()
+        if grandchild_pid is not None:
+            try:
+                os.kill(grandchild_pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
 
 
 def test_user_config_files_preserved_in_isolated_fixture_repo(tmp_path: Path) -> None:

@@ -1,11 +1,11 @@
 {
   "status": "PASS",
-  "commit_sha": "7caff26b69b943638da5849c357d84661e6a8452",
-  "git_dirty_files": 3,
-  "image_tag": "jplearn-api-python:hardened",
-  "image_id": "sha256:324002dd7e6a405407ac53a2f0ae1e1c936e6820127f81208dca144226fe26f4",
-  "start_time_utc": "2026-09-05T05:39:03Z",
-  "end_time_utc": "2026-09-05T05:39:15Z",
+  "commit_sha": "4e43588e7488fda424d0d174724e44096a337046",
+  "git_dirty_files": 7,
+  "image_tag": "jplearn-api-python:remediation",
+  "image_id": "sha256:456527538b07b768253f316538500dbb1ecba335e2b70bed9e76bf2ef7c544d7",
+  "start_time_utc": "2026-09-05T06:03:22Z",
+  "end_time_utc": "2026-09-05T06:03:43Z",
   "tests": {
     "non_root_uid": {
       "uid": 10001,

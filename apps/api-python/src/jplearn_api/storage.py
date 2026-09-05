@@ -17,6 +17,7 @@ logger = logging.getLogger("jplearn.storage")
 CHUNK_SIZE = 64 * 1024  # 64 KB
 MAX_MEDIA_BYTES = 500 * 1024 * 1024  # 500 MB max for video per ADR-005
 MAX_PROBE_WORKERS = 16
+STAGING_DRAIN_TIMEOUT_SECONDS = 5.0
 
 
 @dataclass(frozen=True)
@@ -103,6 +104,55 @@ class _StagingSession:
         self.in_flight_writes = 0
         self.write_complete_event = threading.Event()
         self.write_complete_event.set()
+        self.cleanup_requested = False
+        self.remove_file_on_cleanup = False
+        self.cleanup_complete = False
+
+    def _finish_in_flight_io(self) -> None:
+        should_finalize = False
+        with self._lock:
+            self.in_flight_writes -= 1
+            if self.in_flight_writes == 0:
+                self.write_complete_event.set()
+                should_finalize = self.cleanup_requested
+        if should_finalize:
+            self._finalize_cleanup()
+
+    def _finalize_cleanup(self) -> None:
+        """Close/unlink exactly once, and only after all worker I/O has stopped."""
+        with self._lock:
+            if self.cleanup_complete or self.in_flight_writes != 0:
+                return
+            handle = self.file_handle
+            self.file_handle = None
+            remove_file = self.remove_file_on_cleanup
+            self.cleanup_complete = True
+
+        close_exc = None
+        unlink_exc = None
+        if handle is not None:
+            try:
+                handle.close()
+            except Exception as exc:
+                close_exc = exc
+            finally:
+                self.closed = True
+
+        if remove_file:
+            try:
+                self.temp_path.unlink(missing_ok=True)
+            except Exception as exc:
+                unlink_exc = exc
+
+        if close_exc or unlink_exc:
+            logger.error(
+                "storage_staging_cleanup_failed",
+                extra={
+                    "path": str(self.temp_path),
+                    "close_error": type(close_exc).__name__ if close_exc else None,
+                    "unlink_error": type(unlink_exc).__name__ if unlink_exc else None,
+                },
+            )
 
     def sync_open(self) -> Any:
         handle = self.temp_path.open("wb")
@@ -138,10 +188,7 @@ class _StagingSession:
         try:
             return handle.write(chunk)
         finally:
-            with self._lock:
-                self.in_flight_writes -= 1
-                if self.in_flight_writes == 0:
-                    self.write_complete_event.set()
+            self._finish_in_flight_io()
 
     def sync_flush_and_sync(self) -> None:
         with self._lock:
@@ -155,51 +202,24 @@ class _StagingSession:
             handle.flush()
             os.fsync(handle.fileno())
         finally:
-            with self._lock:
-                self.in_flight_writes -= 1
-                if self.in_flight_writes == 0:
-                    self.write_complete_event.set()
+            self._finish_in_flight_io()
 
     def sync_cleanup(self, remove_file: bool = True) -> None:
         with self._lock:
             self.cancelled = True
-            handle = self.file_handle
-            self.file_handle = None
+            self.cleanup_requested = True
+            self.remove_file_on_cleanup = self.remove_file_on_cleanup or remove_file
 
-        # Bounded wait for in-flight writes to finish
-        write_drained = self.write_complete_event.wait(timeout=5.0)
+        # Wait only a bounded time in the caller. If I/O is still active, its
+        # worker owns finalization and performs it from _finish_in_flight_io().
+        write_drained = self.write_complete_event.wait(timeout=STAGING_DRAIN_TIMEOUT_SECONDS)
         if not write_drained:
-            logger.error(
+            logger.warning(
                 "storage_staging_write_drain_timeout",
-                extra={"path": str(self.temp_path)},
+                extra={"path": str(self.temp_path), "cleanup_deferred": True},
             )
-
-        close_exc = None
-        unlink_exc = None
-
-        if handle is not None and not self.closed:
-            try:
-                handle.close()
-            except Exception as exc:
-                close_exc = exc
-            finally:
-                self.closed = True
-
-        if remove_file:
-            try:
-                self.temp_path.unlink(missing_ok=True)
-            except Exception as exc:
-                unlink_exc = exc
-
-        if close_exc or unlink_exc:
-            logger.error(
-                "storage_staging_cleanup_failed",
-                extra={
-                    "path": str(self.temp_path),
-                    "close_error": type(close_exc).__name__ if close_exc else None,
-                    "unlink_error": type(unlink_exc).__name__ if unlink_exc else None,
-                },
-            )
+            return
+        self._finalize_cleanup()
 
 
 class LocalFilesystemStorage(StoragePort):

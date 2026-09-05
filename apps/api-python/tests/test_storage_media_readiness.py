@@ -677,6 +677,56 @@ async def test_stage_stream_cancellation_during_in_flight_write(tmp_path: Path):
         _StagingSession.sync_write = real_sync_write  # type: ignore[assignment]
 
 
+def test_staging_cleanup_defers_close_and_unlink_after_drain_timeout(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R-07/A: timeout transfers cleanup ownership to the active I/O worker."""
+    import threading
+
+    from jplearn_api import storage as storage_mod
+
+    temp_path = tmp_path / "deferred.part"
+    temp_path.touch()
+    write_started = threading.Event()
+    allow_write_finish = threading.Event()
+
+    class BarrierHandle:
+        closed = False
+        close_while_write_active = False
+
+        def write(self, chunk: bytes) -> int:
+            write_started.set()
+            allow_write_finish.wait(timeout=2.0)
+            return len(chunk)
+
+        def close(self) -> None:
+            self.close_while_write_active = not allow_write_finish.is_set()
+            self.closed = True
+
+    monkeypatch.setattr(storage_mod, "STAGING_DRAIN_TIMEOUT_SECONDS", 0.01)
+    session = storage_mod._StagingSession(temp_path)
+    handle = BarrierHandle()
+    session.file_handle = handle
+
+    writer = threading.Thread(target=session.sync_write, args=(b"payload",))
+    writer.start()
+    assert write_started.wait(timeout=1.0)
+
+    session.sync_cleanup(remove_file=True)
+
+    assert handle.closed is False
+    assert temp_path.exists()
+
+    allow_write_finish.set()
+    writer.join(timeout=1.0)
+
+    assert not writer.is_alive()
+    assert handle.closed is True
+    assert handle.close_while_write_active is False
+    assert not temp_path.exists()
+
+
 @pytest.mark.asyncio
 async def test_stage_stream_cleanup_failure_logging(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     """R-07/A: When cleanup unlink raises an error, it must be logged with structured error."""
@@ -714,5 +764,4 @@ async def test_stage_stream_cleanup_failure_logging(tmp_path: Path, monkeypatch:
     cleanup_logs = [e for e in logged_errors if e[0] == "storage_staging_cleanup_failed"]
     assert len(cleanup_logs) == 1
     assert cleanup_logs[0][1].get("unlink_error") == "PermissionError"
-
 

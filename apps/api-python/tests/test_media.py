@@ -794,6 +794,7 @@ def test_upload_outcome_2_commit_in_flight_cancelled_preserves_object_and_logs(l
         return real_warning(msg, *args, **kwargs)
 
     monkeypatch.setattr(media_service.logger, "warning", capture_warning)
+    monkeypatch.setattr(media_service, "COMMIT_CANCELLATION_GRACE_SECONDS", 0.05)
 
     async def _run():
         engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
@@ -854,6 +855,91 @@ def test_upload_outcome_2_commit_in_flight_cancelled_preserves_object_and_logs(l
             await engine.dispose()
 
     asyncio.run(_run())
+
+
+@pytest.mark.asyncio
+async def test_upload_does_not_rollback_while_cancelled_commit_is_still_running(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """R-07/B: rollback starts only after the COMMIT task reaches terminal state."""
+    from io import BytesIO
+    from types import SimpleNamespace
+
+    from fastapi import UploadFile
+
+    from jplearn_api import media_service
+
+    commit_entered = asyncio.Event()
+    commit_release = asyncio.Event()
+    rollback_called = asyncio.Event()
+    commit_active = False
+    rollback_raced_commit = False
+
+    class BarrierSession:
+        async def get(self, *args):
+            return object()
+
+        def add(self, instance) -> None:
+            pass
+
+        async def commit(self) -> None:
+            nonlocal commit_active
+            commit_active = True
+            commit_entered.set()
+            try:
+                await asyncio.Event().wait()
+            except asyncio.CancelledError:
+                await commit_release.wait()
+            finally:
+                commit_active = False
+
+        async def rollback(self) -> None:
+            nonlocal rollback_raced_commit
+            rollback_raced_commit = commit_active
+            rollback_called.set()
+
+    class MemoryStorage:
+        async def stage_stream(self, key, stream) -> int:
+            total = 0
+            async for chunk in stream:
+                total += len(chunk)
+            return total
+
+        async def promote(self, temp_key, final_key) -> None:
+            pass
+
+        async def delete(self, key) -> bool:
+            return True
+
+    monkeypatch.setattr(media_service, "COMMIT_CANCELLATION_GRACE_SECONDS", 0.01)
+    upload_file = UploadFile(
+        filename="sample.mp4",
+        file=BytesIO(TINY_MP4),
+        headers={"content-type": "video/mp4"},
+    )
+    task = asyncio.create_task(
+        media_service.upload(
+            BarrierSession(),
+            SimpleNamespace(api_public_url="http://localhost"),
+            MemoryStorage(),
+            "catalog-id",
+            upload_file,
+        )
+    )
+
+    await commit_entered.wait()
+    task.cancel()
+    await asyncio.sleep(0.05)
+
+    assert rollback_called.is_set() is False
+    assert task.done() is False
+
+    commit_release.set()
+    with pytest.raises(asyncio.CancelledError):
+        await task
+
+    assert rollback_called.is_set() is True
+    assert rollback_raced_commit is False
 
 
 def test_upload_outcome_3_server_commit_response_lost_preserves_object(live_client, monkeypatch):
