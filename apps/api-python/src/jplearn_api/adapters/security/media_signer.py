@@ -38,6 +38,9 @@ class HmacMediaUrlSigner(MediaUrlSigner):
             now_sec=self._clock(),
         )
 
+    def playback_url(self, asset_id: str) -> str:
+        return f"{self._base_url}/media/{asset_id}"
+
     def manifest_url(self, asset_id: str) -> str:
         return f"{self._base_url}/media/{asset_id}/hls/index.m3u8"
 

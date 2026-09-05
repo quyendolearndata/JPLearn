@@ -18,6 +18,7 @@ from jplearn_api.application.ports.repositories import (
     MediaRepository,
     UserRepository,
 )
+from jplearn_api.application.ports.security import MediaUrlSigner
 from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
 
@@ -532,3 +533,26 @@ class FakeUnitOfWork(AsyncUnitOfWork):
         for p in self.participants:
             if hasattr(p, "rollback_transaction"):
                 p.rollback_transaction()
+
+
+class FakeMediaUrlSigner(MediaUrlSigner):
+    """In-memory fake MediaUrlSigner generating deterministic URLs without secret credentials."""
+
+    def __init__(self, base_url: str = "http://localhost:3001") -> None:
+        self._base_url = base_url.rstrip("/")
+
+    def sign_playback_url(self, asset_id: str) -> str:
+        return f"{self._base_url}/media/{asset_id}?exp=9999999999&sig=fakesig"
+
+    def sign_hls_url(self, asset_id: str) -> str:
+        return f"{self._base_url}/media/{asset_id}/hls/index.m3u8?exp=9999999999&sig=fakesig"
+
+    def playback_url(self, asset_id: str) -> str:
+        return f"{self._base_url}/media/{asset_id}"
+
+    def manifest_url(self, asset_id: str) -> str:
+        return f"{self._base_url}/media/{asset_id}/hls/index.m3u8"
+
+    def verify_media_sig(self, asset_id: str, exp: int, sig: str) -> bool:
+        return sig == "fakesig"
+

@@ -25,6 +25,7 @@ from fakes import (
     FakeFlagsRepository,
     FakeLearningRepository,
     FakeMediaRepository,
+    FakeMediaUrlSigner,
     FakePasswordHasher,
     FakeStoragePort,
     FakeTokenService,
@@ -631,9 +632,10 @@ async def test_media_use_cases_in_memory():
     with pytest.raises(RangeNotSatisfiableError):
         parse_byte_range("bytes=200-", 100)
 
-    # 2. Setup media repository and storage
+    # 2. Setup media repository, storage, and signer
     media_repo = FakeMediaRepository(existing_items={"cat-item-1"})
     storage = FakeStoragePort()
+    signer = FakeMediaUrlSigner("http://localhost:3001")
     uow = FakeUnitOfWork(media_repo)
     uow_factory = lambda: uow
 
@@ -652,8 +654,7 @@ async def test_media_use_cases_in_memory():
             content_type="video/mp4",
             uow_factory=uow_factory,
             storage=storage,
-            base_url="http://localhost:3001",
-            secret="test-secret-at-least-32-bytes-long",
+            signer=signer,
         )
 
     # 4. Upload with invalid extension raises InvalidDomainStateError
@@ -666,8 +667,7 @@ async def test_media_use_cases_in_memory():
             content_type="video/mp4",
             uow_factory=uow_factory,
             storage=storage,
-            base_url="http://localhost:3001",
-            secret="test-secret-at-least-32-bytes-long",
+            signer=signer,
         )
 
     # 5. Successful upload promotes object and creates record
@@ -679,8 +679,7 @@ async def test_media_use_cases_in_memory():
         content_type="video/mp4",
         uow_factory=uow_factory,
         storage=storage,
-        base_url="http://localhost:3001",
-        secret="test-secret-at-least-32-bytes-long",
+        signer=signer,
     )
     assert dto.catalog_item_id == "cat-item-1"
     assert dto.mime == "video/mp4"
@@ -707,8 +706,7 @@ async def test_media_use_cases_in_memory():
             asset_id=dto.id,
             uow=uow,
             storage=storage,
-            base_url="http://localhost:3001",
-            secret="test-secret-at-least-32-bytes-long",
+            signer=signer,
         )
 
     # 8. Register HLS with manifest succeeds
@@ -717,8 +715,7 @@ async def test_media_use_cases_in_memory():
         asset_id=dto.id,
         uow=uow,
         storage=storage,
-        base_url="http://localhost:3001",
-        secret="test-secret-at-least-32-bytes-long",
+        signer=signer,
     )
     assert hls_dto.hls_url is not None
     assert f"/media/{dto.id}/hls/index.m3u8" in hls_dto.hls_url
@@ -800,8 +797,7 @@ async def test_failure_boundaries_across_use_cases():
             content_type="video/mp4",
             uow_factory=lambda: media_uow,
             storage=media_storage,
-            base_url="http://localhost:3001",
-            secret="test-secret-at-least-32-bytes-long",
+            signer=FakeMediaUrlSigner(),
         )
     assert media_uow.rolled_back is True
     assert not media_repo._committed_assets

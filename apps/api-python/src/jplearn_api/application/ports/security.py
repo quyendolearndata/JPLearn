@@ -42,6 +42,10 @@ class MediaUrlSigner(Protocol):
         """Generate time-limited signed URL for HLS manifest."""
         ...
 
+    def playback_url(self, asset_id: str) -> str:
+        """Generate canonical public URL for MP4 playback."""
+        ...
+
     def manifest_url(self, asset_id: str) -> str:
         """Generate canonical public URL for HLS master manifest."""
         ...

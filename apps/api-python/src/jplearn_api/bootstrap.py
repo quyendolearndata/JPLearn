@@ -44,11 +44,15 @@ def create_token_service() -> TokenService:
     return JwtTokenService()
 
 
-def create_media_signer(settings: Settings | None = None) -> HmacMediaUrlSigner:
+def create_media_signer(settings: Any | None = None) -> HmacMediaUrlSigner:
     """Factory creating a Media URL signer adapter."""
     resolved_settings = settings or get_settings()
-    base_url = resolved_settings.api_public_url or "http://localhost:3001"
-    secret = resolved_settings.media_signing_secret or resolved_settings.jwt_secret or "default-secret"
+    base_url = getattr(resolved_settings, "api_public_url", None) or "http://localhost:3001"
+    secret = (
+        getattr(resolved_settings, "media_signing_secret", None)
+        or getattr(resolved_settings, "jwt_secret", None)
+        or "default-secret"
+    )
     return HmacMediaUrlSigner(base_url=base_url, secret=secret)
 
 

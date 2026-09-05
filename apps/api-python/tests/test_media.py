@@ -552,14 +552,17 @@ async def _upload_media(
     file,
     *,
     _pre_commit_hook=None,
-    _grace_seconds=5.0,
+    _grace_seconds=None,
 ):
     from jplearn_api.adapters.persistence.media_repository import SqlAlchemyMediaRepository
     from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
     from jplearn_api.application.handlers.media import handle_upload_media
 
+    from jplearn_api.bootstrap import create_media_signer
+
     uow = SqlAlchemyUnitOfWork(session)
     media_repo = SqlAlchemyMediaRepository(session)
+    signer = create_media_signer(settings)
     first_chunk = await file.read(64 * 1024)
 
     async def stream():
@@ -568,6 +571,10 @@ async def _upload_media(
             if not chunk:
                 break
             yield chunk
+
+    kwargs = {}
+    if _grace_seconds is not None:
+        kwargs["_grace_seconds"] = _grace_seconds
 
     return await handle_upload_media(
         catalog_item_id=catalog_item_id,
@@ -578,10 +585,9 @@ async def _upload_media(
         uow=uow,
         media_repo=media_repo,
         storage=storage,
-        base_url=settings.api_public_url.rstrip("/"),
-        secret=getattr(settings, "media_signing_secret", None) or getattr(settings, "jwt_secret", None) or "default-secret",
+        signer=signer,
         _pre_commit_hook=_pre_commit_hook,
-        _grace_seconds=_grace_seconds,
+        **kwargs,
     )
 
 
@@ -1209,6 +1215,9 @@ async def test_upload_repo_add_failure_after_promote_rolls_back_and_compensates(
 
     media_repo.add = fail_add
 
+    from fakes import FakeMediaUrlSigner
+    signer = FakeMediaUrlSigner()
+
     with pytest.raises(RuntimeError, match="Database connection dropped during repo.add"):
         await handle_upload_media(
             catalog_item_id="cat-item-1",
@@ -1219,8 +1228,7 @@ async def test_upload_repo_add_failure_after_promote_rolls_back_and_compensates(
             uow=uow,
             media_repo=media_repo,
             storage=storage,
-            base_url="http://localhost:3001",
-            secret="test-secret-at-least-32-bytes-long",
+            signer=signer,
         )
 
     # Invariant: UoW must be rolled back and final object must NOT remain in storage!
@@ -1231,13 +1239,14 @@ async def test_upload_repo_add_failure_after_promote_rolls_back_and_compensates(
 @pytest.mark.asyncio
 async def test_upload_pre_commit_storage_delete_failure_preserves_original_exception_and_logs_warning(monkeypatch):
     """G1: If storage.delete fails during pre-commit compensation, original error is preserved and warning is logged."""
-    from fakes import FakeMediaRepository, FakeStoragePort, FakeUnitOfWork
+    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
     from jplearn_api.application.handlers.media import handle_upload_media, logger
 
     uow = FakeUnitOfWork()
     media_repo = FakeMediaRepository()
     media_repo.catalog_items.add("cat-item-1")
     storage = FakeStoragePort()
+    signer = FakeMediaUrlSigner()
 
     logged_warnings = []
     real_warning = logger.warning
@@ -1271,8 +1280,7 @@ async def test_upload_pre_commit_storage_delete_failure_preserves_original_excep
             uow=uow,
             media_repo=media_repo,
             storage=storage,
-            base_url="http://localhost:3001",
-            secret="test-secret-at-least-32-bytes-long",
+            signer=signer,
             _pre_commit_hook=fail_hook,
         )
 
@@ -1328,6 +1336,8 @@ def test_upload_byte_stream_barrier_releases_db_connection(live_client, live_dat
             finally:
                 await conn.close()
 
+        from jplearn_api.bootstrap import create_media_signer
+        signer = create_media_signer(live_client.app.state.settings)
         first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
         dto = await handle_upload_media(
             catalog_item_id=item_id,
@@ -1337,8 +1347,7 @@ def test_upload_byte_stream_barrier_releases_db_connection(live_client, live_dat
             content_type="video/mp4",
             uow_factory=uow_factory,
             storage=storage,
-            base_url="http://localhost:3001",
-            secret="test-secret-at-least-32-bytes-long",
+            signer=signer,
             _staging_barrier=staging_barrier,
         )
 
@@ -1366,13 +1375,14 @@ def test_upload_catalog_deleted_between_preflight_and_write_compensates(live_cli
     storage = live_client.app.state.storage
 
     async def _run():
-        from jplearn_api.bootstrap import create_uow_factory
+        from jplearn_api.bootstrap import create_media_signer, create_uow_factory
         from jplearn_api.db import create_engine_and_sessions
         from jplearn_api.application.handlers.media import handle_upload_media
         from jplearn_api.domain.errors import EntityNotFoundError
 
         engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
         uow_factory = create_uow_factory(sessionmaker)
+        signer = create_media_signer(live_client.app.state.settings)
 
         async def delete_catalog_during_staging():
             # Delete the catalog item between Scope 1 (preflight) and Scope 3 (write)
@@ -1396,8 +1406,7 @@ def test_upload_catalog_deleted_between_preflight_and_write_compensates(live_cli
                 content_type="video/mp4",
                 uow_factory=uow_factory,
                 storage=storage,
-                base_url="http://localhost:3001",
-                secret="test-secret-at-least-32-bytes-long",
+                signer=signer,
                 _staging_barrier=delete_catalog_during_staging,
             )
 

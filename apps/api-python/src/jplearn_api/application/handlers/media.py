@@ -8,7 +8,6 @@ from enum import Enum
 import logging
 from pathlib import Path
 import re
-from time import time
 from typing import Any
 from uuid import uuid4
 
@@ -24,7 +23,6 @@ from jplearn_api.domain.errors import (
 )
 from jplearn_api.domain.media import MediaAsset
 from jplearn_api.domain.range_parser import RangeNotSatisfiableError, parse_byte_range
-from jplearn_api.signed_url import sign_hls_url, sign_media_url
 
 logger = logging.getLogger("jplearn.media")
 
@@ -40,38 +38,13 @@ HLS_FILE_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 COMMIT_CANCELLATION_GRACE_SECONDS = 5.0
 
 
-def _signed_playback(asset_id: str, base_url: str, secret: str) -> str:
-    return sign_media_url(
-        asset_id=asset_id,
-        base_url=base_url,
-        secret=secret,
-        now_sec=int(time()),
-    )
-
-
-def _signed_hls(asset_id: str, base_url: str, secret: str) -> str:
-    return sign_hls_url(
-        asset_id=asset_id,
-        base_url=base_url,
-        secret=secret,
-        now_sec=int(time()),
-    )
-
-
 def to_staff_dto(
     asset: MediaAsset,
-    signer: MediaUrlSigner | None = None,
-    base_url: str | None = None,
-    secret: str | None = None,
+    signer: MediaUrlSigner,
 ) -> MediaAssetStaffDTO:
-    if signer is not None:
-        playback_url = signer.sign_playback_url(asset.id)
-        hls_url = signer.sign_hls_url(asset.id) if asset.hls_url else None
-    elif base_url and secret:
-        playback_url = _signed_playback(asset.id, base_url, secret)
-        hls_url = _signed_hls(asset.id, base_url, secret) if asset.hls_url else None
-    else:
-        raise ValueError("Either signer or (base_url, secret) must be provided")
+    """Project domain MediaAsset into staff DTO with URLs signed by the injected MediaUrlSigner."""
+    playback_url = signer.sign_playback_url(asset.id)
+    hls_url = signer.sign_hls_url(asset.id) if asset.hls_url else None
 
     return MediaAssetStaffDTO(
         id=asset.id,
@@ -97,18 +70,22 @@ async def handle_upload_media(
     content_type: str,
     uow: UnitOfWorkFactory | AsyncUnitOfWork | None = None,
     storage: StoragePort | None = None,
-    media_repo: MediaRepository | None = None,
     signer: MediaUrlSigner | None = None,
-    base_url: str | None = None,
-    secret: str | None = None,
     *,
+    media_repo: MediaRepository | None = None,
     uow_factory: UnitOfWorkFactory | None = None,
     id_generator: Callable[[], str] = lambda: str(uuid4()),
     _pre_commit_hook: Any = None,
-    _grace_seconds: float = COMMIT_CANCELLATION_GRACE_SECONDS,
+    _grace_seconds: float | None = None,
     _staging_barrier: Any = None,
 ) -> MediaAssetStaffDTO:
     """Upload media file with strict 3-scope transaction isolation and commit outcome machine."""
+    if signer is None:
+        raise ValueError("MediaUrlSigner is required")
+    resolved_grace_seconds = (
+        _grace_seconds if _grace_seconds is not None else COMMIT_CANCELLATION_GRACE_SECONDS
+    )
+
     active_factory: Callable[[], AsyncUnitOfWork]
     if uow_factory is not None:
         active_factory = uow_factory
@@ -238,7 +215,11 @@ async def handle_upload_media(
                     )
 
         try:
-            playback_raw = f"{base_url}/media/{asset_id}" if base_url else f"/media/{asset_id}"
+            playback_raw = (
+                signer.playback_url(asset_id)
+                if hasattr(signer, "playback_url")
+                else f"/media/{asset_id}"
+            )
             asset = MediaAsset(
                 id=asset_id,
                 catalog_item_id=catalog_item_id,
@@ -266,7 +247,7 @@ async def handle_upload_media(
             try:
                 await asyncio.wait_for(
                     asyncio.shield(commit_task),
-                    timeout=_grace_seconds,
+                    timeout=resolved_grace_seconds,
                 )
                 committed = True
             except TimeoutError:
@@ -356,17 +337,16 @@ async def handle_upload_media(
                 await asyncio.shield(_cleanup_uow())
             raise
 
-    return to_staff_dto(asset, signer=signer, base_url=base_url, secret=secret)
+    return to_staff_dto(asset, signer=signer)
 
 
 async def handle_register_hls(
     asset_id: str,
     uow: AsyncUnitOfWork,
     storage: StoragePort,
+    signer: MediaUrlSigner,
+    *,
     media_repo: MediaRepository | None = None,
-    signer: MediaUrlSigner | None = None,
-    base_url: str | None = None,
-    secret: str | None = None,
 ) -> MediaAssetStaffDTO:
     """Register HLS manifest for an existing media asset."""
     target_repo = media_repo if media_repo is not None else uow.media
@@ -380,17 +360,11 @@ async def handle_register_hls(
         if not exists:
             raise InvalidDomainStateError("HLS manifest missing on disk; run scripts/transcode-hls.sh for this asset first")
 
-        if signer is not None:
-            asset.hls_url = signer.manifest_url(asset_id)
-        elif base_url:
-            asset.hls_url = f"{base_url}/media/{asset_id}/hls/{HLS_MANIFEST}"
-        else:
-            asset.hls_url = f"/media/{asset_id}/hls/{HLS_MANIFEST}"
-
+        asset.hls_url = signer.manifest_url(asset_id)
         await target_repo.update(asset)
         await uow.commit()
 
-    return to_staff_dto(asset, signer=signer, base_url=base_url, secret=secret)
+    return to_staff_dto(asset, signer=signer)
 
 
 async def handle_get_media(asset_id: str, media_repo: MediaRepository) -> MediaAsset:
