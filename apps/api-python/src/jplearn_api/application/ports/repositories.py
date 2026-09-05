@@ -6,6 +6,7 @@ from typing import Protocol
 from jplearn_api.application.read_models import CatalogItemPublicDTO
 from jplearn_api.domain.catalog import CatalogItem
 from jplearn_api.domain.identity import UserAccount
+from jplearn_api.domain.learning import LearnerProgress, LearningSession
 
 
 class FlagsRepository(Protocol):
@@ -66,4 +67,39 @@ class CatalogQueryPort(Protocol):
     """Port for reading published catalog items."""
 
     async def list_published(self, ci_level: int | None) -> list[CatalogItemPublicDTO]:
+        ...
+
+
+class LearningRepository(Protocol):
+    """Port for session and progress persistence with row-locking support."""
+
+    async def create_session(self, session: LearningSession) -> None:
+        ...
+
+    async def lock_and_get_session(self, session_id: str) -> LearningSession | None:
+        ...
+
+    async def update_session(self, session: LearningSession) -> None:
+        ...
+
+    async def upsert_device(self, user_id: str, device_class: str, last_seen_at: datetime) -> None:
+        ...
+
+    async def get_progress(self, user_id: str) -> LearnerProgress | None:
+        ...
+
+    async def lock_and_get_progress(self, user_id: str) -> LearnerProgress | None:
+        ...
+
+    async def update_progress(self, progress: LearnerProgress) -> None:
+        ...
+
+    async def record_event(
+        self,
+        user_id: str,
+        session_id: str | None,
+        event_type: str,
+        payload: dict,
+        created_at: datetime,
+    ) -> None:
         ...

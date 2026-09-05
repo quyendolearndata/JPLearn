@@ -239,3 +239,52 @@ async def test_catalog_use_cases_in_memory():
     await handle_archive(ArchiveCatalogItemCommand(item_id=item_dto.id), uow, repo)
     archived_item = await repo.get_by_id(item_dto.id)
     assert archived_item.status == "archived"
+
+
+@pytest.mark.asyncio
+async def test_learning_use_cases_in_memory():
+    """Verify learning session lifecycle and progress logic in pure memory."""
+    from datetime import timedelta
+    from fakes import FakeLearningRepository
+    from jplearn_api.application.commands import EndLearningSessionCommand, StartLearningSessionCommand
+    from jplearn_api.application.handlers.learning import (
+        handle_end_session,
+        handle_get_progress,
+        handle_start_session,
+    )
+    from jplearn_api.application.queries import GetLearnerProgressQuery
+    from jplearn_api.domain.errors import ForbiddenError, SessionAlreadyEndedError
+    from jplearn_api.domain.learning import LearnerProgress
+
+    initial_prog = LearnerProgress(user_id="user_learner", minutes_comprehensible=10, current_ci_level=1)
+    repo = FakeLearningRepository(initial_progress={"user_learner": initial_prog})
+    uow = FakeUnitOfWork()
+
+    # 1. Start session
+    start_cmd = StartLearningSessionCommand(user_id="user_learner", device_class="phone")
+    session_dto = await handle_start_session(start_cmd, uow, repo)
+    assert session_dto.device_class == "phone"
+    assert session_dto.ended_at is None
+    assert uow.committed is True
+    assert len(repo.events) == 2  # session_started and level_exposed
+
+    # 2. Get progress
+    prog_dto = await handle_get_progress(GetLearnerProgressQuery(user_id="user_learner"), repo)
+    assert prog_dto.minutes_comprehensible == 10
+
+    # Simulate time elapsed: started 3 minutes ago
+    domain_session = await repo.lock_and_get_session(session_dto.id)
+    domain_session.started_at -= timedelta(seconds=185)
+
+    # 3. End session by wrong user raises ForbiddenError
+    with pytest.raises(ForbiddenError):
+        await handle_end_session(EndLearningSessionCommand(user_id="other_user", session_id=session_dto.id), uow, repo)
+
+    # 4. End session by owner succeeds exactly-once
+    end_dto = await handle_end_session(EndLearningSessionCommand(user_id="user_learner", session_id=session_dto.id), uow, repo)
+    assert end_dto.minutes_comprehensible == 13  # 10 + 3 minutes
+    assert len(repo.events) == 4  # + session_ended and minutes_comprehensible
+
+    # 5. Duplicate end session raises SessionAlreadyEndedError
+    with pytest.raises(SessionAlreadyEndedError):
+        await handle_end_session(EndLearningSessionCommand(user_id="user_learner", session_id=session_dto.id), uow, repo)

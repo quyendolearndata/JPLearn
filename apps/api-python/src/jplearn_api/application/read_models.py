@@ -1,8 +1,7 @@
-"""Application read models and DTOs (Pure Python dataclasses)."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 
 
 @dataclass(frozen=True)
@@ -41,3 +40,18 @@ class CatalogItemPublicDTO:
     visual_support: str
     playback_url: str | None
     hls_url: str | None
+
+
+@dataclass(frozen=True)
+class LearningSessionDTO:
+    id: str
+    device_class: str
+    started_at: datetime
+    ended_at: datetime | None
+    duration_seconds: int | None
+
+
+@dataclass(frozen=True)
+class LearnerProgressDTO:
+    minutes_comprehensible: int
+    current_ci_level: int

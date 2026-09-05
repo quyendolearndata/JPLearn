@@ -25,3 +25,8 @@ class GetCurrentUserQuery:
 @dataclass(frozen=True)
 class ListPublishedCatalogQuery:
     ci_level: int | None = None
+
+
+@dataclass(frozen=True)
+class GetLearnerProgressQuery:
+    user_id: str

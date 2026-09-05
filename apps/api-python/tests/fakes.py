@@ -174,3 +174,50 @@ class FakeCatalogRepository:
     async def topic_exists(self, topic_id: str) -> bool:
         return topic_id in self.topics
 
+
+class FakeLearningRepository:
+    """In-memory fake implementation of LearningRepository."""
+
+    def __init__(self, initial_progress: dict[str, object] | None = None) -> None:
+        self.sessions: dict[str, object] = {}
+        self.progress: dict[str, object] = dict(initial_progress or {})
+        self.devices: dict[tuple[str, str], object] = {}
+        self.events: list[dict[str, object]] = []
+
+    async def create_session(self, session) -> None:
+        self.sessions[session.id] = session
+
+    async def lock_and_get_session(self, session_id: str):
+        return self.sessions.get(session_id)
+
+    async def update_session(self, session) -> None:
+        self.sessions[session.id] = session
+
+    async def upsert_device(self, user_id: str, device_class: str, last_seen_at) -> None:
+        self.devices[(user_id, device_class)] = last_seen_at
+
+    async def get_progress(self, user_id: str):
+        return self.progress.get(user_id)
+
+    async def lock_and_get_progress(self, user_id: str):
+        return self.progress.get(user_id)
+
+    async def update_progress(self, progress) -> None:
+        self.progress[progress.user_id] = progress
+
+    async def record_event(
+        self,
+        user_id: str,
+        session_id: str | None,
+        event_type: str,
+        payload: dict,
+        created_at,
+    ) -> None:
+        self.events.append({
+            "user_id": user_id,
+            "session_id": session_id,
+            "event_type": event_type,
+            "payload": payload,
+            "created_at": created_at,
+        })
+

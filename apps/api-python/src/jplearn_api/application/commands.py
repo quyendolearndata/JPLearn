@@ -51,3 +51,15 @@ class UnpublishCatalogItemCommand:
 @dataclass(frozen=True)
 class ArchiveCatalogItemCommand:
     item_id: str
+
+
+@dataclass(frozen=True)
+class StartLearningSessionCommand:
+    user_id: str
+    device_class: str
+
+
+@dataclass(frozen=True)
+class EndLearningSessionCommand:
+    user_id: str
+    session_id: str
