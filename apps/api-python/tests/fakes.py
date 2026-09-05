@@ -257,3 +257,33 @@ class FakeLearningRepository:
             "created_at": created_at,
         })
 
+
+class FakeMediaRepository:
+    """In-memory fake implementation of MediaRepository."""
+
+    def __init__(
+        self,
+        initial_assets: dict[str, object] | None = None,
+        existing_items: set[str] | None = None,
+    ) -> None:
+        self.assets: dict[str, object] = dict(initial_assets or {})
+        self.catalog_items: set[str] = set(existing_items or [])
+
+    async def get_by_id(self, asset_id: str):
+        return self.assets.get(asset_id)
+
+    async def add(self, asset) -> None:
+        self.assets[asset.id] = asset
+
+    async def update(self, asset) -> None:
+        self.assets[asset.id] = asset
+
+    async def catalog_item_exists(self, catalog_item_id: str) -> bool:
+        return catalog_item_id in self.catalog_items
+
+    async def list_all_storage_keys(self) -> set[str]:
+        return {getattr(a, "storage_key", "") for a in self.assets.values() if getattr(a, "storage_key", None)}
+
+    async def storage_key_exists(self, storage_key: str) -> bool:
+        return any(getattr(a, "storage_key", None) == storage_key for a in self.assets.values())
+

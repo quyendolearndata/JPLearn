@@ -1,12 +1,11 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from jplearn_api.adapters.persistence.flags_repository import SqlAlchemyFlagsRepository
-from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
 from jplearn_api.application.commands import UpdateFlagsCommand
 from jplearn_api.application.handlers.flags import handle_get_flags, handle_update_flags
+from jplearn_api.application.read_models import UserDTO
+from jplearn_api.bootstrap import create_flags_repository, create_uow
 from jplearn_api.deps import get_session
-from jplearn_api.models import User
 from jplearn_api.roles import require_roles
 from jplearn_api.schemas import Flags
 from jplearn_api.security import require_user
@@ -22,9 +21,9 @@ router = APIRouter(tags=["Flags"])
 )
 async def read_flags(
     session: AsyncSession = Depends(get_session),
-    _user: User = Depends(require_user),
+    _user: UserDTO = Depends(require_user),
 ) -> Flags:
-    repo = SqlAlchemyFlagsRepository(session)
+    repo = create_flags_repository(session)
     result = await handle_get_flags(repo)
     return Flags.model_validate(result)
 
@@ -39,10 +38,10 @@ async def read_flags(
 async def patch_flags(
     body: Flags,
     session: AsyncSession = Depends(get_session),
-    _admin: User = Depends(require_roles("admin")),
+    _admin: UserDTO = Depends(require_roles("admin")),
 ) -> Flags:
-    uow = SqlAlchemyUnitOfWork(session)
-    repo = SqlAlchemyFlagsRepository(session)
+    uow = create_uow(session)
+    repo = create_flags_repository(session)
     cmd = UpdateFlagsCommand(flags=body.model_dump())
     updated = await handle_update_flags(cmd, uow, repo)
     return Flags.model_validate(updated)

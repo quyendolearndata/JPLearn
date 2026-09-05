@@ -3,11 +3,6 @@ from dataclasses import asdict
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from jplearn_api.adapters.persistence.catalog_repository import (
-    SqlAlchemyCatalogQueryAdapter,
-    SqlAlchemyCatalogRepository,
-)
-from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
 from jplearn_api.application.commands import (
     CreateCatalogItemCommand,
     PublishCatalogItemCommand,
@@ -23,10 +18,11 @@ from jplearn_api.application.handlers.catalog import (
 )
 from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.queries import ListPublishedCatalogQuery
+from jplearn_api.application.read_models import UserDTO
+from jplearn_api.bootstrap import create_catalog_query, create_catalog_repository, create_uow
 from jplearn_api.deps import UUIDPath, get_session, get_storage
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
-from jplearn_api.models import User
 from jplearn_api.roles import require_roles
 from jplearn_api.schemas import CatalogItemPublic, CatalogItemStaff, CatalogItemWrite, CatalogList
 from jplearn_api.security import require_user
@@ -45,10 +41,10 @@ router = APIRouter()
 async def list_catalog(
     request: Request,
     session: AsyncSession = Depends(get_session),
-    _user: User = Depends(require_user),
+    _user: UserDTO = Depends(require_user),
     ci_level: int | None = Query(default=None, ge=0, le=4),
 ) -> CatalogList:
-    query_port = SqlAlchemyCatalogQueryAdapter(session, request.app.state.settings)
+    query_port = create_catalog_query(session, request.app.state.settings)
     items_dto = await handle_list_published(
         ListPublishedCatalogQuery(ci_level=ci_level),
         query_port,
@@ -83,10 +79,10 @@ async def create_catalog_item(
     body: CatalogItemWrite,
     request: Request,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(require_roles("teacher", "admin")),
+    user: UserDTO = Depends(require_roles("teacher", "admin")),
 ) -> CatalogItemStaff:
-    uow = SqlAlchemyUnitOfWork(session)
-    repo = SqlAlchemyCatalogRepository(session)
+    uow = create_uow(session)
+    repo = create_catalog_repository(session)
     cmd = CreateCatalogItemCommand(
         topic_id=body.topic_id,
         ci_level=body.ci_level,
@@ -115,10 +111,10 @@ async def submit_level_qa(
     id: UUIDPath,
     request: Request,
     session: AsyncSession = Depends(get_session),
-    _user: User = Depends(require_roles("teacher", "admin")),
+    _user: UserDTO = Depends(require_roles("teacher", "admin")),
 ) -> CatalogItemStaff:
-    uow = SqlAlchemyUnitOfWork(session)
-    repo = SqlAlchemyCatalogRepository(session)
+    uow = create_uow(session)
+    repo = create_catalog_repository(session)
     cmd = SubmitCatalogForQaCommand(item_id=id)
     try:
         dto = await handle_submit_qa(cmd, uow, repo)
@@ -144,10 +140,10 @@ async def publish_catalog_item(
     request: Request,
     session: AsyncSession = Depends(get_session),
     storage: StoragePort = Depends(get_storage),
-    _admin: User = Depends(require_roles("admin")),
+    _admin: UserDTO = Depends(require_roles("admin")),
 ) -> CatalogItemStaff:
-    uow = SqlAlchemyUnitOfWork(session)
-    repo = SqlAlchemyCatalogRepository(session)
+    uow = create_uow(session)
+    repo = create_catalog_repository(session)
     cmd = PublishCatalogItemCommand(item_id=id)
     try:
         dto = await handle_publish(cmd, uow, repo, storage)
@@ -173,10 +169,10 @@ async def unpublish_catalog_item(
     id: UUIDPath,
     request: Request,
     session: AsyncSession = Depends(get_session),
-    _admin: User = Depends(require_roles("admin")),
+    _admin: UserDTO = Depends(require_roles("admin")),
 ) -> CatalogItemStaff:
-    uow = SqlAlchemyUnitOfWork(session)
-    repo = SqlAlchemyCatalogRepository(session)
+    uow = create_uow(session)
+    repo = create_catalog_repository(session)
     cmd = UnpublishCatalogItemCommand(item_id=id)
     try:
         dto = await handle_unpublish(cmd, uow, repo)

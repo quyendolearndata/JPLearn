@@ -63,9 +63,9 @@ def create_catalog_repository(session: Any) -> SqlAlchemyCatalogRepository:
     return SqlAlchemyCatalogRepository(session)
 
 
-def create_catalog_query(session: Any) -> SqlAlchemyCatalogQueryAdapter:
+def create_catalog_query(session: Any, settings: Settings | None = None) -> SqlAlchemyCatalogQueryAdapter:
     """Factory creating a Catalog query adapter."""
-    return SqlAlchemyCatalogQueryAdapter(session)
+    return SqlAlchemyCatalogQueryAdapter(session, settings)
 
 
 def create_learning_repository(session: Any) -> SqlAlchemyLearningRepository:

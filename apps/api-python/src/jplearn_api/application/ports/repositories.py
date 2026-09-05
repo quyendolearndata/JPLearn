@@ -120,3 +120,9 @@ class MediaRepository(Protocol):
 
     async def catalog_item_exists(self, catalog_item_id: str) -> bool:
         ...
+
+    async def list_all_storage_keys(self) -> set[str]:
+        ...
+
+    async def storage_key_exists(self, storage_key: str) -> bool:
+        ...

@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from jplearn_api.adapters.persistence.learning_repository import SqlAlchemyLearningRepository
-from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
 from jplearn_api.application.commands import EndLearningSessionCommand, StartLearningSessionCommand
 from jplearn_api.application.handlers.learning import (
     handle_end_session,
@@ -10,6 +8,8 @@ from jplearn_api.application.handlers.learning import (
     handle_start_session,
 )
 from jplearn_api.application.queries import GetLearnerProgressQuery
+from jplearn_api.application.read_models import UserDTO
+from jplearn_api.bootstrap import create_learning_repository, create_uow
 from jplearn_api.datetime_adapt import to_json_z
 from jplearn_api.deps import UUIDPath, get_session
 from jplearn_api.domain.errors import (
@@ -17,7 +17,6 @@ from jplearn_api.domain.errors import (
     ForbiddenError,
     SessionAlreadyEndedError,
 )
-from jplearn_api.models import User
 from jplearn_api.schemas import LearnerProgressPublic, LearningSessionPublic, SessionStartBody
 from jplearn_api.security import require_user
 
@@ -37,12 +36,12 @@ DEVICE_CLASSES = ("web", "phone", "ipad")
 async def start_session(
     body: SessionStartBody,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(require_user),
+    user: UserDTO = Depends(require_user),
 ) -> LearningSessionPublic:
     if body.device_class not in DEVICE_CLASSES:
         raise HTTPException(status_code=400, detail="device_class is required")
-    uow = SqlAlchemyUnitOfWork(session)
-    repo = SqlAlchemyLearningRepository(session)
+    uow = create_uow(session)
+    repo = create_learning_repository(session)
     cmd = StartLearningSessionCommand(user_id=user.id, device_class=body.device_class)
     try:
         dto = await handle_start_session(cmd, uow, repo)
@@ -71,10 +70,10 @@ async def start_session(
 async def end_session(
     id: UUIDPath,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(require_user),
+    user: UserDTO = Depends(require_user),
 ) -> LearnerProgressPublic:
-    uow = SqlAlchemyUnitOfWork(session)
-    repo = SqlAlchemyLearningRepository(session)
+    uow = create_uow(session)
+    repo = create_learning_repository(session)
     cmd = EndLearningSessionCommand(user_id=user.id, session_id=id)
     try:
         dto = await handle_end_session(cmd, uow, repo)
@@ -102,9 +101,9 @@ async def end_session(
 )
 async def get_progress(
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(require_user),
+    user: UserDTO = Depends(require_user),
 ) -> LearnerProgressPublic:
-    repo = SqlAlchemyLearningRepository(session)
+    repo = create_learning_repository(session)
     query = GetLearnerProgressQuery(user_id=user.id)
     try:
         dto = await handle_get_progress(query, repo)

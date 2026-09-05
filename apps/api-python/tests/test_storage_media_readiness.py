@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 import pytest
 
 from helpers import ensure_topics, grant_role, register
-from jplearn_api.models import MediaAsset
+from jplearn_api.adapters.persistence.models import MediaAsset
 from jplearn_api.reconciliation import reconcile_orphans
 from jplearn_api.storage import InMemoryStorage, LocalFilesystemStorage
 

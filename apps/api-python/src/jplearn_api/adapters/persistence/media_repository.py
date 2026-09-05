@@ -55,3 +55,13 @@ class SqlAlchemyMediaRepository(MediaRepository):
     async def catalog_item_exists(self, catalog_item_id: str) -> bool:
         item = await self._session.get(OrmCatalogItem, catalog_item_id)
         return item is not None
+
+    async def list_all_storage_keys(self) -> set[str]:
+        result = await self._session.execute(select(OrmMediaAsset.storage_key))
+        return set(result.scalars().all())
+
+    async def storage_key_exists(self, storage_key: str) -> bool:
+        result = await self._session.execute(
+            select(OrmMediaAsset.id).where(OrmMediaAsset.storage_key == storage_key)
+        )
+        return result.scalar_one_or_none() is not None

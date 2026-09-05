@@ -1,3 +1,5 @@
+from collections.abc import AsyncIterator
+from dataclasses import asdict
 from pathlib import Path
 from urllib.parse import quote
 
@@ -5,15 +7,37 @@ from fastapi import APIRouter, Depends, HTTPException, Path as FastPath, Query, 
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from jplearn_api import media_service
+from jplearn_api.application.handlers.media import (
+    COMMIT_CANCELLATION_GRACE_SECONDS,
+    handle_get_media,
+    handle_register_hls,
+    handle_stream_hls,
+    handle_stream_media,
+    handle_upload_media,
+)
+from jplearn_api.application.read_models import UserDTO
+from jplearn_api.bootstrap import create_media_repository, create_uow
 from jplearn_api.deps import UUIDPath, get_session, get_storage
-from jplearn_api.media_access import require_media_access
-from jplearn_api.models import User
+from jplearn_api.domain.errors import DomainError
+from jplearn_api.domain.range_parser import RangeNotSatisfiableError
+from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
 from jplearn_api.roles import require_roles
 from jplearn_api.schemas import MediaAssetStaff
+from jplearn_api.security import require_media_access
+from jplearn_api.settings import Settings
 from jplearn_api.storage import StoragePort
 
 router = APIRouter()
+
+
+def _base_url(settings: Settings) -> str:
+    if not settings.api_public_url:
+        raise RuntimeError("API_PUBLIC_URL must be set")
+    return settings.api_public_url.rstrip("/")
+
+
+def _secret(settings: object) -> str:
+    return getattr(settings, "media_signing_secret", None) or getattr(settings, "jwt_secret", None) or "default-secret"
 
 
 @router.post(
@@ -30,9 +54,43 @@ async def upload_media(
     file: UploadFile,
     session: AsyncSession = Depends(get_session),
     storage: StoragePort = Depends(get_storage),
-    _user: User = Depends(require_roles("teacher", "admin")),
+    _user: UserDTO = Depends(require_roles("teacher", "admin")),
 ) -> MediaAssetStaff:
-    return await media_service.upload(session, request.app.state.settings, storage, id, file)
+    uow = create_uow(session)
+    media_repo = create_media_repository(session)
+    settings = request.app.state.settings
+    base_url = _base_url(settings)
+    secret = _secret(settings)
+
+    filename = (file.filename or "").lower().strip()
+    content_type = file.content_type
+    first_chunk = await file.read(64 * 1024)
+
+    async def stream_rest() -> AsyncIterator[bytes]:
+        while True:
+            chunk = await file.read(64 * 1024)
+            if not chunk:
+                break
+            yield chunk
+
+    try:
+        dto = await handle_upload_media(
+            catalog_item_id=id,
+            first_chunk=first_chunk,
+            stream=stream_rest(),
+            filename=filename,
+            content_type=content_type,
+            uow=uow,
+            media_repo=media_repo,
+            storage=storage,
+            base_url=base_url,
+            secret=secret,
+            _grace_seconds=COMMIT_CANCELLATION_GRACE_SECONDS,
+        )
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
+
+    return MediaAssetStaff(**asdict(dto))
 
 
 @router.post(
@@ -52,9 +110,26 @@ async def register_hls(
     request: Request,
     session: AsyncSession = Depends(get_session),
     storage: StoragePort = Depends(get_storage),
-    _user: User = Depends(require_roles("teacher", "admin")),
+    _user: UserDTO = Depends(require_roles("teacher", "admin")),
 ) -> MediaAssetStaff:
-    return await media_service.register_hls(session, request.app.state.settings, storage, id)
+    uow = create_uow(session)
+    media_repo = create_media_repository(session)
+    settings = request.app.state.settings
+    base_url = _base_url(settings)
+    secret = _secret(settings)
+    try:
+        dto = await handle_register_hls(
+            asset_id=id,
+            uow=uow,
+            media_repo=media_repo,
+            storage=storage,
+            base_url=base_url,
+            secret=secret,
+        )
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
+
+    return MediaAssetStaff(**asdict(dto))
 
 
 @router.get(
@@ -86,12 +161,16 @@ async def stream_media(
     storage: StoragePort = Depends(get_storage),
     _access: None = Depends(require_media_access),
 ) -> Response:
+    media_repo = create_media_repository(session)
     range_header = request.headers.get("range")
     try:
-        stream_iter, _size, mime, status_code, headers = await media_service.stream(
-            session, storage, id, range_header=range_header
+        stream_iter, _size, mime, status_code, headers = await handle_stream_media(
+            asset_id=id,
+            media_repo=media_repo,
+            storage=storage,
+            range_header=range_header,
         )
-    except media_service.RangeNotSatisfiable as exc:
+    except RangeNotSatisfiableError as exc:
         raise HTTPException(
             status_code=416,
             detail="Range Not Satisfiable",
@@ -101,6 +180,9 @@ async def stream_media(
                 "X-Content-Type-Options": "nosniff",
             },
         )
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
+
     return StreamingResponse(
         stream_iter,
         status_code=status_code,
@@ -141,13 +223,26 @@ async def stream_hls(
     storage: StoragePort = Depends(get_storage),
     _access: None = Depends(require_media_access),
 ) -> Response:
-    await media_service.get(session, id)
+    media_repo = create_media_repository(session)
+    try:
+        await handle_get_media(id, media_repo)
+    except DomainError as exc:
+        http_exc = map_domain_error_to_http(exc)
+        raise HTTPException(
+            status_code=http_exc.status_code,
+            detail=http_exc.detail,
+            headers={"X-Content-Type-Options": "nosniff"},
+        ) from exc
+
     range_header = request.headers.get("range")
     try:
-        stream_iter, _size, content_type, status_code, headers = await media_service.stream_hls(
-            storage, id, file, range_header=range_header
+        stream_iter, _size, content_type, status_code, headers = await handle_stream_hls(
+            storage=storage,
+            asset_id=id,
+            file=file,
+            range_header=range_header,
         )
-    except media_service.RangeNotSatisfiable as exc:
+    except RangeNotSatisfiableError as exc:
         raise HTTPException(
             status_code=416,
             detail="Range Not Satisfiable",
@@ -157,12 +252,11 @@ async def stream_hls(
                 "X-Content-Type-Options": "nosniff",
             },
         )
-    except HTTPException as exc:
-        # Nest sets @Header("X-Content-Type-Options", "nosniff") on every
-        # response of this handler, including 400/404 errors.
+    except DomainError as exc:
+        http_exc = map_domain_error_to_http(exc)
         raise HTTPException(
-            status_code=exc.status_code,
-            detail=exc.detail,
+            status_code=http_exc.status_code,
+            detail=http_exc.detail,
             headers={"X-Content-Type-Options": "nosniff"},
         ) from exc
 
