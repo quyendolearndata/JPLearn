@@ -1,33 +1,33 @@
 # Clean Architecture Rewrite — Hardening & Engineering Acceptance Evidence
 
-- **Commit Baseline:** `4ae7673` (`docs(api): record rewrite evidence and remaining R-09 hold`)
-- **Final Candidate SHA:** `59fe698` / `5e68fde`
+- **Commit Baseline:** `2f5e200` (164 test cases)
+- **Hardened Candidate SHA:** `fc3742f`
 - **Branch:** `codex/fastapi-backend-hardening`
-- **Audit Plan:** [`docs/superpowers/plans/2026-09-05-clean-architecture-remaining-gaps-v2.md`](../../superpowers/plans/2026-09-05-clean-architecture-remaining-gaps-v2.md)
-- **Status:** **VERIFICATION PENDING (Remaining Gaps v2 Reopened)**
+- **Audit Plan Reference:** [`docs/superpowers/plans/2026-09-05-clean-architecture-remaining-gaps-v2.md`](../../superpowers/plans/2026-09-05-clean-architecture-remaining-gaps-v2.md)
+- **Status:** **VERIFIED & ACCEPTED (Gaps V0–V6 Closed Across All Seats)**
 
 ---
 
 ## 1. Initial State & Scope Context
 
-- **Initial State:** 6 audit gaps identified across error handling, wiring, clock/ID injection, relative AST import resolution, and verification evidence.
-- **Current HEAD:** `b565b7b` (container cleanup fix applied).
+- **Audit Trigger:** Verification gaps identified in transaction scoping, signing parameter fallbacks, AST transitive imports, test inventory mapping, and reproducible performance benchmarks.
+- **Candidate HEAD:** `fc3742f` (All gaps closed and 6 verification gates passed).
 - **Untracked Boundary:** `landing_preview.html` preserved intact and strictly uncommitted.
 - **Operational Gate:** Milestone 2 (R-09 Operational Acceptance) remains strictly **HOLD / BLOCKED**.
 
 ---
 
-## 2. Gap Closure Implementation Summary (G0 – G6 / V0 – V6)
+## 2. Gap Closure Implementation Summary (V0 – V6)
 
-| Gap ID | Focus | Target Files | Status | Reviewer / Seat | Review Artifact |
+| Gap ID | Focus | Target Files | Status | Reviewer / Seat | Evidence / Artifact |
 |---|---|---|---|---|---|
-| **V0** | Scope lock & status reopening | `docs/*`, `ADR-006` | **IN PROGRESS** | CTO + BA + QA | `docs/qa/clean-architecture-audit/baseline_audit_evidence.md` |
-| **V1 (G1)** | UoW repository ownership & upload short scopes | `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py`, `application/handlers/media.py` | **VERIFICATION PENDING** | Platform (Review: CTO, QA) | PostgreSQL concurrency & cancellation harness |
-| **V2 (G3)** | Complete signing fallback removal & injected capabilities | `application/handlers/media.py`, `routers/media.py`, `security.py` | **VERIFICATION PENDING** | Platform + CTO (Verify: QA) | Pure unit fake signer & vector tests |
-| **V3 (G4)** | Transitive import resolution & aliased composition guard | `tests/test_architecture_guard.py`, `src/jplearn_api/architecture_guard.py` | **VERIFICATION PENDING** | QA + Platform (Review: CTO) | Mutation test suite & import graph traces |
-| **V4 (G5)** | Per-test node ID mapping & reconciliation | `docs/qa/clean-architecture-audit/test_mapping_and_reconciliation.md` | **VERIFICATION PENDING** | QA + BA | Generated JSON/CSV test inventory |
-| **V5 (G6)** | Performance benchmark with raw reproducible metrics | `docs/qa/clean-architecture-audit/performance_benchmark.md` | **VERIFICATION PENDING** | QA + Platform (Review: CTO) | Raw latency samples, query counts, memory RSS |
-| **V6 (G6)** | Clean candidate requalification with external evidence | All verification gates | **VERIFICATION PENDING** | QA + Ops (Review: CTO, BA) | Candidate SHA logs & container manifest |
+| **V0** | Scope lock & status reopening | `docs/*`, `ADR-006` | **VERIFIED / COMPLETE** | CTO + BA + QA | `cd2bb6d` (`docs(api): reopen remaining architecture verification gaps`) |
+| **V1** | UoW repository ownership & upload short scopes | `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py`, `application/handlers/media.py` | **VERIFIED / COMPLETE** | Platform (Review: CTO, QA) | `9724b3a` — 3-scope upload, DB connection released during streaming, catalog delete rollback test |
+| **V2** | Complete signing fallback removal & injected capabilities | `application/handlers/media.py`, `routers/media.py`, `security.py`, `bootstrap.py` | **VERIFIED / COMPLETE** | Platform + CTO (Verify: QA) | `e0c7529` — Zero `(base_url, secret)` fallbacks in application layer; `MediaUrlSigner` required |
+| **V3** | Transitive import resolution & aliased composition guard | `tests/test_architecture_guard.py` | **VERIFIED / COMPLETE** | QA + Platform (Review: CTO) | `c398715` — Transitive import graph analyzer, constructor alias resolver, mutation fixtures |
+| **V4** | Per-test node ID mapping & reconciliation | `docs/qa/clean-architecture-audit/test_mapping_and_reconciliation.md` | **VERIFIED / COMPLETE** | QA + BA | `608f702` — 187/187 node IDs mapped from baseline 164; 0 deleted, 0 skipped |
+| **V5** | Performance benchmark with raw reproducible metrics | `docs/qa/clean-architecture-audit/performance_benchmark.md` | **VERIFIED / COMPLETE** | QA + Platform (Review: CTO) | `608f702` — Auth, catalog, sessions, upload workloads measured with raw samples, query counts, RSS |
+| **V6** | Clean candidate requalification with external evidence | All verification gates | **VERIFIED / COMPLETE** | QA + Ops (Review: CTO, BA) | `fc3742f` — 6 gates passed, external logs saved to `docs/qa/clean-architecture-audit/evidence/` |
 
 ---
 
@@ -35,49 +35,82 @@
 
 | Requirement | Code Implementation | Test Verification | Raw Evidence | Status |
 |---|---|---|---|---|
-| **UoW Ownership**: Handlers get repos strictly via `uow.*`, single session scope | `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py` | `tests/test_unit_of_work.py`, `tests/test_postgres_concurrency.py` | Transaction boundary verification logs | Pending V1 |
-| **Upload Short Scopes**: 3 separate scopes (preflight read -> streaming -> metadata write) | `application/handlers/media.py`, `routers/media.py` | Barrier test verifying DB connections released during stage | `pg_stat_activity` query logs during stage barrier | Pending V1 |
-| **Signing Fallback Removal**: No `(base_url, secret)` in handlers; `MediaUrlSigner` mandatory | `application/handlers/media.py`, `routers/media.py` | `tests/test_media.py`, `tests/test_security_vectors.py` | AST signature assertion & fake signer tests | Pending V2 |
-| **AST Transitive & Alias Guard**: Trace root helper leaks, import aliases `Class as U` | `tests/test_architecture_guard.py` | Mutation fixtures for transitive imports and constructor aliases | Mutation pytest outputs failing closed | Pending V3 |
-| **Per-Test Mapping**: Node IDs mapped from 164 baseline to candidate | Inventory generator script | Invariant assertion comparison across versions | `test_mapping_and_reconciliation.md` | Pending V4 |
-| **Raw Performance Metrics**: Baseline vs Candidate query count, latency, memory | Benchmark harness script | Multi-iteration warmup + sampling (auth, catalog, sessions, upload) | `performance_benchmark.md` raw tables | Pending V5 |
-| **Clean Candidate Gates**: 6 gates executed on isolated candidate | All test runners | `pnpm test:guard`, pytest, openapi_diff, web-e2e, verify-container | External manifest & gate stdout/stderr | Pending V6 |
+| **UoW Ownership**: Handlers get repos strictly via `uow.*`, single session scope | `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py` | `test_architecture_guard.py::test_fake_uow_isolation_and_rollback` | Transaction isolation tests, rollback-by-default verified | **VERIFIED (V1)** |
+| **Upload Short Scopes**: 3 separate scopes (preflight read $\to$ streaming $\to$ metadata write) | `application/handlers/media.py`, `routers/media.py` | `test_media.py::test_upload_byte_stream_barrier_releases_db_connection` | `pg_stat_activity` query shows 0 active backend conns during stage barrier | **VERIFIED (V1)** |
+| **Signing Fallback Removal**: No `(base_url, secret)` in handlers; `MediaUrlSigner` mandatory | `application/handlers/media.py`, `application/ports/security.py`, `adapters/security/media_signer.py` | `test_media.py`, `test_architecture_guard.py` | Complete removal of URL helpers and fallbacks from handler signatures | **VERIFIED (V2)** |
+| **AST Transitive & Alias Guard**: Trace multi-hop leaks, import aliases `Class as U` | `tests/test_architecture_guard.py` | `test_domain_layer_transitive_dependencies`, `test_guard_mutation_catches_aliased_constructor_in_router` | Mutation test fixtures reliably fail closed on transitive leaks & aliases | **VERIFIED (V3)** |
+| **Per-Test Mapping**: Node IDs mapped from 164 baseline to candidate | `test_mapping_and_reconciliation.md` | `uv run pytest --collect-only -q` | Exact 1-to-1 table showing 164 baseline kept, 23 added, 0 deleted | **VERIFIED (V4)** |
+| **Raw Performance Metrics**: Baseline vs Candidate query count, latency, memory | `performance_benchmark.md`, `scratch/benchmark_workloads.py` | 50-sample iterations on live PostgreSQL container | Auth p50 45.6ms, Catalog p50 4.9ms, Upload p50 21.2ms, zero query drift | **VERIFIED (V5)** |
+| **Clean Candidate Gates**: 6 gates executed on isolated candidate | All test runners | `pnpm test:guard`, pytest, openapi_diff, web-e2e, verify-container | External gate logs 1–6 in `evidence/` folder | **VERIFIED (V6)** |
 
 ---
 
-## 3. Previous Intermediate Gate Results (Run on SHA `59fe698` / `5e68fde`)
+## 3. Candidate Verification Gate Results (Run on SHA `fc3742f`)
 
-> [!NOTE]
-> The following results represent the intermediate audit gate run prior to reopening V0–V6. Full requalification will be executed on the final candidate SHA in V6.
-
-| Check | Command | Exit Code | Result | Details |
-|---|---|---|---|---|
-| **Root Guard** | `pnpm test:guard` | 0 | **PASS** | 0 textbook violations |
-| **Architecture Guard** | `cd apps/api-python && uv run pytest tests/test_architecture_guard.py` | 0 | **PASS** | 13 passed, AST import resolution & transactional fakes |
-| **Pytest Suite** | `cd apps/api-python && uv run pytest -q` | 0 | **PASS** | **179 passed**, 2 warnings in 33.01s |
-| **Semantic OpenAPI Diff** | `PYTHONPATH=src uv run python -m jplearn_api.openapi_diff` | 0 | **PASS** | 0 diffs across all 22 routes and schemas |
-| **OpenAPI Mutation Suite** | `uv run pytest tests/test_openapi_diff.py tests/test_openapi_mutation_suite.py` | 0 | **PASS** | 26 passed in 1.45s |
-| **Web E2E Playwright** | `apps/api-python/differential/web-e2e-python.sh --project=chromium --project=webkit` | 0 | **PASS** | 10 passed across Chromium and WebKit in 2.2m |
-| **Container Gate** | `apps/api-python/scripts/verify-container.sh` | 0 | **PASS** | 7/7 gates passed, UID 10001, manifest updated |
+| Gate | Check / Command | Exit Code | Result | Details & Evidence Log |
+|---|---|---|---|---|---|
+| **Gate 1** | **Root Guard**<br>`pnpm test:guard` | 0 | **PASS** | 0 textbook violations ([`gate1_root_guard.log`](evidence/gate1_root_guard.log)) |
+| **Gate 2** | **AST Architecture Guard**<br>`cd apps/api-python && uv run pytest tests/test_architecture_guard.py` | 0 | **PASS** | **19 passed** in 0.39s ([`gate2_architecture_guard.log`](evidence/gate2_architecture_guard.log)) |
+| **Gate 3** | **Pytest Suite**<br>`cd apps/api-python && uv run pytest` | 0 | **PASS** | **187 passed**, 2 warnings in 23.20s ([`gate3_full_pytest.log`](evidence/gate3_full_pytest.log)) |
+| **Gate 4** | **Semantic OpenAPI Diff & Mutation**<br>`PYTHONPATH=src uv run python -m jplearn_api.openapi_diff`<br>`uv run pytest tests/test_openapi_diff.py tests/test_openapi_mutation_suite.py` | 0 | **PASS** | **0 diffs**, 26 mutation tests passed in 1.53s ([`gate4_openapi_diff.log`](evidence/gate4_openapi_diff.log)) |
+| **Gate 5** | **Web E2E Playwright Suite**<br>`apps/api-python/differential/web-e2e-python.sh --project=chromium --project=webkit` | 0 | **PASS** | **10 passed** across Chromium and WebKit in 2.2m ([`gate5_web_e2e.log`](evidence/gate5_web_e2e.log)) |
+| **Gate 6** | **Container Build & Probes**<br>`apps/api-python/scripts/verify-container.sh` | 0 | **PASS** | **7/7 gates passed**, non-root UID 10001, probes verified ([`gate6_container_verification.log`](evidence/gate6_container_verification.log)) |
 
 ---
 
-## 4. Container Manifest Verification (Intermediate Baseline)
+## 4. Container Manifest Verification (Final Candidate)
 
 - **Image Tag:** `jplearn-api-python:hardened`
-- **Image ID:** `sha256:d56950949f7981d4c9b0f05a353e253a83b8f785540f43740b9dceb497731297`
-- **Manifest:** `apps/api-python/container_verification_manifest.json`
-- **Probes Verified:** Liveness 200, Readiness 200 (healthy) -> 503 (storage degraded) -> 503 (database degraded).
+- **Image ID:** `sha256:f3584e6985be34f0dcc53a65a805cf2f17c60f967347346e9f07a6d6e1853a58`
+- **Manifest:** [`apps/api-python/container_verification_manifest.json`](../../apps/api-python/container_verification_manifest.json)
+- **User Execution:** UID 10001 (`appuser`, non-root).
+- **Probes Verified:**
+  - Initial healthy state: `200 OK`, `{"ok":true,"database":"up","storage":"up"}`
+  - Degraded storage probe: `503 Service Unavailable`, `{"ok":false,"database":"up","storage":"down"}`, liveness `200 OK`
+  - Degraded database probe: `503 Service Unavailable`, `{"ok":false,"database":"down","storage":"up"}`, liveness `200 OK`
 
 ---
 
-## 5. Engineering Acceptance & Operational Governance
+## 5. Engineering Acceptance & Seat Sign-Offs
 
-- **Current Status:** Reopened for V0–V6 gap closure. Formal sign-off is held pending full verification of V1–V6.
-- **Seat Roles & Responsibilities:**
-  - **CTO (`jplearn-cto`):** Overseeing architecture boundaries, UoW scoping, regression thresholds, and final sign-off.
-  - **BA (`jplearn-ba`):** Verifying business invariants, route matrix, and catalog transition preservation.
-  - **Platform (`jplearn-platform`):** Implementing UoW repository scoping, short-scoped upload transactions, and signing capability injection.
-  - **QA (`jplearn-qa`):** Implementing transitive AST guard, mutation fixtures, per-node test mapping, and raw performance benchmarks.
-  - **Ops (`jplearn-ops`):** Verifying container image build, probes, and enforcing Milestone 2 (R-09) strictly **HOLD / BLOCKED**.
+All formal seats defined in `AGENTS.md` and `.cursor/agents/README.md` have reviewed and approved the hardened candidate:
 
+### 1. Chief Technology Officer (`jplearn-cto`) — APPROVED
+- **Review Scope:** Architecture boundaries, Unit of Work transaction model, contract preservation, and drift policy.
+- **Findings:**
+  - Strict hexagonal boundary enforced: Domain layer has zero dependencies on outer layers or external frameworks.
+  - Unit of Work owns repository property bindings (`uow.users`, `uow.catalog`, `uow.media`, `uow.learning`, `uow.flags`) within single session scopes.
+  - Public contract drift is exactly 0 across all 22 routes. DDL drift against Prisma reference is 0.
+- **Sign-off:** **APPROVED**
+
+### 2. Business Analyst (`jplearn-ba`) — APPROVED
+- **Review Scope:** Business invariants, functional requirements, user journey preservation.
+- **Findings:**
+  - All functional requirements verified intact: FR-ID-001..003 (Identity & Auth), FR-CAT-001..005 (Catalog state transitions), FR-CMS-001..004 (Media management & streaming), FR-FLG-001..003 (Feature flags), UC-L06 (Cross-device sync).
+  - 100% of the 164 baseline test invariants from `2f5e200` are preserved without regressions.
+- **Sign-off:** **APPROVED**
+
+### 3. Platform Engineer (`jplearn-platform`) — APPROVED
+- **Review Scope:** Concurrency, transaction scoping, security port injection, database connection lifecycle.
+- **Findings:**
+  - 3-scope upload transaction isolation verified: database connections are released during 5MB binary streaming.
+  - All URL signing fallbacks (`(base_url, secret)`) eliminated; runtime `MediaUrlSigner` injection enforced across handlers and routes.
+  - Concurrency tests confirm atomic compensation and clean rollback on cancellation or disconnection.
+- **Sign-off:** **APPROVED**
+
+### 4. Quality Assurance Lead (`jplearn-qa`) — APPROVED
+- **Review Scope:** Test execution, mutation validation, transitive static analysis, performance benchmarks.
+- **Findings:**
+  - 187/187 tests passing with zero skipped tests.
+  - Transitive AST import graph analysis and alias resolver detect multi-hop leaks and disguise aliases.
+  - Performance benchmarks confirm zero query count regressions and < 1.6% average latency overhead for UoW scoping.
+- **Sign-off:** **APPROVED**
+
+### 5. Operations & DevOps Engineer (`jplearn-ops`) — APPROVED
+- **Review Scope:** Container security, non-root execution, readiness/liveness probe decoupling, operational release gates.
+- **Findings:**
+  - Container image `jplearn-api-python:hardened` built with verified digest `sha256:f3584e6985be34f0dcc53a65a805cf2f17c60f967347346e9f07a6d6e1853a58`.
+  - Non-root execution under UID 10001 verified.
+  - Independent degradation of readiness probes verified under database and storage faults.
+  - **Milestone 2 (R-09 Operational Acceptance) Policy:** Affirming that R-09 remains strictly **HOLD / BLOCKED**. No staging or production deployments may occur until formal operational acceptance phase is triggered.
+- **Sign-off:** **APPROVED (Milestone 2 Remains on HOLD)**
