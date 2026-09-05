@@ -43,6 +43,8 @@ class SqlAlchemyMediaRepository(MediaRepository):
             mime=asset.mime,
         )
         self._session.add(orm_asset)
+        if hasattr(self._session, "flush"):
+            await self._session.flush()
 
     async def update(self, asset: DomainMediaAsset) -> None:
         orm_asset = await self._session.get(OrmMediaAsset, asset.id)

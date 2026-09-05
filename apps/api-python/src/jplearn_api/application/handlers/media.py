@@ -133,42 +133,52 @@ async def handle_upload_media(
         raise
 
     # 4. Record staging and run pre-commit hooks
-    asset = MediaAsset(
-        id=asset_id,
-        catalog_item_id=catalog_item_id,
-        storage_key=final_key,
-        playback_url=f"{base_url}/media/{asset_id}",
-        mime="video/mp4",
-    )
-    await media_repo.add(asset)
-
-    if _pre_commit_hook is not None:
+    async def _compensate_pre_commit() -> None:
+        rb_ok = False
         try:
-            hook_res = _pre_commit_hook()
-            if asyncio.iscoroutine(hook_res):
-                await hook_res
-        except BaseException:
-            rb_ok = False
+            await uow.rollback()
+            rb_ok = True
+        except Exception as rb_exc:
+            logger.warning(
+                "media_upload_commit_outcome_unknown",
+                extra={
+                    "asset_id": asset_id,
+                    "catalog_item_id": catalog_item_id,
+                    "final_key": final_key,
+                    "reason": f"rollback_failed_pre_commit: {type(rb_exc).__name__}",
+                },
+            )
+        if rb_ok:
             try:
-                await uow.rollback()
-                rb_ok = True
-            except Exception as rb_exc:
+                await storage.delete(final_key)
+            except Exception as del_exc:
                 logger.warning(
-                    "media_upload_commit_outcome_unknown",
+                    "media_cleanup_failed",
                     extra={
                         "asset_id": asset_id,
                         "catalog_item_id": catalog_item_id,
                         "final_key": final_key,
-                        "reason": f"rollback_failed: {type(rb_exc).__name__}",
+                        "reason": f"storage_delete_failed: {type(del_exc).__name__}",
                     },
                 )
 
-            if rb_ok:
-                try:
-                    await storage.delete(final_key)
-                except Exception:
-                    pass
-            raise
+    try:
+        asset = MediaAsset(
+            id=asset_id,
+            catalog_item_id=catalog_item_id,
+            storage_key=final_key,
+            playback_url=f"{base_url}/media/{asset_id}",
+            mime="video/mp4",
+        )
+        await media_repo.add(asset)
+
+        if _pre_commit_hook is not None:
+            hook_res = _pre_commit_hook()
+            if asyncio.iscoroutine(hook_res):
+                await hook_res
+    except BaseException:
+        await asyncio.shield(_compensate_pre_commit())
+        raise
 
     # 5. Commit with outcome machine
     commit_task = asyncio.create_task(uow.commit())
@@ -223,8 +233,10 @@ async def handle_upload_media(
             )
         raise
     except Exception as exc:
-        is_integrity_error = "IntegrityError" in [cls.__name__ for cls in type(exc).__mro__]
-        if is_integrity_error:
+        is_deterministic_abort = getattr(exc, "is_deterministic_abort", False) or (
+            "IntegrityError" in [cls.__name__ for cls in type(exc).__mro__]
+        )
+        if is_deterministic_abort:
             rb_ok = False
             try:
                 await uow.rollback()
@@ -242,8 +254,16 @@ async def handle_upload_media(
             if rb_ok:
                 try:
                     await storage.delete(final_key)
-                except Exception:
-                    pass
+                except Exception as del_exc:
+                    logger.warning(
+                        "media_cleanup_failed",
+                        extra={
+                            "asset_id": asset_id,
+                            "catalog_item_id": catalog_item_id,
+                            "final_key": final_key,
+                            "reason": f"storage_delete_failed: {type(del_exc).__name__}",
+                        },
+                    )
         else:
             logger.warning(
                 "media_upload_commit_outcome_unknown",
@@ -251,7 +271,7 @@ async def handle_upload_media(
                     "asset_id": asset_id,
                     "catalog_item_id": catalog_item_id,
                     "final_key": final_key,
-                    "reason": type(exc).__name__,
+                    "reason": f"commit_failed:{type(exc).__name__}",
                 },
             )
             async def _cleanup_uow() -> None:

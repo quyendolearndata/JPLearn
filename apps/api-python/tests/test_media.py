@@ -1138,3 +1138,100 @@ def test_upload_outcome_5_post_commit_cancellation_preserves_object(live_client)
             await engine.dispose()
 
     asyncio.run(_run())
+
+
+@pytest.mark.asyncio
+async def test_upload_repo_add_failure_after_promote_rolls_back_and_compensates():
+    """G1: Fault injection into repo.add() after promote must rollback UoW and delete final object."""
+    from fakes import FakeMediaRepository, FakeStoragePort, FakeUnitOfWork
+    from jplearn_api.application.handlers.media import handle_upload_media
+
+    uow = FakeUnitOfWork()
+    media_repo = FakeMediaRepository()
+    media_repo.catalog_items.add("cat-item-1")
+    storage = FakeStoragePort()
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+    async def fake_stream():
+        yield b"chunk-data"
+
+    async def fail_add(asset):
+        raise RuntimeError("Database connection dropped during repo.add")
+
+    media_repo.add = fail_add
+
+    with pytest.raises(RuntimeError, match="Database connection dropped during repo.add"):
+        await handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="video.mp4",
+            content_type="video/mp4",
+            uow=uow,
+            media_repo=media_repo,
+            storage=storage,
+            base_url="http://localhost:3001",
+            secret="test-secret-at-least-32-bytes-long",
+        )
+
+    # Invariant: UoW must be rolled back and final object must NOT remain in storage!
+    assert uow.rolled_back is True, "UoW was not rolled back when repo.add failed!"
+    assert len(storage.keys) == 0, f"Final promoted object leaked in storage: {storage.keys}"
+
+
+@pytest.mark.asyncio
+async def test_upload_pre_commit_storage_delete_failure_preserves_original_exception_and_logs_warning(monkeypatch):
+    """G1: If storage.delete fails during pre-commit compensation, original error is preserved and warning is logged."""
+    from fakes import FakeMediaRepository, FakeStoragePort, FakeUnitOfWork
+    from jplearn_api.application.handlers.media import handle_upload_media, logger
+
+    uow = FakeUnitOfWork()
+    media_repo = FakeMediaRepository()
+    media_repo.catalog_items.add("cat-item-1")
+    storage = FakeStoragePort()
+
+    logged_warnings = []
+    real_warning = logger.warning
+
+    def capture_warning(msg, *args, **kwargs):
+        logged_warnings.append((msg, kwargs.get("extra", {})))
+        return real_warning(msg, *args, **kwargs)
+
+    monkeypatch.setattr(logger, "warning", capture_warning)
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+    async def fake_stream():
+        yield b"chunk-data"
+
+    async def fail_hook():
+        raise ValueError("Specific pre-commit validation failure")
+
+    async def fail_delete(key):
+        raise PermissionError("Storage permission denied on unlink")
+
+    storage.delete = fail_delete
+
+    with pytest.raises(ValueError, match="Specific pre-commit validation failure"):
+        await handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="video.mp4",
+            content_type="video/mp4",
+            uow=uow,
+            media_repo=media_repo,
+            storage=storage,
+            base_url="http://localhost:3001",
+            secret="test-secret-at-least-32-bytes-long",
+            _pre_commit_hook=fail_hook,
+        )
+
+    assert uow.rolled_back is True
+    cleanup_warnings = [w for w in logged_warnings if w[0] == "media_cleanup_failed"]
+    assert len(cleanup_warnings) == 1
+    assert "PermissionError" in cleanup_warnings[0][1].get("reason", "")
+    assert "secret" not in str(cleanup_warnings[0][1])
+
+
