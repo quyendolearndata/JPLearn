@@ -1283,6 +1283,347 @@ async def test_upload_recheck_catalog_query_error_compensates_storage():
 
 
 @pytest.mark.asyncio
+async def test_upload_repeated_cancellation_preserves_cleanup_and_deletes_object():
+    """C1 reproducer: Query recheck is cancelled (1st cancel), and then rollback cleanup
+    is cancelled again (2nd cancel).
+    Invariant: Rollback is confirmed -> final object MUST be deleted from storage!
+    """
+    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from jplearn_api.application.handlers.media import handle_upload_media
+
+    storage = FakeStoragePort()
+    signer = FakeMediaUrlSigner()
+
+    uow1 = FakeUnitOfWork()
+    uow1.media.catalog_items.add("cat-item-1")
+
+    uow2 = FakeUnitOfWork()
+    uow2.media.catalog_items.add("cat-item-1")
+
+    recheck_barrier = asyncio.Event()
+    rollback_barrier = asyncio.Event()
+    rollback_proceed = asyncio.Event()
+
+    real_catalog_exists = uow2.media.catalog_item_exists
+    async def cancelling_catalog_exists(item_id: str) -> bool:
+        recheck_barrier.set()
+        # Wait until cancelled
+        await asyncio.sleep(100)
+        return await real_catalog_exists(item_id)
+
+    uow2.media.catalog_item_exists = cancelling_catalog_exists
+
+    real_rollback = uow2.rollback
+    async def barrier_rollback() -> None:
+        rollback_barrier.set()
+        await rollback_proceed.wait()
+        await real_rollback()
+
+    uow2.rollback = barrier_rollback
+
+    scopes = [uow1, uow2]
+    def uow_factory():
+        return scopes.pop(0)
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+    async def fake_stream():
+        yield b"chunk-data"
+
+    upload_task = asyncio.create_task(
+        handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="video.mp4",
+            content_type="video/mp4",
+            uow_factory=uow_factory,
+            storage=storage,
+            signer=signer,
+        )
+    )
+
+    # 1. Wait until recheck in Scope 3 is entered
+    await recheck_barrier.wait()
+
+    # 2. Trigger 1st cancellation (at recheck query)
+    upload_task.cancel()
+
+    # 3. Wait until cleanup rollback begins
+    await rollback_barrier.wait()
+
+    # 4. Trigger 2nd cancellation (while rollback cleanup is in-flight)
+    upload_task.cancel()
+    rollback_proceed.set()
+
+    # 5. Wait for upload_task to terminate
+    with pytest.raises(asyncio.CancelledError):
+        await upload_task
+
+    # Invariant: write_uow rollback is confirmed, so final promoted object MUST NOT leak in storage!
+    assert uow2.rolled_back is True, "Write UoW must be rolled back"
+    assert len(storage.keys) == 0, f"Final object leaked in storage after repeated cancellation: {storage.keys}"
+
+
+@pytest.mark.asyncio
+async def test_upload_cancellation_during_storage_delete_completes_cleanup_and_no_orphan_task():
+    """C1 fault matrix: Cancellation received while storage delete is in-flight
+    does not abandon cleanup task; cleanup completes and final object is removed.
+    """
+    from fakes import FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from jplearn_api.application.handlers.media import handle_upload_media
+
+    storage = FakeStoragePort()
+    signer = FakeMediaUrlSigner()
+
+    uow1 = FakeUnitOfWork()
+    uow1.media.catalog_items.add("cat-item-1")
+
+    uow2 = FakeUnitOfWork()
+    uow2.media.catalog_items.add("cat-item-1")
+
+    recheck_barrier = asyncio.Event()
+    recheck_proceed = asyncio.Event()
+    real_exists = uow2.media.catalog_item_exists
+
+    async def barrier_exists(catalog_item_id):
+        recheck_barrier.set()
+        await recheck_proceed.wait()
+        return await real_exists(catalog_item_id)
+
+    uow2.media.catalog_item_exists = barrier_exists
+
+    delete_barrier = asyncio.Event()
+    delete_proceed = asyncio.Event()
+    real_delete = storage.delete
+
+    async def barrier_delete(key):
+        delete_barrier.set()
+        await delete_proceed.wait()
+        return await real_delete(key)
+
+    storage.delete = barrier_delete
+
+    scopes = [uow1, uow2]
+
+    def uow_factory():
+        return scopes.pop(0)
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+    async def fake_stream():
+        yield b"chunk-data"
+
+    upload_task = asyncio.create_task(
+        handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="video.mp4",
+            content_type="video/mp4",
+            uow_factory=uow_factory,
+            storage=storage,
+            signer=signer,
+        )
+    )
+
+    # 1. Wait until recheck in Scope 3 is entered and trigger 1st cancellation
+    await recheck_barrier.wait()
+    upload_task.cancel()
+    recheck_proceed.set()
+
+    # 2. Wait until storage delete begins
+    await delete_barrier.wait()
+
+    # 3. Trigger 2nd cancellation while storage delete is actively in-flight
+    upload_task.cancel()
+    delete_proceed.set()
+
+    # 4. Wait for upload_task to terminate
+    with pytest.raises(asyncio.CancelledError):
+        await upload_task
+
+    # Invariant: storage delete completed, no leak
+    assert uow2.rolled_back is True, "Write UoW must be rolled back"
+    assert len(storage.keys) == 0, f"Final object leaked: {storage.keys}"
+
+
+@pytest.mark.asyncio
+async def test_upload_triple_cancellation_preserves_original_cancelled_error():
+    """C1 fault matrix: Triple repeated cancellation across recheck, rollback,
+    and storage delete does not cause concurrency error, unhandled exception, or storage leak.
+    """
+    from fakes import FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from jplearn_api.application.handlers.media import handle_upload_media
+
+    storage = FakeStoragePort()
+    signer = FakeMediaUrlSigner()
+
+    uow1 = FakeUnitOfWork()
+    uow1.media.catalog_items.add("cat-item-1")
+
+    uow2 = FakeUnitOfWork()
+    uow2.media.catalog_items.add("cat-item-1")
+
+    recheck_barrier = asyncio.Event()
+    recheck_proceed = asyncio.Event()
+    real_exists = uow2.media.catalog_item_exists
+
+    async def barrier_exists(catalog_item_id):
+        recheck_barrier.set()
+        await recheck_proceed.wait()
+        return await real_exists(catalog_item_id)
+
+    uow2.media.catalog_item_exists = barrier_exists
+
+    rollback_barrier = asyncio.Event()
+    rollback_proceed = asyncio.Event()
+    real_rollback = uow2.rollback
+
+    async def barrier_rollback():
+        rollback_barrier.set()
+        await rollback_proceed.wait()
+        await real_rollback()
+
+    uow2.rollback = barrier_rollback
+
+    delete_barrier = asyncio.Event()
+    delete_proceed = asyncio.Event()
+    real_delete = storage.delete
+
+    async def barrier_delete(key):
+        delete_barrier.set()
+        await delete_proceed.wait()
+        return await real_delete(key)
+
+    storage.delete = barrier_delete
+
+    scopes = [uow1, uow2]
+
+    def uow_factory():
+        return scopes.pop(0)
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+    async def fake_stream():
+        yield b"chunk-data"
+
+    upload_task = asyncio.create_task(
+        handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="video.mp4",
+            content_type="video/mp4",
+            uow_factory=uow_factory,
+            storage=storage,
+            signer=signer,
+        )
+    )
+
+    # 1. Cancel at recheck
+    await recheck_barrier.wait()
+    upload_task.cancel()
+    recheck_proceed.set()
+
+    # 2. Cancel at rollback
+    await rollback_barrier.wait()
+    upload_task.cancel()
+    rollback_proceed.set()
+
+    # 3. Cancel at storage delete
+    await delete_barrier.wait()
+    upload_task.cancel()
+    delete_proceed.set()
+
+    with pytest.raises(asyncio.CancelledError):
+        await upload_task
+
+    assert uow2.rolled_back is True
+    assert len(storage.keys) == 0
+
+
+@pytest.mark.asyncio
+async def test_upload_rollback_drain_timeout_sets_outcome_unknown_and_retains_object(monkeypatch):
+    """C1 fault matrix: When rollback cleanup hangs and exceeds grace budget,
+    coordinator marks outcome as outcome_unknown, retains final object for recovery,
+    and logs structured warning with task state.
+    """
+    from fakes import FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from jplearn_api.application.handlers.media import handle_upload_media, logger
+
+    storage = FakeStoragePort()
+    signer = FakeMediaUrlSigner()
+
+    uow1 = FakeUnitOfWork()
+    uow1.media.catalog_items.add("cat-item-1")
+
+    uow2 = FakeUnitOfWork()
+    uow2.media.catalog_items.add("cat-item-1")
+
+    recheck_barrier = asyncio.Event()
+    real_exists = uow2.media.catalog_item_exists
+
+    async def barrier_exists(catalog_item_id):
+        recheck_barrier.set()
+        await asyncio.sleep(100)  # Hang indefinitely until cancelled
+        return await real_exists(catalog_item_id)
+
+    uow2.media.catalog_item_exists = barrier_exists
+
+    # Rollback also hangs indefinitely
+    async def hanging_rollback():
+        await asyncio.sleep(100)
+
+    uow2.rollback = hanging_rollback
+
+    scopes = [uow1, uow2]
+
+    def uow_factory():
+        return scopes.pop(0)
+
+    logged_warnings = []
+    real_warning = logger.warning
+
+    def capture_warning(msg, *args, **kwargs):
+        logged_warnings.append((msg, kwargs.get("extra", {})))
+        return real_warning(msg, *args, **kwargs)
+
+    monkeypatch.setattr(logger, "warning", capture_warning)
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+    async def fake_stream():
+        yield b"chunk-data"
+
+    upload_task = asyncio.create_task(
+        handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="video.mp4",
+            content_type="video/mp4",
+            uow_factory=uow_factory,
+            storage=storage,
+            signer=signer,
+            _grace_seconds=0.05,
+        )
+    )
+
+    await recheck_barrier.wait()
+    upload_task.cancel()
+
+    with pytest.raises(asyncio.CancelledError):
+        await upload_task
+
+    # Invariant: Drain timed out, so outcome is unknown, final object is retained
+    assert len(storage.keys) == 1, f"Object must be retained when rollback times out: {storage.keys}"
+    unknown_warnings = [w for w in logged_warnings if w[0] == "media_upload_commit_outcome_unknown"]
+    assert len(unknown_warnings) >= 1
+    assert "drain_timeout" in unknown_warnings[0][1].get("task_state", "")
+
+
+
+@pytest.mark.asyncio
 async def test_upload_write_uow_enter_failure_compensates_storage():
     """R1 regression test: When write UoW __aenter__ raises after promote,
     final object is deleted from storage and original exception is preserved.
