@@ -1,47 +1,48 @@
 # Clean Architecture Rewrite — Hardening & Engineering Acceptance Evidence
 
 - **Commit Baseline:** `2f5e200` (164 test cases)
-- **Hardened Candidate SHA:** `fc3742f`
+- **Hardened Candidate SHA (Historical):** `fc3742f`
 - **Branch:** `codex/fastapi-backend-hardening`
-- **Audit Plan Reference:** [`docs/superpowers/plans/2026-09-05-clean-architecture-remaining-gaps-v2.md`](../../superpowers/plans/2026-09-05-clean-architecture-remaining-gaps-v2.md)
-- **Status:** **VERIFIED & ACCEPTED (Gaps V0–V6 Closed Across All Seats)**
+- **Audit Plan Reference:** [`docs/superpowers/plans/2026-09-05-clean-architecture-final-closure-v3.md`](../../superpowers/plans/2026-09-05-clean-architecture-final-closure-v3.md)
+- **Status:** **VERIFICATION PENDING (R0–R5 in progress per 2026-09-05-clean-architecture-final-closure-v3.md)**
 
 ---
 
 ## 1. Initial State & Scope Context
 
-- **Audit Trigger:** Verification gaps identified in transaction scoping, signing parameter fallbacks, AST transitive imports, test inventory mapping, and reproducible performance benchmarks.
-- **Candidate HEAD:** `fc3742f` (All gaps closed and 6 verification gates passed).
+- **Audit Trigger:** Verification gaps identified in transaction scoping (post-promote compensation leak on recheck query error), upload handler API ownership (`media_repo` bypass), raw test inventory collection across revisions, and measured baseline performance data.
+- **Current Baseline:** `b7804a5` (Historical candidate `fc3742f` recorded 6 gates passing; reopened under Final Closure v3 plan).
 - **Untracked Boundary:** `landing_preview.html` preserved intact and strictly uncommitted.
 - **Operational Gate:** Milestone 2 (R-09 Operational Acceptance) remains strictly **HOLD / BLOCKED**.
 
 ---
 
-## 2. Gap Closure Implementation Summary (V0 – V6)
+## 2. Gap Closure Implementation Summary (V0 – V6 Status)
 
 | Gap ID | Focus | Target Files | Status | Reviewer / Seat | Evidence / Artifact |
 |---|---|---|---|---|---|
-| **V0** | Scope lock & status reopening | `docs/*`, `ADR-006` | **VERIFIED / COMPLETE** | CTO + BA + QA | `cd2bb6d` (`docs(api): reopen remaining architecture verification gaps`) |
-| **V1** | UoW repository ownership & upload short scopes | `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py`, `application/handlers/media.py` | **VERIFIED / COMPLETE** | Platform (Review: CTO, QA) | `9724b3a` — 3-scope upload, DB connection released during streaming, catalog delete rollback test |
-| **V2** | Complete signing fallback removal & injected capabilities | `application/handlers/media.py`, `routers/media.py`, `security.py`, `bootstrap.py` | **VERIFIED / COMPLETE** | Platform + CTO (Verify: QA) | `e0c7529` — Zero `(base_url, secret)` fallbacks in application layer; `MediaUrlSigner` required |
-| **V3** | Transitive import resolution & aliased composition guard | `tests/test_architecture_guard.py` | **VERIFIED / COMPLETE** | QA + Platform (Review: CTO) | `c398715` — Transitive import graph analyzer, constructor alias resolver, mutation fixtures |
-| **V4** | Per-test node ID mapping & reconciliation | `docs/qa/clean-architecture-audit/test_mapping_and_reconciliation.md` | **VERIFIED / COMPLETE** | QA + BA | `608f702` — 187/187 node IDs mapped from baseline 164; 0 deleted, 0 skipped |
-| **V5** | Performance benchmark with raw reproducible metrics | `docs/qa/clean-architecture-audit/performance_benchmark.md` | **VERIFIED / COMPLETE** | QA + Platform (Review: CTO) | `608f702` — Auth, catalog, sessions, upload workloads measured with raw samples, query counts, RSS |
-| **V6** | Clean candidate requalification with external evidence | All verification gates | **VERIFIED / COMPLETE** | QA + Ops (Review: CTO, BA) | `fc3742f` — 6 gates passed, external logs saved to `docs/qa/clean-architecture-audit/evidence/` |
+| **V0** | Scope lock & status reopening | `docs/*`, `ADR-006` | **REOPENED (R0)** | CTO + BA + QA | Pending completion of R1–R5 |
+| **V1** | UoW repository ownership & upload compensation | `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py`, `application/handlers/media.py` | **REOPENED (R1, R2)** | Platform (Review: CTO, QA) | Pending post-promote compensation coverage & pure factory migration |
+| **V2** | Complete signing fallback removal & injected capabilities | `application/handlers/media.py`, `routers/media.py`, `security.py`, `bootstrap.py` | **VERIFIED** | Platform + CTO (Verify: QA) | `e0c7529` — Zero `(base_url, secret)` fallbacks in application layer; `MediaUrlSigner` required |
+| **V3** | Transitive import resolution & aliased composition guard | `tests/test_architecture_guard.py` | **VERIFIED** | QA + Platform (Review: CTO) | `c398715` — Transitive import graph analyzer, constructor alias resolver, mutation fixtures |
+| **V4** | Per-test node ID mapping & reconciliation | `docs/qa/clean-architecture-audit/test_mapping_and_reconciliation.md` | **REOPENED (R3)** | QA + BA | Pending automated pytest collection across revisions (`2f5e200` to candidate) |
+| **V5** | Performance benchmark with raw reproducible metrics | `docs/qa/clean-architecture-audit/performance_benchmark.md` | **REOPENED (R4)** | QA + Platform (Review: CTO) | Pending real measured baseline (`2f5e200`) comparison without estimated values |
+| **V6** | Clean candidate requalification with external evidence | All verification gates | **REOPENED (R5)** | QA + Ops (Review: CTO, BA) | Pending clean detached worktree qualification and external artifacts |
 
 ---
 
-## 2.1 Traceability Matrix: Requirement → Code → Test → Raw Evidence
+## 2.1 Traceability Matrix: Requirement → Code → Test → Raw Evidence → Reviewer
 
-| Requirement | Code Implementation | Test Verification | Raw Evidence | Status |
-|---|---|---|---|---|
-| **UoW Ownership**: Handlers get repos strictly via `uow.*`, single session scope | `application/ports/unit_of_work.py`, `adapters/persistence/unit_of_work.py` | `test_architecture_guard.py::test_fake_uow_isolation_and_rollback` | Transaction isolation tests, rollback-by-default verified | **VERIFIED (V1)** |
-| **Upload Short Scopes**: 3 separate scopes (preflight read $\to$ streaming $\to$ metadata write) | `application/handlers/media.py`, `routers/media.py` | `test_media.py::test_upload_byte_stream_barrier_releases_db_connection` | `pg_stat_activity` query shows 0 active backend conns during stage barrier | **VERIFIED (V1)** |
-| **Signing Fallback Removal**: No `(base_url, secret)` in handlers; `MediaUrlSigner` mandatory | `application/handlers/media.py`, `application/ports/security.py`, `adapters/security/media_signer.py` | `test_media.py`, `test_architecture_guard.py` | Complete removal of URL helpers and fallbacks from handler signatures | **VERIFIED (V2)** |
-| **AST Transitive & Alias Guard**: Trace multi-hop leaks, import aliases `Class as U` | `tests/test_architecture_guard.py` | `test_domain_layer_transitive_dependencies`, `test_guard_mutation_catches_aliased_constructor_in_router` | Mutation test fixtures reliably fail closed on transitive leaks & aliases | **VERIFIED (V3)** |
-| **Per-Test Mapping**: Node IDs mapped from 164 baseline to candidate | `test_mapping_and_reconciliation.md` | `uv run pytest --collect-only -q` | Exact 1-to-1 table showing 164 baseline kept, 23 added, 0 deleted | **VERIFIED (V4)** |
-| **Raw Performance Metrics**: Baseline vs Candidate query count, latency, memory | `performance_benchmark.md`, `scratch/benchmark_workloads.py` | 50-sample iterations on live PostgreSQL container | Auth p50 45.6ms, Catalog p50 4.9ms, Upload p50 21.2ms, zero query drift | **VERIFIED (V5)** |
-| **Clean Candidate Gates**: 6 gates executed on isolated candidate | All test runners | `pnpm test:guard`, pytest, openapi_diff, web-e2e, verify-container | External gate logs 1–6 in `evidence/` folder | **VERIFIED (V6)** |
+| Requirement | Code Location | Test ID | Raw Artifact | Reviewer | Status |
+|---|---|---|---|---|---|
+| **Post-Promote Full Compensation**: Wrap write UoW creation, enter, recheck, add, hook, commit; delete final on rollback | `application/handlers/media.py` | `test_media.py::test_upload_recheck_catalog_error_compensates_storage` | Pytest stdout / log | Platform (QA, CTO) | **PENDING (R1)** |
+| **UoW Ownership**: Mandatory factory only, no `media_repo` or instance fallback; scope-bound repos | `application/handlers/media.py`, `application/ports/unit_of_work.py` | `test_media.py::test_upload_media_requires_uow_factory`, `test_architecture_guard.py` | Pytest stdout / log | Platform + CTO | **PENDING (R2)** |
+| **Signing Capability Injection**: Protocol `MediaUrlSigner` mandatory in handlers | `application/handlers/media.py`, `adapters/security/media_signer.py` | `test_media.py`, `test_architecture_guard.py` | `gate2_architecture_guard.log` | Platform + CTO | **VERIFIED** |
+| **AST Transitive & Alias Guard**: Multi-hop imports and aliased constructor resolution | `tests/test_architecture_guard.py` | `test_guard_mutation_catches_aliased_constructor_in_router` | `gate2_architecture_guard.log` | QA + Platform | **VERIFIED** |
+| **Automated Revision Inventory**: Collect pytest node IDs from revisions `2f5e200`..candidate | Pytest collector script | `pytest --collect-only -q` | `evidence/test_inventories/` | QA + BA | **PENDING (R3)** |
+| **Measured Baseline Benchmark**: Real measured metrics on `2f5e200` vs candidate | `tests/benchmark_harness.py` | Standalone benchmark suite | `evidence/benchmark_raw_metrics.json` | QA + Platform | **PENDING (R4)** |
+| **Clean Candidate Qualification**: 6 gates executed in clean detached worktree | Verification scripts | 6 quality gates | `evidence/gate[1-6]*.log`, manifest | QA + Ops | **PENDING (R5)** |
+| **Operational Boundary**: Milestone 2 (R-09) strictly on HOLD | `ADR-006`, policies | N/A | Manifest notes | Ops + CTO | **HOLD (CONTROLLED)** |
 
 ---
 

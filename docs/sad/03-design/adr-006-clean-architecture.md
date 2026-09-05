@@ -94,6 +94,6 @@ Mọi write use case đều bắt buộc phải chạy trong phạm vi của m�
 
 ## 4. Trạng thái kiểm chứng & Ranh giới vận hành
 
-- **Milestone 1 (Clean Architecture Rewrite):** Các lát cắt dọc cơ bản đã triển khai. Hệ thống đang thực hiện kế hoạch đóng lỗ hổng kiểm thử kiến trúc (Audit Gap Closure G0–G6 theo `docs/superpowers/plans/2026-09-05-clean-architecture-audit-gap-closure.md`). Engineering acceptance chỉ được cấp sau khi hoàn thành toàn bộ các block G0–G6 trên clean candidate checkout.
+- **Milestone 1 (Clean Architecture Rewrite):** Các lát cắt dọc cơ bản đã triển khai. Hệ thống đang thực hiện kế hoạch đóng lỗ hổng kiểm thử kiến trúc đợt cuối (Final Closure v3 theo `docs/superpowers/plans/2026-09-05-clean-architecture-final-closure-v3.md`). Engineering acceptance chỉ được cấp sau khi hoàn thành toàn bộ các mục R0–R5 trên clean candidate checkout.
 - **Milestone 2 (Operational Acceptance / R-09):** Tiếp tục duy trì trạng thái **STRICTLY HOLD / BLOCKED** cho đến khi có đủ hạ tầng staging và quyết định mở traffic từ ghế Ops & CTO.
 
