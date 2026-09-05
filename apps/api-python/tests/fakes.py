@@ -20,7 +20,7 @@ from jplearn_api.application.ports.repositories import (
 )
 from jplearn_api.application.ports.security import MediaUrlSigner
 from jplearn_api.application.ports.storage import StoragePort
-from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
+from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork, UnitOfWorkFactory
 
 _active_fake_uow: contextvars.ContextVar[FakeUnitOfWork | None] = contextvars.ContextVar(
     "_active_fake_uow", default=None
@@ -558,4 +558,30 @@ class FakeMediaUrlSigner(MediaUrlSigner):
 
     def verify_media_sig(self, asset_id: str, exp: int, sig: str) -> bool:
         return sig == "fakesig"
+
+
+def create_fake_uow_factory(
+    *participants: Any,
+    users: UserRepository | None = None,
+    catalog: CatalogRepository | None = None,
+    media: MediaRepository | None = None,
+    learning: LearningRepository | None = None,
+    flags: FlagsRepository | None = None,
+) -> UnitOfWorkFactory:
+    """Create a UnitOfWorkFactory producing fresh FakeUnitOfWork instances sharing the same committed state."""
+    shared_users = users or FakeUserRepository()
+    shared_catalog = catalog or FakeCatalogRepository()
+    shared_media = media or FakeMediaRepository()
+    shared_learning = learning or FakeLearningRepository()
+    shared_flags = flags or FakeFlagsRepository()
+
+    return lambda: FakeUnitOfWork(
+        *participants,
+        users=shared_users,
+        catalog=shared_catalog,
+        media=shared_media,
+        learning=shared_learning,
+        flags=shared_flags,
+    )
+
 

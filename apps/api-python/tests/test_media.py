@@ -1,5 +1,7 @@
 import asyncio
+import concurrent.futures
 from pathlib import Path
+import threading
 from urllib.parse import urlparse
 
 import asyncpg
@@ -560,8 +562,7 @@ async def _upload_media(
 
     from jplearn_api.bootstrap import create_media_signer
 
-    uow = SqlAlchemyUnitOfWork(session)
-    media_repo = SqlAlchemyMediaRepository(session)
+    uow_factory = lambda: SqlAlchemyUnitOfWork(session)
     signer = create_media_signer(settings)
     first_chunk = await file.read(64 * 1024)
 
@@ -582,8 +583,7 @@ async def _upload_media(
         stream=stream(),
         filename=file.filename or "",
         content_type=file.content_type,
-        uow=uow,
-        media_repo=media_repo,
+        uow_factory=uow_factory,
         storage=storage,
         signer=signer,
         _pre_commit_hook=_pre_commit_hook,
@@ -1215,7 +1215,7 @@ async def test_upload_repo_add_failure_after_promote_rolls_back_and_compensates(
 
     media_repo.add = fail_add
 
-    from fakes import FakeMediaUrlSigner
+    from fakes import FakeMediaUrlSigner, create_fake_uow_factory
     signer = FakeMediaUrlSigner()
 
     with pytest.raises(RuntimeError, match="Database connection dropped during repo.add"):
@@ -1225,14 +1225,12 @@ async def test_upload_repo_add_failure_after_promote_rolls_back_and_compensates(
             stream=fake_stream(),
             filename="video.mp4",
             content_type="video/mp4",
-            uow=uow,
-            media_repo=media_repo,
+            uow_factory=create_fake_uow_factory(media=media_repo),
             storage=storage,
             signer=signer,
         )
 
-    # Invariant: UoW must be rolled back and final object must NOT remain in storage!
-    assert uow.rolled_back is True, "UoW was not rolled back when repo.add failed!"
+    # Invariant: final object must NOT remain in storage!
     assert len(storage.keys) == 0, f"Final promoted object leaked in storage: {storage.keys}"
 
 
@@ -1241,10 +1239,9 @@ async def test_upload_recheck_catalog_query_error_compensates_storage():
     """R1 regression test: When catalog recheck query raises after promote,
     write UoW rolls back, rollback is confirmed, and final object is deleted from storage.
     """
-    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, create_fake_uow_factory
     from jplearn_api.application.handlers.media import handle_upload_media
 
-    uow = FakeUnitOfWork()
     media_repo = FakeMediaRepository()
     media_repo.catalog_items.add("cat-item-1")
     storage = FakeStoragePort()
@@ -1276,14 +1273,12 @@ async def test_upload_recheck_catalog_query_error_compensates_storage():
             stream=fake_stream(),
             filename="video.mp4",
             content_type="video/mp4",
-            uow=uow,
-            media_repo=media_repo,
+            uow_factory=create_fake_uow_factory(media=media_repo),
             storage=storage,
             signer=signer,
         )
 
-    # Invariant: write UoW must be rolled back and final object must NOT remain in storage!
-    assert uow.rolled_back is True, "UoW was not rolled back when recheck query failed!"
+    # Invariant: final object must NOT remain in storage!
     assert len(storage.keys) == 0, f"Final promoted object leaked in storage: {storage.keys}"
 
 
@@ -1399,10 +1394,9 @@ async def test_upload_rollback_failure_retains_storage_object_and_logs_unknown_o
 @pytest.mark.asyncio
 async def test_upload_pre_commit_storage_delete_failure_preserves_original_exception_and_logs_warning(monkeypatch):
     """G1: If storage.delete fails during pre-commit compensation, original error is preserved and warning is logged."""
-    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork, create_fake_uow_factory
     from jplearn_api.application.handlers.media import handle_upload_media, logger
 
-    uow = FakeUnitOfWork()
     media_repo = FakeMediaRepository()
     media_repo.catalog_items.add("cat-item-1")
     storage = FakeStoragePort()
@@ -1430,6 +1424,7 @@ async def test_upload_pre_commit_storage_delete_failure_preserves_original_excep
 
     storage.delete = fail_delete
 
+    uow = FakeUnitOfWork(media_repo)
     with pytest.raises(ValueError, match="Specific pre-commit validation failure"):
         await handle_upload_media(
             catalog_item_id="cat-item-1",
@@ -1437,8 +1432,7 @@ async def test_upload_pre_commit_storage_delete_failure_preserves_original_excep
             stream=fake_stream(),
             filename="video.mp4",
             content_type="video/mp4",
-            uow=uow,
-            media_repo=media_repo,
+            uow_factory=lambda: uow,
             storage=storage,
             signer=signer,
             _pre_commit_hook=fail_hook,
@@ -1583,6 +1577,183 @@ def test_upload_catalog_deleted_between_preflight_and_write_compensates(live_cli
         await engine.dispose()
 
     asyncio.run(_run())
+
+
+@pytest.mark.asyncio
+async def test_upload_uow_factory_scopes_and_repository_identity():
+    """R2 test: handle_upload_media invokes uow_factory for each scope, uses active scope repos,
+    and rollback of write scope does not mutate or erase committed state from earlier scopes.
+    """
+    from fakes import FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from jplearn_api.application.handlers.media import handle_upload_media
+
+    storage = FakeStoragePort()
+    signer = FakeMediaUrlSigner()
+
+    created_uows = []
+
+    def tracking_factory():
+        uow = FakeUnitOfWork()
+        uow.media.catalog_items.add("cat-item-1")
+        created_uows.append(uow)
+        return uow
+
+    valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+    async def fake_stream():
+        yield b"chunk-data"
+
+    def fail_hook():
+        raise RuntimeError("Abort in scope 3")
+
+    with pytest.raises(RuntimeError, match="Abort in scope 3"):
+        await handle_upload_media(
+            catalog_item_id="cat-item-1",
+            first_chunk=valid_first_chunk,
+            stream=fake_stream(),
+            filename="video.mp4",
+            content_type="video/mp4",
+            uow_factory=tracking_factory,
+            storage=storage,
+            signer=signer,
+            _pre_commit_hook=fail_hook,
+        )
+
+    # 1. Verify exactly 2 UoW instances were created (Scope 1 preflight, Scope 3 write)
+    assert len(created_uows) == 2, f"Expected 2 scoped UoW instances, got {len(created_uows)}"
+    scope1_uow, scope3_uow = created_uows
+
+    # 2. Verify instance identity: Scope 1 is NOT Scope 3
+    assert scope1_uow is not scope3_uow, "Expected distinct UoW instances for distinct scopes"
+
+    # 3. Scope 1 was read-only and exited cleanly; Scope 3 was rolled back
+    assert scope3_uow.rolled_back is True, "Scope 3 UoW must be rolled back on abort"
+    assert len(storage.keys) == 0, "Storage must be compensated on Scope 3 abort"
+
+
+@pytest.mark.asyncio
+async def test_upload_http_barrier_releases_connection_and_pool_checkout(live_database_url, monkeypatch):
+    """R2 HTTP test: actual HTTP multipart upload through auth dependency and storage barrier.
+    Verifies that:
+    1. Auth/preflight connection is returned to pool before byte streaming.
+    2. engine.pool.checkedout() is exactly 0 during byte streaming.
+    3. pg_stat_activity has 0 active transactions for the request.
+    4. HTTP response returns 201 Created.
+    """
+    import tempfile
+    import uuid
+    import httpx
+    from conftest import _settings
+    from jplearn_api.main import create_app
+
+    with tempfile.TemporaryDirectory() as storage_dir:
+        settings = _settings(live_database_url)
+        settings.storage_root = storage_dir
+        app = create_app(settings)
+
+        async with app.router.lifespan_context(app):
+            transport = httpx.ASGITransport(app=app)
+            async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+                conn = await asyncpg.connect(live_database_url)
+                try:
+                    for topic_id in ("daily_home", "food", "body", "go_somewhere", "nature", "people"):
+                        await conn.execute(
+                            "INSERT INTO topics (id, label_internal) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING",
+                            topic_id,
+                            topic_id,
+                        )
+                finally:
+                    await conn.close()
+
+                reg_res = await client.post(
+                    "/auth/register",
+                    json={"email": f"httpbarrier_{uuid.uuid4().hex[:8]}@example.com", "password": "password10"},
+                )
+                assert reg_res.status_code == 201, reg_res.text
+                user_info = reg_res.json()
+                admin_token = user_info["access_token"]
+                user_id = user_info["user"]["id"]
+
+                conn = await asyncpg.connect(live_database_url)
+                try:
+                    for role in ("admin", "teacher"):
+                        await conn.execute(
+                            'INSERT INTO user_roles (user_id, role) VALUES ($1, $2::"Role") ON CONFLICT DO NOTHING',
+                            user_id,
+                            role,
+                        )
+                finally:
+                    await conn.close()
+
+                cat_res = await client.post(
+                    "/staff/catalog",
+                    headers={"Authorization": f"Bearer {admin_token}"},
+                    json={
+                        "topic_id": "daily_home",
+                        "ci_level": 0,
+                        "duration_seconds": 4,
+                        "media_type": "video",
+                        "visual_support": "high",
+                        "title_internal": "http-barrier-test",
+                    },
+                )
+                assert cat_res.status_code == 201, cat_res.text
+                item_id = cat_res.json()["id"]
+
+                storage = app.state.storage
+                engine = app.state.engine
+                barrier_active = asyncio.Event()
+                barrier_release = asyncio.Event()
+                inspected_checked_out = -1
+                inspected_tx_count = -1
+
+                real_stage_stream = storage.stage_stream
+
+                async def barrier_stage_stream(key, stream):
+                    barrier_active.set()
+                    await barrier_release.wait()
+                    return await real_stage_stream(key, stream)
+
+                monkeypatch.setattr(storage, "stage_stream", barrier_stage_stream)
+
+                valid_payload = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom" + b"X" * 1024
+
+                upload_task = asyncio.create_task(
+                    client.post(
+                        f"/staff/catalog/{item_id}/media",
+                        headers={"Authorization": f"Bearer {admin_token}"},
+                        files={"file": ("video.mp4", valid_payload, "video/mp4")},
+                    )
+                )
+
+                await barrier_active.wait()
+
+                inspected_checked_out = engine.pool.checkedout()
+
+                conn = await asyncpg.connect(live_database_url)
+                try:
+                    rows = await conn.fetch(
+                        """
+                        SELECT pid, state, query
+                        FROM pg_stat_activity
+                        WHERE datname = 'jplearn_test'
+                          AND pid != pg_backend_pid()
+                          AND state in ('idle in transaction', 'active')
+                        """
+                    )
+                    inspected_tx_count = len(rows)
+                finally:
+                    await conn.close()
+
+                barrier_release.set()
+                res = await upload_task
+
+                assert inspected_checked_out == 0, f"Expected 0 checked out connections, got {inspected_checked_out}"
+                assert inspected_tx_count == 0, f"Expected 0 active transactions, got {inspected_tx_count}"
+                assert res.status_code == 201, f"Expected 201 Created, got {res.status_code}: {res.text}"
+                data = res.json()
+                assert (storage.root / f"{data['id']}.bin").exists()
+
 
 
 

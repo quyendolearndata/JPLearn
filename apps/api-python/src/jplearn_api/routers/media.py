@@ -66,7 +66,7 @@ async def upload_media(
             stream=stream_rest(),
             filename=filename,
             content_type=content_type,
-            uow=uow_factory,
+            uow_factory=uow_factory,
             storage=storage,
             signer=signer,
             _grace_seconds=COMMIT_CANCELLATION_GRACE_SECONDS,

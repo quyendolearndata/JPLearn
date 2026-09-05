@@ -68,43 +68,31 @@ async def handle_upload_media(
     stream: AsyncIterator[bytes],
     filename: str,
     content_type: str,
-    uow: UnitOfWorkFactory | AsyncUnitOfWork | None = None,
-    storage: StoragePort | None = None,
-    signer: MediaUrlSigner | None = None,
+    uow_factory: UnitOfWorkFactory,
+    storage: StoragePort,
+    signer: MediaUrlSigner,
     *,
-    media_repo: MediaRepository | None = None,
-    uow_factory: UnitOfWorkFactory | None = None,
     id_generator: Callable[[], str] = lambda: str(uuid4()),
     _pre_commit_hook: Any = None,
     _grace_seconds: float | None = None,
     _staging_barrier: Any = None,
 ) -> MediaAssetStaffDTO:
-    """Upload media file with strict 3-scope transaction isolation and commit outcome machine."""
+    """Upload media file with strict 3-scope transaction isolation and scoped UoW factories."""
+    if not callable(uow_factory):
+        raise ValueError("uow_factory must be a callable returning an AsyncUnitOfWork")
+    if storage is None:
+        raise ValueError("storage is required")
     if signer is None:
         raise ValueError("MediaUrlSigner is required")
+
     resolved_grace_seconds = (
         _grace_seconds if _grace_seconds is not None else COMMIT_CANCELLATION_GRACE_SECONDS
     )
 
-    active_factory: Callable[[], AsyncUnitOfWork]
-    if uow_factory is not None:
-        active_factory = uow_factory
-    elif callable(uow):
-        active_factory = uow
-    elif uow is not None:
-        active_factory = lambda: uow
-    else:
-        raise ValueError("Either uow or uow_factory must be provided")
-
-    if storage is None:
-        raise ValueError("storage is required")
-
     # Scope 1: Preflight read check (short-lived read scope, closed immediately)
-    preflight_uow = active_factory()
-    repo_preflight = media_repo if media_repo is not None else getattr(preflight_uow, "media", None)
+    preflight_uow = uow_factory()
     async with preflight_uow:
-        check_repo = repo_preflight or preflight_uow.media
-        item_exists = await check_repo.catalog_item_exists(catalog_item_id)
+        item_exists = await preflight_uow.media.catalog_item_exists(catalog_item_id)
         if not item_exists:
             raise EntityNotFoundError("Catalog item not found")
     # Scope 1 exited and closed! Preflight connection returned to pool.
@@ -163,7 +151,7 @@ async def handle_upload_media(
     # Scope 3: Metadata write in a fresh UoW
     write_uow = None
     try:
-        write_uow = active_factory()
+        write_uow = uow_factory()
     except BaseException:
         # Factory failed before UoW creation: no DB transaction opened, no mutations
         try:
@@ -179,8 +167,6 @@ async def handle_upload_media(
                 },
             )
         raise
-
-    repo_write = media_repo if media_repo is not None else getattr(write_uow, "media", None)
 
     async def _safe_rollback_and_cleanup(reason: str) -> None:
         rb_ok = False
@@ -215,7 +201,7 @@ async def handle_upload_media(
     try:
         async with write_uow:
             uow_entered = True
-            target_repo = repo_write or write_uow.media
+            target_repo = write_uow.media
 
             # Revalidate catalog reference at write boundary
             try:
@@ -283,7 +269,6 @@ async def handle_upload_media(
                             break
                     try:
                         commit_task.result()
-                        committed = True
                     except BaseException:
                         pass
 
