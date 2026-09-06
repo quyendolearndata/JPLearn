@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   classifyReplayFailure,
+  classifySessionRecoveryBootstrap,
   classifySessionStatusFailure,
   classifySessionStatusResponse,
   createSessionOperationGuard,
@@ -14,6 +15,16 @@ const validRequiredFields = {
   device_class: "web",
   started_at: "2026-09-06T08:00:00Z",
 };
+
+test("T-SES-REC-001: session recovery cannot become ready before authenticated identity", () => {
+  assert.deepEqual(classifySessionRecoveryBootstrap(null, null), { kind: "awaiting_identity" });
+  assert.deepEqual(classifySessionRecoveryBootstrap("token", null), { kind: "awaiting_identity" });
+  assert.deepEqual(classifySessionRecoveryBootstrap(null, "u1"), { kind: "awaiting_identity" });
+  assert.deepEqual(
+    classifySessionRecoveryBootstrap("token", "u1"),
+    { kind: "inspect", token: "token", userId: "u1" },
+  );
+});
 
 test("T-SES-REC-001: end fallback GET 403 and 404 are terminal while 500 is unverified", () => {
   assert.equal(classifySessionStatusFailure(403), "terminal");

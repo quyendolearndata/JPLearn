@@ -46,6 +46,7 @@ const PREFIX = "jplearn.session:";
 const ACCESS_PROBE_KEY = `${PREFIX}__access_probe__`;
 const STATES: readonly SessionLifecycleState[] = ["starting", "active", "ending", "outcome_unknown"];
 const ALLOWED_KEYS = new Set(["v", "state", "idempotencyKey", "deviceClass", "startedAt", "itemId", "sessionId"]);
+const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9-]{8,128}$/;
 
 export function sessionStorageKey(userId: string): string {
   return `${PREFIX}${userId}`;
@@ -91,7 +92,11 @@ function isValid(x: unknown): x is StoredSession {
   const r = x as Record<string, unknown>;
   if (r.v !== 1) return false;
   if (!STATES.includes(r.state as SessionLifecycleState)) return false;
-  if (typeof r.idempotencyKey !== "string" || typeof r.startedAt !== "string") return false;
+  if (
+    typeof r.idempotencyKey !== "string"
+    || !IDEMPOTENCY_KEY_PATTERN.test(r.idempotencyKey)
+    || typeof r.startedAt !== "string"
+  ) return false;
   if (r.deviceClass !== "web") return false;
   if (r.sessionId !== undefined && typeof r.sessionId !== "string") return false;
   if (r.state !== "starting" && (typeof r.sessionId !== "string" || !r.sessionId)) return false;
@@ -136,7 +141,7 @@ export function readSessionRecord(userId: string): StoredSession | null {
 
 export function writeSessionRecord(userId: string, rec: StoredSession): boolean {
   if (!isValid(rec)) {
-    throw new Error("StoredSession must include sessionId outside starting and must not carry catalog/media payload");
+    throw new Error("StoredSession must have a valid idempotency key, include sessionId outside starting, and not carry catalog/media payload");
   }
   const s = accessibleStore();
   if (!s) return false;
@@ -203,6 +208,7 @@ export function prepareStartingSession(
 
 export function recoveryRequestFor(stored: StoredSession): SessionRecoveryRequest | null {
   if (stored.state === "starting") {
+    if (!IDEMPOTENCY_KEY_PATTERN.test(stored.idempotencyKey)) return null;
     return {
       kind: "replay_start",
       idempotencyKey: stored.idempotencyKey,

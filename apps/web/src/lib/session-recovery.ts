@@ -9,6 +9,9 @@ export interface LearningSessionResponse {
 export type ReplayFailureDisposition = "auth" | "terminal" | "unverified";
 export type SessionStatusFailureDisposition = "auth" | "terminal" | "unverified";
 export type SessionOperation = "recovery" | "start" | "end";
+export type SessionRecoveryBootstrap =
+  | { kind: "awaiting_identity" }
+  | { kind: "inspect"; token: string; userId: string };
 
 export interface SessionOperationTicket {
   id: number;
@@ -81,6 +84,15 @@ export function classifySessionStatusResponse(
   return value.ended_at
     ? { kind: "ended", session: value }
     : { kind: "active", session: value };
+}
+
+export function classifySessionRecoveryBootstrap(
+  token: string | null,
+  userId: string | null,
+): SessionRecoveryBootstrap {
+  return token && userId
+    ? { kind: "inspect", token, userId }
+    : { kind: "awaiting_identity" };
 }
 
 export function createSessionOperationGuard(): SessionOperationGuard {

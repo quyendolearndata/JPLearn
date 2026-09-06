@@ -42,7 +42,7 @@ beforeEach(() => {
 });
 
 const rec = (over: Partial<StoredSession> = {}): StoredSession => ({
-  v: 1, state: "starting", idempotencyKey: "k1", deviceClass: "web", startedAt: "2026-09-06T00:00:00.000Z", ...over,
+  v: 1, state: "starting", idempotencyKey: "valid-key", deviceClass: "web", startedAt: "2026-09-06T00:00:00.000Z", ...over,
 });
 
 test("T-SES-REC-001: failed active persistence stays unverified with the recoverable pointer", () => {
@@ -144,11 +144,11 @@ test("T-SES-REC-001: key is scoped per user", () => {
 });
 
 test("T-SES-REC-001: clear only touches the given user", () => {
-  writeSessionRecord("u1", rec({ idempotencyKey: "a" }));
-  writeSessionRecord("u2", rec({ idempotencyKey: "b" }));
+  writeSessionRecord("u1", rec({ idempotencyKey: "valid-key-a" }));
+  writeSessionRecord("u2", rec({ idempotencyKey: "valid-key-b" }));
   clearSessionRecord("u1");
   assert.equal(readSessionRecord("u1"), null);
-  assert.equal(readSessionRecord("u2")?.idempotencyKey, "b");
+  assert.equal(readSessionRecord("u2")?.idempotencyKey, "valid-key-b");
 });
 
 test("T-SES-REC-001: corrupt or foreign-shaped records are dropped, never returned", () => {
@@ -179,6 +179,19 @@ test("newIdempotencyKey returns distinct, header-safe values ≤128 chars", () =
   const a = newIdempotencyKey(); const b = newIdempotencyKey();
   assert.notEqual(a, b);
   assert.match(a, /^[A-Za-z0-9-]{8,128}$/);
+});
+
+test("T-SES-REC-001: invalid idempotency keys are neither persisted nor replayed", () => {
+  for (const idempotencyKey of ["", "   ", "short", "has_underscore", "a".repeat(129)]) {
+    sessionStorage.setItem(
+      sessionStorageKey("u1"),
+      JSON.stringify(rec({ idempotencyKey })),
+    );
+    assert.deepEqual(inspectSessionRecord("u1"), { kind: "empty" });
+    assert.equal(sessionStorage.getItem(sessionStorageKey("u1")), null);
+    assert.throws(() => writeSessionRecord("u1", rec({ idempotencyKey })), /idempotency/i);
+    assert.equal(recoveryRequestFor(rec({ idempotencyKey })), null);
+  }
 });
 
 test("T-SES-REC-001: starting retries preserve the stored key, device and item", () => {

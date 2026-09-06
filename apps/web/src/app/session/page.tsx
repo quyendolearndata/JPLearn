@@ -9,6 +9,7 @@ import { getToken, getUser } from "../../lib/auth-storage";
 import { CiPlayer } from "../../components/ci-player";
 import {
   classifyReplayFailure,
+  classifySessionRecoveryBootstrap,
   classifySessionStatusFailure,
   classifySessionStatusResponse,
   createSessionOperationGuard,
@@ -92,14 +93,14 @@ function SessionContent() {
 
   // Check and recover session from scoped sessionStorage
   const checkActiveSession = useCallback(async () => {
-    const token = getToken();
-    const userId = currentUserId();
+    const bootstrap = classifySessionRecoveryBootstrap(getToken(), currentUserId());
 
-    if (!token || !userId) {
-      setRecoveryPhase("ready");
-      setStatus("");
+    if (bootstrap.kind === "awaiting_identity") {
+      setRecoveryPhase("initializing");
+      setStatus("Vui lòng đăng nhập để kiểm tra phiên.");
       return;
     }
+    const { token, userId } = bootstrap;
     try { localStorage.removeItem("jplearn_active_session"); } catch {}
 
     const inspection = inspectSessionRecord(userId);
