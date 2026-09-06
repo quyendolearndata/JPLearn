@@ -116,17 +116,17 @@ export function inspectSessionRecord(userId: string): SessionRecordInspection {
   } catch {
     try {
       s.removeItem(key);
+      return s.getItem(key) === null ? { kind: "empty" } : { kind: "unavailable" };
     } catch {
       return { kind: "unavailable" };
     }
-    return { kind: "empty" };
   }
   try {
     s.removeItem(key);
+    return s.getItem(key) === null ? { kind: "empty" } : { kind: "unavailable" };
   } catch {
     return { kind: "unavailable" };
   }
-  return { kind: "empty" };
 }
 
 export function readSessionRecord(userId: string): StoredSession | null {

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   classifyReplayFailure,
+  classifySessionStatusFailure,
   classifySessionStatusResponse,
   createSessionOperationGuard,
   isLearningSessionResponse,
@@ -13,6 +14,13 @@ const validRequiredFields = {
   device_class: "web",
   started_at: "2026-09-06T08:00:00Z",
 };
+
+test("T-SES-REC-001: end fallback GET 403 and 404 are terminal while 500 is unverified", () => {
+  assert.equal(classifySessionStatusFailure(403), "terminal");
+  assert.equal(classifySessionStatusFailure(404), "terminal");
+  assert.equal(classifySessionStatusFailure(500), "unverified");
+  assert.equal(classifySessionStatusFailure(401), "auth");
+});
 
 test("T-SES-REC-001: invalid or mismatched ended GET is not terminal", () => {
   assert.equal(classifySessionStatusResponse(

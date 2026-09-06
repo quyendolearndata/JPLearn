@@ -9,6 +9,7 @@ import { getToken, getUser } from "../../lib/auth-storage";
 import { CiPlayer } from "../../components/ci-player";
 import {
   classifyReplayFailure,
+  classifySessionStatusFailure,
   classifySessionStatusResponse,
   createSessionOperationGuard,
   isLearningSessionResponse,
@@ -487,6 +488,28 @@ function SessionContent() {
     const rec = readSessionRecord(userId);
     if (rec) writeSessionRecord(userId, { ...rec, state: "ending", sessionId: targetSessionId });
 
+    const handleStatusFailure = (statusCode: number) => {
+      const disposition = classifySessionStatusFailure(statusCode);
+      if (disposition === "auth") return;
+      if (disposition === "terminal") {
+        const cleared = clearSessionRecord(userId);
+        setSessionId(null);
+        setStartedAt(null);
+        setClip(null);
+        setStatus(
+          cleared
+            ? statusCode === 403
+              ? "Bạn không có quyền kiểm tra phiên này."
+              : "Phiên cần kiểm tra không còn tồn tại."
+            : "Phiên không thể kiểm tra và chưa thể xóa dữ liệu trên trình duyệt.",
+        );
+        setRecoveryPhase(cleared ? "ready" : "unverified");
+        return;
+      }
+      setStatus("Chưa xác nhận được trạng thái phiên với máy chủ.");
+      setRecoveryPhase("unverified");
+    };
+
     try {
       const res = await api(`/sessions/${targetSessionId}/end`, {
         method: "POST",
@@ -510,44 +533,46 @@ function SessionContent() {
           signal: controller.signal,
         });
         if (!isCurrentOperation()) return;
-        if (checkRes.ok) {
-          const checkBody = await parseApiResponse<unknown>(checkRes);
+        if (!checkRes.ok) {
+          handleStatusFailure(checkRes.status);
+          return;
+        }
+        const checkBody = await parseApiResponse<unknown>(checkRes);
+        if (!isCurrentOperation()) return;
+        const checked = classifySessionStatusResponse(checkBody, targetSessionId);
+        if (checked.kind === "invalid") {
+          setStatus("Dữ liệu trạng thái phiên không hợp lệ.");
+          setRecoveryPhase("unverified");
+          return;
+        }
+        if (checked.kind === "ended") {
+          const cleared = clearSessionRecord(userId);
+          const progressRes = await api("/progress", {
+            token,
+            signal: controller.signal,
+          });
           if (!isCurrentOperation()) return;
-          const checked = classifySessionStatusResponse(checkBody, targetSessionId);
-          if (checked.kind === "invalid") {
-            setStatus("Dữ liệu trạng thái phiên không hợp lệ.");
-            setRecoveryPhase("unverified");
-            return;
-          }
-          if (checked.kind === "ended") {
-            const cleared = clearSessionRecord(userId);
-            const progressRes = await api("/progress", {
-              token,
-              signal: controller.signal,
-            });
-            if (!isCurrentOperation()) return;
-            const progress = progressRes.ok
-              ? await parseApiResponse<{
-                  minutes_comprehensible: number;
-                  current_ci_level: number;
-                }>(progressRes)
-              : null;
-            if (!isCurrentOperation()) return;
-            setCompletedSummary({
-              minutesComprehensible: progress?.minutes_comprehensible ?? 0,
-              currentCiLevel: progress?.current_ci_level ?? 0,
-              durationSeconds: checked.session.duration_seconds ?? elapsedSeconds,
-            });
-            setSessionId(null);
-            setClip(null);
-            setStatus(
-              cleared
-                ? "Đã kết thúc phiên."
-                : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
-            );
-            setRecoveryPhase(cleared ? "ready" : "unverified");
-            return;
-          }
+          const progress = progressRes.ok
+            ? await parseApiResponse<{
+                minutes_comprehensible: number;
+                current_ci_level: number;
+              }>(progressRes)
+            : null;
+          if (!isCurrentOperation()) return;
+          setCompletedSummary({
+            minutesComprehensible: progress?.minutes_comprehensible ?? 0,
+            currentCiLevel: progress?.current_ci_level ?? 0,
+            durationSeconds: checked.session.duration_seconds ?? elapsedSeconds,
+          });
+          setSessionId(null);
+          setClip(null);
+          setStatus(
+            cleared
+              ? "Đã kết thúc phiên."
+              : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
+          );
+          setRecoveryPhase(cleared ? "ready" : "unverified");
+          return;
         }
         const err = await parseApiError(res);
         if (!isCurrentOperation()) return;
@@ -591,33 +616,36 @@ function SessionContent() {
           signal: controller.signal,
         });
         if (!isCurrentOperation()) return;
-        if (checkRes.ok) {
-          const checkBody = await parseApiResponse<unknown>(checkRes);
-          if (!isCurrentOperation()) return;
-          const checked = classifySessionStatusResponse(checkBody, targetSessionId);
-          if (checked.kind === "invalid") {
-            setStatus("Dữ liệu trạng thái phiên không hợp lệ.");
-            setRecoveryPhase("unverified");
-            return;
-          }
-          if (checked.kind === "ended") {
-            const cleared = clearSessionRecord(userId);
-            setSessionId(null);
-            setClip(null);
-            setStatus(
-              cleared
-                ? "Đã kết thúc phiên."
-                : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
-            );
-            setRecoveryPhase(cleared ? "ready" : "unverified");
-            return;
-          }
+        if (!checkRes.ok) {
+          handleStatusFailure(checkRes.status);
+          return;
+        }
+        const checkBody = await parseApiResponse<unknown>(checkRes);
+        if (!isCurrentOperation()) return;
+        const checked = classifySessionStatusResponse(checkBody, targetSessionId);
+        if (checked.kind === "invalid") {
+          setStatus("Dữ liệu trạng thái phiên không hợp lệ.");
+          setRecoveryPhase("unverified");
+          return;
+        }
+        if (checked.kind === "ended") {
+          const cleared = clearSessionRecord(userId);
+          setSessionId(null);
+          setClip(null);
+          setStatus(
+            cleared
+              ? "Đã kết thúc phiên."
+              : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
+          );
+          setRecoveryPhase(cleared ? "ready" : "unverified");
+          return;
         }
       } catch {
         if (!isCurrentOperation()) return;
       }
       if (!isCurrentOperation()) return;
       setStatus("Lỗi kết nối khi kết thúc phiên.");
+      setRecoveryPhase("unverified");
     } finally {
       if (operationGuardRef.current.finish(ticket)) {
         setLoading(false);

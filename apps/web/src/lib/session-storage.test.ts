@@ -22,6 +22,13 @@ class MemoryStorage {
   removeItem(k: string) { this.m.delete(k); }
   clear() { this.m.clear(); }
 }
+
+class RemovalNoOpStorage extends MemoryStorage {
+  override removeItem(k: string) {
+    if (k === "jplearn.session:u1") return;
+    super.removeItem(k);
+  }
+}
 (globalThis as unknown as { window: unknown }).window = globalThis;
 const memoryStorage = new MemoryStorage();
 
@@ -150,6 +157,18 @@ test("T-SES-REC-001: corrupt or foreign-shaped records are dropped, never return
   assert.equal(sessionStorage.getItem("jplearn.session:u1"), null);
   sessionStorage.setItem("jplearn.session:u1", JSON.stringify({ state: "active", clip: { hls_url: "x" } }));
   assert.equal(readSessionRecord("u1"), null, "records without v:1 or with clip payload are rejected");
+});
+
+test("T-SES-REC-001: corrupt record with unconfirmed removal is unavailable, not empty", () => {
+  const removalNoOpStorage = new RemovalNoOpStorage();
+  removalNoOpStorage.setItem("jplearn.session:u1", "{not json");
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    writable: true,
+    value: removalNoOpStorage,
+  });
+
+  assert.deepEqual(inspectSessionRecord("u1"), { kind: "unavailable" });
 });
 
 test("T-SES-REC-001: writer refuses payloads carrying catalog/media URLs", () => {

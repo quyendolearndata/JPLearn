@@ -7,6 +7,7 @@ export interface LearningSessionResponse {
 }
 
 export type ReplayFailureDisposition = "auth" | "terminal" | "unverified";
+export type SessionStatusFailureDisposition = "auth" | "terminal" | "unverified";
 export type SessionOperation = "recovery" | "start" | "end";
 
 export interface SessionOperationTicket {
@@ -117,5 +118,11 @@ export function isSessionOperationCurrent(
 export function classifyReplayFailure(status: number): ReplayFailureDisposition {
   if (status === 401) return "auth";
   if (status === 409) return "terminal";
+  return "unverified";
+}
+
+export function classifySessionStatusFailure(status: number): SessionStatusFailureDisposition {
+  if (status === 401) return "auth";
+  if (status === 403 || status === 404) return "terminal";
   return "unverified";
 }
