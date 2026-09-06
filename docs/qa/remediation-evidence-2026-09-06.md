@@ -2,7 +2,7 @@
 
 - **Date:** 2026-09-06
 - **Plan Reference:** [2026-09-06-web-frontend-remediation.md](../superpowers/plans/2026-09-06-web-frontend-remediation.md)
-- **Status:** **IN PROGRESS** — C4/C5 chưa đóng theo [recovery follow-up](../superpowers/plans/2026-09-06-web-frontend-recovery-followup.md). Số liệu §2 và closeout §4 là bằng chứng lịch sử tại `fd838d2`, không chứng minh F-01–F-04.
+- **Status:** C4 **CLOSED** qua [recovery-followup-evidence-2026-09-06.md](recovery-followup-evidence-2026-09-06.md) tại `41a4009` / `d1715d2` (F-01–F-03 engineering PASS). C5 keyboard/manual: engineering PASS, Design PARTIAL. Số liệu §2 và closeout §4 là lịch sử `fd838d2` (217 / 21+21 / 7), không thay số follow-up.
 - **Review Seats:** BA (`jplearn-ba`), Platform (`jplearn-platform`), Web (`jplearn-web`), QA (`jplearn-qa`)
 
 ---
@@ -88,9 +88,9 @@
 
 ## 4. Historical Closeout Evidence (C6, fd838d2)
 
-Phần này giữ nguyên evidence đã chạy tại `fd838d2`; không được dùng để kết luận
-C4 recovery đã đóng lại. F-01–F-03 cần evidence mới theo recovery follow-up, còn
-C5 keyboard/manual vẫn **PARTIAL**.
+Phần này giữ nguyên evidence đã chạy tại `fd838d2` (217 / 21+21 / 7). C4 recovery
+đóng bằng evidence follow-up `41a4009` / `d1715d2`, không bằng bảng dưới. C5
+keyboard/manual: engineering PASS, Design PARTIAL.
 
 - **Candidate SHA:** `fd838d268de9dfba79df3484ddaae1ca8ab30ec9`
 - **Dirty state before/after:** 0 / 0 (`dirty-before.txt`, `dirty-after.txt`)

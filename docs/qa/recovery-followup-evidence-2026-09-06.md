@@ -4,7 +4,7 @@
 - **Plan:** [2026-09-06-web-frontend-recovery-followup.md](../superpowers/plans/2026-09-06-web-frontend-recovery-followup.md) §7 bước 6
 - **Candidate SHA:** `41a4009fed53f8ff43bf5527a16d0976993293ff` (HEAD trước evidence commit)
 - **Branch:** `codex/fastapi-backend-hardening`
-- **Status:** **engineering PASS** — mọi lệnh bắt buộc exit 0. Không tuyên bố production/release. BA đóng plan/walkthrough/traceability sau số liệu này.
+- **Status:** **engineering PASS** — mọi lệnh bắt buộc exit 0. F-01–F-03 engineering PASS; F-04 engineering PASS + Design PARTIAL. Không tuyên bố production/release. BA đã đóng C4 và cập nhật plan/walkthrough/traceability; không ghi COMPLETED toàn bộ.
 - **Test IDs:** T-NEG-001–004, T-SES-REC-001, T-LRN-001, T-NFR-A1, T-NFR-P2, T-FLG-002, T-CAT-002, T-CMS-E2E-001, T-AUTH-SEC-001, T-AUTH-ERR-001. Kịch bản F-01–F-04.
 
 ## Environment
@@ -58,8 +58,8 @@ Annotation F-04 (cả hai engine):
 
 T-NEG: `pnpm test:guard` 0 banned fields; `tests/test_neg.py` trong 217 API; `shell.spec.ts` T-NEG-002 / T-FLG-002 trên Chromium + WebKit.
 
-## Chữ ký QA
+## Chữ ký QA + BA
 
 - QA (`jplearn-qa`): **PASS** theo bảng lệnh tại SHA trên. F-01–F-03 engineering PASS. F-04 engineering PASS + Design PARTIAL.
-- Không đóng plan §8 / walkthrough COMPLETED từ ghế này.
+- BA (`jplearn-ba`): coverage F-01–F-03 đủ để **đóng C4**. C5 keyboard/manual: engineering tests PASS, Design PARTIAL (focus thủ công + Safari/iPhone/iPad thật). Walkthrough/plan: **engineering PASS**, **Design PARTIAL** — không COMPLETED toàn diện. Mốc B CMS giữ `fd838d2`. Không thêm FR/Test ID. Release gate không đổi.
 - PASS local/test không mở production gate.

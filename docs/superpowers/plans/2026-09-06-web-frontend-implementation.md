@@ -1,6 +1,6 @@
 # Kế hoạch triển khai frontend web JPLearn
 
-Ngày: 2026-09-06. Trạng thái: **Mốc A recovery IN PROGRESS** theo [recovery follow-up](2026-09-06-web-frontend-recovery-followup.md); Mốc B giữ kết quả hồi quy lịch sử tại `fd838d2`, không dựng lại workflow. Evidence lịch sử: [remediation-evidence-2026-09-06.md](../../qa/remediation-evidence-2026-09-06.md) §4. Mục còn mở được đánh dấu inline: 4 mục *PARTIAL (Design)* — artifact luồng/visual review, 1 mục *HOLD* reviewer theo gates.md, 1 mục *HOLD (CTO/Ops)* staging/R-09.
+Ngày: 2026-09-06. Trạng thái: **Mốc A recovery engineering PASS**, **Design PARTIAL** (focus/Safari) theo [recovery follow-up](2026-09-06-web-frontend-recovery-followup.md); không COMPLETED toàn bộ. Mốc B giữ kết quả hồi quy lịch sử tại `fd838d2` (217 / 21+21 / 7), không dựng lại workflow. Evidence follow-up: [recovery-followup-evidence-2026-09-06.md](../../qa/recovery-followup-evidence-2026-09-06.md) tại `41a4009` / `d1715d2` (217 / 42+42 / 35). Evidence lịch sử: [remediation-evidence-2026-09-06.md](../../qa/remediation-evidence-2026-09-06.md) §4. Mục còn mở: 4 mục *PARTIAL (Design)* — artifact luồng/visual review + F-04 Safari/device, 1 mục *HOLD* reviewer theo gates.md, 1 mục *HOLD (CTO/Ops)* staging/R-09. Release gate không đổi.
 Baseline khảo sát: `00576eb`; backend FastAPI/Alembic, frontend Next.js hiện có.
 Chủ trì: Web. BA phụ trách phạm vi/UC; Platform phụ trách hợp đồng API;
 Design phụ trách giao diện; QA kiểm chứng; CTO/Ops phụ trách phát hành.
@@ -109,12 +109,13 @@ NFR-A11Y-001, NFR-XPLAT-002.
 - [ ] Desktop, phone và tablet có navigation/spacing phù hợp; CMS desktop ưu tiên bảng thao tác.
   *PARTIAL (Design):* CSS responsive có (`globals.css` breakpoints 768/960); chưa có visual review/ảnh QA.
 - [x] Keyboard/focus, label, thông báo lỗi đọc được, contrast AA; trạng thái pending không gây nhảy bố cục lớn.
-  Bằng chứng: `a11y.spec.ts` (axe + keyboard) tại `fd838d2`; không phải audit WCAG 2.2 AA toàn diện.
+  Bằng chứng: `a11y.spec.ts` (axe + keyboard) tại `fd838d2` và follow-up `41a4009` /
+  `d1715d2`; không phải audit WCAG 2.2 AA toàn diện. F-04 Design PARTIAL (chưa Safari).
 
 **Exit:** landing và các màn nền tảng chạy trên API thật, route mới được kiểm thử;
 các layout đã có ảnh kiểm tra thực tế. W3 hoàn thiện hành vi chọn clip và khôi phục phiên.
 
-## 6. W3 — Vòng học và khôi phục phiên (Mốc A recovery chưa đóng)
+## 6. W3 — Vòng học và khôi phục phiên (Mốc A recovery engineering PASS; Design PARTIAL)
 
 **Owner:** Web + Platform; BA/Pedagogy review ngữ nghĩa; QA kiểm chứng.
 **FR:** FR-LRN-001/UC-L10 sau W0, FR-SES-001…003, FR-PRG-001/004, FR-CMS-003/004, NFR-PERF-002.
@@ -181,8 +182,8 @@ không sinh thêm phiên khi retry cùng start key. API additions có contract t
 **Exit Mốc B:** teacher tạo/upload/submit, logout; admin login, tìm đúng item, kiểm tra và publish;
 learner thấy nội dung; unpublish loại nội dung khỏi catalog. Reload từng bước vẫn tiếp tục được.
 
-> Mốc B giữ kết quả hồi quy tại `fd838d2`; recovery follow-up không dựng lại
-> workflow CMS.
+> Mốc B giữ kết quả hồi quy tại `fd838d2` (217 / 21+21 / 7); recovery follow-up
+> không dựng lại workflow CMS. Candidate `41a4009` / `d1715d2` không mở lại Mốc B.
 
 ## 8. W5 — Kiểm chứng và bàn giao, áp dụng cho từng mốc
 
@@ -204,7 +205,9 @@ learner thấy nội dung; unpublish loại nội dung khỏi catalog. Reload t�
   cập nhật expected OpenAPI thay đổi có chủ đích. Không dùng baseline parity lịch sử làm chứng cứ API mới.
 - [x] Chỉ thêm tests cho hành vi/rủi ro, không test lặp markup thuần trang trí.
   Lưu revision, config không chứa secret, commands/exit codes, logs và ảnh QA vào evidence của từng mốc.
-  Ghi chú: evidence `docs/qa/evidence/remediation-closeout-20260906-140329/` có log/exit/SHA; chưa có ảnh QA.
+  Ghi chú: evidence lịch sử `docs/qa/evidence/remediation-closeout-20260906-140329/`
+  (`fd838d2`, 217 / 21+21 / 7). Follow-up: `docs/qa/evidence/recovery-followup-20260906-170905/`
+  (`41a4009` / `d1715d2`, 217 / 42+42 / 35). Chưa có ảnh QA Safari/device.
 - [x] Cập nhật README hướng dẫn web/env/routes và ma trận FR→UC→test.
   Tiêu chí đồng bộ 3 bề mặt tách riêng: browser emulation không được báo là đã kiểm trên thiết bị native.
 - [x] DB test `/jplearn_test` và media test cô lập; bảo toàn DB dev/volumes và hai file

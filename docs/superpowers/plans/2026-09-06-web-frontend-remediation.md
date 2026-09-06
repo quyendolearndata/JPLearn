@@ -1,6 +1,6 @@
 # Kế hoạch khắc phục Web Frontend & Staff CMS
 
-Ngày: 2026-09-06. Trạng thái: **REMEDIATION IN PROGRESS** — C4 được mở lại theo [kế hoạch recovery follow-up](2026-09-06-web-frontend-recovery-followup.md), vì F-01–F-03 chưa đủ bằng chứng; C5 keyboard/manual vẫn **PARTIAL**. Các kết quả lịch sử tại `fd838d2` được giữ nguyên, không mở lại R-01, R-02 hoặc R-04.
+Ngày: 2026-09-06. Trạng thái: **C4 CLOSED** — F-01–F-03 engineering PASS tại `41a4009` / evidence `d1715d2` ([recovery follow-up](2026-09-06-web-frontend-recovery-followup.md), [evidence](../../qa/recovery-followup-evidence-2026-09-06.md)). C5 keyboard/manual: **engineering PASS**, **Design PARTIAL**. Không COMPLETED toàn bộ (còn Design focus/Safari). Lịch sử `fd838d2` (217 / 21+21 / 7) giữ nguyên; không mở lại R-01, R-02 hoặc R-04. Release gate không đổi (không production).
 Kế thừa: [kế hoạch Mốc A/B](2026-09-06-web-frontend-implementation.md).
 Baseline recovery đang review: `c2329a5`. `8bd0b44` được giữ lại như baseline
 closeout trước đây của Task 1, không phải baseline hiện hành cho recovery.
@@ -150,14 +150,15 @@ kiểm chứng được và response phản ánh đúng kết quả database.
 **Exit:** retry đồng thời không trả 500 và không tạo/emit trùng; evidence kiểm trực tiếp
 row/event, không chỉ so response ID.
 
-## 7. C4 — Web session recovery theo user và tab (**REOPENED**)
+## 7. C4 — Web session recovery theo user và tab (**CLOSED**)
 
 **Owner:** Web; Platform hỗ trợ contract; QA E2E. **Màn:** S-SESSION. **Đóng:** R-03.
 
-> Các checkbox và test dưới đây ghi nhận lịch sử remediation tại `fd838d2`, không
-> phải bằng chứng đóng lại các acceptance F-01–F-03. C4 chỉ được đóng sau khi
-> follow-up xác nhận không ghi đè session chưa xác nhận, mọi ended path tải
-> progress, và media recovery giữ đúng item.
+> Đóng C4 vì F-01–F-03 có bằng chứng tại candidate `41a4009` / evidence `d1715d2`.
+> Checkbox dưới đây vẫn ghi lịch sử remediation `fd838d2` (217 / 21+21 / 7).
+> Follow-up xác nhận: không ghi đè session chưa xác nhận (F-01), mọi ended path
+> tải progress (F-02), media recovery giữ đúng item (F-03; WebKit HLS = engine,
+> không phải iPhone). C5 keyboard/manual không đóng Design.
 
 ### State và storage
 
@@ -188,14 +189,16 @@ row/event, không chỉ so response ID.
 - [x] Hai tab cùng user không ghi đè record; đổi user không nhận phiên của user trước.
 - [x] URL media hết hạn/item unpublish: refetch catalog có giới hạn; không dùng lại signed URL đã lưu.
 
-**Exit Mốc A về recovery (lịch sử `fd838d2`, hiện chưa đạt lại):** mọi trạng thái mất
-response/reload có đường xử lý xác định; không tạo session mới vì mất key và không báo
-thành công khi server chưa được xác nhận. F-01/F-02/F-03 của follow-up phải có
-evidence mới trước khi đóng C4.
+**Exit Mốc A về recovery:** đạt tại `41a4009` / `d1715d2` (F-01–F-03 engineering PASS).
+Lịch sử `fd838d2` giữ nguyên. Mọi trạng thái mất response/reload có đường xử lý xác định;
+không tạo session mới vì mất key và không báo thành công khi server chưa được xác nhận.
 
 ## 8. C5 — Hoàn thiện CMS/UI và phạm vi kiểm thử
 
 **Owner:** Web + QA; BA xác nhận workflow. **Đóng:** R-05, R-06, R-07.
+**Keyboard/manual:** engineering tests **PASS** (axe + Tab→Phát/Tạm dừng + `role=alert`
+tại `41a4009` / `d1715d2`); **Design PARTIAL** — chưa rà focus thủ công trên Safari/
+iPhone/iPad thật. Mốc B CMS giữ hồi quy lịch sử `fd838d2`, không dựng lại workflow.
 
 - [x] Form new/detail chỉ nhận `video/mp4` cho upload; kiểm extension/MIME phía client
   để báo sớm, backend tiếp tục là nguồn validation cuối. Có thể giữ metadata `audio`
@@ -239,8 +242,10 @@ Chạy trên working tree sạch hoặc isolated worktree từ candidate SHA, l�
   code cuối; bỏ số test cũ nếu suite count đã thay đổi.
 - [x] Chỉ đổi kế hoạch Mốc A/B và remediation sang `COMPLETED` khi mọi exit ở trên PASS.
   Nếu còn exception, ghi `PARTIAL/HOLD` cùng owner và điều kiện đóng cụ thể.
+  **Hiện tại:** C4 CLOSED; C5 engineering PASS + Design PARTIAL — không COMPLETED toàn bộ.
 - [x] Local/test engineering PASS không tự mở R-09; staging/production vẫn cần cấu hình
   HTTPS/CORS/media, smoke/rollback và authorization CTO/Ops theo gate hiện hành.
+  Release gate hiện hành giữ nguyên (không production).
 
 ## 10. Thứ tự triển khai
 

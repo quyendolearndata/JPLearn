@@ -1,6 +1,6 @@
 # Báo Cáo Thực Thi: Web Frontend & Staff CMS (Mốc A & Mốc B)
 
-> **Trạng thái: REMEDIATION IN PROGRESS.** [Kế hoạch recovery follow-up](docs/superpowers/plans/2026-09-06-web-frontend-recovery-followup.md) mở lại C4 vì F-01–F-03 chưa đủ bằng chứng; C5 keyboard/manual vẫn PARTIAL. Số liệu lịch sử tại `fd838d2` được giữ nguyên: pytest **217 passed**; Playwright **21+21** (Chromium + WebKit engines, không phải iPhone/iPad); web unit **7 passed**. Đây là baseline hồi quy, không chứng minh F-01–F-04.
+> **Trạng thái: engineering PASS, Design PARTIAL.** Không COMPLETED toàn diện. [Recovery follow-up](docs/superpowers/plans/2026-09-06-web-frontend-recovery-followup.md) đóng C4 vì F-01–F-03 có evidence; C5 keyboard/manual: engineering tests PASS, Design PARTIAL (chưa rà focus/Safari device). Evidence mới: [recovery-followup-evidence-2026-09-06.md](docs/qa/recovery-followup-evidence-2026-09-06.md) — candidate `41a4009` (code), evidence `d1715d2`: pytest **217 passed**; Playwright **42+42** Chromium/WebKit; web unit **35**; guard **0 banned**; build **10 routes**. WebKit HLS = engine, không phải iPhone. Lịch sử `fd838d2` giữ nguyên: pytest **217 passed**; Playwright **21+21**; web unit **7**. Release gate không đổi (không production).
 
 ---
 
@@ -17,9 +17,10 @@
   - Đồng hồ đếm thời gian thực khi học, nút Bắt đầu / Kết thúc rõ ràng, và bảng tổng kết tiến độ ngay sau phiên.
 - **Tiến Độ Học Tập ([apps/web/src/app/progress/page.tsx](file:///Users/quyendo/Documents/Learn/JPLearn/apps/web/src/app/progress/page.tsx)):** Hiển thị số phút CI tích luỹ và cấp độ hiện tại, tự động đồng bộ khi quay lại trang.
 
-Các số liệu trên là lịch sử kiểm thử tại `fd838d2`; recovery follow-up dùng
-baseline review `c2329a5` để xử lý các scenario F-01–F-04, không coi các số liệu
-đó là bằng chứng đã đạt các scenario còn thiếu.
+Mốc A recovery: **engineering PASS** tại `41a4009` / `d1715d2` (F-01–F-03).
+F-04 engineering PASS, Design PARTIAL (focus thủ công + Safari/iPhone/iPad thật).
+Mốc B CMS giữ hồi quy lịch sử `fd838d2`, không dựng lại workflow.
+Số liệu `fd838d2` (217 / 21+21 / 7) là lịch sử; không thay số follow-up.
 
 ### Mốc B — Staff CMS (Cổng Quản Trị & Biên Tập Nội Dung)
 - **Danh Sách Nội Dung Staff ([apps/web/src/app/staff/page.tsx](file:///Users/quyendo/Documents/Learn/JPLearn/apps/web/src/app/staff/page.tsx)):** Cổng biên tập dành cho vai trò `teacher` / `admin`, lọc theo trạng thái (`draft`, `level_qa`, `published`, `archived`) và cấp độ CI, bảng chi tiết hiển thị revision và thời lượng.
@@ -92,6 +93,21 @@ cd apps/api-python && uv run pytest
 ./apps/api-python/differential/web-e2e-python.sh --project=webkit
 ```
 - **Kết quả:** `21 passed (2.3m)` trên WebKit engine (không phải thiết bị iPhone/iPad thật).
+
+### F. Recovery follow-up candidate `41a4009` / evidence `d1715d2` (2026-09-06)
+
+Không thay thế mục C–E ở trên. Raw: `docs/qa/evidence/recovery-followup-20260906-170905/`.
+
+| Lệnh | Exit | Count |
+|---|---|---|
+| `pnpm test:guard` | 0 | 0 banned textbook fields |
+| `pnpm --filter @jplearn/web test` | 0 | **35 passed** |
+| `pnpm --filter @jplearn/web build` | 0 | 10 routes |
+| `pnpm test:api` | 0 | **217 passed** |
+| `web-e2e-python.sh --project=chromium` | 0 | **42 passed** |
+| `web-e2e-python.sh --project=webkit` | 0 | **42 passed** (HLS = engine, không phải iPhone) |
+
+F-01–F-03 engineering PASS. F-04 engineering PASS + Design PARTIAL.
 
 ---
 

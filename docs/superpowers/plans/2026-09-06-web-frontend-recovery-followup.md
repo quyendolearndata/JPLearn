@@ -1,12 +1,15 @@
 # Kế hoạch sửa các lỗi còn lại của Web Frontend
 
-Ngày: 2026-09-06. Trạng thái: **IN PROGRESS**.
-Baseline được kiểm tra: `c2329a5` (được dùng làm mốc hồi quy cho F-01–F-04).
-Kế thừa: [remediation Mốc A/B](2026-09-06-web-frontend-remediation.md).
+Ngày: 2026-09-06. Trạng thái: **engineering PASS**, **Design PARTIAL** — không COMPLETED toàn bộ.
+Còn chờ Design rà focus thủ công và thiết bị Safari/iPhone/iPad thật.
+Candidate engineering: `41a4009` (code); evidence: `d1715d2`
+([recovery-followup-evidence-2026-09-06.md](../../qa/recovery-followup-evidence-2026-09-06.md)).
+Baseline được kiểm tra: `c2329a5` (mốc hồi quy F-01–F-04). Lịch sử closeout `fd838d2`
+(217 / 21+21 / 7) giữ nguyên. Kế thừa: [remediation Mốc A/B](2026-09-06-web-frontend-remediation.md).
 
-Plan này mở lại phần C4 chưa đạt và bổ sung bằng chứng C5. Trạng thái COMPLETED
-trong tài liệu trước không còn đủ để kết luận toàn bộ recovery đã hoàn tất.
-Không mở lại các thay đổi concurrency/migration backend đã được xác thực.
+C4 đóng vì F-01–F-03 có bằng chứng. C5 keyboard/manual: engineering tests PASS,
+Design PARTIAL. Không mở lại concurrency/migration backend đã xác thực.
+Release gate hiện hành giữ nguyên (không production).
 
 ## 1. Mục tiêu và phạm vi
 
@@ -54,22 +57,22 @@ catalog, chưa gây URL hết hạn hoặc gỡ item của phiên đang chạy.
 Có thể tách hook/helper quản lý phiên để các nhánh dùng chung quy tắc; tránh refactor
 toàn bộ trang hoặc đổi cấu trúc lưu trữ khi không cần thiết.
 
-- [ ] Có trạng thái UI khởi tạo/đang xác minh/chưa xác minh riêng. Start chỉ bật khi
+- [x] Có trạng thái UI khởi tạo/đang xác minh/chưa xác minh riêng. Start chỉ bật khi
   đã đọc storage và xác nhận không còn phiên phải xử lý. Khóa nút ngay từ lần render
   đầu, cả trong lúc GET chưa trả về và sau khi GET lỗi.
-- [ ] Retry ở `starting` luôn lấy key, deviceClass và itemId từ record đã lưu;
+- [x] Retry ở `starting` luôn lấy key, deviceClass và itemId từ record đã lưu;
   không sinh key mới vì remount hoặc vì ref trong bộ nhớ đã mất.
-- [ ] Retry ở `active`, `ending`, `outcome_unknown` xác minh cùng sessionId;
+- [x] Retry ở `active`, `ending`, `outcome_unknown` xác minh cùng sessionId;
   active thì cho end, ended thì đi qua F-02. Không POST start trong các nhánh này.
-- [ ] Hiện nút “Thử khôi phục lại” khi mạng lỗi. Chống hai request recovery đồng thời;
+- [x] Hiện nút “Thử khôi phục lại” khi mạng lỗi. Chống hai request recovery đồng thời;
   response cũ sau đổi user, chuyển trang hoặc retry mới không được ghi đè state mới.
-- [ ] Network error, 5xx hoặc response không hợp lệ giữ record/key và trạng thái chưa
+- [x] Network error, 5xx hoặc response không hợp lệ giữ record/key và trạng thái chưa
   xác nhận. Không clear record chỉ vì `res.ok` false; phân loại lỗi theo OpenAPI.
-- [ ] 401 đi theo luồng đăng nhập hiện hành và giữ dữ liệu cần recovery của đúng user.
+- [x] 401 đi theo luồng đăng nhập hiện hành và giữ dữ liệu cần recovery của đúng user.
   GET 403/404 có xử lý terminal rõ ràng, không cho người khác sử dụng phiên đó.
-- [ ] Chỉ sinh key mới khi bắt đầu một phiên mới đã được phép. Bảo toàn storage theo
+- [x] Chỉ sinh key mới khi bắt đầu một phiên mới đã được phép. Bảo toàn storage theo
   user/tab; lưu active trước catalog; lỗi media không làm mất quyền kết thúc phiên.
-- [ ] Nếu replay POST trả session đã ended, xử lý ended thay vì dựng lại UI active.
+- [x] Nếu replay POST trả session đã ended, xử lý ended thay vì dựng lại UI active.
 
 **Acceptance test trước sửa phải thất bại:**
 
@@ -89,16 +92,16 @@ tạo phiên mới do mất key. Giữ các test hai tab/đổi user đang có.
 
 **Tệp chính:** `apps/web/src/app/session/page.tsx`, `apps/web/e2e/recovery.spec.ts`.
 
-- [ ] Hợp nhất xử lý ended từ POST end thành công, GET sau POST lỗi và GET khi reload.
+- [x] Hợp nhất xử lý ended từ POST end thành công, GET sau POST lỗi và GET khi reload.
   Session status và progress là hai bước riêng: đã xác nhận ended thì không retry end.
-- [ ] Đọc progress khi GET xác nhận ended; lấy duration từ response server khi có.
+- [x] Đọc progress khi GET xác nhận ended; lấy duration từ response server khi có.
   Không dùng `0` thay dữ liệu chưa tải được rồi hiển thị như kết quả thật.
-- [ ] Nếu progress lỗi: hiện “Phiên đã kết thúc; chưa tải được tổng kết” và nút thử lại
+- [x] Nếu progress lỗi: hiện “Phiên đã kết thúc; chưa tải được tổng kết” và nút thử lại
   tổng kết. Lưu đủ tham chiếu để reload còn thử lại được; không giữ UI như phiên active.
-- [ ] Có thể giữ record `outcome_unknown` hiện hữu cho tới khi tổng kết tải xong;
+- [x] Có thể giữ record `outcome_unknown` hiện hữu cho tới khi tổng kết tải xong;
   mỗi lần recovery phải GET status trước. Nếu thêm state mới thì cập nhật validator,
   khả năng đọc record cũ và unit tests cùng thay đổi.
-- [ ] Sau khi có tổng kết thật mới dọn dữ liệu recovery theo policy; không clear sớm
+- [x] Sau khi có tổng kết thật mới dọn dữ liệu recovery theo policy; không clear sớm
   làm mất đường tải lại. Tách rõ lỗi kết thúc phiên với lỗi tải progress.
 
 **Acceptance:** mất response end sau commit → GET ended → GET progress → tổng kết
@@ -111,20 +114,20 @@ Sửa test hiện tại để assert heading và số liệu, không chỉ asser
 **Tệp chính:** `apps/web/src/components/ci-player.tsx`, `apps/web/src/app/session/page.tsx`,
 `apps/web/e2e/recovery.spec.ts`, `apps/web/e2e/hls.spec.ts`.
 
-- [ ] CiPlayer báo lỗi nguồn không phục hồi được về trang cha, bao phủ HLS native,
+- [x] CiPlayer báo lỗi nguồn không phục hồi được về trang cha, bao phủ HLS native,
   hls.js và MP4. Giữ fallback HLS→MP4 khi MP4 còn dùng được.
-- [ ] Trang cha gọi catalog lấy URL mới cho đúng itemId. Một chu kỳ lỗi chỉ có
+- [x] Trang cha gọi catalog lấy URL mới cho đúng itemId. Một chu kỳ lỗi chỉ có
   **tối đa một lần tự refetch catalog**; gộp các error event cùng chu kỳ. URL vẫn
   lỗi/không đổi thì dừng tự động, báo lỗi và cho retry thủ công, không lặp vô hạn.
-- [ ] Không reset ngân sách retry chỉ vì props URL đổi hoặc component render lại.
+- [x] Không reset ngân sách retry chỉ vì props URL đổi hoặc component render lại.
   Retry thủ công tạo một chu kỳ mới; hủy/bỏ qua kết quả sau end, đổi item hoặc unmount.
-- [ ] Với phiên không có itemId ban đầu, chỉ chọn mặc định lần đầu rồi persist ID
+- [x] Với phiên không có itemId ban đầu, chỉ chọn mặc định lần đầu rồi persist ID
   thực tế. Với record cũ thiếu itemId, thực hiện cùng quy tắc một lần sau recovery.
-- [ ] Khi đã có targetItemId nhưng catalog không còn item đó, báo nội dung không còn
+- [x] Khi đã có targetItemId nhưng catalog không còn item đó, báo nội dung không còn
   khả dụng; không lấy item đầu tiên khác. Giữ sessionId và nút kết thúc hoạt động.
-- [ ] Sau đổi URL cùng item, khôi phục vị trí xem khi media hỗ trợ và không vượt
+- [x] Sau đổi URL cùng item, khôi phục vị trí xem khi media hỗ trợ và không vượt
   duration; tôn trọng trạng thái pause và chính sách autoplay của trình duyệt.
-- [ ] Storage chỉ lưu ID/state; tuyệt đối không persist signed URL hoặc object catalog.
+- [x] Storage chỉ lưu ID/state; tuyệt đối không persist signed URL hoặc object catalog.
 
 **Acceptance:**
 
@@ -143,17 +146,18 @@ Phạm vi này không yêu cầu thu hồi tức thì signed URL đang còn hạ
 
 ## 6. F-04 — Hoàn thiện bằng chứng keyboard/a11y
 
-- [ ] Mở rộng `apps/web/e2e/a11y.spec.ts`: đi đến player bằng bàn phím, thực hiện
+- [x] Mở rộng `apps/web/e2e/a11y.spec.ts`: đi đến player bằng bàn phím, thực hiện
   phát/dừng bằng bàn phím và assert `paused`/`currentTime` thay đổi đúng.
   Không dùng `video.focus()` hoặc gọi `play()` bằng script thay cho hành động cần đo.
-- [ ] Kiểm thứ tự focus ở các điều khiển web thuộc phạm vi, Enter submit và thông báo
+  **Engineering PASS** tại `41a4009` / `d1715d2` (Tab→Phát/Tạm dừng + `role=alert`).
+- [x] Kiểm thứ tự focus ở các điều khiển web thuộc phạm vi, Enter submit và thông báo
   lỗi recovery/tổng kết có semantics phù hợp (`role=alert` cho lỗi cần thông báo).
-- [ ] Chạy trên cả Chromium/WebKit. Nếu thao tác native controls phụ thuộc engine,
-  ghi rõ bằng chứng từng engine và kiểm thủ công phần không tự động hóa được;
-  không skip rồi ghi đạt. Chỉ bổ sung điều khiển accessible tối thiểu nếu test phát
-  hiện giao diện hiện hành không thao tác được bằng bàn phím.
-- [ ] Design ghi người kiểm/ngày/revision/kết quả rà focus thủ công. Chưa có bằng
-  chứng thì giữ PARTIAL; axe đạt không thay thế audit WCAG hoặc thiết bị Safari thật.
+- [x] Chạy trên cả Chromium/WebKit. Native media keys: `tab-to-video=false`,
+  `spaceChangedPaused=false` trên cả hai engine. WebKit HLS = engine, không phải
+  iPhone/Safari thật. Không skip.
+- [ ] Design ghi người kiểm/ngày/revision/kết quả rà focus thủ công trên thiết bị
+  Safari/iPhone/iPad thật. **Design PARTIAL** — chưa có rà Safari/device; axe đạt
+  không thay thế audit WCAG 2.2 AA.
 
 ## 7. Thứ tự thực hiện và kiểm thử
 
@@ -177,15 +181,21 @@ volume `jplearn_postgres_data` hoặc media dev. Dọn riêng process/container 
 
 ## 8. Điều kiện đóng và bàn giao
 
-- [ ] F-01/F-02/F-03 có test từng thất bại trên baseline và đạt sau sửa, không skip
+- [x] F-01/F-02/F-03 có test từng thất bại trên baseline và đạt sau sửa, không skip
   scenario bắt buộc. Lưu rõ ca mock fault và ca tích hợp API/media thật.
-- [ ] Hồi quy đạt; số test thực tế được ghi lại, không ấn định trước số lượng mới.
-- [ ] Evidence trong `docs/qa/` có candidate SHA, trạng thái working tree trước/sau,
-  môi trường, lệnh, exit code, thời lượng và raw logs đã loại secret.
-- [ ] BA xác nhận coverage và cập nhật plan trước/traceability/walkthrough theo kết quả.
-  Đóng C4 chỉ khi F-01–03 đủ bằng chứng; C5 ghi riêng phạm vi keyboard/manual còn thiếu.
-- [ ] Chỉ ghi COMPLETED toàn bộ khi không còn acceptance bắt buộc chưa đạt. Nếu Design
-  chưa rà xong, ghi rõ engineering PASS, Design PARTIAL và hạng mục còn chờ.
+  **Engineering PASS** — F-01/F-02/F-03 tại `41a4009` / evidence `d1715d2`.
+- [x] Hồi quy đạt; số test thực tế: pytest **217 passed**; Playwright **42+42**
+  Chromium/WebKit; web unit **35**; guard **0 banned**; build **10 routes**.
+  Lịch sử `fd838d2` giữ **217 / 21+21 / 7**.
+- [x] Evidence trong `docs/qa/recovery-followup-evidence-2026-09-06.md` và
+  `docs/qa/evidence/recovery-followup-20260906-170905/` (SHA, dirty, env, lệnh,
+  exit, duration, raw logs đã loại secret).
+- [x] BA xác nhận coverage và cập nhật plan trước/traceability/walkthrough theo kết quả.
+  **C4 đóng** vì F-01–03 đủ bằng chứng. C5 keyboard/manual: engineering tests PASS,
+  Design PARTIAL (focus thủ công + Safari/device).
+- [ ] Không ghi COMPLETED toàn bộ: **engineering PASS**, **Design PARTIAL**, còn chờ
+  Design rà focus thủ công và thiết bị Safari/iPhone/iPad thật.
 
-Mốc B CMS giữ kết quả hồi quy, không dựng lại workflow. Hoàn tất plan này không tự
-đồng nghĩa được triển khai production; release gate hiện hành giữ nguyên.
+Mốc B CMS giữ kết quả hồi quy lịch sử `fd838d2`, không dựng lại workflow. Hoàn tất
+plan này không tự đồng nghĩa được triển khai production; release gate hiện hành
+giữ nguyên (không production).
