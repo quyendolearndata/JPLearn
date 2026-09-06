@@ -1,59 +1,526 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import type { CatalogItemPublic } from "@jplearn/domain";
-import { api } from "../../lib/api";
-import { getToken } from "../../lib/auth-storage";
+import { api, parseApiError, parseApiResponse } from "../../lib/api";
+import { getToken, getUser } from "../../lib/auth-storage";
 import { CiPlayer } from "../../components/ci-player";
 
-export default function SessionPage() {
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [status, setStatus] = useState("");
-  const [clip, setClip] = useState<CatalogItemPublic | null>(null);
+type SessionLifecycleState = "starting" | "active" | "ending" | "outcome_unknown";
 
-  async function start() {
+interface StoredSession {
+  state: SessionLifecycleState;
+  sessionId?: string;
+  itemId?: string;
+  idempotencyKey: string;
+  startedAt: string;
+  deviceClass: string;
+  clip?: CatalogItemPublic;
+}
+
+interface EndSummary {
+  minutesComprehensible: number;
+  currentCiLevel: number;
+  durationSeconds: number;
+}
+
+const TOPIC_NAMES: Record<string, string> = {
+  daily_home: "Sinh hoạt gia đình",
+  food: "Ẩm thực & Nấu ăn",
+  shopping: "Mua sắm & Cửa hàng",
+  travel: "Du lịch & Phương tiện",
+  nature: "Thiên nhiên & Đời sống",
+  culture: "Văn hoá Nhật Bản",
+  body: "Cơ thể & Sức khoẻ",
+  work: "Công việc & Xã hội",
+};
+
+function getStorageKey(): string {
+  const user = getUser();
+  return user?.id ? `jplearn.session:${user.id}` : "jplearn.session:anonymous";
+}
+
+function SessionContent() {
+  const searchParams = useSearchParams();
+  const requestedItemId = searchParams.get("item_id");
+
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>("");
+  const [clip, setClip] = useState<CatalogItemPublic | null>(null);
+  const [startedAt, setStartedAt] = useState<Date | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [completedSummary, setCompletedSummary] = useState<EndSummary | null>(null);
+
+  const pendingIdempotencyKeyRef = useRef<string | null>(null);
+
+  const loadClip = useCallback(
+    async (targetItemId?: string | null, activeRecord?: StoredSession) => {
+      const token = getToken();
+      if (!token) return;
+      const catRes = await api("/catalog", { token });
+      let playable: CatalogItemPublic | null = null;
+      if (catRes.ok) {
+        const catalog = await parseApiResponse<{ items: CatalogItemPublic[] }>(catRes);
+        const items = catalog?.items || [];
+        if (targetItemId) {
+          playable = items.find((i) => i.id === targetItemId) || null;
+        }
+        if (!playable && items.length > 0) {
+          playable = items.find((i) => i.hls_url ?? i.playback_url) || items[0];
+        }
+      }
+      setClip(playable);
+      setStatus(playable ? "Phiên đang chạy." : "Phiên đang chạy. Chưa có clip published.");
+
+      if (activeRecord && typeof window !== "undefined") {
+        const storageKey = getStorageKey();
+        activeRecord.clip = playable ?? undefined;
+        try {
+          sessionStorage.setItem(storageKey, JSON.stringify(activeRecord));
+        } catch {}
+      }
+    },
+    []
+  );
+
+  // Check and recover session from scoped sessionStorage
+  const checkActiveSession = useCallback(async () => {
+    if (typeof window === "undefined") return;
+    const token = getToken();
+    const storageKey = getStorageKey();
+
+    // Clean up legacy localStorage key if present
+    try {
+      localStorage.removeItem("jplearn_active_session");
+    } catch {}
+
+    const raw = sessionStorage.getItem(storageKey);
+    if (!raw) return;
+
+    let stored: StoredSession;
+    try {
+      stored = JSON.parse(raw);
+    } catch {
+      sessionStorage.removeItem(storageKey);
+      return;
+    }
+
+    if (!token) return;
+
+    // 1. Recover mid-flight "starting" session
+    if (stored.state === "starting") {
+      setStatus("Đang khôi phục phiên...");
+      setLoading(true);
+      try {
+        const res = await api("/sessions", {
+          method: "POST",
+          token,
+          headers: { "Idempotency-Key": stored.idempotencyKey },
+          body: JSON.stringify({ device_class: stored.deviceClass || "web" }),
+        });
+        if (res.ok) {
+          const body = await parseApiResponse<{ id: string; started_at?: string }>(res);
+          if (body?.id) {
+            const activeRecord: StoredSession = {
+              ...stored,
+              state: "active",
+              sessionId: body.id,
+              startedAt: body.started_at || stored.startedAt,
+            };
+            sessionStorage.setItem(storageKey, JSON.stringify(activeRecord));
+            setSessionId(body.id);
+            setStartedAt(new Date(activeRecord.startedAt));
+            await loadClip(stored.itemId, activeRecord);
+            setStatus("Phiên đang chạy (đã khôi phục).");
+            return;
+          }
+        }
+        sessionStorage.removeItem(storageKey);
+        setStatus("Không thể khôi phục phiên.");
+      } catch {
+        setStatus("Lỗi kết nối khi khôi phục phiên.");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // 2. Recover active or outcome_unknown session
+    if (stored.sessionId && (stored.state === "active" || stored.state === "outcome_unknown")) {
+      try {
+        const res = await api(`/sessions/${stored.sessionId}`, { token });
+        if (res.status === 200) {
+          const sessionData = await res.json();
+          if (sessionData.ended_at) {
+            sessionStorage.removeItem(storageKey);
+            return;
+          }
+          setSessionId(stored.sessionId);
+          const start = new Date(sessionData.started_at || stored.startedAt);
+          setStartedAt(start);
+          const now = Date.now();
+          setElapsedSeconds(Math.max(0, Math.floor((now - start.getTime()) / 1000)));
+          pendingIdempotencyKeyRef.current = stored.idempotencyKey;
+          setStatus("Phiên đang chạy.");
+
+          stored.state = "active";
+          sessionStorage.setItem(storageKey, JSON.stringify(stored));
+
+          if (stored.clip) {
+            setClip(stored.clip);
+          } else {
+            await loadClip(stored.itemId, stored);
+          }
+        } else if (res.status === 404 || res.status === 403) {
+          sessionStorage.removeItem(storageKey);
+        }
+      } catch {
+        // Non-blocking on network failure
+      }
+      return;
+    }
+
+    // 3. Recover ending session
+    if (stored.sessionId && stored.state === "ending") {
+      try {
+        const res = await api(`/sessions/${stored.sessionId}`, { token });
+        if (res.status === 200) {
+          const sessionData = await res.json();
+          if (sessionData.ended_at) {
+            sessionStorage.removeItem(storageKey);
+            const progressRes = await api("/progress", { token });
+            const progress = progressRes.ok
+              ? await parseApiResponse<{ minutes_comprehensible: number; current_ci_level: number }>(progressRes)
+              : null;
+            setCompletedSummary({
+              minutesComprehensible: progress?.minutes_comprehensible ?? 0,
+              currentCiLevel: progress?.current_ci_level ?? 0,
+              durationSeconds: sessionData.duration_seconds ?? 0,
+            });
+            setStatus("Phiên đã kết thúc.");
+            return;
+          }
+        }
+        stored.state = "outcome_unknown";
+        sessionStorage.setItem(storageKey, JSON.stringify(stored));
+      } catch {}
+    }
+  }, [loadClip]);
+
+  useEffect(() => {
+    void checkActiveSession();
+  }, [checkActiveSession]);
+
+  // Elapsed timer ticker while session is active
+  useEffect(() => {
+    if (!sessionId || !startedAt) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const elapsed = Math.max(0, Math.floor((now - startedAt.getTime()) / 1000));
+      setElapsedSeconds(elapsed);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [sessionId, startedAt]);
+
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  // Start learning session with Idempotency-Key
+  const startSession = async () => {
     const token = getToken();
     if (!token) {
       setStatus("Hãy đăng nhập.");
       return;
     }
-    const res = await api("/sessions", {
-      method: "POST",
-      token,
-      body: JSON.stringify({ device_class: "web" }),
-    });
-    const body = await res.json();
-    setSessionId(body.id);
-    const catalog = (await api("/catalog", { token }).then((r) => r.json())) as {
-      items: CatalogItemPublic[];
-    };
-    const playable = catalog.items.find((item) => item.hls_url ?? item.playback_url);
-    setClip(playable ?? null);
-    setStatus(playable ? "Phiên đang chạy." : "Phiên đang chạy. Chưa có clip published.");
-  }
 
-  async function end() {
+    const storageKey = getStorageKey();
+    setLoading(true);
+    setCompletedSummary(null);
+
+    const idempotencyKey =
+      pendingIdempotencyKeyRef.current ||
+      (typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `web-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+    pendingIdempotencyKeyRef.current = idempotencyKey;
+
+    const startedAtIso = new Date().toISOString();
+
+    // Persist "starting" state BEFORE sending POST /sessions
+    const startingRecord: StoredSession = {
+      state: "starting",
+      idempotencyKey,
+      startedAt: startedAtIso,
+      itemId: requestedItemId || undefined,
+      deviceClass: "web",
+    };
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem(storageKey, JSON.stringify(startingRecord));
+    }
+
+    try {
+      const res = await api("/sessions", {
+        method: "POST",
+        token,
+        headers: {
+          "Idempotency-Key": idempotencyKey,
+        },
+        body: JSON.stringify({ device_class: "web" }),
+      });
+
+      if (!res.ok) {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem(storageKey);
+        }
+        const err = await parseApiError(res);
+        setStatus(err.message || "Không thể bắt đầu phiên.");
+        return;
+      }
+
+      const body = await parseApiResponse<{ id: string; started_at?: string }>(res);
+      if (!body?.id) {
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem(storageKey);
+        }
+        setStatus("Dữ liệu phiên không hợp lệ.");
+        return;
+      }
+
+      // IMMEDIATELY update sessionStorage to "active" BEFORE fetching catalog
+      const activeRecord: StoredSession = {
+        state: "active",
+        sessionId: body.id,
+        itemId: requestedItemId || undefined,
+        idempotencyKey,
+        startedAt: body.started_at || startedAtIso,
+        deviceClass: "web",
+      };
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(storageKey, JSON.stringify(activeRecord));
+      }
+
+      const start = new Date(activeRecord.startedAt);
+      setSessionId(body.id);
+      setStartedAt(start);
+      setElapsedSeconds(0);
+      pendingIdempotencyKeyRef.current = null;
+
+      // Fetch catalog to find playable clip
+      await loadClip(requestedItemId, activeRecord);
+    } catch {
+      // Keep "starting" in storage so reload can recover using same idempotency key
+      setStatus("Lỗi kết nối máy chủ khi bắt đầu phiên.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // End learning session
+  const endSession = async () => {
     const token = getToken();
     if (!token || !sessionId) return;
-    await api(`/sessions/${sessionId}/end`, { method: "POST", token });
-    setSessionId(null);
-    setClip(null);
-    setStatus("Đã kết thúc phiên.");
-  }
+    const storageKey = getStorageKey();
+
+    // Mark ending in sessionStorage
+    if (typeof window !== "undefined") {
+      const raw = sessionStorage.getItem(storageKey);
+      if (raw) {
+        try {
+          const s = JSON.parse(raw);
+          s.state = "ending";
+          sessionStorage.setItem(storageKey, JSON.stringify(s));
+        } catch {}
+      }
+    }
+
+    setLoading(true);
+    try {
+      const res = await api(`/sessions/${sessionId}/end`, {
+        method: "POST",
+        token,
+      });
+
+      if (!res.ok) {
+        // Mark outcome_unknown and verify
+        if (typeof window !== "undefined") {
+          const raw = sessionStorage.getItem(storageKey);
+          if (raw) {
+            try {
+              const s = JSON.parse(raw);
+              s.state = "outcome_unknown";
+              sessionStorage.setItem(storageKey, JSON.stringify(s));
+            } catch {}
+          }
+        }
+
+        const checkRes = await api(`/sessions/${sessionId}`, { token });
+        if (checkRes.ok) {
+          const checkData = await parseApiResponse<{ ended_at?: string; duration_seconds?: number }>(checkRes);
+          if (checkData?.ended_at) {
+            if (typeof window !== "undefined") {
+              sessionStorage.removeItem(storageKey);
+            }
+            const progressRes = await api("/progress", { token });
+            const progress = progressRes.ok
+              ? await parseApiResponse<{
+                  minutes_comprehensible: number;
+                  current_ci_level: number;
+                }>(progressRes)
+              : null;
+            setCompletedSummary({
+              minutesComprehensible: progress?.minutes_comprehensible ?? 0,
+              currentCiLevel: progress?.current_ci_level ?? 0,
+              durationSeconds: checkData.duration_seconds ?? elapsedSeconds,
+            });
+            setSessionId(null);
+            setClip(null);
+            setStatus("Đã kết thúc phiên.");
+            return;
+          }
+        }
+        const err = await parseApiError(res);
+        setStatus(err.message || "Không thể kết thúc phiên. Vui lòng thử lại.");
+        return;
+      }
+
+      const progress = await parseApiResponse<{
+        minutes_comprehensible: number;
+        current_ci_level: number;
+      }>(res);
+
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(storageKey);
+      }
+      setCompletedSummary({
+        minutesComprehensible: progress?.minutes_comprehensible ?? 0,
+        currentCiLevel: progress?.current_ci_level ?? 0,
+        durationSeconds: elapsedSeconds,
+      });
+      setSessionId(null);
+      setClip(null);
+      setStatus("Đã kết thúc phiên.");
+    } catch {
+      if (typeof window !== "undefined") {
+        const raw = sessionStorage.getItem(storageKey);
+        if (raw) {
+          try {
+            const s = JSON.parse(raw);
+            s.state = "outcome_unknown";
+            sessionStorage.setItem(storageKey, JSON.stringify(s));
+          } catch {}
+        }
+      }
+      // Attempt verification
+      try {
+        const checkRes = await api(`/sessions/${sessionId}`, { token });
+        if (checkRes.ok) {
+          const checkData = await parseApiResponse<{ ended_at?: string }>(checkRes);
+          if (checkData?.ended_at) {
+            if (typeof window !== "undefined") {
+              sessionStorage.removeItem(storageKey);
+            }
+            setSessionId(null);
+            setClip(null);
+            setStatus("Đã kết thúc phiên.");
+            return;
+          }
+        }
+      } catch {}
+      setStatus("Lỗi kết nối khi kết thúc phiên.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <section>
-      <h1>Phiên</h1>
-      <p>{status}</p>
+    <section className="login-card" style={{ maxWidth: "720px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "0.5rem" }}>
+        <h1>Phiên</h1>
+        {sessionId && (
+          <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--pink)" }}>
+            ⏱ {formatTime(elapsedSeconds)}
+          </div>
+        )}
+      </div>
+
+      <p className="status-text" style={{ marginTop: "0.5rem", fontWeight: 700, color: sessionId ? "#15803d" : "var(--charcoal)" }}>
+        {status}
+      </p>
+
       {clip ? (
-        <CiPlayer hlsUrl={clip.hls_url} playbackUrl={clip.playback_url} />
+        <div style={{ marginTop: "1.5rem", marginBottom: "1.5rem" }}>
+          <div style={{ borderRadius: "var(--radius-md)", overflow: "hidden", border: "2px solid var(--charcoal)", background: "#000000" }}>
+            <CiPlayer hlsUrl={clip.hls_url} playbackUrl={clip.playback_url} />
+          </div>
+          <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700 }}>
+            <span>Chủ đề: {TOPIC_NAMES[clip.topic_id] || clip.topic_id}</span>
+            <span>·</span>
+            <span>Cấp độ CI {clip.ci_level}</span>
+            <span>·</span>
+            <span>{clip.duration_seconds} giây</span>
+          </div>
+        </div>
       ) : null}
-      <button type="button" onClick={() => void start()}>
-        Bắt đầu phiên
-      </button>
-      <button type="button" onClick={() => void end()}>
-        Kết thúc phiên
-      </button>
+
+      {completedSummary && (
+        <div style={{ background: "var(--bg-subtle)", border: "1.5px solid var(--charcoal)", borderRadius: "var(--radius-sm)", padding: "1.25rem", margin: "1.5rem 0" }}>
+          <h2 style={{ fontSize: "1.2rem", fontWeight: 900, marginBottom: "0.5rem" }}>
+            Tổng kết phiên học
+          </h2>
+          <p style={{ margin: "0.25rem 0" }}>
+            Thời lượng: <strong>{formatTime(completedSummary.durationSeconds)}</strong>
+          </p>
+          <p style={{ margin: "0.25rem 0" }}>
+            Tổng tích luỹ: <strong>{completedSummary.minutesComprehensible} phút</strong>
+          </p>
+          <p style={{ margin: "0.25rem 0" }}>
+            Cấp độ CI: <strong>Cấp {completedSummary.currentCiLevel}</strong>
+          </p>
+          <div style={{ marginTop: "1rem", display: "flex", gap: "0.75rem" }}>
+            <Link href="/catalog" className="btn-cta btn-secondary" style={{ fontSize: "0.85rem", padding: "0.4rem 0.8rem" }}>
+              Xem Catalog
+            </Link>
+            <Link href="/progress" className="btn-cta btn-secondary" style={{ fontSize: "0.85rem", padding: "0.4rem 0.8rem" }}>
+              Xem Tiến độ
+            </Link>
+          </div>
+        </div>
+      )}
+
+      <div className="button-group">
+        <button
+          type="button"
+          onClick={() => void startSession()}
+          disabled={loading || Boolean(sessionId)}
+          className="btn-primary"
+        >
+          {loading && !sessionId ? "Đang xử lý…" : "Bắt đầu phiên"}
+        </button>
+        <button
+          type="button"
+          onClick={() => void endSession()}
+          disabled={loading || !sessionId}
+          className="btn-danger"
+        >
+          {loading && sessionId ? "Đang xử lý…" : "Kết thúc phiên"}
+        </button>
+      </div>
     </section>
+  );
+}
+
+export default function SessionPage() {
+  return (
+    <Suspense fallback={<section><h1>Phiên</h1><p>Đang tải…</p></section>}>
+      <SessionContent />
+    </Suspense>
   );
 }

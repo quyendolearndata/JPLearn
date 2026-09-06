@@ -17,8 +17,8 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | FR-CAT-002 | UC-L02 | GET /catalog chỉ published | T-CAT-002 draft hidden |
 | FR-CAT-003 | UC-L02 | query ci_level | T-CAT-003 |
 | FR-CAT-004 | UC-L02, UC-T02 | CatalogItemPublic không field dịch | T-CAT-004 schema |
-| FR-CAT-005 | UC-T02 | staff create | T-CAT-005 |
-| FR-SES-001 | UC-L03 | POST /sessions | T-SES-001 |
+| FR-CAT-005 | UC-T02, UC-T02b, UC-T05 | staff create, GET /staff/catalog, PATCH /staff/catalog/{id} | T-CAT-005 staff list & edit, T-CAT-005-CAS atomic CAS |
+| FR-SES-001 | UC-L03, UC-L10 | POST /sessions (Idempotency-Key), GET /sessions/{id} | T-SES-001 start, T-SES-004 idempotency & status, T-SES-003-IDEM-CONCUR concurrency lock |
 | FR-SES-002 | UC-L04 | POST /sessions/{id}/end | T-SES-002 |
 | FR-SES-003 | UC-L03 | session không cần media | T-SES-003 |
 | FR-PRG-001 | UC-L04, UC-L05 | minutes tăng khi end. ADR-003 D10 resolved tại FastAPI hardening: `SELECT ... FOR UPDATE` exactly-once | T-PRG-001 |
@@ -26,7 +26,7 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | FR-PRG-003 | UC-L05 | OpenAPI additionalProperties false | T-PRG-003 no extra scores |
 | FR-PRG-004 | UC-L06 | GET /progress | T-PRG-004 |
 | FR-CMS-001 | UC-T03 | upload media | T-CMS-001 |
-| FR-CMS-002 | UC-T04, UC-A01 | submit-qa, publish | T-CMS-002 |
+| FR-CMS-002 | UC-T04, UC-A01 | submit-qa, publish | T-CMS-002, T-CMS-E2E-001 full lifecycle |
 | FR-CMS-003 | UC-A01, UC-L02, UC-L10 | playback_url HMAC `exp`+`sig` | T-CMS-003 |
 | FR-CMS-004 | UC-A01 | URL từ API (không CDN hardcode) | T-CMS-004 |
 | FR-FLG-001 | UC-A02 | GET /flags defaults false | T-FLG-001 |
@@ -45,10 +45,10 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | NFR-SEC-001 | — | HTTPS, hash | T-NFR-S1 |
 | NFR-SEC-002 | UC-T01 | 403 learner staff | T-NFR-S2 |
 | NFR-PRIV-001 | — | PII tối thiểu | T-NFR-PR1 |
-| NFR-A11Y-001 | S-LOGIN, S-SESSION | keyboard pause (P5 play) / chrome AA | T-NFR-A1 |
+| NFR-A11Y-001 | S-LOGIN, S-SESSION | keyboard pause (P5 play) / chrome AA | T-NFR-A1 axe scan 4 routes |
 | NFR-OBS-001 | — | request id + alert webhook 5xx (stub, `ALERT_WEBHOOK_URL`) | T-NFR-O1 echo `x-request-id`; T-NFR-O2 alert 5xx env bật/tắt, 4xx im |
-| FR-LRN-001 | UC-L10 | web `<video>` trong phiên, signed URL | T-NFR-A1 keyboard controls |
-| FR-LRN-002…004 | UC-L11–12 | chưa | T-P5-hold |
+| FR-LRN-001 | UC-L10 | web `<video>` / CiPlayer trong phiên, HLS/MP4, signed URL | T-LRN-001 player clip, T-NFR-A1 keyboard controls, T-SES-REC-001 session recovery |
+| NFR-MIG-001 | — | Alembic migration & Prisma adoption | T-MIG-002-ADOPT |
 
 Lỗ = hàng FR nền tảng không có UC hoặc không có thiết kế. Cổng nền tảng 2026-08-25: exception HLS player / native UC-L06 / alert 5xx còn mở.
 

@@ -146,6 +146,38 @@ paths:
                     type: array
                     items: { $ref: "#/components/schemas/CatalogItemPublic" }
   /staff/catalog:
+    get:
+      operationId: listStaffCatalog
+      tags: [CMS]
+      x-jplearn-fr: [FR-CAT-005, FR-CMS-001]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: query
+          name: status
+          required: false
+          schema: { type: string, nullable: true }
+        - in: query
+          name: ci_level
+          required: false
+          schema: { type: integer, minimum: 0, maximum: 4, nullable: true }
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
+        - in: query
+          name: offset
+          required: false
+          schema: { type: integer, minimum: 0, default: 0 }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogStaffList" }
+        "403":
+          description: Not teacher or admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
     post:
       operationId: createCatalogItem
       tags: [CMS]
@@ -162,6 +194,72 @@ paths:
               schema: { $ref: "#/components/schemas/CatalogItemStaff" }
         "403":
           description: Not teacher or admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+  /staff/catalog/{id}:
+    get:
+      operationId: getStaffCatalogItem
+      tags: [CMS]
+      x-jplearn-fr: [FR-CAT-005]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
+        "403":
+          description: Not teacher or admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+        "404":
+          description: Catalog item not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+    patch:
+      operationId: updateStaffCatalogItem
+      tags: [CMS]
+      x-jplearn-fr: [FR-CAT-005]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CatalogItemPatch" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
+        "400":
+          description: Item is not in draft status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+        "403":
+          description: Not teacher or admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+        "404":
+          description: Catalog item not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+        "409":
+          description: Revision conflict
           content:
             application/json:
               schema: { $ref: "#/components/schemas/HttpError" }
@@ -389,6 +487,11 @@ paths:
       tags: [Session]
       x-jplearn-fr: [FR-SES-001, FR-SES-003, FR-EVT-001, FR-EVT-003]
       security: [{ bearerAuth: [] }]
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: false
+          schema: { type: string, nullable: true }
       requestBody:
         content:
           application/json:
@@ -404,6 +507,37 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/LearningSession" }
+        "409":
+          description: Idempotency key conflict
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+  /sessions/{id}:
+    get:
+      operationId: getSession
+      tags: [Session]
+      x-jplearn-fr: [FR-SES-001, FR-SES-002]
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LearningSession" }
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
+        "404":
+          description: Session not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HttpError" }
   /sessions/{id}/end:
     post:
       operationId: endSession
@@ -589,6 +723,27 @@ components:
               type: string
               enum: [draft, level_qa, published, archived]
             has_l1_translation: { type: boolean, enum: [false] }
+            revision:
+              type: integer
+              default: 1
+    CatalogItemPatch:
+      type: object
+      required: [revision]
+      properties:
+        revision: { type: integer }
+        topic_id: { type: string, nullable: true }
+        ci_level: { type: integer, minimum: 0, maximum: 4, nullable: true }
+        duration_seconds: { type: integer, minimum: 1, nullable: true }
+        media_type: { type: string, enum: [video, audio], nullable: true }
+        visual_support: { type: string, enum: [high, medium, low], nullable: true }
+        title_internal: { type: string, nullable: true }
+    CatalogStaffList:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/CatalogItemStaff" }
     LearningSession:
       type: object
       required: [id, device_class, started_at]

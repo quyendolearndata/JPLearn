@@ -285,16 +285,73 @@ Chặt UML thì login là precondition; v1 mô hình include vì mọi UC học 
 - **Ngoại lệ:** Không invent role `level_qa`. Teacher không publish nếu policy chỉ Admin (A01) — đổi role không bỏ bước QA.
 - **Quan hệ:** «include» UC-T01.
 
-## Deferred — Kịch bản Phase 5 (chưa thiết kế UI v1)
+### UC-T02b Xem danh sách nội dung CMS
 
-Không vẽ `UC-L10`…`UC-L13` trên sơ đồ v1 (mục 1 / 1b). Mỗi UC: một kịch bản chính; UI vòng học = SAD Phase 5.
+- **Actor:** Teacher hoặc Admin
+- **FR / NFR:** FR-CAT-005, FR-CMS-001…004, NFR-SEC-002
+- **Trigger:** Actor truy cập màn hình `/staff`.
+- **Tiền điều kiện:** UC-T01 («include»).
+- **Hậu điều kiện (thành công):** Danh sách item nội bộ với phân trang, lọc theo status (`draft`, `level_qa`, `published`, `archived`) và `ci_level`. Không lộ secret/storage_key.
+- **Kịch bản chính:**
+  1. Actor mở `/staff`.
+  2. Hệ thống gọi `GET /staff/catalog` kèm query filter (status, ci_level).
+  3. Hệ thống trả danh sách kèm `revision`, `status`, metadata nội bộ và cờ media.
+  4. Client hiển thị bảng nội dung kèm hành động tương ứng với vai trò (Teacher: sửa draft, nộp QA; Admin: thêm publish, unpublish).
+- **Kịch bản phụ (extend):** không.
+- **Ngoại lệ:** Learner gọi `GET /staff/catalog` → 403 Forbidden.
+- **Quan hệ:** «include» UC-T01.
 
-### UC-L10 Phát item CI trong phiên
+### UC-T05 Chỉnh sửa metadata draft
 
-- **Actor:** Learner — **FR:** FR-LRN-001
-- **Tiền:** Phiên đã start (UC-L03); item `published` có URL media.
-- **Kịch bản chính:** Actor chọn phát item trong phiên → Hệ thống cấp playback URL (ký) → Client phát xem/nghe CI. Không phụ đề L1, không flashcard, không bài ngữ pháp.
-- **Hiện trạng (không đổi FR):** Web đã có player skeleton sau cổng nền tảng. Expo native gộp #30. Chưa thiết kế UI v1 đầy đủ / HLS trên mọi client (NFR-PERF-002).
+- **Actor:** Teacher hoặc Admin
+- **FR / NFR:** FR-CAT-005
+- **Trigger:** Actor chỉnh sửa metadata của item draft tại `/staff/[id]`.
+- **Tiền điều kiện:** UC-T01 («include»). Item có `status=draft`.
+- **Hậu điều kiện (thành công):** Metadata cập nhật thành công, `revision` tăng lên.
+- **Kịch bản chính:**
+  1. Actor mở item draft, sửa thông tin trong `catalogWriteFields` (topic, ci_level, duration, media_type, visual_support, title_internal).
+  2. Client gửi `PATCH /staff/catalog/{id}` kèm body và `revision` hiện tại.
+  3. Hệ thống kiểm tra trong transaction: nếu item là `draft` và `revision` khớp, cập nhật metadata và tăng `revision`.
+  4. Hệ thống trả về item đã cập nhật.
+- **Kịch bản phụ (extend):** không.
+- **Ngoại lệ:**
+  - Item không ở trạng thái `draft` → 400 Bad Request.
+  - `revision` không khớp (xung đột đồng thời do người khác vừa sửa) → 409 Conflict; client yêu cầu reload dữ liệu mới.
+- **Quan hệ:** «include» UC-T01.
+
+## SAD Vòng 2 — Vòng học có chọn clip & Khôi phục phiên (Phase 5 / Mốc A)
+
+### UC-L10 Vòng học hoàn chỉnh: chọn clip, mở phiên, phát CI và kết thúc
+
+- **Actor:** Learner
+- **FR / NFR:** FR-LRN-001, FR-SES-001…003, FR-PRG-001/004, NFR-PERF-002, NFR-A11Y-001
+- **Trigger:** Actor chọn bài học từ danh mục hoặc mở `/session`.
+- **Tiền điều kiện:** UC-L01 đã thực hiện («include»). Item được chọn phải có `status=published` và có media playback hợp lệ.
+- **Hậu điều kiện (thành công):** Phiên học được ghi nhận, phát media mượt mà, kết thúc và cộng phút tích lũy chính xác trên server. Tiến độ hiển thị cập nhật.
+- **Kịch bản chính:**
+  1. Actor duyệt `/catalog`, chọn một clip CI cụ thể.
+  2. Client chuyển sang giao diện `/session` gắn với clip đã chọn.
+  3. Client sinh `Idempotency-Key`, gửi `POST /sessions` (kèm header `Idempotency-Key` và `device_class=web`).
+  4. Hệ thống lưu phiên và ghi nhận idempotency key, trả về `session_id`.
+  5. Client lưu tham chiếu phiên vào storage theo tab/user để tồn tại qua reload.
+  6. Client khởi tạo trình phát `CiPlayer`: ưu tiên `hls_url` (HLS native hoặc hls.js), tự động fallback về `playback_url` (MP4) khi cần.
+  7. Actor xem/nghe nội dung CI (điều khiển được bằng bàn phím theo NFR-A11Y-001). Tuyệt đối không có phụ đề tiếng Việt L1, không câu hỏi ngữ pháp, không flashcard.
+  8. Actor bấm "Kết thúc phiên".
+  9. Client gửi `POST /sessions/{id}/end`.
+  10. Server xác nhận kết thúc, tính thời lượng, cộng floor phút vào `minutes_comprehensible`, trả về tiến độ mới.
+  11. Client dọn sạch active session và hiển thị trạng thái hoàn thành.
+- **Kịch bản phụ (extend):**
+  - 4a. Mất kết nối lúc gửi Start: Client retry có chủ đích với cùng `Idempotency-Key`. Hệ thống trả về phiên đã tạo thay vì sinh phiên trùng.
+  - 9a. Mất kết nối lúc gửi End: Client giữ nguyên `session_id`, gửi `GET /sessions/{id}` để tra cứu trạng thái. Nếu phiên đã kết thúc trên server, client cập nhật UI thành công và gọi `GET /progress`. Nếu phiên vẫn `active`, cho phép người dùng thử kết thúc lại.
+  - 5a. Người dùng F5 / reload trình duyệt giữa phiên: Client đọc lại session active từ local storage, gọi `GET /sessions/{id}` để khôi phục trạng thái và tiếp tục phiên học.
+- **Ngoại lệ:**
+  - Clip bị gỡ (unpublish) trong lúc học: Báo lỗi nội dung không còn khả dụng, nhưng vẫn cho phép bấm kết thúc phiên để ghi nhận phút học trước đó.
+  - 401 hết hạn token giữa phiên: Yêu cầu đăng nhập lại, chỉ khôi phục phiên nếu đúng tài khoản sở hữu ban đầu.
+- **Quan hệ:** «include» UC-L01, UC-L02, UC-L05.
+
+## Deferred — Kịch bản Phase 5 mở rộng (chưa thiết kế UI v1)
+
+Không vẽ `UC-L11`…`UC-L13` trên sơ đồ v1.
 
 ### UC-L11 Chọn hình kiểm hiểu
 
@@ -311,7 +368,7 @@ Không vẽ `UC-L10`…`UC-L13` trên sơ đồ v1 (mục 1 / 1b). Mỗi UC: m�
 - **Actor:** Learner — **FR:** FR-EVT-003
 - **Kịch bản chính:** Actor mở item một `ci_level` → Hệ thống ghi event `level_exposed` (`ci_level`). Nếu shell v1 chỉ list, không màn chi tiết: ghi khi start session với `current_ci_level` của user (ghi OpenAPI). Có thể làm sớm khi có detail; **chưa thiết kế UI v1.**
 
-## Truy vết FR → UC (nền tảng)
+## Truy vết FR → UC (nền tảng & Mốc A/B)
 
 | FR | UC |
 |---|---|
@@ -320,24 +377,25 @@ Không vẽ `UC-L10`…`UC-L13` trên sơ đồ v1 (mục 1 / 1b). Mỗi UC: m�
 | FR-ID-003 | UC-L01 |
 | FR-ID-004 | UC-T01, UC-A03 |
 | FR-CAT-001 | UC-T02 |
-| FR-CAT-002 | UC-L02 |
+| FR-CAT-002 | UC-L02, UC-L10 |
 | FR-CAT-003 | UC-L02 |
 | FR-CAT-004 | UC-L02, UC-T02 |
-| FR-CAT-005 | UC-T02 |
-| FR-SES-001 | UC-L03 |
-| FR-SES-002 | UC-L04 |
-| FR-SES-003 | UC-L03 |
-| FR-PRG-001 | UC-L04, UC-L05 |
+| FR-CAT-005 | UC-T02, UC-T02b, UC-T05 |
+| FR-SES-001 | UC-L03, UC-L10 |
+| FR-SES-002 | UC-L04, UC-L10 |
+| FR-SES-003 | UC-L03, UC-L10 |
+| FR-LRN-001 | UC-L10 |
+| FR-PRG-001 | UC-L04, UC-L05, UC-L10 |
 | FR-PRG-002 | UC-L05 |
 | FR-PRG-003 | UC-L05 |
 | FR-PRG-004 | UC-L06 |
-| FR-CMS-001 | UC-T03 |
-| FR-CMS-002 | UC-T04, UC-A01 |
-| FR-CMS-003 | UC-A01, UC-L02 |
+| FR-CMS-001 | UC-T03, UC-T02b |
+| FR-CMS-002 | UC-T04, UC-A01, UC-T02b |
+| FR-CMS-003 | UC-A01, UC-L02, UC-L10 |
 | FR-CMS-004 | UC-A01 |
 | FR-FLG-001 | UC-A02 |
 | FR-FLG-002 | UC-A02, UC-L02 |
-| FR-EVT-001 | UC-L03, UC-L04 |
-| FR-EVT-002 | UC-L04 |
+| FR-EVT-001 | UC-L03, UC-L04, UC-L10 |
+| FR-EVT-002 | UC-L04, UC-L10 |
 | FR-EVT-003 | UC-L13 (tối thiểu: session start với current level) |
 | FR-NEG-* | Không có UC dương; QA kiểm vắng feature |

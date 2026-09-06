@@ -27,8 +27,9 @@ test("UC-L06 cùng user hai client: cùng catalog published, cùng minutes_compr
   await fillAuth(pageA);
   await pageA.getByRole("button", { name: "Đăng ký" }).click();
   await expect(pageA).toHaveURL("/");
-  await expect(pageA.locator("ul li").first()).toBeVisible();
-  const itemsA = (await pageA.locator("ul li").allInnerTexts()).sort();
+  await pageA.goto("/catalog");
+  await expect(pageA.locator("article.catalog-card").first()).toBeVisible();
+  const itemsA = (await pageA.locator("article.catalog-card h3").allInnerTexts()).sort();
   expect(itemsA.length).toBeGreaterThan(0);
 
   await pageA.goto("/progress");
@@ -43,8 +44,9 @@ test("UC-L06 cùng user hai client: cùng catalog published, cùng minutes_compr
   await fillAuth(pageB);
   await pageB.getByRole("button", { name: "Đăng nhập" }).click();
   await expect(pageB).toHaveURL("/");
-  await expect(pageB.locator("ul li").first()).toBeVisible();
-  const itemsB = (await pageB.locator("ul li").allInnerTexts()).sort();
+  await pageB.goto("/catalog");
+  await expect(pageB.locator("article.catalog-card").first()).toBeVisible();
+  const itemsB = (await pageB.locator("article.catalog-card h3").allInnerTexts()).sort();
   expect(itemsB).toEqual(itemsA);
 
   await pageB.goto("/progress");
