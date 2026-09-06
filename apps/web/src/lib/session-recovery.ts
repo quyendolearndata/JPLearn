@@ -7,6 +7,24 @@ export interface LearningSessionResponse {
 }
 
 export type ReplayFailureDisposition = "auth" | "terminal" | "unverified";
+export type SessionOperation = "recovery" | "start" | "end";
+
+export interface SessionOperationTicket {
+  id: number;
+  operation: SessionOperation;
+}
+
+export interface SessionOperationGuard {
+  begin(operation: SessionOperation): SessionOperationTicket | null;
+  isCurrent(ticket: SessionOperationTicket): boolean;
+  finish(ticket: SessionOperationTicket): boolean;
+  cancel(): void;
+}
+
+export type SessionStatusClassification =
+  | { kind: "invalid" }
+  | { kind: "active"; session: LearningSessionResponse }
+  | { kind: "ended"; session: LearningSessionResponse };
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -52,6 +70,48 @@ export function isLearningSessionResponse(
     return false;
   }
   return true;
+}
+
+export function classifySessionStatusResponse(
+  value: unknown,
+  expectedId: string,
+): SessionStatusClassification {
+  if (!isLearningSessionResponse(value, expectedId)) return { kind: "invalid" };
+  return value.ended_at
+    ? { kind: "ended", session: value }
+    : { kind: "active", session: value };
+}
+
+export function createSessionOperationGuard(): SessionOperationGuard {
+  let sequence = 0;
+  let current: SessionOperationTicket | null = null;
+  const isCurrent = (ticket: SessionOperationTicket) =>
+    current?.id === ticket.id && current.operation === ticket.operation;
+  return {
+    begin(operation) {
+      if (current) return null;
+      current = { id: ++sequence, operation };
+      return current;
+    },
+    isCurrent,
+    finish(ticket) {
+      if (!isCurrent(ticket)) return false;
+      current = null;
+      return true;
+    },
+    cancel() {
+      current = null;
+    },
+  };
+}
+
+export function isSessionOperationCurrent(
+  guard: SessionOperationGuard,
+  ticket: SessionOperationTicket,
+  requestUserId: string,
+  currentUserId: string | null,
+): boolean {
+  return guard.isCurrent(ticket) && requestUserId === currentUserId;
 }
 
 export function classifyReplayFailure(status: number): ReplayFailureDisposition {
