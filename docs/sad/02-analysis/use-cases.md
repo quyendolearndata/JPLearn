@@ -341,3 +341,10 @@ Không vẽ `UC-L10`…`UC-L13` trên sơ đồ v1 (mục 1 / 1b). Mỗi UC: m�
 | FR-EVT-002 | UC-L04 |
 | FR-EVT-003 | UC-L13 (tối thiểu: session start với current level) |
 | FR-NEG-* | Không có UC dương; QA kiểm vắng feature |
+
+## UC-T02 / Q02 completion — ADR-006
+
+Teacher/Admin can retrieve the staff list and item detail, edit a draft, and submit for QA.
+Every submission increments the QA round. A review records reviewer, time, verdict and notes;
+reject requires notes and returns to draft. Approval is valid only for that round.
+Media and metadata are immutable outside draft. Admin publish requires the current approval.

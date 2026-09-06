@@ -100,3 +100,10 @@ Phạm vi: **nền tảng**. Yêu cầu học đầy đủ đánh dấu `Deferre
 - Mỗi FR nền tảng có ≥1 use case trong SAD-2.
 - Mỗi NFR có hướng kiểm trong ma trận truy vết SAD-3.
 - Không có yêu cầu “làm app học tiếng Nhật” không mã.
+
+## CMS clarification — ADR-006 (branch proposal)
+
+FR-CAT-005 includes staff list/detail and editing draft metadata. FR-CMS-002 requires a
+persisted approve/reject decision for the current submission, with internal rejection notes.
+Only Admin publishes; Teacher/Admin may act as LevelQA under existing roles. Metadata/media
+changes require draft and a fresh submission/review before republish. See ADR-006 for acceptance.

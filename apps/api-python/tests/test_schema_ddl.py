@@ -1,9 +1,9 @@
-"""ADR-004 DDL gate: Alembic must reproduce the schema Prisma owned.
+"""ADR-004 / ADR-006 DDL gate: exact snapshots for legacy adoption and current head.
 
 The baseline JSON was captured from a Prisma-migrated database on 2026-09-04,
-before `apps/api` was removed (docs/qa/adr-004-schema-baseline.json). If a future
-revision changes the schema on purpose, regenerate the baseline in the same
-commit — never loosen this test.
+before `apps/api` was removed (docs/qa/adr-004-schema-baseline.json).
+ADR-006 adds a separate head snapshot; the original adoption snapshot is preserved.
+Future intentional revisions must update the exact head snapshot in the same commit.
 
 Also re-asserts FR-NEG-004 on the live schema, which is what
 apps/api/test/schema.guard.spec.ts used to do from the Node side.
@@ -27,7 +27,7 @@ from pg_harness import (
     stop_docker_postgres,
 )
 
-BASELINE = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-004-schema-baseline.json"
+BASELINE = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-006-schema-baseline.json"
 
 BANNED_COLUMNS = ("vocabulary_score", "grammar_lesson_id", "textbook_percent", "translation_vi")
 
@@ -43,11 +43,11 @@ def alembic_database() -> str:
         stop_docker_postgres(project)
 
 
-def test_alembic_schema_matches_prisma_baseline(alembic_database: str) -> None:
+def test_alembic_schema_matches_head_baseline(alembic_database: str) -> None:
     expected = json.loads(BASELINE.read_text(encoding="utf-8"))
     actual = asyncio.run(snapshot_url(alembic_database))
     problems = diff(expected, actual)
-    assert not problems, "Alembic schema drifted from the Prisma baseline:\n" + "\n".join(problems)
+    assert not problems, "Alembic schema drifted from the head baseline:\n" + "\n".join(problems)
 
 
 def test_live_schema_has_no_textbook_columns(alembic_database: str) -> None:
@@ -102,13 +102,14 @@ def test_stamp_adopts_a_database_built_before_alembic(alembic_database: str) -> 
         finally:
             await conn.close()
 
+    downgrade("0001_prisma_baseline", alembic_database)
     asyncio.run(drop_bookkeeping())
     stamp("0001_prisma_baseline", alembic_database)
     assert asyncio.run(stamped_revision()) == "0001_prisma_baseline"
 
     upgrade(alembic_database)
     assert not diff(expected, asyncio.run(snapshot_url(alembic_database))), (
-        "upgrade after stamp must not touch an adopted schema"
+        "upgrade after legacy stamp must produce the exact head schema"
     )
 
 
@@ -209,3 +210,35 @@ def test_destructive_downgrade_blocked_in_staging_and_production(
     downgrade("base", alembic_database)
     upgrade(alembic_database)
 
+
+
+def test_cms_upgrade_preserves_legacy_data_and_head_stamp_cannot_skip_it(alembic_database: str) -> None:
+    """ADR-006: populated legacy adoption, exact old/new schema, no invented QA."""
+    legacy = json.loads(BASELINE.with_name("adr-004-schema-baseline.json").read_text())
+    downgrade("0001_prisma_baseline", alembic_database)
+    assert not diff(legacy, asyncio.run(snapshot_url(alembic_database)))
+    seed_database(alembic_database)
+
+    async def read_items():
+        conn = await asyncpg.connect(alembic_database)
+        try:
+            return [dict(row) for row in await conn.fetch("SELECT id, status::text AS status FROM catalog_items ORDER BY id")]
+        finally:
+            await conn.close()
+
+    before = asyncio.run(read_items())
+    with pytest.raises(RuntimeError, match="live schema diverges from baseline"):
+        stamp("head", alembic_database)
+    upgrade(alembic_database)
+    assert before == asyncio.run(read_items())
+    assert not diff(json.loads(BASELINE.read_text()), asyncio.run(snapshot_url(alembic_database)))
+    stamp("head", alembic_database)
+
+    async def review_count():
+        conn = await asyncpg.connect(alembic_database)
+        try:
+            return await conn.fetchval("SELECT count(*) FROM catalog_reviews")
+        finally:
+            await conn.close()
+
+    assert asyncio.run(review_count()) == 0

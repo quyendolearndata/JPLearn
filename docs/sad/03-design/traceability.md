@@ -61,3 +61,11 @@ Lỗ = hàng FR nền tảng không có UC hoặc không có thiết kế. Cổn
 | NFR-PERF-002 HLS trên client | GAP |
 | NFR-A11Y-001 contrast đo | GAP |
 | NFR-OBS-001 alert 5xx staging | PASS (stub) — webhook `ALERT_WEBHOOK_URL`, default tắt; URL kênh thật (Slack) chờ Ops cấp |
+
+## CMS completion — ADR-006
+
+| Req | UC | API / model | Tests |
+|---|---|---|---|
+| FR-CAT-005 | UC-T02 | GET staff catalog/list/detail; PATCH draft | test_cms_workflow.py |
+| FR-CMS-002 | UC-T04/Q01/Q02/A01 | POST review; catalog_reviews; qa_round; publish approval gate | test_cms_workflow.py |
+| FR-CMS-001, NFR-SEC-002 | UC-T03 | Draft-only upload/HLS; staff authorization | test_cms_workflow.py |

@@ -93,6 +93,7 @@ class CatalogItem(Base):
     )
     title_internal: Mapped[str] = mapped_column(Text)
     created_by: Mapped[str] = mapped_column(Text, ForeignKey("users.id"))
+    qa_round: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
     media: Mapped[list["MediaAsset"]] = relationship(back_populates="catalog_item")
 
 
@@ -155,3 +156,19 @@ class LearningEvent(Base):
     )
     payload: Mapped[dict] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=False))
+
+
+class CatalogReview(Base):
+    __tablename__ = "catalog_reviews"
+    __table_args__ = (
+        UniqueConstraint("catalog_item_id", "qa_round", name="catalog_reviews_item_round_key"),
+        CheckConstraint("decision IN ('approve', 'reject')", name="catalog_reviews_decision_check"),
+        CheckConstraint("decision <> 'reject' OR length(btrim(notes)) > 0", name="catalog_reviews_reject_notes_check"),
+    )
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    catalog_item_id: Mapped[str] = mapped_column(Text, ForeignKey("catalog_items.id"))
+    qa_round: Mapped[int] = mapped_column(Integer)
+    decision: Mapped[str] = mapped_column(Text)
+    notes: Mapped[str] = mapped_column(Text)
+    reviewed_by: Mapped[str] = mapped_column(Text, ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=False))

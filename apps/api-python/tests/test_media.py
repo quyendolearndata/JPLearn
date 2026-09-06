@@ -1,3 +1,4 @@
+from helpers import approve_catalog
 import asyncio
 from pathlib import Path
 from urllib.parse import urlparse
@@ -44,6 +45,7 @@ def _publish(live_client, token: str, item_id: str):
         f"/staff/catalog/{item_id}/submit-qa",
         headers={"Authorization": f"Bearer {token}"},
     ).status_code == 200
+    approve_catalog(live_client, token, item_id)
     assert live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {token}"},
@@ -188,6 +190,7 @@ def test_publish_rejected_if_media_missing_from_storage(live_client):
     assert missing_file.exists()
     missing_file.unlink()
 
+    approve_catalog(live_client, admin, item_id)
     published = live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {admin}"},

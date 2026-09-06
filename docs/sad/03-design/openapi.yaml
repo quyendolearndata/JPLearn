@@ -146,6 +146,84 @@ paths:
                     type: array
                     items: { $ref: "#/components/schemas/CatalogItemPublic" }
   /staff/catalog:
+    get:
+      operationId: listStaffCatalog
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CAT-005
+      - NFR-SEC-002
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogStaffList'
+        '400':
+          description: Invalid input/state, unauthorized, forbidden, missing item or server
+            error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Invalid input/state, unauthorized, forbidden, missing item or server
+            error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Invalid input/state, unauthorized, forbidden, missing item or server
+            error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Invalid input/state, unauthorized, forbidden, missing item or server
+            error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '500':
+          description: Invalid input/state, unauthorized, forbidden, missing item or server
+            error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          type: string
+          nullable: true
+          enum:
+          - draft
+          - level_qa
+          - published
+          - archived
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
     post:
       operationId: createCatalogItem
       tags: [CMS]
@@ -167,6 +245,7 @@ paths:
               schema: { $ref: "#/components/schemas/HttpError" }
   /staff/catalog/{id}/media:
     post:
+      description: Draft only; upload before submit-qa (ADR-006).
       operationId: uploadMedia
       tags: [CMS]
       x-jplearn-fr: [FR-CMS-001]
@@ -280,6 +359,7 @@ paths:
               schema: { $ref: "#/components/schemas/HttpError" }
   /staff/media/{id}/hls:
     post:
+      description: Draft only; register before submit-qa (ADR-006).
       operationId: registerHls
       tags: [CMS]
       x-jplearn-fr: [FR-CMS-001, NFR-PERF-002]
@@ -325,6 +405,7 @@ paths:
               schema: { $ref: "#/components/schemas/CatalogItemStaff" }
   /staff/catalog/{id}/publish:
     post:
+      description: Admin only; current round approval and media required (ADR-006).
       operationId: publishCatalogItem
       tags: [CMS]
       x-jplearn-fr: [FR-CMS-002, FR-CMS-003, FR-CMS-004, FR-CAT-002]
@@ -468,6 +549,191 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/HttpError" }
+  /staff/catalog/{id}:
+    get:
+      operationId: getStaffCatalogItem
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CAT-005
+      - FR-CMS-002
+      - NFR-SEC-002
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogItemDetail'
+        '400':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '500':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      parameters:
+      - &id001
+        name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+    patch:
+      operationId: updateDraftCatalogItem
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CAT-005
+      - NFR-SEC-002
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogItemStaff'
+        '400':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '500':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      parameters:
+      - *id001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogItemPatch'
+  /staff/catalog/{id}/review:
+    post:
+      operationId: reviewCatalogItem
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CMS-002
+      - NFR-SEC-002
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogItemStaff'
+        '400':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '500':
+          description: Invalid input/state, unauthorized, forbidden, missing item or
+            server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogReviewBody'
 components:
   parameters:
     RequestIdHeader:
@@ -491,6 +757,153 @@ components:
       name: sig
       description: HMAC-SHA256 signature for media streaming (with exp timestamp)
   schemas:
+    CatalogStaffList:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogItemStaff'
+      required:
+      - items
+    CatalogItemDetail:
+      type: object
+      required:
+      - topic_id
+      - ci_level
+      - duration_seconds
+      - media_type
+      - visual_support
+      - title_internal
+      - id
+      - status
+      - has_l1_translation
+      - qa_round
+      - media
+      - reviews
+      properties:
+        topic_id:
+          type: string
+        ci_level:
+          type: integer
+          description: v1 write has no min/max (Prisma Int). GET /catalog?ci_level= is
+            0–4.
+        duration_seconds:
+          type: integer
+        media_type:
+          type: string
+          enum:
+          - video
+          - audio
+        visual_support:
+          type: string
+          enum:
+          - high
+          - medium
+          - low
+        title_internal:
+          type: string
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+          - draft
+          - level_qa
+          - published
+          - archived
+        has_l1_translation:
+          type: boolean
+          enum:
+          - false
+        qa_round:
+          type: integer
+        media:
+          type: array
+          items:
+            $ref: '#/components/schemas/MediaAssetStaff'
+        reviews:
+          type: array
+          items:
+            $ref: '#/components/schemas/CatalogReviewPublic'
+      additionalProperties: false
+    CatalogReviewPublic:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+        qa_round:
+          type: integer
+        decision:
+          type: string
+          enum:
+          - approve
+          - reject
+        notes:
+          type: string
+        reviewed_by:
+          type: string
+        reviewed_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - qa_round
+      - decision
+      - notes
+      - reviewed_by
+      - reviewed_at
+    CatalogReviewBody:
+      type: object
+      additionalProperties: false
+      properties:
+        decision:
+          type: string
+          enum:
+          - approve
+          - reject
+        notes:
+          type: string
+          maxLength: 2000
+          default: ''
+      required:
+      - decision
+      description: Reject requires a nonblank trimmed reason. One review per submitted
+        round.
+    CatalogItemPatch:
+      type: object
+      additionalProperties: false
+      properties:
+        topic_id:
+          type: string
+          minLength: 1
+        ci_level:
+          type: integer
+          minimum: 0
+          maximum: 4
+        duration_seconds:
+          type: integer
+          minimum: 1
+        media_type:
+          type: string
+          enum:
+          - video
+          - audio
+        visual_support:
+          type: string
+          enum:
+          - high
+          - medium
+          - low
+        title_internal:
+          type: string
+          minLength: 1
+          maxLength: 500
+      description: At least one field is required; explicit null and unknown fields are
+        rejected (400). Draft only.
     Health:
       type: object
       required: [ok]

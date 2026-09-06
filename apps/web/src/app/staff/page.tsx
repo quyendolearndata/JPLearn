@@ -24,6 +24,7 @@ export default function StaffPage() {
   const [mediaType, setMediaType] = useState<"video" | "audio">("video");
   const [visual, setVisual] = useState<"high" | "medium" | "low">("high");
   const [title, setTitle] = useState("");
+  const [qaNotes, setQaNotes] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
   useEffect(() => {
@@ -73,14 +74,26 @@ export default function StaffPage() {
 
   async function submitQa() {
     if (!token || !itemId) return;
-    await api(`/staff/catalog/${itemId}/submit-qa`, { method: "POST", token });
-    setStatus("level_qa");
+    const res = await api(`/staff/catalog/${itemId}/submit-qa`, { method: "POST", token });
+    const result = await res.json();
+    setStatus(res.ok ? "level_qa" : String(result.message ?? "Không gửi được QA"));
+  }
+
+  async function review(decision: "approve" | "reject") {
+    if (!token || !itemId) return;
+    const res = await api(`/staff/catalog/${itemId}/review`, {
+      method: "POST", token, body: JSON.stringify({ decision, notes: qaNotes }),
+    });
+    const result = await res.json();
+    setStatus(res.ok ? (decision === "approve" ? "QA đã duyệt" : "draft — cần chỉnh sửa")
+      : String(result.message ?? "Không lưu được kết quả QA"));
   }
 
   async function publish() {
     if (!token || !itemId) return;
-    await api(`/staff/catalog/${itemId}/publish`, { method: "POST", token });
-    setStatus("published");
+    const res = await api(`/staff/catalog/${itemId}/publish`, { method: "POST", token });
+    const result = await res.json();
+    setStatus(res.ok ? "published" : String(result.message ?? "Không xuất bản được"));
   }
 
   return (
@@ -140,6 +153,15 @@ export default function StaffPage() {
       </button>
       <button type="button" onClick={() => void submitQa()}>
         Nộp QA
+      </button>
+      <label htmlFor="qa-notes">Ghi chú QA (bắt buộc khi từ chối)</label>
+      <textarea id="qa-notes" maxLength={2000} value={qaNotes}
+        onChange={(event) => setQaNotes(event.target.value)} />
+      <button type="button" disabled={!itemId} onClick={() => void review("approve")}>
+        Duyệt QA
+      </button>
+      <button type="button" disabled={!itemId || !qaNotes.trim()} onClick={() => void review("reject")}>
+        Trả về draft
       </button>
       {isAdmin ? (
         <button type="button" onClick={() => void publish()}>

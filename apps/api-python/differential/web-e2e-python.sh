@@ -112,10 +112,6 @@ ASSET_ID="$(curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/
   -F "file=@$SOURCE_MP4;type=video/mp4" \
   | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
-curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/submit-qa" \
-  -H "Authorization: Bearer $TOKEN" >/dev/null
-curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/publish" \
-  -H "Authorization: Bearer $TOKEN" >/dev/null
 
 mkdir -p "$STORAGE/hls/$ASSET_ID"
 ffmpeg -loglevel error -y -i "$STORAGE/$ASSET_ID.bin" \
@@ -123,6 +119,13 @@ ffmpeg -loglevel error -y -i "$STORAGE/$ASSET_ID.bin" \
   -hls_segment_filename "$STORAGE/hls/$ASSET_ID/segment-%03d.ts" \
   "$STORAGE/hls/$ASSET_ID/index.m3u8"
 curl -fsS -X POST "http://localhost:$PY_PORT/staff/media/$ASSET_ID/hls" \
+  -H "Authorization: Bearer $TOKEN" >/dev/null
+curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/submit-qa" \
+  -H "Authorization: Bearer $TOKEN" >/dev/null
+curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/review" \
+  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -d '{"decision":"approve","notes":"E2E fixture"}' >/dev/null
+curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/publish" \
   -H "Authorization: Bearer $TOKEN" >/dev/null
 echo "   published item $ITEM_ID, asset $ASSET_ID (+hls)"
 

@@ -125,10 +125,12 @@ def stamp(
     if not url:
         raise RuntimeError("DATABASE_URL is required to run migrations")
 
-    if verify_baseline and revision in ("0001_prisma_baseline", "head"):
+    if verify_baseline and revision in ("0001_prisma_baseline", "0002_cms_reviews", "head"):
         import asyncio
         from jplearn_api.schema_snapshot import diff, snapshot_url
 
+        if revision in ("head", "0002_cms_reviews") and baseline_path is None:
+            baseline_path = MIGRATIONS_DIR.parent / "resources" / "adr-006-schema-baseline.json"
         expected = load_baseline_schema(baseline_path)
         actual = asyncio.run(snapshot_url(url))
 

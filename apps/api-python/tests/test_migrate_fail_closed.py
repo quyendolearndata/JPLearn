@@ -148,8 +148,8 @@ def test_stamp_empty_database_fails_closed(isolated_postgres: str) -> None:
 def test_stamp_fails_on_schema_divergence_and_preserves_clean_state(
     isolated_postgres: str,
 ) -> None:
-    # First, bring DB to baseline via upgrade
-    upgrade(isolated_postgres)
+    # Adopt the legacy revision, then apply the CMS migration.
+    upgrade(isolated_postgres, revision="0001_prisma_baseline")
 
     async def drop_bookkeeping() -> None:
         conn = await asyncpg.connect(isolated_postgres)
@@ -202,11 +202,11 @@ def test_stamp_fails_on_schema_divergence_and_preserves_clean_state(
     stamp("0001_prisma_baseline", isolated_postgres)
     assert asyncio.run(check_alembic_version()) == "0001_prisma_baseline"
 
-    # Subsequent upgrade head is a clean no-op
-    expected = load_baseline_schema()
+    # Subsequent upgrade applies the CMS revision to the adopted legacy schema
+    expected = load_baseline_schema(Path(__file__).resolve().parents[3] / "docs/qa/adr-006-schema-baseline.json")
     upgrade(isolated_postgres)
     actual = asyncio.run(snapshot_url(isolated_postgres))
-    assert not diff(expected, actual), "upgrade after stamp modified the schema!"
+    assert not diff(expected, actual), "upgrade after legacy stamp did not match the head schema!"
 
 
 def test_destructive_downgrade_unconfigured_env_preserves_data(

@@ -1,3 +1,4 @@
+from helpers import approve_catalog
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -95,6 +96,7 @@ def test_register_serves_manifest_and_segments(live_client):
         f"/staff/catalog/{item_id}/submit-qa",
         headers={"Authorization": f"Bearer {admin}"},
     ).status_code == 200
+    approve_catalog(live_client, admin, item_id)
     assert live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {admin}"},
@@ -136,6 +138,7 @@ def test_signed_manifest_rewrites_segment_uris(live_client):
         f"/staff/catalog/{item_id}/submit-qa",
         headers={"Authorization": f"Bearer {admin}"},
     ).status_code == 200
+    approve_catalog(live_client, admin, item_id)
     assert live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {admin}"},

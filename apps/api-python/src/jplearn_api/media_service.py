@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 logger = logging.getLogger("jplearn.media")
 
@@ -80,9 +81,14 @@ async def upload(
     *,
     _pre_commit_hook: Any = None,
 ) -> MediaAssetStaff:
-    item = await session.get(CatalogItem, catalog_item_id)
+    item = await session.scalar(select(CatalogItem).where(
+        CatalogItem.id == catalog_item_id,
+    ).with_for_update().execution_options(populate_existing=True))
     if item is None:
         raise HTTPException(status_code=404, detail="Catalog item not found")
+
+    if item.status != "draft":
+        raise HTTPException(status_code=400, detail="Media can only be changed on draft items")
 
     # 1. Validate file extension and MIME per ADR-005 BA decision
     filename = (file.filename or "").lower().strip()
@@ -303,6 +309,11 @@ async def register_hls(
     asset_id: str,
 ) -> MediaAssetStaff:
     asset = await get(session, asset_id)
+    item = await session.scalar(select(CatalogItem).where(
+        CatalogItem.id == asset.catalog_item_id,
+    ).with_for_update().execution_options(populate_existing=True))
+    if item is None or item.status != "draft":
+        raise HTTPException(status_code=400, detail="HLS can only be registered on draft items")
     manifest_key = f"hls/{asset_id}/{HLS_MANIFEST}"
     if not await storage.exists(manifest_key):
         raise HTTPException(

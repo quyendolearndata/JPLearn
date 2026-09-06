@@ -166,3 +166,16 @@ flowchart LR
 ```
 
 Prod không nằm trong Q1.
+
+## CMS recorded review (ADR-006)
+
+```mermaid
+stateDiagram-v2
+    draft --> level_qa: submit / new round
+    level_qa --> draft: reject / reason
+    level_qa --> level_qa: approve / record reviewer
+    level_qa --> published: admin + current approval + media
+    published --> draft: unpublish
+```
+
+Editing metadata or media is allowed only in draft. Reviews remain in history across rounds.
