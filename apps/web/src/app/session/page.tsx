@@ -7,17 +7,16 @@ import type { CatalogItemPublic } from "@jplearn/domain";
 import { api, parseApiError, parseApiResponse } from "../../lib/api";
 import { getToken, getUser } from "../../lib/auth-storage";
 import { CiPlayer } from "../../components/ci-player";
+import {
+  clearSessionRecord,
+  newIdempotencyKey,
+  readSessionRecord,
+  writeSessionRecord,
+  type StoredSession,
+} from "../../lib/session-storage";
 
-type SessionLifecycleState = "starting" | "active" | "ending" | "outcome_unknown";
-
-interface StoredSession {
-  state: SessionLifecycleState;
-  sessionId?: string;
-  itemId?: string;
-  idempotencyKey: string;
-  startedAt: string;
-  deviceClass: string;
-  clip?: CatalogItemPublic;
+function currentUserId(): string | null {
+  return getUser()?.id ?? null;
 }
 
 interface EndSummary {
@@ -37,11 +36,6 @@ const TOPIC_NAMES: Record<string, string> = {
   work: "Công việc & Xã hội",
 };
 
-function getStorageKey(): string {
-  const user = getUser();
-  return user?.id ? `jplearn.session:${user.id}` : "jplearn.session:anonymous";
-}
-
 function SessionContent() {
   const searchParams = useSearchParams();
   const requestedItemId = searchParams.get("item_id");
@@ -56,61 +50,36 @@ function SessionContent() {
 
   const pendingIdempotencyKeyRef = useRef<string | null>(null);
 
-  const loadClip = useCallback(
-    async (targetItemId?: string | null, activeRecord?: StoredSession) => {
-      const token = getToken();
-      if (!token) return;
+  const loadClip = useCallback(async (targetItemId?: string | null) => {
+    const token = getToken();
+    if (!token) return;
+    let playable: CatalogItemPublic | null = null;
+    try {
       const catRes = await api("/catalog", { token });
-      let playable: CatalogItemPublic | null = null;
       if (catRes.ok) {
         const catalog = await parseApiResponse<{ items: CatalogItemPublic[] }>(catRes);
         const items = catalog?.items || [];
-        if (targetItemId) {
-          playable = items.find((i) => i.id === targetItemId) || null;
-        }
-        if (!playable && items.length > 0) {
-          playable = items.find((i) => i.hls_url ?? i.playback_url) || items[0];
-        }
+        if (targetItemId) playable = items.find((i) => i.id === targetItemId) || null;
+        if (!playable && items.length > 0) playable = items.find((i) => i.hls_url ?? i.playback_url) || items[0];
       }
-      setClip(playable);
-      setStatus(playable ? "Phiên đang chạy." : "Phiên đang chạy. Chưa có clip published.");
-
-      if (activeRecord && typeof window !== "undefined") {
-        const storageKey = getStorageKey();
-        activeRecord.clip = playable ?? undefined;
-        try {
-          sessionStorage.setItem(storageKey, JSON.stringify(activeRecord));
-        } catch {}
-      }
-    },
-    []
-  );
+    } catch {
+      /* catalog failure must not block end-session */
+    }
+    setClip(playable);
+    setStatus(playable ? "Phiên đang chạy." : "Phiên đang chạy. Chưa có clip published.");
+  }, []);
 
   // Check and recover session from scoped sessionStorage
   const checkActiveSession = useCallback(async () => {
-    if (typeof window === "undefined") return;
     const token = getToken();
-    const storageKey = getStorageKey();
+    const userId = currentUserId();
+    if (!token || !userId) return;
+    try { localStorage.removeItem("jplearn_active_session"); } catch {}
 
-    // Clean up legacy localStorage key if present
-    try {
-      localStorage.removeItem("jplearn_active_session");
-    } catch {}
+    const stored = readSessionRecord(userId);
+    if (!stored) return;
 
-    const raw = sessionStorage.getItem(storageKey);
-    if (!raw) return;
-
-    let stored: StoredSession;
-    try {
-      stored = JSON.parse(raw);
-    } catch {
-      sessionStorage.removeItem(storageKey);
-      return;
-    }
-
-    if (!token) return;
-
-    // 1. Recover mid-flight "starting" session
+    // 1. Mid-flight start: replay POST with the same key.
     if (stored.state === "starting") {
       setStatus("Đang khôi phục phiên...");
       setLoading(true);
@@ -119,94 +88,71 @@ function SessionContent() {
           method: "POST",
           token,
           headers: { "Idempotency-Key": stored.idempotencyKey },
-          body: JSON.stringify({ device_class: stored.deviceClass || "web" }),
+          body: JSON.stringify({ device_class: stored.deviceClass }),
         });
         if (res.ok) {
           const body = await parseApiResponse<{ id: string; started_at?: string }>(res);
           if (body?.id) {
-            const activeRecord: StoredSession = {
-              ...stored,
-              state: "active",
-              sessionId: body.id,
-              startedAt: body.started_at || stored.startedAt,
-            };
-            sessionStorage.setItem(storageKey, JSON.stringify(activeRecord));
+            const active: StoredSession = { ...stored, state: "active", sessionId: body.id, startedAt: body.started_at || stored.startedAt };
+            writeSessionRecord(userId, active);
             setSessionId(body.id);
-            setStartedAt(new Date(activeRecord.startedAt));
-            await loadClip(stored.itemId, activeRecord);
+            setStartedAt(new Date(active.startedAt));
+            await loadClip(stored.itemId);
             setStatus("Phiên đang chạy (đã khôi phục).");
             return;
           }
         }
-        sessionStorage.removeItem(storageKey);
+        clearSessionRecord(userId);
         setStatus("Không thể khôi phục phiên.");
       } catch {
-        setStatus("Lỗi kết nối khi khôi phục phiên.");
+        setStatus("Lỗi kết nối khi khôi phục phiên. Tải lại trang để thử lại.");
       } finally {
         setLoading(false);
       }
       return;
     }
 
-    // 2. Recover active or outcome_unknown session
-    if (stored.sessionId && (stored.state === "active" || stored.state === "outcome_unknown")) {
-      try {
-        const res = await api(`/sessions/${stored.sessionId}`, { token });
-        if (res.status === 200) {
-          const sessionData = await res.json();
-          if (sessionData.ended_at) {
-            sessionStorage.removeItem(storageKey);
-            return;
-          }
-          setSessionId(stored.sessionId);
-          const start = new Date(sessionData.started_at || stored.startedAt);
-          setStartedAt(start);
-          const now = Date.now();
-          setElapsedSeconds(Math.max(0, Math.floor((now - start.getTime()) / 1000)));
-          pendingIdempotencyKeyRef.current = stored.idempotencyKey;
-          setStatus("Phiên đang chạy.");
+    if (!stored.sessionId) { clearSessionRecord(userId); return; }
 
-          stored.state = "active";
-          sessionStorage.setItem(storageKey, JSON.stringify(stored));
+    // 2. active / ending / outcome_unknown: ask the server what really happened.
+    try {
+      const res = await api(`/sessions/${stored.sessionId}`, { token });
+      if (res.status === 404 || res.status === 403) { clearSessionRecord(userId); return; }
+      if (!res.ok) throw new Error("status check failed");
+      const data = await parseApiResponse<{ started_at?: string; ended_at?: string | null; duration_seconds?: number }>(res);
 
-          if (stored.clip) {
-            setClip(stored.clip);
-          } else {
-            await loadClip(stored.itemId, stored);
-          }
-        } else if (res.status === 404 || res.status === 403) {
-          sessionStorage.removeItem(storageKey);
+      if (data?.ended_at) {
+        clearSessionRecord(userId);
+        if (stored.state === "ending" || stored.state === "outcome_unknown") {
+          const progressRes = await api("/progress", { token });
+          const progress = progressRes.ok
+            ? await parseApiResponse<{ minutes_comprehensible: number; current_ci_level: number }>(progressRes)
+            : null;
+          setCompletedSummary({
+            minutesComprehensible: progress?.minutes_comprehensible ?? 0,
+            currentCiLevel: progress?.current_ci_level ?? 0,
+            durationSeconds: data.duration_seconds ?? 0,
+          });
+          setStatus("Phiên đã kết thúc.");
         }
-      } catch {
-        // Non-blocking on network failure
+        return;
       }
-      return;
-    }
 
-    // 3. Recover ending session
-    if (stored.sessionId && stored.state === "ending") {
-      try {
-        const res = await api(`/sessions/${stored.sessionId}`, { token });
-        if (res.status === 200) {
-          const sessionData = await res.json();
-          if (sessionData.ended_at) {
-            sessionStorage.removeItem(storageKey);
-            const progressRes = await api("/progress", { token });
-            const progress = progressRes.ok
-              ? await parseApiResponse<{ minutes_comprehensible: number; current_ci_level: number }>(progressRes)
-              : null;
-            setCompletedSummary({
-              minutesComprehensible: progress?.minutes_comprehensible ?? 0,
-              currentCiLevel: progress?.current_ci_level ?? 0,
-              durationSeconds: sessionData.duration_seconds ?? 0,
-            });
-            setStatus("Phiên đã kết thúc.");
-            return;
-          }
-        }
-        stored.state = "outcome_unknown";
-        sessionStorage.setItem(storageKey, JSON.stringify(stored));
-      } catch {}
+      // Still active on the server.
+      const start = new Date(data?.started_at || stored.startedAt);
+      setSessionId(stored.sessionId);
+      setStartedAt(start);
+      setElapsedSeconds(Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000)));
+      writeSessionRecord(userId, { ...stored, state: "active" });
+      setStatus(stored.state === "active" ? "Phiên đang chạy." : "Phiên vẫn đang chạy trên máy chủ — hãy kết thúc lại.");
+      await loadClip(stored.itemId);
+    } catch {
+      if (stored.state !== "active") {
+        writeSessionRecord(userId, { ...stored, state: "outcome_unknown" });
+        setStatus("Chưa xác nhận được trạng thái phiên với máy chủ. Tải lại trang khi có mạng.");
+      } else {
+        setStatus("Không kiểm tra được phiên với máy chủ.");
+      }
     }
   }, [loadClip]);
 
@@ -236,35 +182,30 @@ function SessionContent() {
   // Start learning session with Idempotency-Key
   const startSession = async () => {
     const token = getToken();
-    if (!token) {
+    const userId = currentUserId();
+    if (!token || !userId) {
       setStatus("Hãy đăng nhập.");
       return;
     }
 
-    const storageKey = getStorageKey();
     setLoading(true);
     setCompletedSummary(null);
 
-    const idempotencyKey =
-      pendingIdempotencyKeyRef.current ||
-      (typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `web-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
+    const idempotencyKey = pendingIdempotencyKeyRef.current || newIdempotencyKey();
     pendingIdempotencyKeyRef.current = idempotencyKey;
 
     const startedAtIso = new Date().toISOString();
 
     // Persist "starting" state BEFORE sending POST /sessions
     const startingRecord: StoredSession = {
+      v: 1,
       state: "starting",
       idempotencyKey,
       startedAt: startedAtIso,
       itemId: requestedItemId || undefined,
       deviceClass: "web",
     };
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem(storageKey, JSON.stringify(startingRecord));
-    }
+    writeSessionRecord(userId, startingRecord);
 
     try {
       const res = await api("/sessions", {
@@ -277,9 +218,7 @@ function SessionContent() {
       });
 
       if (!res.ok) {
-        if (typeof window !== "undefined") {
-          sessionStorage.removeItem(storageKey);
-        }
+        clearSessionRecord(userId);
         const err = await parseApiError(res);
         setStatus(err.message || "Không thể bắt đầu phiên.");
         return;
@@ -287,15 +226,14 @@ function SessionContent() {
 
       const body = await parseApiResponse<{ id: string; started_at?: string }>(res);
       if (!body?.id) {
-        if (typeof window !== "undefined") {
-          sessionStorage.removeItem(storageKey);
-        }
+        clearSessionRecord(userId);
         setStatus("Dữ liệu phiên không hợp lệ.");
         return;
       }
 
       // IMMEDIATELY update sessionStorage to "active" BEFORE fetching catalog
       const activeRecord: StoredSession = {
+        v: 1,
         state: "active",
         sessionId: body.id,
         itemId: requestedItemId || undefined,
@@ -303,9 +241,7 @@ function SessionContent() {
         startedAt: body.started_at || startedAtIso,
         deviceClass: "web",
       };
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(storageKey, JSON.stringify(activeRecord));
-      }
+      writeSessionRecord(userId, activeRecord);
 
       const start = new Date(activeRecord.startedAt);
       setSessionId(body.id);
@@ -313,8 +249,7 @@ function SessionContent() {
       setElapsedSeconds(0);
       pendingIdempotencyKeyRef.current = null;
 
-      // Fetch catalog to find playable clip
-      await loadClip(requestedItemId, activeRecord);
+      await loadClip(requestedItemId);
     } catch {
       // Keep "starting" in storage so reload can recover using same idempotency key
       setStatus("Lỗi kết nối máy chủ khi bắt đầu phiên.");
@@ -326,20 +261,11 @@ function SessionContent() {
   // End learning session
   const endSession = async () => {
     const token = getToken();
-    if (!token || !sessionId) return;
-    const storageKey = getStorageKey();
+    const userId = currentUserId();
+    if (!token || !sessionId || !userId) return;
 
-    // Mark ending in sessionStorage
-    if (typeof window !== "undefined") {
-      const raw = sessionStorage.getItem(storageKey);
-      if (raw) {
-        try {
-          const s = JSON.parse(raw);
-          s.state = "ending";
-          sessionStorage.setItem(storageKey, JSON.stringify(s));
-        } catch {}
-      }
-    }
+    const rec = readSessionRecord(userId);
+    if (rec) writeSessionRecord(userId, { ...rec, state: "ending" });
 
     setLoading(true);
     try {
@@ -349,25 +275,14 @@ function SessionContent() {
       });
 
       if (!res.ok) {
-        // Mark outcome_unknown and verify
-        if (typeof window !== "undefined") {
-          const raw = sessionStorage.getItem(storageKey);
-          if (raw) {
-            try {
-              const s = JSON.parse(raw);
-              s.state = "outcome_unknown";
-              sessionStorage.setItem(storageKey, JSON.stringify(s));
-            } catch {}
-          }
-        }
+        const latest = readSessionRecord(userId);
+        if (latest) writeSessionRecord(userId, { ...latest, state: "outcome_unknown" });
 
         const checkRes = await api(`/sessions/${sessionId}`, { token });
         if (checkRes.ok) {
           const checkData = await parseApiResponse<{ ended_at?: string; duration_seconds?: number }>(checkRes);
           if (checkData?.ended_at) {
-            if (typeof window !== "undefined") {
-              sessionStorage.removeItem(storageKey);
-            }
+            clearSessionRecord(userId);
             const progressRes = await api("/progress", { token });
             const progress = progressRes.ok
               ? await parseApiResponse<{
@@ -396,9 +311,7 @@ function SessionContent() {
         current_ci_level: number;
       }>(res);
 
-      if (typeof window !== "undefined") {
-        sessionStorage.removeItem(storageKey);
-      }
+      clearSessionRecord(userId);
       setCompletedSummary({
         minutesComprehensible: progress?.minutes_comprehensible ?? 0,
         currentCiLevel: progress?.current_ci_level ?? 0,
@@ -408,25 +321,14 @@ function SessionContent() {
       setClip(null);
       setStatus("Đã kết thúc phiên.");
     } catch {
-      if (typeof window !== "undefined") {
-        const raw = sessionStorage.getItem(storageKey);
-        if (raw) {
-          try {
-            const s = JSON.parse(raw);
-            s.state = "outcome_unknown";
-            sessionStorage.setItem(storageKey, JSON.stringify(s));
-          } catch {}
-        }
-      }
-      // Attempt verification
+      const latest = readSessionRecord(userId);
+      if (latest) writeSessionRecord(userId, { ...latest, state: "outcome_unknown" });
       try {
         const checkRes = await api(`/sessions/${sessionId}`, { token });
         if (checkRes.ok) {
           const checkData = await parseApiResponse<{ ended_at?: string }>(checkRes);
           if (checkData?.ended_at) {
-            if (typeof window !== "undefined") {
-              sessionStorage.removeItem(storageKey);
-            }
+            clearSessionRecord(userId);
             setSessionId(null);
             setClip(null);
             setStatus("Đã kết thúc phiên.");

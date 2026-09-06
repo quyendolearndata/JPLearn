@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { clearSessionRecord } from "./session-storage";
 
 const TOKEN_KEY = "jplearn.access_token";
 const USER_KEY = "jplearn.user";
@@ -75,6 +76,8 @@ export async function logout(): Promise<{ serverRevoked: boolean; message: strin
     }
   }
 
+  const current = getUser();
+  if (current?.id) clearSessionRecord(current.id);
   clearSession();
 
   if (serverRevoked) {

@@ -4,19 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, parseApiError } from "../../lib/api";
 import { getUser, logout, setSession, subscribeAuth, type StoredUser } from "../../lib/auth-storage";
-
-function getSafeRedirect(target: string | null): string {
-  if (!target) return "/";
-  if (
-    target.startsWith("/") &&
-    !target.startsWith("//") &&
-    !target.startsWith("/\\") &&
-    !target.includes("://")
-  ) {
-    return target;
-  }
-  return "/";
-}
+import { getSafeRedirect } from "../../lib/safe-redirect";
 
 export default function LoginPage() {
   const router = useRouter();

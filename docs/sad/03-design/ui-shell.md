@@ -11,7 +11,7 @@ Onboarding/cài đặt: tiếng Việt. Chrome học: tối giản, không giả
 | S-LANDING | Giới thiệu phương pháp CI & CTA | `/` | — | Landing công khai, thẩm mỹ Tonmana Nhật đương đại, cam kết trung thực |
 | S-LOGIN | Email / mật khẩu / đăng ký / đăng xuất | `/login` | UC-L01, UC-T01 | Staff và learner cùng login; route sau role; thông báo logout mọi thiết bị |
 | S-CATALOG | Catalog theo `ci_level` (S-HOME) | `/catalog` | UC-L02, UC-L10 | Bộ lọc CI qua API; card từ metadata public; empty/error/retry phân biệt |
-| S-SESSION | Vòng học & phiên phát CI | `/session` | UC-L03, UC-L04, UC-L10 | Phát clip đã chọn; lưu phiên qua reload; hỗ trợ Idempotency & khôi phục |
+| S-SESSION | Vòng học & phiên phát CI | `/session` | UC-L03, UC-L04, UC-L10 | Phát clip đã chọn; record `sessionStorage` theo user/tab, không lưu clip/signed URL; logout xoá record UI của user hiện tại, không end server session; hỗ trợ Idempotency & khôi phục |
 | S-PROGRESS | Phút CI + cấp hiện tại | `/progress` | UC-L05 | Tự làm mới sau khi end; không điểm, không % bài |
 | S-STAFF-LIST | Danh sách nội dung CMS | `/staff` | UC-T02b | Lọc status/CI, phân trang; teacher/admin truy cập |
 | S-STAFF-NEW | Tạo clip draft mới | `/staff/new` | UC-T02 | Form nhập `catalogWriteFields`; validation chặt chẽ |
