@@ -50,8 +50,7 @@ const HEADER_SAFE_VALUE_PATTERN = /^[\t\x20-\x7E]+$/;
 
 function isValidPersistedIdempotencyKey(value: unknown): value is string {
   if (typeof value !== "string" || !HEADER_SAFE_VALUE_PATTERN.test(value)) return false;
-  const trimmedLength = value.trim().length;
-  return trimmedLength >= 1 && trimmedLength <= 128;
+  return value.length >= 1 && value.length <= 128 && value === value.trim();
 }
 
 export function sessionStorageKey(userId: string): string {

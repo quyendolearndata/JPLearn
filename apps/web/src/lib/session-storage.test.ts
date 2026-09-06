@@ -197,7 +197,17 @@ test("T-SES-REC-001: short and typical header-safe persisted keys remain replaya
 });
 
 test("T-SES-REC-001: unsafe idempotency keys are neither persisted nor replayed", () => {
-  for (const idempotencyKey of ["", "   ", "line\rbreak", "line\nbreak", "nul\u0000key", "a".repeat(129)]) {
+  for (const idempotencyKey of [
+    "",
+    "   ",
+    " leading",
+    "trailing ",
+    `a${" ".repeat(128)}`,
+    "line\rbreak",
+    "line\nbreak",
+    "nul\u0000key",
+    "a".repeat(129),
+  ]) {
     sessionStorage.setItem(
       sessionStorageKey("u1"),
       JSON.stringify(rec({ idempotencyKey })),
