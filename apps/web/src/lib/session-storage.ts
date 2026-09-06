@@ -15,6 +15,19 @@ export interface StoredSession {
   sessionId?: string;
 }
 
+export type SessionRecoveryRequest =
+  | {
+      kind: "replay_start";
+      idempotencyKey: string;
+      deviceClass: "web";
+      itemId?: string;
+    }
+  | {
+      kind: "verify_session";
+      sessionId: string;
+      itemId?: string;
+    };
+
 const PREFIX = "jplearn.session:";
 const STATES: readonly SessionLifecycleState[] = ["starting", "active", "ending", "outcome_unknown"];
 const ALLOWED_KEYS = new Set(["v", "state", "idempotencyKey", "deviceClass", "startedAt", "itemId", "sessionId"]);
@@ -66,6 +79,23 @@ export function writeSessionRecord(userId: string, rec: StoredSession): void {
 
 export function clearSessionRecord(userId: string): void {
   store()?.removeItem(sessionStorageKey(userId));
+}
+
+export function recoveryRequestFor(stored: StoredSession): SessionRecoveryRequest | null {
+  if (stored.state === "starting") {
+    return {
+      kind: "replay_start",
+      idempotencyKey: stored.idempotencyKey,
+      deviceClass: stored.deviceClass,
+      itemId: stored.itemId,
+    };
+  }
+  if (!stored.sessionId) return null;
+  return {
+    kind: "verify_session",
+    sessionId: stored.sessionId,
+    itemId: stored.itemId,
+  };
 }
 
 export function newIdempotencyKey(): string {

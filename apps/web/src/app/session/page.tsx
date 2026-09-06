@@ -11,6 +11,7 @@ import {
   clearSessionRecord,
   newIdempotencyKey,
   readSessionRecord,
+  recoveryRequestFor,
   writeSessionRecord,
   type StoredSession,
 } from "../../lib/session-storage";
@@ -23,6 +24,26 @@ interface EndSummary {
   minutesComprehensible: number;
   currentCiLevel: number;
   durationSeconds: number;
+}
+
+type RecoveryPhase = "initializing" | "verifying" | "ready" | "unverified";
+
+interface LearningSessionResponse {
+  id: string;
+  device_class: "web" | "phone" | "ipad";
+  started_at: string;
+  ended_at: string | null;
+  duration_seconds: number | null;
+}
+
+function isLearningSessionResponse(value: unknown, expectedId?: string): value is LearningSessionResponse {
+  if (!value || typeof value !== "object") return false;
+  const session = value as Record<string, unknown>;
+  if (typeof session.id !== "string" || (expectedId && session.id !== expectedId)) return false;
+  if (!["web", "phone", "ipad"].includes(session.device_class as string)) return false;
+  if (typeof session.started_at !== "string") return false;
+  if (session.ended_at !== null && typeof session.ended_at !== "string") return false;
+  return session.duration_seconds === null || typeof session.duration_seconds === "number";
 }
 
 const TOPIC_NAMES: Record<string, string> = {
@@ -41,16 +62,22 @@ function SessionContent() {
   const requestedItemId = searchParams.get("item_id");
 
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [status, setStatus] = useState<string>("");
+  const [status, setStatus] = useState<string>("Đang kiểm tra phiên...");
   const [clip, setClip] = useState<CatalogItemPublic | null>(null);
   const [startedAt, setStartedAt] = useState<Date | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [loading, setLoading] = useState(false);
   const [completedSummary, setCompletedSummary] = useState<EndSummary | null>(null);
+  const [recoveryPhase, setRecoveryPhase] = useState<RecoveryPhase>("initializing");
 
-  const pendingIdempotencyKeyRef = useRef<string | null>(null);
+  const recoveryAttemptRef = useRef(0);
+  const recoveryInFlightRef = useRef(false);
+  const recoveryAbortRef = useRef<AbortController | null>(null);
 
-  const loadClip = useCallback(async (targetItemId?: string | null) => {
+  const loadClip = useCallback(async (
+    targetItemId?: string | null,
+    shouldApply: () => boolean = () => true,
+  ) => {
     const token = getToken();
     if (!token) return;
     let playable: CatalogItemPublic | null = null;
@@ -65,99 +92,193 @@ function SessionContent() {
     } catch {
       /* catalog failure must not block end-session */
     }
+    if (!shouldApply()) return;
     setClip(playable);
     setStatus(playable ? "Phiên đang chạy." : "Phiên đang chạy. Chưa có clip published.");
   }, []);
 
   // Check and recover session from scoped sessionStorage
   const checkActiveSession = useCallback(async () => {
+    if (recoveryInFlightRef.current) return;
+
     const token = getToken();
     const userId = currentUserId();
-    if (!token || !userId) return;
+    const attempt = ++recoveryAttemptRef.current;
+    const isCurrentAttempt = () =>
+      recoveryAttemptRef.current === attempt && currentUserId() === userId;
+
+    if (!token || !userId) {
+      setRecoveryPhase("ready");
+      setStatus("");
+      return;
+    }
     try { localStorage.removeItem("jplearn_active_session"); } catch {}
 
     const stored = readSessionRecord(userId);
-    if (!stored) return;
-
-    // 1. Mid-flight start: replay POST with the same key.
-    if (stored.state === "starting") {
-      setStatus("Đang khôi phục phiên...");
-      setLoading(true);
-      try {
-        const res = await api("/sessions", {
-          method: "POST",
-          token,
-          headers: { "Idempotency-Key": stored.idempotencyKey },
-          body: JSON.stringify({ device_class: stored.deviceClass }),
-        });
-        if (res.ok) {
-          const body = await parseApiResponse<{ id: string; started_at?: string }>(res);
-          if (body?.id) {
-            const active: StoredSession = { ...stored, state: "active", sessionId: body.id, startedAt: body.started_at || stored.startedAt };
-            writeSessionRecord(userId, active);
-            setSessionId(body.id);
-            setStartedAt(new Date(active.startedAt));
-            await loadClip(stored.itemId);
-            setStatus("Phiên đang chạy (đã khôi phục).");
-            return;
-          }
-        }
-        clearSessionRecord(userId);
-        setStatus("Không thể khôi phục phiên.");
-      } catch {
-        setStatus("Lỗi kết nối khi khôi phục phiên. Tải lại trang để thử lại.");
-      } finally {
-        setLoading(false);
-      }
+    if (!stored) {
+      setRecoveryPhase("ready");
+      setStatus("");
       return;
     }
 
-    if (!stored.sessionId) { clearSessionRecord(userId); return; }
+    const recoveryRequest = recoveryRequestFor(stored);
+    if (!recoveryRequest) {
+      clearSessionRecord(userId);
+      setStatus("Dữ liệu khôi phục phiên không hợp lệ.");
+      setRecoveryPhase("ready");
+      return;
+    }
 
-    // 2. active / ending / outcome_unknown: ask the server what really happened.
+    recoveryInFlightRef.current = true;
+    recoveryAbortRef.current = new AbortController();
+    setRecoveryPhase("verifying");
+    setStatus("Đang khôi phục phiên...");
+
     try {
-      const res = await api(`/sessions/${stored.sessionId}`, { token });
-      if (res.status === 404 || res.status === 403) { clearSessionRecord(userId); return; }
-      if (!res.ok) throw new Error("status check failed");
-      const data = await parseApiResponse<{ started_at?: string; ended_at?: string | null; duration_seconds?: number }>(res);
+      // 1. Mid-flight start: replay POST with the persisted request details.
+      if (recoveryRequest.kind === "replay_start") {
+        const res = await api("/sessions", {
+          method: "POST",
+          token,
+          headers: { "Idempotency-Key": recoveryRequest.idempotencyKey },
+          body: JSON.stringify({ device_class: recoveryRequest.deviceClass }),
+          signal: recoveryAbortRef.current.signal,
+        });
 
-      if (data?.ended_at) {
+        if (!isCurrentAttempt()) return;
+        if (!res.ok) {
+          if (res.status === 401) return;
+          const err = await parseApiError(res);
+          if (!isCurrentAttempt()) return;
+          setStatus(err.message || "Không thể khôi phục phiên.");
+          setRecoveryPhase("unverified");
+          return;
+        }
+
+        const body = await parseApiResponse<unknown>(res);
+        if (!isCurrentAttempt()) return;
+        if (!isLearningSessionResponse(body)) {
+          setStatus("Dữ liệu phiên không hợp lệ.");
+          setRecoveryPhase("unverified");
+          return;
+        }
+
+        if (body.ended_at) {
+          clearSessionRecord(userId);
+          setSessionId(null);
+          setStartedAt(null);
+          setClip(null);
+          setStatus("Phiên đã kết thúc.");
+          setRecoveryPhase("ready");
+          return;
+        }
+
+        const active: StoredSession = {
+          ...stored,
+          state: "active",
+          sessionId: body.id,
+          startedAt: body.started_at,
+        };
+        writeSessionRecord(userId, active);
+        setSessionId(body.id);
+        setStartedAt(new Date(active.startedAt));
+        setElapsedSeconds(Math.max(0, Math.floor((Date.now() - new Date(active.startedAt).getTime()) / 1000)));
+        await loadClip(recoveryRequest.itemId, isCurrentAttempt);
+        if (!isCurrentAttempt()) return;
+        setStatus("Phiên đang chạy (đã khôi phục).");
+        setRecoveryPhase("ready");
+        return;
+      }
+
+      // 2. active / ending / outcome_unknown: ask the server what really happened.
+      const res = await api(`/sessions/${recoveryRequest.sessionId}`, {
+        token,
+        signal: recoveryAbortRef.current.signal,
+      });
+      if (!isCurrentAttempt()) return;
+      if (res.status === 401) return;
+      if (res.status === 403 || res.status === 404) {
         clearSessionRecord(userId);
+        setSessionId(null);
+        setStartedAt(null);
+        setClip(null);
+        setStatus(
+          res.status === 403
+            ? "Bạn không có quyền khôi phục phiên này."
+            : "Phiên cần khôi phục không còn tồn tại.",
+        );
+        setRecoveryPhase("ready");
+        return;
+      }
+      if (!res.ok) {
+        const err = await parseApiError(res);
+        if (!isCurrentAttempt()) return;
+        setStatus(err.message || "Không kiểm tra được phiên với máy chủ.");
+        setRecoveryPhase("unverified");
+        return;
+      }
+
+      const data = await parseApiResponse<unknown>(res);
+      if (!isCurrentAttempt()) return;
+      if (!isLearningSessionResponse(data, recoveryRequest.sessionId)) {
+        setStatus("Dữ liệu phiên không hợp lệ.");
+        setRecoveryPhase("unverified");
+        return;
+      }
+
+      if (data.ended_at) {
+        clearSessionRecord(userId);
+        setSessionId(null);
+        setStartedAt(null);
+        setClip(null);
         if (stored.state === "ending" || stored.state === "outcome_unknown") {
           const progressRes = await api("/progress", { token });
+          if (!isCurrentAttempt()) return;
           const progress = progressRes.ok
             ? await parseApiResponse<{ minutes_comprehensible: number; current_ci_level: number }>(progressRes)
             : null;
+          if (!isCurrentAttempt()) return;
           setCompletedSummary({
             minutesComprehensible: progress?.minutes_comprehensible ?? 0,
             currentCiLevel: progress?.current_ci_level ?? 0,
             durationSeconds: data.duration_seconds ?? 0,
           });
-          setStatus("Phiên đã kết thúc.");
         }
+        setStatus("Phiên đã kết thúc.");
+        setRecoveryPhase("ready");
         return;
       }
 
       // Still active on the server.
-      const start = new Date(data?.started_at || stored.startedAt);
-      setSessionId(stored.sessionId);
+      const start = new Date(data.started_at);
+      setSessionId(recoveryRequest.sessionId);
       setStartedAt(start);
       setElapsedSeconds(Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000)));
       writeSessionRecord(userId, { ...stored, state: "active" });
+      await loadClip(recoveryRequest.itemId, isCurrentAttempt);
+      if (!isCurrentAttempt()) return;
       setStatus(stored.state === "active" ? "Phiên đang chạy." : "Phiên vẫn đang chạy trên máy chủ — hãy kết thúc lại.");
-      await loadClip(stored.itemId);
+      setRecoveryPhase("ready");
     } catch {
-      if (stored.state !== "active") {
-        writeSessionRecord(userId, { ...stored, state: "outcome_unknown" });
-        setStatus("Chưa xác nhận được trạng thái phiên với máy chủ. Tải lại trang khi có mạng.");
-      } else {
-        setStatus("Không kiểm tra được phiên với máy chủ.");
+      if (!isCurrentAttempt()) return;
+      setStatus("Chưa xác nhận được trạng thái phiên với máy chủ.");
+      setRecoveryPhase("unverified");
+    } finally {
+      if (recoveryAttemptRef.current === attempt) {
+        recoveryInFlightRef.current = false;
+        recoveryAbortRef.current = null;
       }
     }
   }, [loadClip]);
 
   useEffect(() => {
     void checkActiveSession();
+    return () => {
+      recoveryAttemptRef.current += 1;
+      recoveryInFlightRef.current = false;
+      recoveryAbortRef.current?.abort();
+      recoveryAbortRef.current = null;
+    };
   }, [checkActiveSession]);
 
   // Elapsed timer ticker while session is active
@@ -181,6 +302,8 @@ function SessionContent() {
 
   // Start learning session with Idempotency-Key
   const startSession = async () => {
+    if (recoveryPhase !== "ready" || loading || sessionId) return;
+
     const token = getToken();
     const userId = currentUserId();
     if (!token || !userId) {
@@ -188,12 +311,16 @@ function SessionContent() {
       return;
     }
 
+    if (readSessionRecord(userId)) {
+      setRecoveryPhase("unverified");
+      setStatus("Cần khôi phục phiên đã lưu trước khi bắt đầu phiên mới.");
+      return;
+    }
+
     setLoading(true);
     setCompletedSummary(null);
 
-    const idempotencyKey = pendingIdempotencyKeyRef.current || newIdempotencyKey();
-    pendingIdempotencyKeyRef.current = idempotencyKey;
-
+    const idempotencyKey = newIdempotencyKey();
     const startedAtIso = new Date().toISOString();
 
     // Persist "starting" state BEFORE sending POST /sessions
@@ -218,16 +345,16 @@ function SessionContent() {
       });
 
       if (!res.ok) {
-        clearSessionRecord(userId);
         const err = await parseApiError(res);
         setStatus(err.message || "Không thể bắt đầu phiên.");
+        setRecoveryPhase("unverified");
         return;
       }
 
-      const body = await parseApiResponse<{ id: string; started_at?: string }>(res);
-      if (!body?.id) {
-        clearSessionRecord(userId);
+      const body = await parseApiResponse<unknown>(res);
+      if (!isLearningSessionResponse(body)) {
         setStatus("Dữ liệu phiên không hợp lệ.");
+        setRecoveryPhase("unverified");
         return;
       }
 
@@ -238,7 +365,7 @@ function SessionContent() {
         sessionId: body.id,
         itemId: requestedItemId || undefined,
         idempotencyKey,
-        startedAt: body.started_at || startedAtIso,
+        startedAt: body.started_at,
         deviceClass: "web",
       };
       writeSessionRecord(userId, activeRecord);
@@ -247,12 +374,12 @@ function SessionContent() {
       setSessionId(body.id);
       setStartedAt(start);
       setElapsedSeconds(0);
-      pendingIdempotencyKeyRef.current = null;
 
       await loadClip(requestedItemId);
     } catch {
       // Keep "starting" in storage so reload can recover using same idempotency key
       setStatus("Lỗi kết nối máy chủ khi bắt đầu phiên.");
+      setRecoveryPhase("unverified");
     } finally {
       setLoading(false);
     }
@@ -401,18 +528,28 @@ function SessionContent() {
         <button
           type="button"
           onClick={() => void startSession()}
-          disabled={loading || Boolean(sessionId)}
+          disabled={recoveryPhase !== "ready" || loading || Boolean(sessionId)}
         >
           {loading && !sessionId ? "Đang xử lý…" : "Bắt đầu phiên"}
         </button>
-        <button
-          type="button"
-          onClick={() => void endSession()}
-          disabled={loading || !sessionId}
-          className="btn-danger"
-        >
-          {loading && sessionId ? "Đang xử lý…" : "Kết thúc phiên"}
-        </button>
+        {recoveryPhase === "unverified" && (
+          <button
+            type="button"
+            onClick={() => void checkActiveSession()}
+          >
+            Thử khôi phục lại
+          </button>
+        )}
+        {sessionId && (
+          <button
+            type="button"
+            onClick={() => void endSession()}
+            disabled={loading}
+            className="btn-danger"
+          >
+            {loading ? "Đang xử lý…" : "Kết thúc phiên"}
+          </button>
+        )}
       </div>
     </section>
   );

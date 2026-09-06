@@ -7,6 +7,7 @@ import {
   writeSessionRecord,
   clearSessionRecord,
   newIdempotencyKey,
+  recoveryRequestFor,
   type StoredSession,
 } from "./session-storage";
 
@@ -58,4 +59,28 @@ test("newIdempotencyKey returns distinct, header-safe values ≤128 chars", () =
   const a = newIdempotencyKey(); const b = newIdempotencyKey();
   assert.notEqual(a, b);
   assert.match(a, /^[A-Za-z0-9-]{8,128}$/);
+});
+
+test("T-SES-REC-001: starting retries preserve the stored key, device and item", () => {
+  const stored = rec({ idempotencyKey: "persisted-key", deviceClass: "web", itemId: "item-1" });
+
+  const first = recoveryRequestFor(stored);
+  const retry = recoveryRequestFor(stored);
+
+  assert.deepEqual(first, {
+    kind: "replay_start",
+    idempotencyKey: "persisted-key",
+    deviceClass: "web",
+    itemId: "item-1",
+  });
+  assert.deepEqual(retry, first);
+});
+
+test("T-SES-REC-001: non-starting recovery only verifies the stored session id", () => {
+  for (const state of ["active", "ending", "outcome_unknown"] as const) {
+    assert.deepEqual(
+      recoveryRequestFor(rec({ state, sessionId: "session-1", itemId: "item-1" })),
+      { kind: "verify_session", sessionId: "session-1", itemId: "item-1" },
+    );
+  }
 });

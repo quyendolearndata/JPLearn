@@ -24,6 +24,282 @@ async function readRecord(page: Page, userId: string) {
 }
 
 test.describe("Session recovery T-SES-REC-001", () => {
+  test("F-01 pending active GET disables Start and cannot POST a new session T-SES-REC-001", async ({ page }) => {
+    const { userId } = await register(page);
+    await page.goto("/session");
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
+    const stored = await readRecord(page, userId);
+    const sessionId = stored?.sessionId as string;
+
+    let markStatusRequested!: () => void;
+    const statusRequested = new Promise<void>((resolve) => { markStatusRequested = resolve; });
+    let releaseStatus!: () => void;
+    const statusGate = new Promise<void>((resolve) => { releaseStatus = resolve; });
+    let newSessionPosts = 0;
+    const countPosts = (request: { method(): string; url(): string }) => {
+      if (request.method() === "POST" && /\/sessions$/.test(request.url())) newSessionPosts += 1;
+    };
+    page.on("request", countPosts);
+    const statusPattern = new RegExp(`/sessions/${sessionId}$`);
+    await page.route(statusPattern, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      markStatusRequested();
+      await statusGate;
+      await route.continue();
+    });
+
+    await page.reload();
+    await statusRequested;
+    try {
+      const start = page.getByRole("button", { name: "Bắt đầu phiên" });
+      await expect(start).toBeDisabled();
+      await start.evaluate((button: HTMLButtonElement) => button.click());
+      expect(newSessionPosts).toBe(0);
+    } finally {
+      const statusResponse = page.waitForResponse(statusPattern);
+      releaseStatus();
+      await statusResponse;
+      await page.unroute(statusPattern);
+      page.off("request", countPosts);
+    }
+    await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toBeEnabled();
+  });
+
+  for (const fault of ["network", "HTTP 500"] as const) {
+    const recoveryState = fault === "network" ? "active" : "outcome_unknown";
+    test(`F-01 ${fault} during ${recoveryState} recovery keeps the record and retries the same GET T-SES-REC-001`, async ({ page }) => {
+      const { userId } = await register(page);
+      await page.goto("/session");
+      await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+      await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
+      const before = await readRecord(page, userId);
+      const sessionId = before?.sessionId as string;
+      if (fault === "HTTP 500") {
+        await page.evaluate(({ key }) => {
+          const stored = JSON.parse(sessionStorage.getItem(key) || "{}");
+          sessionStorage.setItem(key, JSON.stringify({ ...stored, state: "outcome_unknown" }));
+        }, { key: `jplearn.session:${userId}` });
+      }
+      const expected = await readRecord(page, userId);
+
+      let newSessionPosts = 0;
+      const countPosts = (request: { method(): string; url(): string }) => {
+        if (request.method() === "POST" && /\/sessions$/.test(request.url())) newSessionPosts += 1;
+      };
+      page.on("request", countPosts);
+      const statusPattern = new RegExp(`/sessions/${sessionId}$`);
+      await page.route(statusPattern, async (route) => {
+        if (route.request().method() === "OPTIONS") return route.continue();
+        if (fault === "network") return route.abort("failed");
+        return route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ statusCode: 500, message: "Injected recovery fault" }),
+        });
+      });
+
+      await page.reload();
+      await expect(page.getByRole("button", { name: "Thử khôi phục lại" })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Bắt đầu phiên" })).toBeDisabled();
+      expect(await readRecord(page, userId)).toEqual(expected);
+      expect(newSessionPosts).toBe(0);
+
+      await page.unroute(statusPattern);
+      await page.getByRole("button", { name: "Thử khôi phục lại" }).click();
+      await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toBeEnabled();
+      expect((await readRecord(page, userId))?.sessionId).toBe(sessionId);
+      expect(newSessionPosts).toBe(0);
+      page.off("request", countPosts);
+    });
+  }
+
+  test("F-01 starting replay keeps one key through HTTP 500 and malformed success T-SES-REC-001", async ({ page }) => {
+    const { userId } = await register(page);
+    const replayKeys: string[] = [];
+    let committedId = "";
+    await page.route(/\/sessions$/, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      if (route.request().method() !== "POST") return route.continue();
+      replayKeys.push(route.request().headers()["idempotency-key"]);
+      const response = await route.fetch();
+      committedId = (await response.json()).id as string;
+      await route.abort("failed");
+    });
+    await page.goto("/session");
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    await expect(page.getByText("Lỗi kết nối máy chủ khi bắt đầu phiên.")).toBeVisible();
+    const starting = await readRecord(page, userId);
+    await page.unroute(/\/sessions$/);
+
+    let faultAttempt = 0;
+    await page.route(/\/sessions$/, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      if (route.request().method() !== "POST") return route.continue();
+      replayKeys.push(route.request().headers()["idempotency-key"]);
+      faultAttempt += 1;
+      if (faultAttempt === 1) {
+        return route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ statusCode: 500, message: "Injected replay fault" }),
+        });
+      }
+      return route.fulfill({ status: 201, contentType: "application/json", body: "{}" });
+    });
+
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Thử khôi phục lại" })).toBeVisible();
+    expect(await readRecord(page, userId)).toEqual(starting);
+    await page.getByRole("button", { name: "Thử khôi phục lại" }).click();
+    await expect(page.getByRole("button", { name: "Thử khôi phục lại" })).toBeVisible();
+    expect(await readRecord(page, userId)).toEqual(starting);
+
+    await page.unroute(/\/sessions$/);
+    await page.getByRole("button", { name: "Thử khôi phục lại" }).click();
+    await expect(page.getByText("Phiên đang chạy (đã khôi phục).")).toBeVisible();
+    const active = await readRecord(page, userId);
+    expect(active?.sessionId).toBe(committedId);
+    expect(new Set(replayKeys)).toEqual(new Set([starting?.idempotencyKey as string]));
+  });
+
+  test("F-01 starting replay returned ended does not restore End or send it twice T-SES-REC-001", async ({ page, request }) => {
+    const { userId, token } = await register(page);
+    const startResponse = page.waitForResponse((response) =>
+      response.request().method() === "POST" && /\/sessions$/.test(response.url()),
+    );
+    await page.goto("/session");
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    const startUrl = (await startResponse).url();
+    await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
+    const active = await readRecord(page, userId);
+    const sessionId = active?.sessionId as string;
+    const ended = await request.post(`${startUrl}/${sessionId}/end`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(ended.ok()).toBeTruthy();
+    await page.evaluate((key) => {
+      const activeRecord = JSON.parse(sessionStorage.getItem(key) || "{}");
+      const { sessionId: _sessionId, ...startingRecord } = activeRecord;
+      sessionStorage.setItem(key, JSON.stringify({ ...startingRecord, state: "starting" }));
+    }, `jplearn.session:${userId}`);
+
+    let browserEndPosts = 0;
+    page.on("request", (req) => {
+      if (req.method() === "POST" && /\/sessions\/[^/]+\/end$/.test(req.url())) browserEndPosts += 1;
+    });
+    await page.reload();
+    await expect(page.getByText("Phiên đã kết thúc.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toHaveCount(0);
+    expect(await readRecord(page, userId)).toBeNull();
+    expect(browserEndPosts).toBe(0);
+  });
+
+  test("F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001", async ({ page }) => {
+    const { userId } = await register(page);
+    await page.goto("/session");
+    const starting = {
+      v: 1,
+      state: "starting",
+      idempotencyKey: "persisted-on-401",
+      startedAt: "2026-09-06T00:00:00.000Z",
+      itemId: SEED_PUBLISHED_ITEM,
+      deviceClass: "web",
+    };
+    await page.evaluate(({ key, record }) => sessionStorage.setItem(key, JSON.stringify(record)), {
+      key: `jplearn.session:${userId}`,
+      record: starting,
+    });
+    await page.route(/\/sessions$/, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      return route.fulfill({
+        status: 401,
+        contentType: "application/json",
+        body: JSON.stringify({ statusCode: 401, message: "Unauthorized" }),
+      });
+    });
+
+    await page.reload();
+    await expect(page).toHaveURL(/\/login\?redirect=%2Fsession/);
+    expect(await readRecord(page, userId)).toEqual(starting);
+  });
+
+  for (const terminalStatus of [403, 404] as const) {
+    test(`F-01 GET ${terminalStatus} clears only the unusable record with an explicit terminal status T-SES-REC-001`, async ({ page }) => {
+      const { userId } = await register(page);
+      await page.goto("/session");
+      await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+      await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
+      const active = await readRecord(page, userId);
+      await page.route(new RegExp(`/sessions/${active?.sessionId}$`), async (route) => {
+        if (route.request().method() === "OPTIONS") return route.continue();
+        return route.fulfill({
+          status: terminalStatus,
+          contentType: "application/json",
+          body: JSON.stringify({
+            statusCode: terminalStatus,
+            message: terminalStatus === 403 ? "Forbidden" : "Session not found",
+          }),
+        });
+      });
+
+      await page.reload();
+      await expect(page.getByText(
+        terminalStatus === 403
+          ? "Bạn không có quyền khôi phục phiên này."
+          : "Phiên cần khôi phục không còn tồn tại.",
+      )).toBeVisible();
+      expect(await readRecord(page, userId)).toBeNull();
+      await expect(page.getByRole("button", { name: "Bắt đầu phiên" })).toBeEnabled();
+      await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toHaveCount(0);
+    });
+  }
+
+  test("F-01 late recovery response cannot overwrite state after the user changes T-SES-REC-001", async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    const userOne = await register(page);
+    await page.goto("/session");
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
+    const active = await readRecord(page, userOne.userId);
+    await page.evaluate((key) => {
+      const stored = JSON.parse(sessionStorage.getItem(key) || "{}");
+      sessionStorage.setItem(key, JSON.stringify({ ...stored, state: "outcome_unknown" }));
+    }, `jplearn.session:${userOne.userId}`);
+
+    let markStatusRequested!: () => void;
+    const statusRequested = new Promise<void>((resolve) => { markStatusRequested = resolve; });
+    let releaseStatus!: () => void;
+    const statusGate = new Promise<void>((resolve) => { releaseStatus = resolve; });
+    const statusPattern = new RegExp(`/sessions/${active?.sessionId}$`);
+    await page.route(statusPattern, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      markStatusRequested();
+      await statusGate;
+      await route.continue();
+    });
+    await page.reload();
+    await statusRequested;
+
+    const otherPage = await context.newPage();
+    const userTwo = await register(otherPage);
+    await page.evaluate(({ token, user }) => {
+      localStorage.setItem("jplearn.access_token", token);
+      localStorage.setItem("jplearn.user", JSON.stringify(user));
+    }, {
+      token: userTwo.token,
+      user: { id: userTwo.userId, email: userTwo.email, roles: ["learner"] },
+    });
+    const responseReceived = page.waitForResponse(statusPattern);
+    releaseStatus();
+    await responseReceived;
+    await page.evaluate(() => new Promise<void>((resolve) => setTimeout(resolve, 0)));
+
+    expect((await readRecord(page, userOne.userId))?.state).toBe("outcome_unknown");
+    await context.close();
+  });
+
   test("start response lost after commit → reload replays same key → one session", async ({ page }) => {
     const { userId } = await register(page);
     const committed: string[] = [];
