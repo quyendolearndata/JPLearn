@@ -1,0 +1,305 @@
+diff --git a/apps/web/e2e/hls.spec.ts b/apps/web/e2e/hls.spec.ts
+index 5cf1b6b..e419a94 100644
+--- a/apps/web/e2e/hls.spec.ts
++++ b/apps/web/e2e/hls.spec.ts
+@@ -84,10 +84,18 @@ test("F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001", a
+   await expect(page.getByText("Không thể phát nội dung này.")).toHaveCount(0);
+ });
+ 
+-test("F-03 đổi URL HLS cùng item khôi phục vị trí pause T-LRN-001", async ({ page }) => {
++async function expectHlsPositionRecovery(
++  page: import("@playwright/test").Page,
++  engine: "hls.js" | "native HLS",
++  playbackState: "paused" | "playing" = "paused",
++) {
+   let catalogGets = 0;
+-  await forceHlsJs(page);
++  if (engine === "hls.js") await forceHlsJs(page);
+   await register(page);
++  if (engine === "native HLS") {
++    expect(await page.evaluate(() => document.createElement("video")
++      .canPlayType("application/vnd.apple.mpegurl"))).not.toBe("");
++  }
+   await page.route(/\/catalog$/, async (route) => {
+     if (route.request().method() === "OPTIONS") return route.continue();
+     const response = await route.fetch();
+@@ -95,6 +103,7 @@ test("F-03 đổi URL HLS cùng item khôi phục vị trí pause T-LRN-001", as
+     catalogGets += 1;
+     if (catalogGets === 2) {
+       await page.locator("video").evaluate((element: HTMLVideoElement) => {
++        element.pause();
+         element.currentTime = 0;
+       });
+       await page.waitForFunction(() => {
+@@ -119,8 +128,17 @@ test("F-03 đổi URL HLS cùng item khôi phục vị trí pause T-LRN-001", as
+   const video = page.locator("video");
+   await page.waitForFunction(() => {
+     const element = document.querySelector("video");
+-    return element !== null && element.readyState >= 1;
++    // Metadata alone does not mean that the first HLS segment is available
++    // to seek; wait for playable media before exercising recovery.
++    return element !== null && element.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA;
+   });
++  if (engine === "native HLS") {
++    expect(await video.evaluate((element: HTMLVideoElement) => element.currentSrc))
++      .toContain("/hls/index.m3u8");
++  } else {
++    expect(await video.evaluate((element: HTMLVideoElement) => element.currentSrc))
++      .toMatch(/^blob:/);
++  }
+   await video.evaluate((element: HTMLVideoElement) => {
+     element.pause();
+     element.currentTime = 1;
+@@ -133,18 +151,39 @@ test("F-03 đổi URL HLS cùng item khôi phục vị trí pause T-LRN-001", as
+   const newManifest = page.waitForRequest(
+     (request) => request.url().includes("/hls/index.m3u8") && request.url().includes("recovery=new"),
+   );
+-  await video.evaluate((element: HTMLVideoElement) => {
++  await video.evaluate(async (element: HTMLVideoElement, playbackState) => {
++    if (playbackState === "playing") {
++      element.muted = true;
++      await element.play();
++    }
+     element.dispatchEvent(new Event("error"));
+-  });
++  }, playbackState);
+   await newManifest;
+   await expect.poll(() => catalogGets).toBe(2);
+   await page.waitForFunction(() => {
+     const element = document.querySelector("video");
+-    return element !== null && element.readyState >= 1 && element.currentTime >= 0.75;
++    return element !== null
++      && element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
++      && !element.seeking
++      && element.currentTime >= 0.75;
+   });
+-  expect(await video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
++  if (playbackState === "paused") {
++    expect(await video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeLessThan(1.25);
++  }
++  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused))
++    .toBe(playbackState === "paused");
++}
++
++test("F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001", async ({ page }) => {
++  await expectHlsPositionRecovery(page, "hls.js");
+ });
+ 
++for (const playbackState of ["paused", "playing"] as const) {
++  test(`F-03 đổi URL HLS theo engine khôi phục vị trí ${playbackState} T-LRN-001`, async ({ page, browserName }) => {
++    await expectHlsPositionRecovery(page, browserName === "webkit" ? "native HLS" : "hls.js", playbackState);
++  });
++}
++
+ test("F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001", async ({ page }) => {
+   let catalogGets = 0;
+   await forceHlsJs(page);
+diff --git a/apps/web/e2e/recovery.spec.ts b/apps/web/e2e/recovery.spec.ts
+index 3b56867..2b8a261 100644
+--- a/apps/web/e2e/recovery.spec.ts
++++ b/apps/web/e2e/recovery.spec.ts
+@@ -330,6 +330,8 @@ test.describe("Session recovery T-SES-REC-001", () => {
+   test("F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001", async ({ page }) => {
+     const { userId } = await register(page);
+     await page.goto("/session");
++    // Finish the initial empty-storage bootstrap before installing the reload scenario.
++    await expect(page.getByRole("button", { name: "Bắt đầu phiên" })).toBeEnabled();
+     const starting = {
+       v: 1,
+       state: "starting",
+@@ -622,7 +624,15 @@ test.describe("Session recovery T-SES-REC-001", () => {
+     await page.unroute(/\/sessions\/[^/]+(\/end)?$/);
+     await page.reload();
+     await expect(page.getByText(/đang chạy/)).toBeVisible();
+-    await page.getByRole("button", { name: "Kết thúc phiên" }).click();
++    // Recovery renders the session before catalog/player setup has finished.
++    // Wait for the final active UI so layout changes cannot swallow the click.
++    await page.waitForFunction(() => (document.querySelector("video")?.readyState ?? 0) >= 1);
++    const end = page.getByRole("button", { name: "Kết thúc phiên" });
++    await expect(end).toBeEnabled();
++    const ended = page.waitForResponse((response) =>
++      response.request().method() === "POST" && /\/sessions\/[^/]+\/end$/.test(response.url()));
++    await end.click();
++    expect((await ended).ok()).toBeTruthy();
+     await expect(page.getByText("Tổng kết phiên học")).toBeVisible();
+   });
+ 
+@@ -745,14 +755,25 @@ test.describe("Session recovery T-SES-REC-001", () => {
+     expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
+   });
+ 
+-  test("F-03 manual retry can choose the default after initial catalog failure T-LRN-001", async ({ page }) => {
++  test("F-03 manual retry remains usable after choosing a default and another source failure T-LRN-001", async ({ page }) => {
+     const { userId } = await register(page);
+     let catalogGets = 0;
++    let sessionPosts = 0;
++    let chosenItems: Array<Record<string, unknown>> | undefined;
++    page.on("request", (request) => {
++      if (request.method() === "POST" && /\/sessions$/.test(request.url())) sessionPosts += 1;
++    });
+     await page.route(/\/catalog$/, async (route) => {
+       if (route.request().method() === "OPTIONS") return route.continue();
+       catalogGets += 1;
+       if (catalogGets === 1) return route.abort("failed");
+-      await route.continue();
++      const response = await route.fetch();
++      const body = await response.json() as { items: Array<Record<string, unknown>> };
++      body.items = body.items.map((item) => ({ ...item, hls_url: null }));
++      if (catalogGets === 2) chosenItems = body.items;
++      // Keep the failed URL unchanged on the automatic retry, regardless of signed-URL TTL.
++      if (catalogGets === 3) body.items = chosenItems!;
++      await route.fulfill({ response, json: body });
+     });
+ 
+     await page.goto("/session");
+@@ -764,6 +785,20 @@ test.describe("Session recovery T-SES-REC-001", () => {
+     await expect.poll(() => catalogGets).toBe(2);
+     await expect(page.locator("video")).toBeVisible();
+     expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
++    await page.waitForFunction(() => (document.querySelector("video")?.readyState ?? 0) >= 1);
++    const before = await readRecord(page, userId);
++
++    // Choosing a default changes the media generation. It must release this retry's lock.
++    await page.locator("video").evaluate((video) => video.dispatchEvent(new Event("error")));
++    await expect(page.getByText("Không thể phát nội dung này.", { exact: true })).toBeVisible();
++    expect(catalogGets).toBe(3);
++    const retry = page.getByRole("button", { name: "Thử tải lại video" });
++    await expect(retry).toBeEnabled();
++    await retry.click();
++    await expect.poll(() => catalogGets).toBe(4);
++    await page.waitForFunction(() => (document.querySelector("video")?.readyState ?? 0) >= 1);
++    expect(await readRecord(page, userId)).toEqual(before);
++    expect(sessionPosts).toBe(1);
+   });
+ 
+   test("F-03 dual-source faults use one auto refetch and manual retry starts a new cycle T-LRN-001", async ({ page }) => {
+diff --git a/apps/web/src/app/session/page.tsx b/apps/web/src/app/session/page.tsx
+index 05ec755..0456330 100644
+--- a/apps/web/src/app/session/page.tsx
++++ b/apps/web/src/app/session/page.tsx
+@@ -83,7 +83,7 @@ function SessionContent() {
+   const activeOperationRef = useRef<"recovery" | "start" | "end" | null>(null);
+   const targetItemIdRef = useRef<string | null>(requestedItemId);
+   const mediaRecoveryCycleRef = useRef(createMediaRecoveryCycle(requestedItemId));
+-  const mediaManualRetryRef = useRef(false);
++  const mediaManualRetryRef = useRef<object | null>(null);
+   const mountedRef = useRef(true);
+ 
+   const applySessionId = useCallback((value: string | null) => {
+@@ -889,7 +889,9 @@ function SessionContent() {
+       || activeOperationRef.current !== null
+     ) return;
+ 
+-    mediaManualRetryRef.current = true;
++    // The request owns this lock even if selecting a default changes the media generation.
++    const retryTicket = {};
++    mediaManualRetryRef.current = retryTicket;
+     mediaRecoveryCycleRef.current = restartMediaRecoveryManually(
+       mediaRecoveryCycleRef.current,
+     );
+@@ -909,8 +911,8 @@ function SessionContent() {
+           "manual",
+         );
+       } finally {
+-        if (mediaRecoveryCycleRef.current.generation === generation) {
+-          mediaManualRetryRef.current = false;
++        if (mediaManualRetryRef.current === retryTicket) {
++          mediaManualRetryRef.current = null;
+         }
+       }
+     })();
+@@ -1000,7 +1002,7 @@ function SessionContent() {
+           <button
+             type="button"
+             onClick={retryMediaSource}
+-            disabled={loading || activeOperation !== null || mediaManualRetryRef.current}
++            disabled={loading || activeOperation !== null || mediaManualRetryRef.current !== null}
+           >
+             Thử tải lại video
+           </button>
+diff --git a/apps/web/src/components/ci-player.tsx b/apps/web/src/components/ci-player.tsx
+index 1d94c02..c17a94b 100644
+--- a/apps/web/src/components/ci-player.tsx
++++ b/apps/web/src/components/ci-player.tsx
+@@ -23,15 +23,16 @@ export function CiPlayer({
+     const video = videoRef.current;
+     if (!video) return;
+ 
+-    if (Number.isFinite(video.currentTime) && video.currentTime > 0) {
+-      lastPositionRef.current = video.currentTime;
+-    }
+     let disposed = false;
++    let trackingSuspended = true;
+     let hls: Hls | null = null;
+     let removeSourceError = () => {};
+     let removeRestorePlayback = () => {};
+ 
+     const rememberPlayback = () => {
++      // Loading another source can emit pause/timeupdate events for its reset
++      // position. Keep the snapshot from the source being recovered instead.
++      if (trackingSuspended) return;
+       if (Number.isFinite(video.currentTime) && video.currentTime > 0) {
+         lastPositionRef.current = video.currentTime;
+       }
+@@ -45,25 +46,27 @@ export function CiPlayer({
+ 
+     const registerRestorePlayback = (shouldResume = shouldResumeRef.current) => {
+       removeRestorePlayback();
++      const savedPosition = lastPositionRef.current;
++      trackingSuspended = true;
+       let finished = false;
+       const restorePlayback = () => {
+-        if (disposed || finished) return;
+-        finished = true;
+-        const savedPosition = lastPositionRef.current;
++        if (disposed || finished || video.readyState < HTMLMediaElement.HAVE_METADATA) return;
+         if (savedPosition > 0) {
+           const maximum = Number.isFinite(video.duration)
+             ? Math.max(0, video.duration - 0.05)
+             : savedPosition;
+           video.currentTime = Math.min(savedPosition, maximum);
+         }
++        finished = true;
++        video.removeEventListener("loadedmetadata", restorePlayback);
++        trackingSuspended = false;
+         if (shouldResume) void video.play().catch(() => {});
+       };
+-      video.addEventListener("loadedmetadata", restorePlayback, { once: true });
++      video.addEventListener("loadedmetadata", restorePlayback);
+       removeRestorePlayback = () => {
+         finished = true;
+         video.removeEventListener("loadedmetadata", restorePlayback);
+       };
+-      return restorePlayback;
+     };
+ 
+     const setSource = (source: string, shouldResume?: boolean) => {
+@@ -73,6 +76,9 @@ export function CiPlayer({
+ 
+     const reportFailure = () => {
+       rememberPlayback();
++      removeRestorePlayback();
++      // Retain this position while the parent fetches replacement signed URLs.
++      trackingSuspended = true;
+       onSourceFailure?.();
+     };
+ 
+@@ -117,6 +123,7 @@ export function CiPlayer({
+           fallbackStarted = true;
+           rememberPlayback();
+           const shouldResume = shouldResumeRef.current;
++          trackingSuspended = true;
+           hls?.destroy();
+           hls = null;
+           useMp4OrReport(shouldResume);
+@@ -130,8 +137,8 @@ export function CiPlayer({
+           if (!data.fatal) return;
+           fallbackFromHls();
+         });
+-        const restorePlayback = registerRestorePlayback();
+-        hls.on(HlsCtor.Events.MANIFEST_PARSED, restorePlayback);
++        // A parsed manifest does not imply that the media can seek yet.
++        registerRestorePlayback();
+         hls.loadSource(hlsUrl);
+         hls.attachMedia(video);
+       }).catch(() => {

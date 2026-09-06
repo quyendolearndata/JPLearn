@@ -1,5 +1,11 @@
 # Ma trận truy vết
 
+> Evidence cuối cho T-LRN-001 / T-SES-REC-001 F-03:
+> [media retry/HLS fix](../../qa/media-retry-fix-evidence-2026-09-06.md), working-tree
+> patch từ `564275e`, full E2E 44+44 PASS. Bao phủ retry sau chọn default và native
+> HLS WebKit restore paused/playing. Các SHA closeout bên dưới giữ lịch sử;
+> Design/device vẫn PARTIAL, không thêm FR/Test ID hoặc mở production gate.
+
 Test IDs là mã truy vết yêu cầu, không phải pytest node IDs. Backend tests hiện
 nằm trong `apps/api-python/tests/`; xem [development](../../backend/development.md)
 và [mapping theo revision](../../qa/clean-architecture-audit/test_mapping_and_reconciliation.md).

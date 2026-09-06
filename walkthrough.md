@@ -1,5 +1,11 @@
 # Báo Cáo Thực Thi: Web Frontend & Staff CMS (Mốc A & Mốc B)
 
+> **Cập nhật cuối:** đã sửa retry video bị khóa và HLS restore; native WebKit được
+> kiểm cả paused/playing. Bản patch từ `564275e` đạt **88/88 E2E**, **217/217 backend**,
+> **35/35 unit**, guard/build PASS. [Evidence và patch](docs/qa/media-retry-fix-evidence-2026-09-06.md).
+> Engineering PASS; **Design PARTIAL** (Safari/iPhone/iPad thật). Số liệu bên dưới
+> giữ lịch sử nghiệm thu trước đợt sửa; chưa triển khai production.
+
 > **Trạng thái: engineering PASS, Design PARTIAL.** Không COMPLETED toàn diện. [Recovery follow-up](docs/superpowers/plans/2026-09-06-web-frontend-recovery-followup.md) đóng C4 vì F-01–F-03 có evidence; C5 keyboard/manual: engineering tests PASS, Design PARTIAL (chưa rà focus/Safari device). Evidence mới: [recovery-followup-evidence-2026-09-06.md](docs/qa/recovery-followup-evidence-2026-09-06.md) — candidate `41a4009` (code), evidence `d1715d2`: pytest **217 passed**; Playwright **42+42** Chromium/WebKit; web unit **35**; guard **0 banned**; build **10 routes**. WebKit HLS = engine, không phải iPhone. Lịch sử `fd838d2` giữ nguyên: pytest **217 passed**; Playwright **21+21**; web unit **7**. Release gate không đổi (không production).
 
 ---

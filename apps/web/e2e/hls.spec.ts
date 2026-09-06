@@ -84,10 +84,18 @@ test("F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001", a
   await expect(page.getByText("Không thể phát nội dung này.")).toHaveCount(0);
 });
 
-test("F-03 đổi URL HLS cùng item khôi phục vị trí pause T-LRN-001", async ({ page }) => {
+async function expectHlsPositionRecovery(
+  page: import("@playwright/test").Page,
+  engine: "hls.js" | "native HLS",
+  playbackState: "paused" | "playing" = "paused",
+) {
   let catalogGets = 0;
-  await forceHlsJs(page);
+  if (engine === "hls.js") await forceHlsJs(page);
   await register(page);
+  if (engine === "native HLS") {
+    expect(await page.evaluate(() => document.createElement("video")
+      .canPlayType("application/vnd.apple.mpegurl"))).not.toBe("");
+  }
   await page.route(/\/catalog$/, async (route) => {
     if (route.request().method() === "OPTIONS") return route.continue();
     const response = await route.fetch();
@@ -95,6 +103,7 @@ test("F-03 đổi URL HLS cùng item khôi phục vị trí pause T-LRN-001", as
     catalogGets += 1;
     if (catalogGets === 2) {
       await page.locator("video").evaluate((element: HTMLVideoElement) => {
+        element.pause();
         element.currentTime = 0;
       });
       await page.waitForFunction(() => {
@@ -119,8 +128,17 @@ test("F-03 đổi URL HLS cùng item khôi phục vị trí pause T-LRN-001", as
   const video = page.locator("video");
   await page.waitForFunction(() => {
     const element = document.querySelector("video");
-    return element !== null && element.readyState >= 1;
+    // Metadata alone does not mean that the first HLS segment is available
+    // to seek; wait for playable media before exercising recovery.
+    return element !== null && element.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA;
   });
+  if (engine === "native HLS") {
+    expect(await video.evaluate((element: HTMLVideoElement) => element.currentSrc))
+      .toContain("/hls/index.m3u8");
+  } else {
+    expect(await video.evaluate((element: HTMLVideoElement) => element.currentSrc))
+      .toMatch(/^blob:/);
+  }
   await video.evaluate((element: HTMLVideoElement) => {
     element.pause();
     element.currentTime = 1;
@@ -133,17 +151,38 @@ test("F-03 đổi URL HLS cùng item khôi phục vị trí pause T-LRN-001", as
   const newManifest = page.waitForRequest(
     (request) => request.url().includes("/hls/index.m3u8") && request.url().includes("recovery=new"),
   );
-  await video.evaluate((element: HTMLVideoElement) => {
+  await video.evaluate(async (element: HTMLVideoElement, playbackState) => {
+    if (playbackState === "playing") {
+      element.muted = true;
+      await element.play();
+    }
     element.dispatchEvent(new Event("error"));
-  });
+  }, playbackState);
   await newManifest;
   await expect.poll(() => catalogGets).toBe(2);
   await page.waitForFunction(() => {
     const element = document.querySelector("video");
-    return element !== null && element.readyState >= 1 && element.currentTime >= 0.75;
+    return element !== null
+      && element.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA
+      && !element.seeking
+      && element.currentTime >= 0.75;
   });
-  expect(await video.evaluate((element: HTMLVideoElement) => element.paused)).toBe(true);
+  if (playbackState === "paused") {
+    expect(await video.evaluate((element: HTMLVideoElement) => element.currentTime)).toBeLessThan(1.25);
+  }
+  await expect.poll(() => video.evaluate((element: HTMLVideoElement) => element.paused))
+    .toBe(playbackState === "paused");
+}
+
+test("F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001", async ({ page }) => {
+  await expectHlsPositionRecovery(page, "hls.js");
 });
+
+for (const playbackState of ["paused", "playing"] as const) {
+  test(`F-03 đổi URL HLS theo engine khôi phục vị trí ${playbackState} T-LRN-001`, async ({ page, browserName }) => {
+    await expectHlsPositionRecovery(page, browserName === "webkit" ? "native HLS" : "hls.js", playbackState);
+  });
+}
 
 test("F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001", async ({ page }) => {
   let catalogGets = 0;

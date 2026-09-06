@@ -23,15 +23,16 @@ export function CiPlayer({
     const video = videoRef.current;
     if (!video) return;
 
-    if (Number.isFinite(video.currentTime) && video.currentTime > 0) {
-      lastPositionRef.current = video.currentTime;
-    }
     let disposed = false;
+    let trackingSuspended = true;
     let hls: Hls | null = null;
     let removeSourceError = () => {};
     let removeRestorePlayback = () => {};
 
     const rememberPlayback = () => {
+      // Loading another source can emit pause/timeupdate events for its reset
+      // position. Keep the snapshot from the source being recovered instead.
+      if (trackingSuspended) return;
       if (Number.isFinite(video.currentTime) && video.currentTime > 0) {
         lastPositionRef.current = video.currentTime;
       }
@@ -45,25 +46,27 @@ export function CiPlayer({
 
     const registerRestorePlayback = (shouldResume = shouldResumeRef.current) => {
       removeRestorePlayback();
+      const savedPosition = lastPositionRef.current;
+      trackingSuspended = true;
       let finished = false;
       const restorePlayback = () => {
-        if (disposed || finished) return;
-        finished = true;
-        const savedPosition = lastPositionRef.current;
+        if (disposed || finished || video.readyState < HTMLMediaElement.HAVE_METADATA) return;
         if (savedPosition > 0) {
           const maximum = Number.isFinite(video.duration)
             ? Math.max(0, video.duration - 0.05)
             : savedPosition;
           video.currentTime = Math.min(savedPosition, maximum);
         }
+        finished = true;
+        video.removeEventListener("loadedmetadata", restorePlayback);
+        trackingSuspended = false;
         if (shouldResume) void video.play().catch(() => {});
       };
-      video.addEventListener("loadedmetadata", restorePlayback, { once: true });
+      video.addEventListener("loadedmetadata", restorePlayback);
       removeRestorePlayback = () => {
         finished = true;
         video.removeEventListener("loadedmetadata", restorePlayback);
       };
-      return restorePlayback;
     };
 
     const setSource = (source: string, shouldResume?: boolean) => {
@@ -73,6 +76,9 @@ export function CiPlayer({
 
     const reportFailure = () => {
       rememberPlayback();
+      removeRestorePlayback();
+      // Retain this position while the parent fetches replacement signed URLs.
+      trackingSuspended = true;
       onSourceFailure?.();
     };
 
@@ -117,6 +123,7 @@ export function CiPlayer({
           fallbackStarted = true;
           rememberPlayback();
           const shouldResume = shouldResumeRef.current;
+          trackingSuspended = true;
           hls?.destroy();
           hls = null;
           useMp4OrReport(shouldResume);
@@ -130,8 +137,8 @@ export function CiPlayer({
           if (!data.fatal) return;
           fallbackFromHls();
         });
-        const restorePlayback = registerRestorePlayback();
-        hls.on(HlsCtor.Events.MANIFEST_PARSED, restorePlayback);
+        // A parsed manifest does not imply that the media can seek yet.
+        registerRestorePlayback();
         hls.loadSource(hlsUrl);
         hls.attachMedia(video);
       }).catch(() => {

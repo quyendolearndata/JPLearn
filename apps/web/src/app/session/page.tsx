@@ -83,7 +83,7 @@ function SessionContent() {
   const activeOperationRef = useRef<"recovery" | "start" | "end" | null>(null);
   const targetItemIdRef = useRef<string | null>(requestedItemId);
   const mediaRecoveryCycleRef = useRef(createMediaRecoveryCycle(requestedItemId));
-  const mediaManualRetryRef = useRef(false);
+  const mediaManualRetryRef = useRef<object | null>(null);
   const mountedRef = useRef(true);
 
   const applySessionId = useCallback((value: string | null) => {
@@ -889,7 +889,9 @@ function SessionContent() {
       || activeOperationRef.current !== null
     ) return;
 
-    mediaManualRetryRef.current = true;
+    // The request owns this lock even if selecting a default changes the media generation.
+    const retryTicket = {};
+    mediaManualRetryRef.current = retryTicket;
     mediaRecoveryCycleRef.current = restartMediaRecoveryManually(
       mediaRecoveryCycleRef.current,
     );
@@ -909,8 +911,8 @@ function SessionContent() {
           "manual",
         );
       } finally {
-        if (mediaRecoveryCycleRef.current.generation === generation) {
-          mediaManualRetryRef.current = false;
+        if (mediaManualRetryRef.current === retryTicket) {
+          mediaManualRetryRef.current = null;
         }
       }
     })();
@@ -1000,7 +1002,7 @@ function SessionContent() {
           <button
             type="button"
             onClick={retryMediaSource}
-            disabled={loading || activeOperation !== null || mediaManualRetryRef.current}
+            disabled={loading || activeOperation !== null || mediaManualRetryRef.current !== null}
           >
             Thử tải lại video
           </button>

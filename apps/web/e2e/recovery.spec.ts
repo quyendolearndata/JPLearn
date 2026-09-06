@@ -330,6 +330,8 @@ test.describe("Session recovery T-SES-REC-001", () => {
   test("F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001", async ({ page }) => {
     const { userId } = await register(page);
     await page.goto("/session");
+    // Finish the initial empty-storage bootstrap before installing the reload scenario.
+    await expect(page.getByRole("button", { name: "Bắt đầu phiên" })).toBeEnabled();
     const starting = {
       v: 1,
       state: "starting",
@@ -622,7 +624,15 @@ test.describe("Session recovery T-SES-REC-001", () => {
     await page.unroute(/\/sessions\/[^/]+(\/end)?$/);
     await page.reload();
     await expect(page.getByText(/đang chạy/)).toBeVisible();
-    await page.getByRole("button", { name: "Kết thúc phiên" }).click();
+    // Recovery renders the session before catalog/player setup has finished.
+    // Wait for the final active UI so layout changes cannot swallow the click.
+    await page.waitForFunction(() => (document.querySelector("video")?.readyState ?? 0) >= 1);
+    const end = page.getByRole("button", { name: "Kết thúc phiên" });
+    await expect(end).toBeEnabled();
+    const ended = page.waitForResponse((response) =>
+      response.request().method() === "POST" && /\/sessions\/[^/]+\/end$/.test(response.url()));
+    await end.click();
+    expect((await ended).ok()).toBeTruthy();
     await expect(page.getByText("Tổng kết phiên học")).toBeVisible();
   });
 
@@ -745,14 +755,25 @@ test.describe("Session recovery T-SES-REC-001", () => {
     expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
   });
 
-  test("F-03 manual retry can choose the default after initial catalog failure T-LRN-001", async ({ page }) => {
+  test("F-03 manual retry remains usable after choosing a default and another source failure T-LRN-001", async ({ page }) => {
     const { userId } = await register(page);
     let catalogGets = 0;
+    let sessionPosts = 0;
+    let chosenItems: Array<Record<string, unknown>> | undefined;
+    page.on("request", (request) => {
+      if (request.method() === "POST" && /\/sessions$/.test(request.url())) sessionPosts += 1;
+    });
     await page.route(/\/catalog$/, async (route) => {
       if (route.request().method() === "OPTIONS") return route.continue();
       catalogGets += 1;
       if (catalogGets === 1) return route.abort("failed");
-      await route.continue();
+      const response = await route.fetch();
+      const body = await response.json() as { items: Array<Record<string, unknown>> };
+      body.items = body.items.map((item) => ({ ...item, hls_url: null }));
+      if (catalogGets === 2) chosenItems = body.items;
+      // Keep the failed URL unchanged on the automatic retry, regardless of signed-URL TTL.
+      if (catalogGets === 3) body.items = chosenItems!;
+      await route.fulfill({ response, json: body });
     });
 
     await page.goto("/session");
@@ -764,6 +785,20 @@ test.describe("Session recovery T-SES-REC-001", () => {
     await expect.poll(() => catalogGets).toBe(2);
     await expect(page.locator("video")).toBeVisible();
     expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
+    await page.waitForFunction(() => (document.querySelector("video")?.readyState ?? 0) >= 1);
+    const before = await readRecord(page, userId);
+
+    // Choosing a default changes the media generation. It must release this retry's lock.
+    await page.locator("video").evaluate((video) => video.dispatchEvent(new Event("error")));
+    await expect(page.getByText("Không thể phát nội dung này.", { exact: true })).toBeVisible();
+    expect(catalogGets).toBe(3);
+    const retry = page.getByRole("button", { name: "Thử tải lại video" });
+    await expect(retry).toBeEnabled();
+    await retry.click();
+    await expect.poll(() => catalogGets).toBe(4);
+    await page.waitForFunction(() => (document.querySelector("video")?.readyState ?? 0) >= 1);
+    expect(await readRecord(page, userId)).toEqual(before);
+    expect(sessionPosts).toBe(1);
   });
 
   test("F-03 dual-source faults use one auto refetch and manual retry starts a new cycle T-LRN-001", async ({ page }) => {

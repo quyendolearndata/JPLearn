@@ -1,5 +1,9 @@
 # Kế hoạch khắc phục Web Frontend & Staff CMS
 
+> C4 đã được kiểm tra lại sau sửa retry/HLS trên patch từ `564275e`:
+> [evidence cuối](../../qa/media-retry-fix-evidence-2026-09-06.md), E2E 44+44 PASS.
+> C4 engineering CLOSED; Design PARTIAL. Closeout SHA bên dưới giữ lịch sử.
+
 Ngày: 2026-09-06. Trạng thái: **C4 CLOSED** — F-01–F-03 engineering PASS tại `41a4009` / evidence `d1715d2` ([recovery follow-up](2026-09-06-web-frontend-recovery-followup.md), [evidence](../../qa/recovery-followup-evidence-2026-09-06.md)). C5 keyboard/manual: **engineering PASS**, **Design PARTIAL**. Không COMPLETED toàn bộ (còn Design focus/Safari). Lịch sử `fd838d2` (217 / 21+21 / 7) giữ nguyên; không mở lại R-01, R-02 hoặc R-04. Release gate không đổi (không production).
 Kế thừa: [kế hoạch Mốc A/B](2026-09-06-web-frontend-implementation.md).
 Baseline recovery đang review: `c2329a5`. `8bd0b44` được giữ lại như baseline

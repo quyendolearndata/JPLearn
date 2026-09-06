@@ -1,5 +1,12 @@
 # Kế hoạch sửa các lỗi còn lại của Web Frontend
 
+> Cập nhật cuối 2026-09-06: lỗi retry lock và HLS restore đã sửa trên working tree
+> từ `564275e`; [evidence mới](../../qa/media-retry-fix-evidence-2026-09-06.md)
+> xác định patch/checksum: E2E **44+44**, media repeat **42/42**, recovery repeat
+> **12/12**, backend **217/217**, web unit **35/35**, guard/build PASS.
+> F-03/C4 engineering đóng lại; **Design PARTIAL** giữ nguyên. Các SHA/số test bên
+> dưới là lịch sử closeout trước đợt sửa này, không phải candidate mới.
+
 Ngày: 2026-09-06. Trạng thái: **engineering PASS**, **Design PARTIAL** — không COMPLETED toàn bộ.
 Còn chờ Design rà focus thủ công và thiết bị Safari/iPhone/iPad thật.
 Candidate engineering: `41a4009` (code); evidence: `d1715d2`

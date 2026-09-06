@@ -1,0 +1,81 @@
+== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260906232449_26642] ==
+== 2/5 FastAPI :54960 ==
+== 3/5 seed nội dung published + HLS thật ==
+   published item 00000000-0000-4000-8000-0000000000c1, asset be0f2c8d-b86e-4100-b5db-100025fbba36 (+hls)
+== 3b/5 teacher E2E account (isolated DB only) ==
+granted teacher to teacher@e2e.local
+== 4/5 web :54961 → API :54960 [workspace=/tmp/jplearn-e2e-20260906232449_26642/web] ==
+== 5/5 playwright --project=chromium --project=webkit --grep HLS|manual retry remains usable --repeat-each=3 ==
+
+Running 42 tests using 6 workers
+
+(node:10919) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10918) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10922) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10923) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10920) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10921) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.8s)
+  ✓   4 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.9s)
+  ✓   5 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.9s)
+  ✓   3 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:748:7 › Session recovery T-SES-REC-001 › F-03 manual retry remains usable after choosing a default and another source failure T-LRN-001 (2.9s)
+  ✓   2 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:748:7 › Session recovery T-SES-REC-001 › F-03 manual retry remains usable after choosing a default and another source failure T-LRN-001 (2.9s)
+  ✓   6 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:748:7 › Session recovery T-SES-REC-001 › F-03 manual retry remains usable after choosing a default and another source failure T-LRN-001 (3.1s)
+(node:10956) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10957) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10959) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   7 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (2.1s)
+  ✓   9 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (2.1s)
+  ✓   8 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (2.2s)
+  ✓  12 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (2.1s)
+  ✓  10 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (2.2s)
+  ✓  13 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:177:5 › F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001 (1.9s)
+  ✓  14 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:177:5 › F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001 (2.1s)
+  ✓  15 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:177:5 › F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001 (2.0s)
+  ✓  11 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:748:7 › Session recovery T-SES-REC-001 › F-03 manual retry remains usable after choosing a default and another source failure T-LRN-001 (3.6s)
+(node:11032) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  18 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí paused T-LRN-001 (1.6s)
+  ✓  20 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí paused T-LRN-001 (1.7s)
+  ✓  16 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (2.3s)
+  ✓  19 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí paused T-LRN-001 (1.9s)
+  ✓  17 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (2.3s)
+  ✓  21 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí playing T-LRN-001 (1.8s)
+  ✓  23 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí playing T-LRN-001 (1.9s)
+  ✓  25 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí playing T-LRN-001 (1.9s)
+  ✓  24 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:177:5 › F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001 (2.0s)
+  ✓  26 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:177:5 › F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001 (2.0s)
+  ✓  22 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:748:7 › Session recovery T-SES-REC-001 › F-03 manual retry remains usable after choosing a default and another source failure T-LRN-001 (3.0s)
+  ✓  27 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:187:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (1.5s)
+(node:11062) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  28 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:187:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (1.6s)
+(node:11064) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  29 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:187:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (1.7s)
+  ✓  31 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí paused T-LRN-001 (1.9s)
+  ✓  30 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí paused T-LRN-001 (2.0s)
+  ✓  32 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.5s)
+  ✓  34 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí playing T-LRN-001 (1.6s)
+  ✓  35 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí playing T-LRN-001 (1.7s)
+  ✓  33 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:748:7 › Session recovery T-SES-REC-001 › F-03 manual retry remains usable after choosing a default and another source failure T-LRN-001 (2.8s)
+  ✓  36 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (2.2s)
+  ✓  37 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:187:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (1.7s)
+  ✓  38 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:187:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (1.7s)
+  ✓  39 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:177:5 › F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001 (1.6s)
+  ✓  40 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí paused T-LRN-001 (1.5s)
+  ✓  41 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí playing T-LRN-001 (1.6s)
+  ✓  42 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:187:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (1.6s)
+
+  42 passed (22.0s)
+== Cleaning up E2E resources [run=20260906232449_26642] ==
+== E2E run finished (exit 0). Evidence preserved at: /tmp/jplearn-e2e-20260906232449_26642 ==
