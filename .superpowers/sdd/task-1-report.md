@@ -127,3 +127,34 @@ Tests:       2 passed, 2 total
 1. **`pnpm` not on PATH** — used `npx pnpm@9.15.0` for install/test; CI/local dev should ensure pnpm 9.15.0 via `corepack` or global install.
 2. **Brief omitted Jest/tsconfig details** — `jest.config.cjs`, domain `devDependencies`, and root `tsx` devDependency were inferred as necessary; not explicitly in brief but required for `pnpm --filter @jplearn/domain test` to work.
 3. **`pnpm-lock.yaml`** included in commit (not in brief's `git add` list) for reproducible installs.
+
+## Task 1 review follow-up
+
+### What you fixed
+
+- Gắn `T-SES-REC-001` vào các hàng FR-SES-001/002/003 và scenario F-01/F-02
+  trong traceability, giữ nguyên các Test ID hiện có.
+- Đổi wording baseline recovery hiện hành của remediation plan sang `c2329a5`;
+  giữ `8bd0b44` như baseline closeout lịch sử.
+
+### Covering checks
+
+Command:
+
+```bash
+set -e
+printf '%s\n' '--- traceability coverage ---'
+rg -n 'FR-SES-00[123].*T-SES-REC-001|scenario F-0[12].*T-SES-REC-001|T-SES-REC-001.*scenario F-0[12]' docs/sad/03-design/traceability.md
+printf '%s\n' '--- recovery baseline ---'
+rg -n 'Baseline recovery đang review: `c2329a5`|8bd0b44.*baseline closeout' docs/superpowers/plans/2026-09-06-web-frontend-remediation.md
+printf '%s\n' '--- diff check ---'
+git diff --check
+```
+
+Output: FR-SES-001/002/003 đều có `T-SES-REC-001`; scenario F-01/F-02 được
+ghi tương ứng; baseline `c2329a5` và lịch sử `8bd0b44` đều hiện diện; `git diff
+--check` PASS.
+
+### Commit SHA
+
+`cda7c93` — `docs(ba): align recovery traceability baseline (FR-SES-001, FR-SES-002, FR-SES-003, T-SES-REC-001)`
