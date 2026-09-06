@@ -2,7 +2,7 @@
 
 - **Date:** 2026-09-06
 - **Plan Reference:** [2026-09-06-web-frontend-remediation.md](../superpowers/plans/2026-09-06-web-frontend-remediation.md)
-- **Status:** **VERIFIED & CLOSED at fd838d2** — số liệu §2 là baseline Task 1; nghiệm thu đóng ở §4.
+- **Status:** **IN PROGRESS** — C4/C5 chưa đóng theo [recovery follow-up](../superpowers/plans/2026-09-06-web-frontend-recovery-followup.md). Số liệu §2 và closeout §4 là bằng chứng lịch sử tại `fd838d2`, không chứng minh F-01–F-04.
 - **Review Seats:** BA (`jplearn-ba`), Platform (`jplearn-platform`), Web (`jplearn-web`), QA (`jplearn-qa`)
 
 ---
@@ -86,7 +86,11 @@
 - **QA Seat (`jplearn-qa`):**
   - PASS theo bảng §4 tại `fd838d2`. Design rà focus thủ công ngoài Playwright: PARTIAL, owner Design.
 
-## 4. Closeout Evidence (C6)
+## 4. Historical Closeout Evidence (C6, fd838d2)
+
+Phần này giữ nguyên evidence đã chạy tại `fd838d2`; không được dùng để kết luận
+C4 recovery đã đóng lại. F-01–F-03 cần evidence mới theo recovery follow-up, còn
+C5 keyboard/manual vẫn **PARTIAL**.
 
 - **Candidate SHA:** `fd838d268de9dfba79df3484ddaae1ca8ab30ec9`
 - **Dirty state before/after:** 0 / 0 (`dirty-before.txt`, `dirty-after.txt`)

@@ -1,6 +1,6 @@
 # Kế hoạch triển khai frontend web JPLearn
 
-Ngày: 2026-09-06. Trạng thái: **COMPLETED** tại `fd838d2` (Mốc A + Mốc B, phạm vi local/test). Evidence: [remediation-evidence-2026-09-06.md](../../qa/remediation-evidence-2026-09-06.md) §4. Mục còn mở được đánh dấu inline: 4 mục *PARTIAL (Design)* — artifact luồng/visual review, 1 mục *HOLD* reviewer theo gates.md, 1 mục *HOLD (CTO/Ops)* staging/R-09.
+Ngày: 2026-09-06. Trạng thái: **Mốc A recovery IN PROGRESS** theo [recovery follow-up](2026-09-06-web-frontend-recovery-followup.md); Mốc B giữ kết quả hồi quy lịch sử tại `fd838d2`, không dựng lại workflow. Evidence lịch sử: [remediation-evidence-2026-09-06.md](../../qa/remediation-evidence-2026-09-06.md) §4. Mục còn mở được đánh dấu inline: 4 mục *PARTIAL (Design)* — artifact luồng/visual review, 1 mục *HOLD* reviewer theo gates.md, 1 mục *HOLD (CTO/Ops)* staging/R-09.
 Baseline khảo sát: `00576eb`; backend FastAPI/Alembic, frontend Next.js hiện có.
 Chủ trì: Web. BA phụ trách phạm vi/UC; Platform phụ trách hợp đồng API;
 Design phụ trách giao diện; QA kiểm chứng; CTO/Ops phụ trách phát hành.
@@ -114,7 +114,7 @@ NFR-A11Y-001, NFR-XPLAT-002.
 **Exit:** landing và các màn nền tảng chạy trên API thật, route mới được kiểm thử;
 các layout đã có ảnh kiểm tra thực tế. W3 hoàn thiện hành vi chọn clip và khôi phục phiên.
 
-## 6. W3 — Vòng học và khôi phục phiên (hoàn tất Mốc A)
+## 6. W3 — Vòng học và khôi phục phiên (Mốc A recovery chưa đóng)
 
 **Owner:** Web + Platform; BA/Pedagogy review ngữ nghĩa; QA kiểm chứng.
 **FR:** FR-LRN-001/UC-L10 sau W0, FR-SES-001…003, FR-PRG-001/004, FR-CMS-003/004, NFR-PERF-002.
@@ -145,7 +145,7 @@ các layout đã có ảnh kiểm tra thực tế. W3 hoàn thiện hành vi ch�
 reload/điều hướng không mất tham chiếu; response loss có kiểm tra trạng thái chắc chắn;
 không sinh thêm phiên khi retry cùng start key. API additions có contract tests và tương thích client cũ.
 
-## 7. W4 — CMS vận hành (hoàn tất Mốc B)
+## 7. W4 — CMS vận hành (giữ kết quả hồi quy Mốc B)
 
 **Owner:** Platform + Web; BA chốt workflow; QA kiểm quyền và trạng thái.
 **FR:** FR-CAT-001/005, FR-CMS-001…004, NFR-SEC-002, NFR-PERF-001.
@@ -180,6 +180,9 @@ không sinh thêm phiên khi retry cùng start key. API additions có contract t
 
 **Exit Mốc B:** teacher tạo/upload/submit, logout; admin login, tìm đúng item, kiểm tra và publish;
 learner thấy nội dung; unpublish loại nội dung khỏi catalog. Reload từng bước vẫn tiếp tục được.
+
+> Mốc B giữ kết quả hồi quy tại `fd838d2`; recovery follow-up không dựng lại
+> workflow CMS.
 
 ## 8. W5 — Kiểm chứng và bàn giao, áp dụng cho từng mốc
 

@@ -1,6 +1,6 @@
 # Báo Cáo Thực Thi: Web Frontend & Staff CMS (Mốc A & Mốc B)
 
-> **Trạng thái: COMPLETED tại `fd838d2`.** Evidence: [docs/qa/remediation-evidence-2026-09-06.md](docs/qa/remediation-evidence-2026-09-06.md) §4. Pytest **217 passed**; Playwright **21+21** (Chromium + WebKit engines, không phải iPhone/iPad); web unit **7 passed**. Design rà focus thủ công ngoài Playwright: PARTIAL.
+> **Trạng thái: REMEDIATION IN PROGRESS.** [Kế hoạch recovery follow-up](docs/superpowers/plans/2026-09-06-web-frontend-recovery-followup.md) mở lại C4 vì F-01–F-03 chưa đủ bằng chứng; C5 keyboard/manual vẫn PARTIAL. Số liệu lịch sử tại `fd838d2` được giữ nguyên: pytest **217 passed**; Playwright **21+21** (Chromium + WebKit engines, không phải iPhone/iPad); web unit **7 passed**. Đây là baseline hồi quy, không chứng minh F-01–F-04.
 
 ---
 
@@ -16,6 +16,10 @@
   - Khôi phục phiên học gián đoạn qua `sessionStorage` tách theo user và tab (`jplearn.session:<userId>`), state machine `starting → active → ending → outcome_unknown`, xác thực trạng thái máy chủ qua `GET /sessions/{id}`.
   - Đồng hồ đếm thời gian thực khi học, nút Bắt đầu / Kết thúc rõ ràng, và bảng tổng kết tiến độ ngay sau phiên.
 - **Tiến Độ Học Tập ([apps/web/src/app/progress/page.tsx](file:///Users/quyendo/Documents/Learn/JPLearn/apps/web/src/app/progress/page.tsx)):** Hiển thị số phút CI tích luỹ và cấp độ hiện tại, tự động đồng bộ khi quay lại trang.
+
+Các số liệu trên là lịch sử kiểm thử tại `fd838d2`; recovery follow-up dùng
+baseline review `c2329a5` để xử lý các scenario F-01–F-04, không coi các số liệu
+đó là bằng chứng đã đạt các scenario còn thiếu.
 
 ### Mốc B — Staff CMS (Cổng Quản Trị & Biên Tập Nội Dung)
 - **Danh Sách Nội Dung Staff ([apps/web/src/app/staff/page.tsx](file:///Users/quyendo/Documents/Learn/JPLearn/apps/web/src/app/staff/page.tsx)):** Cổng biên tập dành cho vai trò `teacher` / `admin`, lọc theo trạng thái (`draft`, `level_qa`, `published`, `archived`) và cấp độ CI, bảng chi tiết hiển thị revision và thời lượng.

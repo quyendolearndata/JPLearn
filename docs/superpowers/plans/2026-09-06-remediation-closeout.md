@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Đóng thật kế hoạch [2026-09-06-web-frontend-remediation.md](2026-09-06-web-frontend-remediation.md): bù các acceptance test còn thiếu (C2/C3/C4/C5), sửa một vi phạm thiết kế ở web session storage, đưa tài liệu trạng thái về đúng sự thật (C0), và tạo evidence có SHA/log (C6).
+**Goal (historical closeout):** Đóng thật kế hoạch [2026-09-06-web-frontend-remediation.md](2026-09-06-web-frontend-remediation.md): bù các acceptance test còn thiếu (C2/C3/C4/C5), sửa một vi phạm thiết kế ở web session storage, đưa tài liệu trạng thái về đúng sự thật (C0), và tạo evidence có SHA/log (C6). Kết quả tại `fd838d2` không còn đủ để đóng C4 recovery; follow-up hiện hành đã mở lại C4 vì F-01–F-03.
 
 **Architecture:** Backend giữ FastAPI + SQLAlchemy async + Alembic + PostgreSQL; race tests dùng `asyncio.Barrier` + `httpx.AsyncClient(ASGITransport)` + `asyncpg` để kiểm row trực tiếp (pattern đã có ở `tests/test_sessions_concurrency.py`). Web tách hai module thuần (`lib/session-storage.ts`, `lib/safe-redirect.ts`) để unit-test bằng `node --test`, và thêm `e2e/recovery.spec.ts` dùng `page.route()` với kỹ thuật **fetch-rồi-abort** để mô phỏng "server đã commit nhưng client mất response".
 

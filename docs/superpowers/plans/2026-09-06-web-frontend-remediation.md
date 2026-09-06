@@ -1,6 +1,6 @@
 # Kế hoạch khắc phục Web Frontend & Staff CMS
 
-Ngày: 2026-09-06. Trạng thái: **COMPLETED** tại `fd838d2` — evidence: [docs/qa/remediation-evidence-2026-09-06.md](../../qa/remediation-evidence-2026-09-06.md) §4. Design rà focus thủ công ngoài Playwright: **PARTIAL** (owner Design).
+Ngày: 2026-09-06. Trạng thái: **REMEDIATION IN PROGRESS** — C4 được mở lại theo [kế hoạch recovery follow-up](2026-09-06-web-frontend-recovery-followup.md), vì F-01–F-03 chưa đủ bằng chứng; C5 keyboard/manual vẫn **PARTIAL**. Các kết quả lịch sử tại `fd838d2` được giữ nguyên, không mở lại R-01, R-02 hoặc R-04.
 Kế thừa: [kế hoạch Mốc A/B](2026-09-06-web-frontend-implementation.md).
 Baseline code đang review: `8bd0b44` (Task 1 closeout commits on `codex/fastapi-backend-hardening`).
 
@@ -149,9 +149,14 @@ kiểm chứng được và response phản ánh đúng kết quả database.
 **Exit:** retry đồng thời không trả 500 và không tạo/emit trùng; evidence kiểm trực tiếp
 row/event, không chỉ so response ID.
 
-## 7. C4 — Web session recovery theo user và tab
+## 7. C4 — Web session recovery theo user và tab (**REOPENED**)
 
 **Owner:** Web; Platform hỗ trợ contract; QA E2E. **Màn:** S-SESSION. **Đóng:** R-03.
+
+> Các checkbox và test dưới đây ghi nhận lịch sử remediation tại `fd838d2`, không
+> phải bằng chứng đóng lại các acceptance F-01–F-03. C4 chỉ được đóng sau khi
+> follow-up xác nhận không ghi đè session chưa xác nhận, mọi ended path tải
+> progress, và media recovery giữ đúng item.
 
 ### State và storage
 
@@ -182,8 +187,10 @@ row/event, không chỉ so response ID.
 - [x] Hai tab cùng user không ghi đè record; đổi user không nhận phiên của user trước.
 - [x] URL media hết hạn/item unpublish: refetch catalog có giới hạn; không dùng lại signed URL đã lưu.
 
-**Exit Mốc A về recovery:** mọi trạng thái mất response/reload có đường xử lý xác định;
-không tạo session mới vì mất key và không báo thành công khi server chưa được xác nhận.
+**Exit Mốc A về recovery (lịch sử `fd838d2`, hiện chưa đạt lại):** mọi trạng thái mất
+response/reload có đường xử lý xác định; không tạo session mới vì mất key và không báo
+thành công khi server chưa được xác nhận. F-01/F-02/F-03 của follow-up phải có
+evidence mới trước khi đóng C4.
 
 ## 8. C5 — Hoàn thiện CMS/UI và phạm vi kiểm thử
 
