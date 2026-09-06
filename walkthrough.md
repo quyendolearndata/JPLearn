@@ -1,6 +1,6 @@
 # Báo Cáo Thực Thi: Web Frontend & Staff CMS (Mốc A & Mốc B)
 
-> **Trạng thái: REMEDIATION IN PROGRESS.** Kế hoạch [Mốc A/B](docs/superpowers/plans/2026-09-06-web-frontend-implementation.md) đã có code đầy đủ; kế hoạch [remediation](docs/superpowers/plans/2026-09-06-web-frontend-remediation.md) đang đóng theo [closeout plan](docs/superpowers/plans/2026-09-06-remediation-closeout.md). Số test dưới đây là **baseline hồi quy** tại commit Task 1, không phải nghiệm thu cuối.
+> **Trạng thái: COMPLETED tại `fd838d2`.** Evidence: [docs/qa/remediation-evidence-2026-09-06.md](docs/qa/remediation-evidence-2026-09-06.md) §4. Pytest **217 passed**; Playwright **21+21** (Chromium + WebKit engines, không phải iPhone/iPad); web unit **7 passed**. Design rà focus thủ công ngoài Playwright: PARTIAL.
 
 ---
 
@@ -61,31 +61,33 @@ pnpm --filter @jplearn/web build
 ```bash
 cd apps/api-python && uv run pytest
 ```
-- **Kết quả:** `212 passed` trong 30.39s (baseline Task 1).
+- **Kết quả:** `217 passed` trong 30.49s tại `fd838d2` (baseline Task 1 là 212).
   - `tests/test_openapi_diff.py`: 7/7 PASSED (0 sai lệch giữa contract OpenAPI và FastAPI router).
   - `tests/test_schema_ddl.py`: 8/8 PASSED (0 sai lệch cấu trúc bảng DDL so với baseline ADR-004).
   - `tests/test_sessions.py`: 11/11 PASSED (kiểm thử chống lặp Idempotency-Key và endpoint khôi phục).
   - `tests/test_catalog.py`: 7/7 PASSED (kiểm thử optimistic locking revision và CRUD staff).
-  - `tests/test_catalog_concurrency.py`: 2/2 PASSED (CAS PATCH đồng thời và race PATCH × submit-QA).
-  - `tests/test_sessions_concurrency.py`: 2/2 PASSED (idempotency replay đồng thời và payload 409).
+  - `tests/test_catalog_concurrency.py`: 4/4 PASSED (CAS PATCH đồng thời, PATCH × submit-QA, PATCH × publish, PATCH × unpublish).
+  - `tests/test_sessions_concurrency.py`: 5/5 PASSED (idempotency replay, payload 409, cross-user, fault rollback, key max 128).
 
 ### D. Kiểm Thử E2E Playwright Trên Trình Duyệt Thật (Chromium)
 ```bash
 ./apps/api-python/differential/web-e2e-python.sh --project=chromium
 ```
-- **Kết quả:** `8 passed (2.2m)` (baseline Chromium Task 1)
+- **Kết quả:** `21 passed (2.3m)` tại `fd838d2`.
   - `hls.spec.ts`: Phát luồng HLS thật `.m3u8` qua `CiPlayer` thành công.
   - `shell.spec.ts (login & progress)`: Chrome không chứa text kênh tắt (`Ngữ pháp`, `Flashcard`, `Bản dịch`).
   - `shell.spec.ts (catalog)`: Hiển thị đúng nội dung đã xuất bản, ẩn bản thảo.
-  - `a11y.spec.ts`: axe không phát hiện vi phạm tự động (contrast, document-title, ARIA) trên 5 route learner và 2 route staff ở trạng thái mặc định. Không phải audit WCAG 2.2 AA toàn diện.
-  - `staff.spec.ts`: vòng đời CMS admin (403 learner, draft → upload MP4 → QA → publish → unpublish) và chặn tệp không phải `.mp4`.
+  - `a11y.spec.ts` (4): axe không phát hiện vi phạm tự động trên 8 route + login error / session active / summary / staff detail; keyboard Chromium full walk. Không phải audit WCAG 2.2 AA toàn diện.
+  - `staff.spec.ts` (5): teacher→admin handoff, reload, publish thiếu media, upload fail, stale 409, mp4 AND mime.
+  - `recovery.spec.ts` (6): mất response start/end, offline, multi-tab, đổi user, không lưu signed URL.
+  - `auth.spec.ts` (2): open-redirect an toàn; 400 hiện trong `p.status-error`.
   - `sync.spec.ts`: Chạy phiên học kéo dài thật >60s giữa 2 ngữ cảnh trình duyệt riêng biệt, đồng bộ chính xác từng phút tích luỹ.
 
 ### E. Kiểm Thử E2E Playwright Trên WebKit (Safari Engine)
 ```bash
 ./apps/api-python/differential/web-e2e-python.sh --project=webkit
 ```
-- **Kết quả:** `8 passed (2.3m)` trên WebKit engine (không phải thiết bị iPhone/iPad thật).
+- **Kết quả:** `21 passed (2.3m)` trên WebKit engine (không phải thiết bị iPhone/iPad thật).
 
 ---
 

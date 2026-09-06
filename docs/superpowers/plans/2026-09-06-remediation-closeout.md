@@ -1450,7 +1450,7 @@ git commit -m "test(web): teacher→admin CMS handoff with reload/fail/conflict 
 **Files:**
 - Modify: `apps/web/e2e/a11y.spec.ts`
 
-- [ ] **Step 1: Thêm state và route detail**
+- [x] **Step 1: Thêm state và route detail**
 
 Append vào `a11y.spec.ts`:
 
@@ -1514,12 +1514,12 @@ test("keyboard: login form tab order and Enter-to-submit; player controls reacha
 
 Nếu `<video>` trong `CiPlayer` không có `controls`, đó là lỗi NFR-A11Y-001 thật: thêm `controls` vào `apps/web/src/components/ci-player.tsx`, không bỏ assertion.
 
-- [ ] **Step 2: Chạy**
+- [x] **Step 2: Chạy**
 
 Run: `./apps/api-python/differential/web-e2e-python.sh --project=chromium e2e/a11y.spec.ts` → Expected: `4 passed`.
 Run: `./apps/api-python/differential/web-e2e-python.sh --project=webkit e2e/a11y.spec.ts` → Expected: `4 passed`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/web/e2e/a11y.spec.ts apps/web/src/components/ci-player.tsx
@@ -1535,7 +1535,7 @@ git commit -m "test(web): axe on error/active/summary/staff-detail states + keyb
 **Files:**
 - Modify: `apps/api-python/differential/web-e2e-python.sh:84` (trước bước 1/5)
 
-- [ ] **Step 1: Thêm guard container sót**
+- [x] **Step 1: Thêm guard container sót**
 
 Ngay trước `echo "== 1/5 docker db-test …"` thêm:
 
@@ -1556,14 +1556,14 @@ if [[ -n "$STALE" ]]; then
 fi
 ```
 
-- [ ] **Step 2: Dọn container sót hiện có và xác nhận guard**
+- [x] **Step 2: Dọn container sót hiện có và xác nhận guard**
 
 Run: `docker ps --filter name=jplearn-web-e2e- --format '{{.Names}}'`
 Expected hiện tại: `jplearn-web-e2e-20260906115846_30869-db-test-1`.
 Run: `JPLEARN_E2E_PRUNE_STALE=true ./apps/api-python/differential/web-e2e-python.sh --project=chromium e2e/hls.spec.ts`
 Expected: log "stale E2E containers detected", rồi `1 passed`; sau đó `docker ps --filter name=jplearn-web-e2e- -q | wc -l` → `0`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api-python/differential/web-e2e-python.sh
@@ -1583,7 +1583,7 @@ git commit -m "chore(e2e): fail closed on stale E2E containers, opt-in prune (C6
 - Modify: `walkthrough.md` (trạng thái + số test)
 - Modify: `docs/sad/03-design/traceability.md` (bỏ hậu tố "chưa có test")
 
-- [ ] **Step 1: Tree sạch + ghi SHA**
+- [x] **Step 1: Tree sạch + ghi SHA**
 
 ```bash
 git status --short | wc -l           # Expected: 0
@@ -1592,7 +1592,7 @@ echo "$SHA" > $EV/sha.txt; git status --short > $EV/dirty-before.txt
 docker ps --filter name=jplearn -q | wc -l > $EV/containers-before.txt   # Expected: 0 (dev DB jplearn-db-1 is Exited, not counted)
 ```
 
-- [ ] **Step 2: Chạy toàn bộ, lưu log + exit code**
+- [x] **Step 2: Chạy toàn bộ, lưu log + exit code**
 
 ```bash
 (pnpm test:guard; echo "exit=$?") > $EV/guard.log 2>&1
@@ -1605,7 +1605,7 @@ grep -h "exit=" $EV/*.log
 ```
 Expected: mọi dòng `exit=0`. Đếm: `tail -3 $EV/pytest.log` → `217 passed` (212 + 2 Task 3 + 3 Task 4); `grep -c "✓" $EV/e2e-chromium.log` → `21` (8 cũ − 2 staff cũ + 5 staff mới + 6 recovery + 2 auth + 2 a11y); webkit cùng số.
 
-- [ ] **Step 3: Kiểm sót và DB dev**
+- [x] **Step 3: Kiểm sót và DB dev**
 
 ```bash
 docker ps --filter name=jplearn-web-e2e- -q | wc -l > $EV/containers-after.txt   # Expected: 0
@@ -1614,7 +1614,7 @@ git status --short > $EV/dirty-after.txt                                        
 cp -r $EV docs/qa/evidence/remediation-closeout-$TS
 ```
 
-- [ ] **Step 4: Viết §4 vào evidence doc**
+- [x] **Step 4: Viết §4 vào evidence doc**
 
 Append vào `docs/qa/remediation-evidence-2026-09-06.md`:
 
@@ -1659,7 +1659,7 @@ Containers/processes sau run: 0 / 0. DB dev không được chạm (mọi test d
 
 Điền giá trị thật từ log; không để `<…>` sót lại.
 
-- [ ] **Step 5: Đổi trạng thái tài liệu**
+- [x] **Step 5: Đổi trạng thái tài liệu**
 
 - `2026-09-06-web-frontend-remediation.md:3` → `Trạng thái: **COMPLETED** tại <SHA> — evidence: docs/qa/remediation-evidence-2026-09-06.md §4.` và tick mọi checkbox đã có bằng chứng (sau Task 3–9 là toàn bộ, trừ mục "Design: rà focus… thủ công" nếu chưa ai rà — ghi `PARTIAL` với owner Design).
 - `2026-09-06-web-frontend-implementation.md`: Mốc A/B → `COMPLETED` cùng SHA.
@@ -1667,7 +1667,7 @@ Containers/processes sau run: 0 / 0. DB dev không được chạm (mọi test d
 - `docs/qa/remediation-evidence-2026-09-06.md` Status → `VERIFIED & CLOSED at <SHA>`; xoá các hậu tố "(chưa có test — Task N)".
 - `traceability.md`: thêm `T-CMS-E2E-001`, `T-SES-REC-001`, `T-AUTH-*` đã có từ Task 2; không đổi FR id.
 
-- [ ] **Step 6: Commit cuối**
+- [x] **Step 6: Commit cuối**
 
 ```bash
 git add docs walkthrough.md

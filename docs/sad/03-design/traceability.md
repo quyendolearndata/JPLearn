@@ -45,7 +45,7 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | NFR-SEC-001 | — | HTTPS, hash | T-NFR-S1 |
 | NFR-SEC-002 | UC-T01 | 403 learner staff | T-NFR-S2 |
 | NFR-PRIV-001 | — | PII tối thiểu | T-NFR-PR1 |
-| NFR-A11Y-001 | S-LOGIN, S-SESSION | keyboard pause (P5 play) / chrome AA | T-NFR-A1 axe scan 4 routes |
+| NFR-A11Y-001 | S-LOGIN, S-SESSION | keyboard pause (P5 play) / chrome AA | T-NFR-A1 axe 8 routes + error/active/summary/staff-detail; keyboard form/player |
 | NFR-OBS-001 | — | request id + alert webhook 5xx (stub, `ALERT_WEBHOOK_URL`) | T-NFR-O1 echo `x-request-id`; T-NFR-O2 alert 5xx env bật/tắt, 4xx im |
 | FR-LRN-001 | UC-L10 | web `<video>` / CiPlayer trong phiên, HLS/MP4, signed URL | T-LRN-001 player clip, T-NFR-A1 keyboard controls, T-SES-REC-001 session recovery |
 | FR-LRN-002…004 | UC-L11–12 | chưa | T-P5-hold |

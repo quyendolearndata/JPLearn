@@ -1,0 +1,38 @@
+
+> @jplearn/web@ build /Users/quyendo/Documents/Learn/JPLearn/apps/web
+> next build
+
+   ▲ Next.js 15.5.23
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 1244ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/10) ...
+   Generating static pages (2/10) 
+   Generating static pages (4/10) 
+   Generating static pages (7/10) 
+ ✓ Generating static pages (10/10)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                    2.35 kB         108 kB
+├ ○ /_not-found                            997 B         103 kB
+├ ○ /catalog                             3.56 kB         109 kB
+├ ○ /login                               3.27 kB         106 kB
+├ ○ /progress                            3.21 kB         109 kB
+├ ○ /session                             5.17 kB         111 kB
+├ ○ /staff                               4.45 kB         110 kB
+├ ƒ /staff/[id]                           6.2 kB         112 kB
+└ ○ /staff/new                           4.77 kB         110 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/342-880c2c49accee4f1.js       46.2 kB
+  ├ chunks/8a37e849-16026bbfaefd2521.js  54.2 kB
+  └ other shared chunks (total)          1.96 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+exit=0

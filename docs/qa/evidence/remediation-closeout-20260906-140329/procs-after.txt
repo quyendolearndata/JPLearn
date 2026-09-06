@@ -1,0 +1,3 @@
+55736 uv run uvicorn jplearn_api.entrypoints.http.app:app --reload --port 3002
+55737 /opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /Users/quyendo/Documents/Learn/JPLearn/apps/api-python/.venv/bin/uvicorn jplearn_api.entrypoints.http.app:app --reload --port 3002
+67988 /opt/homebrew/Cellar/python@3.12/3.12.13_4/Frameworks/Python.framework/Versions/3.12/Resources/Python.app/Contents/MacOS/Python /Users/quyendo/Documents/Learn/JPLearn/apps/api-python/.venv/bin/uvicorn jplearn_api.entrypoints.http.app:app --port 53869

@@ -1,0 +1,8 @@
+pgrep matched two uvicorn processes after the suite. Neither is an E2E
+Compose leftover (containers-after.txt = 0; no `next start`).
+
+- pid 55736/55737: `uv run uvicorn … --reload --port 3002` — user local API
+- pid 67988: `uvicorn … --port 53869` — not from this closeout harness
+  (harness ports were ephemeral and cleaned up)
+
+Dev Docker volume / jplearn_postgres_data was not reset.

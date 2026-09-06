@@ -2,7 +2,7 @@
 
 - **Date:** 2026-09-06
 - **Plan Reference:** [2026-09-06-web-frontend-remediation.md](../superpowers/plans/2026-09-06-web-frontend-remediation.md)
-- **Status:** **IN PROGRESS** — số liệu §2 là baseline tại commit Task 1; evidence đóng nằm ở §4 (điền tại Task 10).
+- **Status:** **VERIFIED & CLOSED at fd838d2** — số liệu §2 là baseline Task 1; nghiệm thu đóng ở §4.
 - **Review Seats:** BA (`jplearn-ba`), Platform (`jplearn-platform`), Web (`jplearn-web`), QA (`jplearn-qa`)
 
 ---
@@ -16,8 +16,8 @@
 | **R-03** | P1 | Web Frontend | Global `localStorage` session state causes cross-tab corruption and loss on reload mid-flight. | Scoped per-user `sessionStorage` (`jplearn.session:${userId}`), 4-state lifecycle machine (`starting` / `active` / `ending` / `outcome_unknown`), persistence before POST, reload recovery. | `T-SES-REC-001` (chưa có test — Task 6) |
 | **R-04** | P1 | Platform / Migration | Baseline schema snapshot overwritten; breaks 0001 adoption path. | Restored immutable Prisma baseline snapshot `adr-004-schema-baseline.json` (10 tables), separated head `adr-004-schema-head-0002.json` (11 tables). Verified adoption path test. | `T-MIG-002-ADOPT` |
 | **R-05** | P1 | Web Frontend | Staff CMS accepts non-MP4 files in upload file inputs. | Added `accept="video/mp4"` and client validation rejecting non-MP4 files before upload. Added E2E test. | `T-CMS-E2E-001` |
-| **R-06** | P2 | Web Frontend | Login form crashes on 400 Bad Request. | Added HTTP 400 validation error handling with explicit user-facing message in `login/page.tsx`. | `T-AUTH-ERR-001` (chưa có test — Task 7) |
-| **R-07** | P2 | Web Frontend | Login redirect allows protocol-relative open redirect (`//attacker.com`). | Added URL sanitization in `getSafeRedirect` enforcing single leading `/`, rejecting `//`, `/\\`, and scheme prefixes. | `T-AUTH-SEC-001` (chưa có test — Task 7) |
+| **R-06** | P2 | Web Frontend | Login form crashes on 400 Bad Request. | Added HTTP 400 validation error handling with explicit user-facing message in `login/page.tsx`. | `T-AUTH-ERR-001` |
+| **R-07** | P2 | Web Frontend | Login redirect allows protocol-relative open redirect (`//attacker.com`). | Added URL sanitization in `getSafeRedirect` enforcing single leading `/`, rejecting `//`, `/\\`, and scheme prefixes. | `T-AUTH-SEC-001` |
 
 ---
 
@@ -82,6 +82,44 @@
   - Scoped `sessionStorage` per user and browser tab prevents multi-tab collision.
   - Four-state lifecycle state machine gracefully handles in-flight reloads and network interruptions.
   - Form validation for `.mp4` and login error handling/redirect sanitization operational.
-  - axe không phát hiện vi phạm tự động trên 7 route đã quét ở trạng thái mặc định.
+  - axe không phát hiện vi phạm tự động trên route/state đã quét (xem §4); không phải audit WCAG 2.2 AA toàn diện.
 - **QA Seat (`jplearn-qa`):**
-  - Chưa ký. Điều kiện: Task 10 closeout plan.
+  - PASS theo bảng §4 tại `fd838d2`. Design rà focus thủ công ngoài Playwright: PARTIAL, owner Design.
+
+## 4. Closeout Evidence (C6)
+
+- **Candidate SHA:** `fd838d268de9dfba79df3484ddaae1ca8ab30ec9`
+- **Dirty state before/after:** 0 / 0 (`dirty-before.txt`, `dirty-after.txt`)
+- **Environment:** macOS 26.6.2 (darwin 25.6.0 / 25G83), Docker Compose project per E2E run, Python 3.12.13 via `uv` (host `python3` is 3.14.2), Node 25.8.1, pnpm 9.15.0, Playwright 1.62.1 (Chromium + WebKit engines — không phải thiết bị iPhone/iPad thật)
+- **Config sanitized:** `JWT_SECRET=test-secret-…`, `ENVIRONMENT=test`, `STORAGE_ROOT=/tmp/jplearn-e2e-<run>/storage`, `DATABASE_URL=postgresql://jplearn_test:…@127.0.0.1:<port>/jplearn_test`
+- **Raw logs:** `docs/qa/evidence/remediation-closeout-20260906-140329/`
+
+| Command | Exit | Count | Duration | Log |
+|---|---|---|---|---|
+| `pnpm test:guard` | 0 | 0 banned fields | <1s | `guard.log` |
+| `uv run pytest` | 0 | 217 passed, 2 warnings | 30.49s | `pytest.log` |
+| `pnpm --filter @jplearn/web test` | 0 | tsc 0 errors; 7 unit passed | 0.10s unit | `web-unit.log` |
+| `pnpm --filter @jplearn/web build` | 0 | 10 routes | — | `web-build.log` |
+| `web-e2e-python.sh --project=chromium` | 0 | 21 passed | 2.3m | `e2e-chromium.log` |
+| `web-e2e-python.sh --project=webkit` | 0 | 21 passed | 2.3m | `e2e-webkit.log` |
+
+E2E leftover containers: 0. `next start`: 0. Two `uvicorn jplearn_api` processes remained (`--reload :3002` user dev; `:53869` outside this harness) — see `procs-after.txt` + `procs-note.txt`. Dev DB volume không được reset.
+
+### Test ID → test thật
+| ID | File::test |
+|---|---|
+| T-CAT-005-CAS | `test_catalog_concurrency.py` (4 tests) |
+| T-SES-003-IDEM-CONCUR | `test_sessions_concurrency.py` (5 tests) |
+| T-MIG-002-ADOPT | `test_schema_ddl.py::test_stamp_adopts_a_database_built_before_alembic` |
+| T-SES-REC-001 | `src/lib/session-storage.test.ts` (4), `e2e/recovery.spec.ts` (6) |
+| T-CMS-E2E-001 | `e2e/staff.spec.ts` (5) |
+| T-AUTH-SEC-001 | `src/lib/safe-redirect.test.ts` (2), `e2e/auth.spec.ts` (1) |
+| T-AUTH-ERR-001 | `e2e/auth.spec.ts` (1) |
+| T-NFR-A1 | `e2e/a11y.spec.ts` (4) — axe tự động trên 8 route + login error / session active / summary / staff detail; keyboard Chromium full form walk, WebKit DOM order + Email→Password. Không phải audit WCAG 2.2 AA toàn diện |
+
+### Chữ ký
+- QA (`jplearn-qa`): PASS theo bảng trên tại SHA ở trên.
+- BA (`jplearn-ba`): traceability đủ hàng cho mọi Test ID mới; hàng FR-LRN-002…004 hold giữ nguyên.
+- Platform / Web: như §3.
+- Design (`jplearn-design`): axe + keyboard Playwright PASS; rà focus/responsive thủ công ngoài spec: **PARTIAL**.
+- **Ghi chú release:** PASS local/test không mở R-09; staging/production vẫn cần HTTPS/CORS/media, smoke/rollback và authorization CTO/Ops.

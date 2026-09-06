@@ -1,0 +1,60 @@
+== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260906140433_18525] ==
+== 2/5 FastAPI :54954 ==
+== 3/5 seed nội dung published + HLS thật ==
+   published item 00000000-0000-4000-8000-0000000000c1, asset 395bdc74-a77c-4f43-a27c-58b6fca727c3 (+hls)
+== 3b/5 teacher E2E account (isolated DB only) ==
+granted teacher to teacher@e2e.local
+== 4/5 web :54955 → API :54954 [workspace=/tmp/jplearn-e2e-20260906140433_18525/web] ==
+== 5/5 playwright --project=chromium ==
+
+Running 21 tests using 6 workers
+
+(node:99076) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99075) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99074) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99073) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99077) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:99078) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:3:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.5s)
+  ✓   3 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/auth.spec.ts:3:5 › T-AUTH-SEC-001: open-redirect targets fall back to /, internal path is honoured (1.5s)
+  ✓   2 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (1.5s)
+No accessibility violations detected!
+  ✓   8 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/auth.spec.ts:20:5 › T-AUTH-ERR-001: a 400 validation error from the API is shown verbatim in the alert (754ms)
+No accessibility violations detected!
+  ✓   5 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:27:7 › Session recovery T-SES-REC-001 › start response lost after commit → reload replays same key → one session (2.4s)
+No accessibility violations detected!
+  ✓   9 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (1.1s)
+No accessibility violations detected!
+  ✓  10 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:54:7 › Session recovery T-SES-REC-001 › started → reload → route away and back → session still active, end works once (1.9s)
+No accessibility violations detected!
+  ✓   6 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:62:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (4.8s)
+  ✓  11 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:74:7 › Session recovery T-SES-REC-001 › end response lost after commit → GET confirms ended → summary shown, no second end (1.2s)
+  ✓   4 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/staff.spec.ts:39:7 › Staff CMS T-CMS-E2E-001 › teacher drafts+uploads+submits (no publish button); admin publishes; learner sees; admin unpublishes — each step survives reload (6.0s)
+No accessibility violations detected!
+  ✓  13 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:100:7 › Session recovery T-SES-REC-001 › end and status check both offline → not reported ended, record kept for retry (1.1s)
+No accessibility violations detected!
+  ✓  12 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:79:5 › chrome staff CMS đạt contrast AA + mọi route có document title T-NFR-A1 (1.8s)
+No accessibility violations detected!
+  ✓  14 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/staff.spec.ts:95:7 › Staff CMS T-CMS-E2E-001 › publish without media is refused and status stays level_qa (1.8s)
+  ✓  15 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:124:7 › Session recovery T-SES-REC-001 › two tabs same user keep independent records; switching user hides previous record (1.4s)
+No accessibility violations detected!
+No accessibility violations detected!
+  ✓  17 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/staff.spec.ts:107:7 › Staff CMS T-CMS-E2E-001 › upload failure keeps the draft and shows an error (928ms)
+  ✓  18 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:155:7 › Session recovery T-SES-REC-001 › recovery refetches catalog; record never contains media URLs (945ms)
+No accessibility violations detected!
+  ✓  16 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:94:5 › axe: error state on login, active session state, staff detail route T-NFR-A1 (2.3s)
+  ✓  20 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:127:5 › keyboard: login form tab order and Enter-to-submit; player controls reachable T-NFR-A1 (863ms)
+  ✓  19 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/staff.spec.ts:119:7 › Staff CMS T-CMS-E2E-001 › stale revision → 409 → reload button loads the winner (1.1s)
+  ✓  21 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/staff.spec.ts:138:7 › Staff CMS T-CMS-E2E-001 › client-side validation rejects non-mp4 in both staff forms (809ms)
+  ✓   7 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
+
+  21 passed (2.3m)
+== Cleaning up E2E resources [run=20260906140433_18525] ==
+== E2E run finished (exit 0). Evidence preserved at: /tmp/jplearn-e2e-20260906140433_18525 ==
+exit=0

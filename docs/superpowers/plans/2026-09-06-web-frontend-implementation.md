@@ -1,6 +1,6 @@
 # Kế hoạch triển khai frontend web JPLearn
 
-Ngày: 2026-09-06. Trạng thái: **PROPOSED — đã lập kế hoạch, chưa triển khai**.
+Ngày: 2026-09-06. Trạng thái: **COMPLETED** tại `fd838d2` (Mốc A + Mốc B). Evidence: [remediation-evidence-2026-09-06.md](../../qa/remediation-evidence-2026-09-06.md) §4. Staging/production vẫn cần cổng CTO/Ops (không mở R-09).
 Baseline khảo sát: `00576eb`; backend FastAPI/Alembic, frontend Next.js hiện có.
 Chủ trì: Web. BA phụ trách phạm vi/UC; Platform phụ trách hợp đồng API;
 Design phụ trách giao diện; QA kiểm chứng; CTO/Ops phụ trách phát hành.

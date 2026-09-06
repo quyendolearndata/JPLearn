@@ -1,6 +1,6 @@
 # Kế hoạch khắc phục Web Frontend & Staff CMS
 
-Ngày: 2026-09-06. Trạng thái: **REMEDIATION IN PROGRESS** — code R-01…R-07 đã có (commit Task 1 của [closeout plan](2026-09-06-remediation-closeout.md)); acceptance C0/C4/C5/C6 và một phần C2/C3 chưa đủ. Chỉ đổi sang COMPLETED khi closeout plan xong Task 10.
+Ngày: 2026-09-06. Trạng thái: **COMPLETED** tại `fd838d2` — evidence: [docs/qa/remediation-evidence-2026-09-06.md](../../qa/remediation-evidence-2026-09-06.md) §4. Design rà focus thủ công ngoài Playwright: **PARTIAL** (owner Design).
 Kế thừa: [kế hoạch Mốc A/B](2026-09-06-web-frontend-implementation.md).
 Baseline code đang review: `8bd0b44` (Task 1 closeout commits on `codex/fastapi-backend-hardening`).
 
@@ -199,11 +199,12 @@ không tạo session mới vì mất key và không báo thành công khi server
 - [x] E2E CMS kiểm upload fail giữ draft, publish thiếu media không báo thành công,
   stale revision 409 có reload, teacher không thấy/không gọi được publish.
 - [x] Harness tạo teacher/admin test riêng trong DB cô lập; không dùng credential hoặc DB dev.
-- [ ] Mở rộng axe scan tới landing và các CMS route/state đại diện. Kiểm thủ công hoặc
-  Playwright keyboard cho focus order, submit form, player controls và dialog/alert.
-- [ ] Giữ wording chính xác: axe tự động không thay thế toàn bộ audit WCAG; Chromium/WebKit
+- [x] Mở rộng axe scan tới landing và các CMS route/state đại diện. Kiểm Playwright
+  keyboard cho focus order, submit form, player controls và `role=alert`. Rà focus
+  thủ công ngoài spec: PARTIAL, owner Design.
+- [x] Giữ wording chính xác: axe tự động không thay thế toàn bộ audit WCAG; Chromium/WebKit
   là browser engines, không được gọi là kiểm thiết bị iPhone/iPad thật.
-- [ ] Sửa guard evidence: `pnpm test:guard` xác nhận field/schema cấm; `shell.spec.ts`
+- [x] Sửa guard evidence: `pnpm test:guard` xác nhận field/schema cấm; `shell.spec.ts`
   xác nhận chrome không hiện text kênh tắt.
 
 **Exit Mốc B:** teacher→admin workflow chạy qua UI/API thật trên hai engine; error,
@@ -224,13 +225,13 @@ Chạy trên working tree sạch hoặc isolated worktree từ candidate SHA, l�
 7. Kiểm container/process/network test không còn sót; xác nhận DB dev row counts không đổi
    nếu verification có khả năng chạm cùng Docker host.
 
-- [ ] Ghi candidate SHA, dirty state trước/sau, config đã sanitize, command, exit code,
+- [x] Ghi candidate SHA, dirty state trước/sau, config đã sanitize, command, exit code,
   test count/duration và đường dẫn raw logs vào evidence bền vững trong `docs/qa/`.
-- [ ] Cập nhật OpenAPI, API usage, migration guide, traceability và walkthrough theo
+- [x] Cập nhật OpenAPI, API usage, migration guide, traceability và walkthrough theo
   code cuối; bỏ số test cũ nếu suite count đã thay đổi.
-- [ ] Chỉ đổi kế hoạch Mốc A/B và remediation sang `COMPLETED` khi mọi exit ở trên PASS.
+- [x] Chỉ đổi kế hoạch Mốc A/B và remediation sang `COMPLETED` khi mọi exit ở trên PASS.
   Nếu còn exception, ghi `PARTIAL/HOLD` cùng owner và điều kiện đóng cụ thể.
-- [ ] Local/test engineering PASS không tự mở R-09; staging/production vẫn cần cấu hình
+- [x] Local/test engineering PASS không tự mở R-09; staging/production vẫn cần cấu hình
   HTTPS/CORS/media, smoke/rollback và authorization CTO/Ops theo gate hiện hành.
 
 ## 10. Thứ tự triển khai
