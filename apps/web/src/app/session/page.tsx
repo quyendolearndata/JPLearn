@@ -8,6 +8,14 @@ import { api, parseApiError, parseApiResponse } from "../../lib/api";
 import { getToken, getUser } from "../../lib/auth-storage";
 import { CiPlayer } from "../../components/ci-player";
 import {
+  completeAutomaticCatalogRefetch,
+  createMediaRecoveryCycle,
+  reconcileMediaRecoveryTarget,
+  requestAutomaticCatalogRefetch,
+  restartMediaRecoveryManually,
+  selectSessionCatalogItem,
+} from "../../lib/media-recovery";
+import {
   classifyEndedProgress,
   classifyReplayFailure,
   classifySessionRecoveryBootstrap,
@@ -34,6 +42,9 @@ function currentUserId(): string | null {
 }
 
 type RecoveryPhase = "initializing" | "verifying" | "ready" | "unverified";
+type ClipLoadMode = "initial" | "automatic" | "manual";
+type ClipLoadResult = "selected" | "unavailable" | "empty" | "failed" | "stale";
+type MediaRecoveryState = "idle" | "retrying" | "failed" | "unavailable";
 
 const TOPIC_NAMES: Record<string, string> = {
   daily_home: "Sinh hoạt gia đình",
@@ -60,33 +71,137 @@ function SessionContent() {
   const [summaryUnavailable, setSummaryUnavailable] = useState(false);
   const [recoveryPhase, setRecoveryPhase] = useState<RecoveryPhase>("initializing");
   const [activeOperation, setActiveOperation] = useState<"recovery" | "start" | "end" | null>(null);
+  const [mediaRecoveryState, setMediaRecoveryState] = useState<MediaRecoveryState>("idle");
 
   const recoveryAttemptRef = useRef(0);
   const operationGuardRef = useRef(createSessionOperationGuard());
   const operationAbortRef = useRef<AbortController | null>(null);
+  const clipAbortRef = useRef<AbortController | null>(null);
+  const clipRequestRef = useRef(0);
+  const sessionIdRef = useRef<string | null>(null);
+  const clipRef = useRef<CatalogItemPublic | null>(null);
+  const activeOperationRef = useRef<"recovery" | "start" | "end" | null>(null);
+  const targetItemIdRef = useRef<string | null>(requestedItemId);
+  const mediaRecoveryCycleRef = useRef(createMediaRecoveryCycle(requestedItemId));
+  const mediaManualRetryRef = useRef(false);
+  const mountedRef = useRef(true);
+
+  const applySessionId = useCallback((value: string | null) => {
+    sessionIdRef.current = value;
+    setSessionId(value);
+  }, []);
+
+  const applyClip = useCallback((value: CatalogItemPublic | null) => {
+    clipRef.current = value;
+    setClip(value);
+  }, []);
+
+  const applyActiveOperation = useCallback((value: "recovery" | "start" | "end" | null) => {
+    activeOperationRef.current = value;
+    setActiveOperation(value);
+  }, []);
 
   const loadClip = useCallback(async (
     targetItemId?: string | null,
     shouldApply: () => boolean = () => true,
-  ) => {
+    mode: ClipLoadMode = "initial",
+  ): Promise<ClipLoadResult> => {
     const token = getToken();
-    if (!token) return;
-    let playable: CatalogItemPublic | null = null;
+    if (!token) return "failed";
+    const normalizedTarget = targetItemId || null;
+    const previousClip = clipRef.current;
+    targetItemIdRef.current = normalizedTarget;
+    mediaRecoveryCycleRef.current = reconcileMediaRecoveryTarget(
+      mediaRecoveryCycleRef.current,
+      normalizedTarget,
+    );
+    const requestId = ++clipRequestRef.current;
+    clipAbortRef.current?.abort();
+    const controller = new AbortController();
+    clipAbortRef.current = controller;
+    if (mode !== "initial") setMediaRecoveryState("retrying");
+
+    let items: CatalogItemPublic[];
     try {
-      const catRes = await api("/catalog", { token });
-      if (catRes.ok) {
-        const catalog = await parseApiResponse<{ items: CatalogItemPublic[] }>(catRes);
-        const items = catalog?.items || [];
-        if (targetItemId) playable = items.find((i) => i.id === targetItemId) || null;
-        if (!playable && items.length > 0) playable = items.find((i) => i.hls_url ?? i.playback_url) || items[0];
-      }
+      const catRes = await api("/catalog", { token, signal: controller.signal });
+      if (!catRes.ok) throw new Error("catalog request failed");
+      const catalog = await parseApiResponse<{ items: CatalogItemPublic[] }>(catRes);
+      items = catalog?.items || [];
     } catch {
-      /* catalog failure must not block end-session */
+      if (
+        !mountedRef.current
+        || requestId !== clipRequestRef.current
+        || !shouldApply()
+      ) return "stale";
+      applyClip(null);
+      if (mode === "initial") {
+        setMediaRecoveryState("failed");
+        setStatus("Phiên đang chạy. Chưa tải được nguồn video.");
+      } else {
+        setMediaRecoveryState("failed");
+        setStatus("Không thể phát nội dung này.");
+      }
+      return "failed";
+    } finally {
+      if (clipAbortRef.current === controller) clipAbortRef.current = null;
     }
-    if (!shouldApply()) return;
-    setClip(playable);
-    setStatus(playable ? "Phiên đang chạy." : "Phiên đang chạy. Chưa có clip published.");
-  }, []);
+    if (
+      !mountedRef.current
+      || requestId !== clipRequestRef.current
+      || !shouldApply()
+    ) return "stale";
+
+    const selection = selectSessionCatalogItem(items, normalizedTarget);
+    if (selection.kind === "unavailable") {
+      applyClip(null);
+      setMediaRecoveryState("unavailable");
+      setStatus("Nội dung này không còn khả dụng.");
+      return "unavailable";
+    }
+    if (selection.kind === "empty") {
+      applyClip(null);
+      setMediaRecoveryState("idle");
+      setStatus("Phiên đang chạy. Chưa có clip published.");
+      return "empty";
+    }
+    if (
+      mode === "automatic"
+      && previousClip?.id === selection.item.id
+      && previousClip.hls_url === selection.item.hls_url
+      && previousClip.playback_url === selection.item.playback_url
+    ) {
+      applyClip(null);
+      setMediaRecoveryState("failed");
+      setStatus("Không thể phát nội dung này.");
+      return "failed";
+    }
+
+    targetItemIdRef.current = selection.item.id;
+    mediaRecoveryCycleRef.current = reconcileMediaRecoveryTarget(
+      mediaRecoveryCycleRef.current,
+      selection.item.id,
+    );
+    let defaultPersisted = true;
+    if (selection.choseDefault) {
+      const userId = currentUserId();
+      const latest = userId ? readSessionRecord(userId) : null;
+      if (userId && latest && !latest.itemId && latest.sessionId === sessionIdRef.current) {
+        defaultPersisted = writeSessionRecord(userId, {
+          ...latest,
+          itemId: selection.item.id,
+        });
+      }
+    }
+    applyClip(selection.item);
+    setMediaRecoveryState("idle");
+    if (defaultPersisted) {
+      setStatus("Phiên đang chạy.");
+    } else {
+      setStatus("Phiên đang chạy nhưng chưa lưu được nội dung đã chọn.");
+      setRecoveryPhase("unverified");
+    }
+    return "selected";
+  }, [applyClip]);
 
   const handleEndedSession = useCallback(async (input: {
     token: string;
@@ -107,10 +222,16 @@ function SessionContent() {
         sessionId: input.sessionId,
       });
     }
-    setSessionId(null);
+    clipRequestRef.current += 1;
+    clipAbortRef.current?.abort();
+    clipAbortRef.current = null;
+    applySessionId(null);
     setStartedAt(null);
     setElapsedSeconds(0);
-    setClip(null);
+    applyClip(null);
+    targetItemIdRef.current = null;
+    mediaRecoveryCycleRef.current = createMediaRecoveryCycle(null);
+    setMediaRecoveryState("idle");
     setCompletedSummary(null);
     setSummaryUnavailable(false);
     setRecoveryPhase("verifying");
@@ -157,7 +278,7 @@ function SessionContent() {
         : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
     );
     setRecoveryPhase(cleared ? "ready" : "unverified");
-  }, []);
+  }, [applyClip, applySessionId]);
 
   // Check and recover session from scoped sessionStorage
   const checkActiveSession = useCallback(async () => {
@@ -204,7 +325,7 @@ function SessionContent() {
     const isCurrentAttempt = () =>
       recoveryAttemptRef.current === attempt
       && isSessionOperationCurrent(operationGuardRef.current, ticket, userId, currentUserId());
-    setActiveOperation("recovery");
+    applyActiveOperation("recovery");
     setRecoveryPhase("verifying");
     setStatus("Đang khôi phục phiên...");
 
@@ -225,9 +346,9 @@ function SessionContent() {
           if (disposition === "auth") return;
           if (disposition === "terminal") {
             const cleared = clearSessionRecord(userId);
-            setSessionId(null);
+            applySessionId(null);
             setStartedAt(null);
-            setClip(null);
+            applyClip(null);
             setStatus(
               cleared
                 ? "Không thể khôi phục phiên do khóa chống trùng bị xung đột."
@@ -273,7 +394,7 @@ function SessionContent() {
           body.started_at,
           (record) => writeSessionRecord(userId, record),
         );
-        setSessionId(promotion.record.sessionId!);
+        applySessionId(promotion.record.sessionId!);
         setStartedAt(new Date(promotion.record.startedAt));
         setElapsedSeconds(Math.max(0, Math.floor((Date.now() - new Date(promotion.record.startedAt).getTime()) / 1000)));
         if (promotion.kind === "unverified") {
@@ -281,9 +402,10 @@ function SessionContent() {
           setRecoveryPhase("unverified");
           return;
         }
-        await loadClip(recoveryRequest.itemId, isCurrentAttempt);
+        const clipResult = await loadClip(recoveryRequest.itemId, isCurrentAttempt);
         if (!isCurrentAttempt()) return;
-        setStatus("Phiên đang chạy (đã khôi phục).");
+        if (clipResult === "stale") return;
+        if (clipResult === "selected") setStatus("Phiên đang chạy (đã khôi phục).");
         setRecoveryPhase("ready");
         return;
       }
@@ -297,9 +419,9 @@ function SessionContent() {
       if (res.status === 401) return;
       if (res.status === 403 || res.status === 404) {
         const cleared = clearSessionRecord(userId);
-        setSessionId(null);
+        applySessionId(null);
         setStartedAt(null);
-        setClip(null);
+        applyClip(null);
         setStatus(
           cleared
             ? res.status === 403
@@ -350,7 +472,7 @@ function SessionContent() {
         (record) => writeSessionRecord(userId, record),
       );
       const start = new Date(promotion.record.startedAt);
-      setSessionId(promotion.record.sessionId!);
+      applySessionId(promotion.record.sessionId!);
       setStartedAt(start);
       setElapsedSeconds(Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000)));
       if (promotion.kind === "unverified") {
@@ -358,9 +480,12 @@ function SessionContent() {
         setRecoveryPhase("unverified");
         return;
       }
-      await loadClip(recoveryRequest.itemId, isCurrentAttempt);
+      const clipResult = await loadClip(recoveryRequest.itemId, isCurrentAttempt);
       if (!isCurrentAttempt()) return;
-      setStatus(stored.state === "active" ? "Phiên đang chạy." : "Phiên vẫn đang chạy trên máy chủ — hãy kết thúc lại.");
+      if (clipResult === "stale") return;
+      if (clipResult === "selected") {
+        setStatus(stored.state === "active" ? "Phiên đang chạy." : "Phiên vẫn đang chạy trên máy chủ — hãy kết thúc lại.");
+      }
       setRecoveryPhase("ready");
     } catch {
       if (!isCurrentAttempt()) return;
@@ -368,19 +493,24 @@ function SessionContent() {
       setRecoveryPhase("unverified");
     } finally {
       if (operationGuardRef.current.finish(ticket)) {
-        setActiveOperation(null);
+        applyActiveOperation(null);
         if (operationAbortRef.current === controller) operationAbortRef.current = null;
       }
     }
-  }, [handleEndedSession, loadClip]);
+  }, [applyActiveOperation, applyClip, applySessionId, handleEndedSession, loadClip]);
 
   useEffect(() => {
+    mountedRef.current = true;
     void checkActiveSession();
     return () => {
+      mountedRef.current = false;
       recoveryAttemptRef.current += 1;
       operationGuardRef.current.cancel();
       operationAbortRef.current?.abort();
       operationAbortRef.current = null;
+      clipRequestRef.current += 1;
+      clipAbortRef.current?.abort();
+      clipAbortRef.current = null;
     };
   }, [checkActiveSession]);
 
@@ -441,6 +571,9 @@ function SessionContent() {
       setStatus("Không thể lưu dữ liệu phiên trên trình duyệt.");
       return;
     }
+    targetItemIdRef.current = requestedItemId;
+    mediaRecoveryCycleRef.current = createMediaRecoveryCycle(requestedItemId);
+    setMediaRecoveryState("idle");
 
     const ticket = operationGuardRef.current.begin("start");
     if (!ticket) {
@@ -452,7 +585,7 @@ function SessionContent() {
     operationAbortRef.current = controller;
     const isCurrentOperation = () =>
       isSessionOperationCurrent(operationGuardRef.current, ticket, userId, currentUserId());
-    setActiveOperation("start");
+    applyActiveOperation("start");
     setLoading(true);
     setCompletedSummary(null);
     setSummaryUnavailable(false);
@@ -506,7 +639,7 @@ function SessionContent() {
         (record) => writeSessionRecord(userId, record),
       );
       const start = new Date(promotion.record.startedAt);
-      setSessionId(promotion.record.sessionId!);
+      applySessionId(promotion.record.sessionId!);
       setStartedAt(start);
       setElapsedSeconds(0);
       if (promotion.kind === "unverified") {
@@ -524,7 +657,7 @@ function SessionContent() {
     } finally {
       if (operationGuardRef.current.finish(ticket)) {
         setLoading(false);
-        setActiveOperation(null);
+        applyActiveOperation(null);
         if (operationAbortRef.current === controller) operationAbortRef.current = null;
       }
     }
@@ -537,13 +670,16 @@ function SessionContent() {
     const targetSessionId = sessionId;
     if (!token || !targetSessionId || !userId) return;
 
+    clipRequestRef.current += 1;
+    clipAbortRef.current?.abort();
+    clipAbortRef.current = null;
     const ticket = operationGuardRef.current.begin("end");
     if (!ticket) return;
     const controller = new AbortController();
     operationAbortRef.current = controller;
     const isCurrentOperation = () =>
       isSessionOperationCurrent(operationGuardRef.current, ticket, userId, currentUserId());
-    setActiveOperation("end");
+    applyActiveOperation("end");
     setLoading(true);
 
     const rec = readSessionRecord(userId);
@@ -554,9 +690,9 @@ function SessionContent() {
       if (disposition === "auth") return;
       if (disposition === "terminal") {
         const cleared = clearSessionRecord(userId);
-        setSessionId(null);
+        applySessionId(null);
         setStartedAt(null);
-        setClip(null);
+        applyClip(null);
         setStatus(
           cleared
             ? statusCode === 403
@@ -696,11 +832,90 @@ function SessionContent() {
     } finally {
       if (operationGuardRef.current.finish(ticket)) {
         setLoading(false);
-        setActiveOperation(null);
+        applyActiveOperation(null);
         if (operationAbortRef.current === controller) operationAbortRef.current = null;
       }
     }
   };
+
+  const handleSourceFailure = useCallback(() => {
+    const currentSessionId = sessionIdRef.current;
+    const targetItemId = targetItemIdRef.current ?? clipRef.current?.id ?? null;
+    if (
+      !mountedRef.current
+      || !currentSessionId
+      || !targetItemId
+      || activeOperationRef.current !== null
+    ) return;
+
+    const decision = requestAutomaticCatalogRefetch(mediaRecoveryCycleRef.current);
+    mediaRecoveryCycleRef.current = decision.cycle;
+    if (decision.action === "coalesced") return;
+    if (decision.action === "exhausted") {
+      applyClip(null);
+      setMediaRecoveryState("failed");
+      setStatus("Không thể phát nội dung này.");
+      return;
+    }
+
+    const generation = decision.cycle.generation;
+    void (async () => {
+      await loadClip(
+        targetItemId,
+        () => (
+          mountedRef.current
+          && sessionIdRef.current === currentSessionId
+          && targetItemIdRef.current === targetItemId
+          && mediaRecoveryCycleRef.current.generation === generation
+          && activeOperationRef.current === null
+        ),
+        "automatic",
+      );
+      if (mediaRecoveryCycleRef.current.generation === generation) {
+        mediaRecoveryCycleRef.current = completeAutomaticCatalogRefetch(
+          mediaRecoveryCycleRef.current,
+        );
+      }
+    })();
+  }, [applyClip, loadClip]);
+
+  const retryMediaSource = useCallback(() => {
+    const currentSessionId = sessionIdRef.current;
+    const targetItemId = targetItemIdRef.current;
+    if (
+      mediaManualRetryRef.current
+      || !mountedRef.current
+      || !currentSessionId
+      || !targetItemId
+      || activeOperationRef.current !== null
+    ) return;
+
+    mediaManualRetryRef.current = true;
+    mediaRecoveryCycleRef.current = restartMediaRecoveryManually(
+      mediaRecoveryCycleRef.current,
+    );
+    const generation = mediaRecoveryCycleRef.current.generation;
+    setMediaRecoveryState("retrying");
+    void (async () => {
+      try {
+        await loadClip(
+          targetItemId,
+          () => (
+            mountedRef.current
+            && sessionIdRef.current === currentSessionId
+            && targetItemIdRef.current === targetItemId
+            && mediaRecoveryCycleRef.current.generation === generation
+            && activeOperationRef.current === null
+          ),
+          "manual",
+        );
+      } finally {
+        if (mediaRecoveryCycleRef.current.generation === generation) {
+          mediaManualRetryRef.current = false;
+        }
+      }
+    })();
+  }, [loadClip]);
 
   return (
     <section className="login-card" style={{ maxWidth: "720px" }}>
@@ -720,7 +935,11 @@ function SessionContent() {
       {clip ? (
         <div style={{ marginTop: "1.5rem", marginBottom: "1.5rem" }}>
           <div style={{ borderRadius: "var(--radius-md)", overflow: "hidden", border: "2px solid var(--charcoal)", background: "#000000" }}>
-            <CiPlayer hlsUrl={clip.hls_url} playbackUrl={clip.playback_url} />
+            <CiPlayer
+              hlsUrl={clip.hls_url}
+              playbackUrl={clip.playback_url}
+              onSourceFailure={handleSourceFailure}
+            />
           </div>
           <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700 }}>
             <span>Chủ đề: {TOPIC_NAMES[clip.topic_id] || clip.topic_id}</span>
@@ -772,6 +991,15 @@ function SessionContent() {
             disabled={loading || activeOperation !== null}
           >
             {summaryUnavailable ? "Thử tải lại tổng kết" : "Thử khôi phục lại"}
+          </button>
+        )}
+        {sessionId && (mediaRecoveryState === "failed" || mediaRecoveryState === "unavailable") && (
+          <button
+            type="button"
+            onClick={retryMediaSource}
+            disabled={loading || activeOperation !== null || mediaManualRetryRef.current}
+          >
+            Thử tải lại video
           </button>
         )}
         {sessionId && (

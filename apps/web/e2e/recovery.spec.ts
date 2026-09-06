@@ -1,6 +1,54 @@
-import { test, expect, type Page, type BrowserContext } from "@playwright/test";
+import { test, expect, type APIRequestContext, type Page, type BrowserContext } from "@playwright/test";
+import fs from "node:fs";
+import path from "node:path";
 
 const SEED_PUBLISHED_ITEM = "00000000-0000-4000-8000-0000000000c1";
+
+function stockMp4(): Buffer {
+  const candidates = [
+    path.resolve(__dirname, "../../../media/stock/mp4/level-0-wash-hands.mp4"),
+    path.resolve(process.cwd(), "../../media/stock/mp4/level-0-wash-hands.mp4"),
+  ];
+  const hit = candidates.find((candidate) => fs.existsSync(candidate));
+  if (!hit) throw new Error("stock mp4 missing");
+  return fs.readFileSync(hit);
+}
+
+async function createPublishedCompanion(
+  request: APIRequestContext,
+  apiRoot: string,
+  token: string,
+): Promise<string> {
+  const headers = { Authorization: `Bearer ${token}` };
+  const created = await request.post(`${apiRoot}/staff/catalog`, {
+    headers,
+    data: {
+      topic_id: "food",
+      ci_level: 0,
+      duration_seconds: 30,
+      media_type: "video",
+      visual_support: "high",
+      title_internal: `F-03 companion ${Date.now()}`,
+    },
+  });
+  expect(created.ok()).toBeTruthy();
+  const itemId = (await created.json()).id as string;
+
+  const uploaded = await request.post(`${apiRoot}/staff/catalog/${itemId}/media`, {
+    headers,
+    multipart: {
+      file: {
+        name: "f03-companion.mp4",
+        mimeType: "video/mp4",
+        buffer: stockMp4(),
+      },
+    },
+  });
+  expect(uploaded.ok()).toBeTruthy();
+  expect((await request.post(`${apiRoot}/staff/catalog/${itemId}/submit-qa`, { headers })).ok()).toBeTruthy();
+  expect((await request.post(`${apiRoot}/staff/catalog/${itemId}/publish`, { headers })).ok()).toBeTruthy();
+  return itemId;
+}
 
 async function register(page: Page): Promise<{ email: string; userId: string; token: string }> {
   await page.goto("/login");
@@ -595,11 +643,12 @@ test.describe("Session recovery T-SES-REC-001", () => {
     await ctx.close();
   });
 
-  test("recovery refetches catalog; record never contains media URLs", async ({ page }) => {
+  test("F-03 recovery persists the chosen default item but never media URLs T-SES-REC-001 T-LRN-001", async ({ page }) => {
     const { userId } = await register(page);
     await page.goto(`/session?item_id=${SEED_PUBLISHED_ITEM}`);
     await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
     await expect(page.locator("video")).toBeVisible();
+    expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
     const raw = await page.evaluate((k) => sessionStorage.getItem(k), `jplearn.session:${userId}`);
     expect(raw).not.toContain("hls_url");
     expect(raw).not.toContain("playback_url");
@@ -609,5 +658,180 @@ test.describe("Session recovery T-SES-REC-001", () => {
     await page.reload();
     await catalogRefetch;
     await expect(page.locator("video")).toBeVisible();
+  });
+
+  test("F-03 legacy session without item persists the first default once T-SES-REC-001 T-LRN-001", async ({ page }) => {
+    const { userId } = await register(page);
+    await page.goto("/session");
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    await expect(page.locator("video")).toBeVisible();
+
+    await page.evaluate((key) => {
+      const stored = JSON.parse(sessionStorage.getItem(key) || "{}");
+      delete stored.itemId;
+      sessionStorage.setItem(key, JSON.stringify(stored));
+    }, `jplearn.session:${userId}`);
+
+    await page.reload();
+    await expect(page.locator("video")).toBeVisible();
+    expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
+  });
+
+  test("F-03 MP4 failure refetches a changed real URL and restores paused position T-LRN-001", async ({ page }) => {
+    const { userId } = await register(page);
+    let catalogGets = 0;
+    await page.route(/\/catalog$/, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      const response = await route.fetch();
+      const body = await response.json() as { items: Array<Record<string, unknown>> };
+      catalogGets += 1;
+      body.items = body.items.map((catalogItem) => (
+        catalogItem.id === SEED_PUBLISHED_ITEM
+          ? {
+            ...catalogItem,
+            hls_url: null,
+            playback_url: `${catalogItem.playback_url as string}&recovery=${catalogGets === 1 ? "old" : "new"}`,
+          }
+          : catalogItem
+      ));
+      await route.fulfill({ response, json: body });
+    });
+
+    await page.goto(`/session?item_id=${SEED_PUBLISHED_ITEM}`);
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    const video = page.locator("video");
+    await expect(video).toBeVisible();
+    await page.waitForFunction(() => {
+      const element = document.querySelector("video");
+      return element !== null && element.readyState >= 1;
+    });
+    const before = await readRecord(page, userId);
+    await video.evaluate((element: HTMLVideoElement) => {
+      element.pause();
+      element.currentTime = 1;
+      element.dispatchEvent(new Event("error"));
+    });
+
+    await expect.poll(() => catalogGets).toBe(2);
+    await page.waitForFunction(() => {
+      const element = document.querySelector("video");
+      return element !== null
+        && element.currentSrc.includes("recovery=new")
+        && element.readyState >= 1;
+    });
+    const playback = await video.evaluate((element: HTMLVideoElement) => ({
+      currentTime: element.currentTime,
+      paused: element.paused,
+      currentSrc: element.currentSrc,
+    }));
+    expect(playback.currentSrc).toContain("recovery=new");
+    expect(playback.currentTime).toBeGreaterThanOrEqual(0.75);
+    expect(playback.paused).toBe(true);
+    expect((await readRecord(page, userId))?.sessionId).toBe(before?.sessionId);
+    expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
+  });
+
+  test("F-03 dual-source faults use one auto refetch and manual retry starts a new cycle T-LRN-001", async ({ page }) => {
+    const { userId } = await register(page);
+    let catalogGets = 0;
+    let sessionPosts = 0;
+    page.on("request", (request) => {
+      if (request.method() === "POST" && /\/sessions$/.test(request.url())) sessionPosts += 1;
+    });
+    await page.route(/\/fault\/f03-/, (route) => route.abort("failed"));
+    await page.route(/\/catalog$/, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      const response = await route.fetch();
+      const body = await response.json() as { items: Array<Record<string, unknown>> };
+      catalogGets += 1;
+      if (catalogGets <= 2) {
+        const origin = new URL(route.request().url()).origin;
+        body.items = body.items.map((catalogItem) => (
+          catalogItem.id === SEED_PUBLISHED_ITEM
+            ? {
+              ...catalogItem,
+              hls_url: `${origin}/fault/f03-${catalogGets}.m3u8`,
+              playback_url: `${origin}/fault/f03-${catalogGets}.mp4`,
+            }
+            : catalogItem
+        ));
+      }
+      await route.fulfill({ response, json: body });
+    });
+
+    await page.goto(`/session?item_id=${SEED_PUBLISHED_ITEM}`);
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    await expect(page.getByText("Không thể phát nội dung này.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Thử tải lại video" })).toBeEnabled();
+    expect(catalogGets).toBe(2);
+    expect(sessionPosts).toBe(1);
+    expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
+    await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toBeEnabled();
+
+    await page.getByRole("button", { name: "Thử tải lại video" }).click();
+    await expect.poll(() => catalogGets).toBe(3);
+    await page.waitForFunction(() => {
+      const element = document.querySelector("video");
+      return element !== null && element.readyState >= 1;
+    });
+    expect(sessionPosts).toBe(1);
+  });
+
+  test("F-03 real unpublish keeps target unavailable instead of playing another item T-SES-REC-001 T-LRN-001", async ({ page, request }) => {
+    test.setTimeout(120_000);
+    const { userId, token: learnerToken } = await register(page);
+    const initialCatalog = page.waitForResponse(
+      (response) => response.request().method() === "GET" && /\/catalog$/.test(response.url()),
+    );
+    await page.route(/\/catalog$/, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      const response = await route.fetch();
+      const body = await response.json() as { items: Array<Record<string, unknown>> };
+      body.items = body.items.map((catalogItem) => (
+        catalogItem.id === SEED_PUBLISHED_ITEM
+          ? { ...catalogItem, hls_url: null }
+          : catalogItem
+      ));
+      await route.fulfill({ response, json: body });
+    });
+
+    await page.goto(`/session?item_id=${SEED_PUBLISHED_ITEM}`);
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    const catalogResponse = await initialCatalog;
+    await expect(page.locator("video")).toBeVisible();
+    const apiRoot = new URL(catalogResponse.url()).origin;
+
+    const adminLogin = await request.post(`${apiRoot}/auth/login`, {
+      data: { email: "admin@jplearn.local", password: "password10" },
+    });
+    expect(adminLogin.ok()).toBeTruthy();
+    const adminToken = (await adminLogin.json()).access_token as string;
+    const companionId = await createPublishedCompanion(request, apiRoot, adminToken);
+    const learnerCatalog = await request.get(`${apiRoot}/catalog`, {
+      headers: { Authorization: `Bearer ${learnerToken}` },
+    });
+    const publishedIds = ((await learnerCatalog.json()).items as Array<{ id: string }>).map((catalogItem) => catalogItem.id);
+    expect(publishedIds).toContain(SEED_PUBLISHED_ITEM);
+    expect(publishedIds).toContain(companionId);
+
+    const unpublished = await request.post(`${apiRoot}/staff/catalog/${SEED_PUBLISHED_ITEM}/unpublish`, {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(unpublished.ok()).toBeTruthy();
+    await page.locator("video").evaluate((element: HTMLVideoElement) => {
+      element.dispatchEvent(new Event("error"));
+    });
+
+    await expect(page.getByText("Nội dung này không còn khả dụng.")).toBeVisible();
+    await expect(page.locator("video")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toBeEnabled();
+    expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
+
+    await page.reload();
+    await expect(page.getByText("Nội dung này không còn khả dụng.")).toBeVisible();
+    await expect(page.locator("video")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toBeEnabled();
+    await page.getByRole("button", { name: "Kết thúc phiên" }).click();
+    await expect(page.getByRole("heading", { name: "Tổng kết phiên học" })).toBeVisible();
   });
 });
