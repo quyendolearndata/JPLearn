@@ -185,7 +185,7 @@ git commit -m "docs(qa): reopen remediation status, restore FR-LRN hold row, fix
 - Consumes: fixture `client_factory` (yield `_make_client`), `_create_admin_token(client, postgres_url)` đã có trong file.
 - Upload media thật qua `POST /staff/catalog/{id}/media` multipart để publish hợp lệ.
 
-- [ ] **Step 1: Thêm helper và 2 test đỏ**
+- [x] **Step 1: Thêm helper và 2 test đỏ**
 
 Append vào cuối `test_catalog_concurrency.py`:
 
@@ -308,7 +308,7 @@ async def test_race_patch_vs_unpublish_revision_never_regresses(client_factory, 
     assert ok.json()["revision"] == 5
 ```
 
-- [ ] **Step 2: Chạy, xác nhận trạng thái**
+- [x] **Step 2: Chạy, xác nhận trạng thái**
 
 Run: `cd apps/api-python && uv run pytest tests/test_catalog_concurrency.py -v -p no:cacheprovider`
 Expected: 4 passed. Nếu test mới FAIL, đó là lỗi thật của CAS/lock — sửa ở `catalog_repository.py`/`handlers/catalog.py`, không nới assertion. (Hai test này là **acceptance** còn thiếu, không phải red-green cho code mới; kỳ vọng xanh ngay vì `update_draft_cas` đã đúng.)

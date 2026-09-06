@@ -200,3 +200,121 @@ async def test_race_between_patch_and_submit_qa(client_factory, postgres_url: st
         assert r_qa.status_code == 200
         assert final_item["status"] == "level_qa"
         assert final_item["revision"] == 2
+
+
+from pathlib import Path
+
+_STOCK_MP4 = Path(__file__).resolve().parents[3] / "media" / "stock" / "mp4" / "level-0-wash-hands.mp4"
+
+
+async def _create_level_qa_item_with_media(client: AsyncClient, token: str) -> tuple[str, int]:
+    """Create draft -> upload mp4 -> submit-qa. Returns (item_id, revision)."""
+    if not _STOCK_MP4.exists():
+        pytest.skip("stock mp4 missing (media/stock/mp4 is gitignored)")
+    headers = {"Authorization": f"Bearer {token}"}
+    created = await client.post(
+        "/staff/catalog",
+        headers=headers,
+        json={
+            "topic_id": "daily_home",
+            "ci_level": 0,
+            "duration_seconds": 30,
+            "media_type": "video",
+            "visual_support": "high",
+            "title_internal": "race-publish-item",
+        },
+    )
+    assert created.status_code == 201, created.text
+    item_id = created.json()["id"]
+    upload = await client.post(
+        f"/staff/catalog/{item_id}/media",
+        headers=headers,
+        files={"file": ("clip.mp4", _STOCK_MP4.read_bytes(), "video/mp4")},
+    )
+    assert upload.status_code == 201, upload.text
+    qa = await client.post(f"/staff/catalog/{item_id}/submit-qa", headers=headers)
+    assert qa.status_code == 200, qa.text
+    return item_id, qa.json()["revision"]
+
+
+@pytest.mark.asyncio
+async def test_race_patch_vs_publish_never_writes_draft_back(client_factory, postgres_url: str):
+    """T-CAT-005-CAS: PATCH racing publish on a level_qa item must never succeed; publish wins, revision only moves forward."""
+    make_client = client_factory
+    admin = await make_client()
+    token = await _create_admin_token(admin, postgres_url)
+    item_id, rev_qa = await _create_level_qa_item_with_media(admin, token)
+    assert rev_qa == 2
+
+    barrier = asyncio.Barrier(2)
+
+    async def patch_worker():
+        c = await make_client()
+        await barrier.wait()
+        return await c.patch(
+            f"/staff/catalog/{item_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            json={"revision": rev_qa, "title_internal": "should-never-land"},
+        )
+
+    async def publish_worker():
+        c = await make_client()
+        await barrier.wait()
+        return await c.post(f"/staff/catalog/{item_id}/publish", headers={"Authorization": f"Bearer {token}"})
+
+    r_patch, r_pub = await asyncio.gather(patch_worker(), publish_worker())
+    assert r_pub.status_code == 200, r_pub.text
+    assert r_patch.status_code in (400, 409), r_patch.text
+
+    final = (await admin.get(f"/staff/catalog/{item_id}", headers={"Authorization": f"Bearer {token}"})).json()
+    assert final["status"] == "published"
+    assert final["revision"] == 3
+    assert final["title_internal"] == "race-publish-item"
+
+
+@pytest.mark.asyncio
+async def test_race_patch_vs_unpublish_revision_never_regresses(client_factory, postgres_url: str):
+    """T-CAT-005-CAS: PATCH with the pre-unpublish revision must fail whether it runs before (wrong status) or after (stale) unpublish."""
+    make_client = client_factory
+    admin = await make_client()
+    token = await _create_admin_token(admin, postgres_url)
+    headers = {"Authorization": f"Bearer {token}"}
+    item_id, _ = await _create_level_qa_item_with_media(admin, token)
+    published = await admin.post(f"/staff/catalog/{item_id}/publish", headers=headers)
+    assert published.status_code == 200
+    rev_published = published.json()["revision"]
+    assert rev_published == 3
+
+    barrier = asyncio.Barrier(2)
+
+    async def patch_worker():
+        c = await make_client()
+        await barrier.wait()
+        return await c.patch(
+            f"/staff/catalog/{item_id}",
+            headers=headers,
+            json={"revision": rev_published, "title_internal": "stale-after-unpublish"},
+        )
+
+    async def unpublish_worker():
+        c = await make_client()
+        await barrier.wait()
+        return await c.post(f"/staff/catalog/{item_id}/unpublish", headers=headers)
+
+    r_patch, r_unpub = await asyncio.gather(patch_worker(), unpublish_worker())
+    assert r_unpub.status_code == 200, r_unpub.text
+    assert r_patch.status_code in (400, 409), r_patch.text
+
+    final = (await admin.get(f"/staff/catalog/{item_id}", headers=headers)).json()
+    assert final["status"] == "draft"
+    assert final["revision"] == 4
+    assert final["title_internal"] == "race-publish-item"
+
+    # A PATCH carrying the fresh revision must now succeed and bump to 5.
+    ok = await admin.patch(
+        f"/staff/catalog/{item_id}",
+        headers=headers,
+        json={"revision": 4, "title_internal": "edited-after-unpublish"},
+    )
+    assert ok.status_code == 200, ok.text
+    assert ok.json()["revision"] == 5

@@ -111,7 +111,7 @@ hai snapshot có checksum/evidence riêng.
   đúng một 200, một 409; DB có revision tăng đúng một và metadata của winner.
 - [x] Race PATCH với submit-QA: kết quả cuối chỉ là draft đã sửa hoặc level_qa từ
   bản đã serialize; không có level_qa với metadata/revision bị ghi ngược.
-- [ ] Race PATCH với publish/unpublish tương ứng; state machine và revision không lùi.
+- [x] Race PATCH với publish/unpublish tương ứng; state machine và revision không lùi.
 - [x] Test stale tuần tự, wrong status, not found và teacher/admin permissions vẫn PASS.
 
 **Exit:** không có lost update; mọi catalog mutation cạnh tranh có một thứ tự commit
