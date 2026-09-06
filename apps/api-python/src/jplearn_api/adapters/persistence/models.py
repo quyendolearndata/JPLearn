@@ -93,6 +93,7 @@ class CatalogItem(Base):
     )
     title_internal: Mapped[str] = mapped_column(Text)
     created_by: Mapped[str] = mapped_column(Text, ForeignKey("users.id"))
+    revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
     media: Mapped[list["MediaAsset"]] = relationship(back_populates="catalog_item")
 
 
@@ -119,6 +120,20 @@ class LearningSession(Base):
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=False))
     ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=False), nullable=True)
     duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class SessionIdempotencyKey(Base):
+    __tablename__ = "session_idempotency_keys"
+
+    user_id: Mapped[str] = mapped_column(Text, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    key: Mapped[str] = mapped_column(Text, primary_key=True)
+    session_id: Mapped[str] = mapped_column(Text, ForeignKey("learning_sessions.id", ondelete="CASCADE"))
+    request_hash: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        server_default=text("CURRENT_TIMESTAMP"),
+    )
+
 
 
 class LearnerProgress(Base):

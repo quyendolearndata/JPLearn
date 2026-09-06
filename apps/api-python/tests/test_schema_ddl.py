@@ -27,7 +27,8 @@ from pg_harness import (
     stop_docker_postgres,
 )
 
-BASELINE = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-004-schema-baseline.json"
+BASELINE_0001 = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-004-schema-baseline.json"
+BASELINE_HEAD = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-004-schema-head-0002.json"
 
 BANNED_COLUMNS = ("vocabulary_score", "grammar_lesson_id", "textbook_percent", "translation_vi")
 
@@ -43,11 +44,11 @@ def alembic_database() -> str:
         stop_docker_postgres(project)
 
 
-def test_alembic_schema_matches_prisma_baseline(alembic_database: str) -> None:
-    expected = json.loads(BASELINE.read_text(encoding="utf-8"))
+def test_alembic_schema_matches_head_baseline(alembic_database: str) -> None:
+    expected = json.loads(BASELINE_HEAD.read_text(encoding="utf-8"))
     actual = asyncio.run(snapshot_url(alembic_database))
     problems = diff(expected, actual)
-    assert not problems, "Alembic schema drifted from the Prisma baseline:\n" + "\n".join(problems)
+    assert not problems, "Alembic schema drifted from the head baseline:\n" + "\n".join(problems)
 
 
 def test_live_schema_has_no_textbook_columns(alembic_database: str) -> None:
@@ -69,24 +70,28 @@ def test_live_schema_has_no_textbook_columns(alembic_database: str) -> None:
 
 
 def test_downgrade_then_upgrade_returns_to_baseline(alembic_database: str) -> None:
-    expected = json.loads(BASELINE.read_text(encoding="utf-8"))
+    expected = json.loads(BASELINE_HEAD.read_text(encoding="utf-8"))
     downgrade("base", alembic_database)
     emptied = asyncio.run(snapshot_url(alembic_database))
     assert emptied["tables"] == {}, "downgrade left tables behind"
 
     upgrade(alembic_database)
     restored = asyncio.run(snapshot_url(alembic_database))
-    assert not diff(expected, restored), "re-upgrade did not restore the baseline schema"
+    assert not diff(expected, restored), "re-upgrade did not restore the head baseline schema"
 
 
 def test_stamp_adopts_a_database_built_before_alembic(alembic_database: str) -> None:
     """ADR-004 adoption path for databases Prisma built (dev, staging).
 
-    Such a database already has the full schema but no `alembic_version`, so
-    `upgrade` would try to CREATE TYPE on existing types. Dropping the bookkeeping
-    table reproduces that state; `stamp` must adopt it and leave `upgrade` a no-op.
+    Such a database already has the 0001 schema but no `alembic_version`, so
+    `upgrade` from base would try to CREATE TYPE on existing types.
+    1. A DB with 0001 schema is stamped as '0001_prisma_baseline'.
+    2. Trying to stamp 'head' on a 0001 DB is rejected.
+    3. `upgrade head` migrates it to 0002, matching the head baseline snapshot.
+    4. A DB with 0002 schema can be stamped 'head', but not '0001_prisma_baseline'.
     """
-    expected = json.loads(BASELINE.read_text(encoding="utf-8"))
+    expected_0001 = json.loads(BASELINE_0001.read_text(encoding="utf-8"))
+    expected_head = json.loads(BASELINE_HEAD.read_text(encoding="utf-8"))
 
     async def drop_bookkeeping() -> None:
         conn = await asyncpg.connect(alembic_database)
@@ -95,21 +100,53 @@ def test_stamp_adopts_a_database_built_before_alembic(alembic_database: str) -> 
         finally:
             await conn.close()
 
-    async def stamped_revision() -> str | None:
+    async def get_revision_and_data() -> tuple[str | None, int]:
         conn = await asyncpg.connect(alembic_database)
         try:
-            return await conn.fetchval("SELECT version_num FROM alembic_version")
+            ver = await conn.fetchval("SELECT version_num FROM alembic_version")
+            rev_val = await conn.fetchval("SELECT revision FROM catalog_items LIMIT 1")
+            return ver, rev_val
         finally:
             await conn.close()
 
-    asyncio.run(drop_bookkeeping())
-    stamp("0001_prisma_baseline", alembic_database)
-    assert asyncio.run(stamped_revision()) == "0001_prisma_baseline"
+    # Reset to 0001 state: downgrade base, then upgrade to 0001 only
+    downgrade("base", alembic_database)
+    upgrade(alembic_database, revision="0001_prisma_baseline")
+    actual_0001 = asyncio.run(snapshot_url(alembic_database))
+    diff_0001 = diff(expected_0001, actual_0001)
+    assert not diff_0001, f"0001 schema drifted from Prisma baseline: {diff_0001}"
 
+    # Seed an item in 0001
+    seed_database(alembic_database)
+
+    # Drop alembic_version to simulate an untracked Prisma-built DB
+    asyncio.run(drop_bookkeeping())
+
+    # 1. Stamping 'head' on 0001 schema must fail closed
+    with pytest.raises(RuntimeError, match="Refusing to stamp head"):
+        stamp("head", alembic_database)
+
+    # 2. Stamping '0001_prisma_baseline' must succeed
+    stamp("0001_prisma_baseline", alembic_database)
+
+    # 3. Upgrade to head executes 0002
     upgrade(alembic_database)
-    assert not diff(expected, asyncio.run(snapshot_url(alembic_database))), (
-        "upgrade after stamp must not touch an adopted schema"
-    )
+    actual_head = asyncio.run(snapshot_url(alembic_database))
+    diff_head = diff(expected_head, actual_head)
+    assert not diff_head, f"Upgraded schema drifted from head baseline: {diff_head}"
+
+    # 4. Confirm data & schema properties
+    ver, rev_val = asyncio.run(get_revision_and_data())
+    assert ver == "0002_session_idem_rev"
+    assert rev_val == 1, "Catalog items must have default revision=1 after migration 0002"
+
+    # 5. Drop bookkeeping again to simulate adoption of a 0002 DB
+    asyncio.run(drop_bookkeeping())
+    # Stamping 0001 on a 0002 DB must fail closed
+    with pytest.raises(RuntimeError, match="Refusing to stamp 0001_prisma_baseline"):
+        stamp("0001_prisma_baseline", alembic_database)
+    # Stamping head on a 0002 DB must succeed
+    stamp("head", alembic_database)
 
 
 def test_seed_is_idempotent_and_keeps_seed_items_draft(alembic_database: str) -> None:

@@ -16,7 +16,8 @@ def test_resources_and_contract_resolve_outside_working_directory(tmp_path, monk
     monkeypatch.delenv("OPENAPI_SPEC_PATH", raising=False)
     assert (MIGRATIONS_DIR / "env.py").is_file()
     assert (MIGRATIONS_DIR / "versions" / "0001_prisma_baseline.py").is_file()
-    assert len(load_baseline_schema()["tables"]) == 10
+    assert len(load_baseline_schema("0001_prisma_baseline")["tables"]) == 10
+    assert len(load_baseline_schema("head")["tables"]) == 11
     assert handwritten_spec_path().is_file()
     config = alembic_config("postgresql://test:test@localhost/jplearn_test")
     assert Path(config.get_main_option("script_location")) == MIGRATIONS_DIR

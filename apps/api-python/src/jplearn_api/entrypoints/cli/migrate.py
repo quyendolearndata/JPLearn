@@ -25,12 +25,24 @@ from alembic.config import Config
 MIGRATIONS_DIR = Path(importlib.resources.files("jplearn_api").joinpath("migrations"))
 
 
-def load_baseline_schema(explicit_path: Path | str | None = None) -> dict[str, Any]:
+def load_baseline_schema(
+    revision: str | Path = "0001_prisma_baseline",
+    explicit_path: Path | str | None = None,
+) -> dict[str, Any]:
     """Load baseline schema JSON from explicit path, package resources, or repo fallback.
     Fails closed if missing or malformed.
     """
-    if explicit_path:
-        p = Path(explicit_path)
+    target_path = explicit_path
+    target_revision = revision if isinstance(revision, str) else "0001_prisma_baseline"
+    if isinstance(revision, Path) or (
+        isinstance(revision, str)
+        and (revision.endswith(".json") or "/" in revision or "\\" in revision)
+    ):
+        target_path = revision
+        target_revision = "0001_prisma_baseline"
+
+    if target_path:
+        p = Path(target_path)
         if not p.exists():
             raise RuntimeError(f"Baseline schema not found at explicit path: {p}")
         try:
@@ -49,18 +61,24 @@ def load_baseline_schema(explicit_path: Path | str | None = None) -> dict[str, A
         except Exception as err:
             raise RuntimeError(f"Malformed baseline schema at {p}: {err}") from err
 
+    filename = (
+        "adr-004-schema-head-0002.json"
+        if target_revision in ("head", "0002_session_idem_rev")
+        else "adr-004-schema-baseline.json"
+    )
+
     # 2. Packaged resource
     try:
-        resource = importlib.resources.files("jplearn_api.resources").joinpath("adr-004-schema-baseline.json")
+        resource = importlib.resources.files("jplearn_api.resources").joinpath(filename)
         if resource.is_file():
             return json.loads(resource.read_text(encoding="utf-8"))
     except Exception:
         pass
 
-    # 3. Walk parent directories looking for docs/qa/adr-004-schema-baseline.json
+    # 3. Walk parent directories looking for docs/qa/<filename>
     curr = Path(__file__).resolve().parent
     while True:
-        candidate = curr / "docs" / "qa" / "adr-004-schema-baseline.json"
+        candidate = curr / "docs" / "qa" / filename
         if candidate.is_file():
             try:
                 return json.loads(candidate.read_text(encoding="utf-8"))
@@ -70,7 +88,7 @@ def load_baseline_schema(explicit_path: Path | str | None = None) -> dict[str, A
             break
         curr = curr.parent
 
-    raise RuntimeError("Baseline schema resource 'adr-004-schema-baseline.json' could not be found")
+    raise RuntimeError(f"Baseline schema resource '{filename}' could not be found")
 
 
 from jplearn_api.config.env_resolver import (
@@ -125,11 +143,11 @@ def stamp(
     if not url:
         raise RuntimeError("DATABASE_URL is required to run migrations")
 
-    if verify_baseline and revision in ("0001_prisma_baseline", "head"):
+    if verify_baseline and revision in ("0001_prisma_baseline", "head", "0002_session_idem_rev"):
         import asyncio
         from jplearn_api.adapters.persistence.schema_snapshot import diff, snapshot_url
 
-        expected = load_baseline_schema(baseline_path)
+        expected = load_baseline_schema(revision=revision, explicit_path=baseline_path)
         actual = asyncio.run(snapshot_url(url))
 
         if not actual.get("tables"):
