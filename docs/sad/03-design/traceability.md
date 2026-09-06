@@ -9,7 +9,7 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 
 | Req | Use case | Thiết kế | Test |
 |---|---|---|---|
-| FR-ID-001 | UC-L01, UC-T01 | POST /auth/register, /auth/login | T-ID-001 register+login |
+| FR-ID-001 | UC-L01, UC-T01 | POST /auth/register, /auth/login | T-ID-001 register+login, T-AUTH-ERR-001 login 400 hiển thị, T-AUTH-SEC-001 redirect an toàn |
 | FR-ID-002 | UC-L01, UC-L06 | cùng token schema 3 client | T-ID-002 same user 3 surfaces |
 | FR-ID-003 | UC-L01 | POST /auth/logout (tăng `tokenVersion`; mọi token cũ 401) | T-ID-003 logout mọi thiết bị |
 | FR-ID-004 | UC-T01, UC-A03 | User.roles | T-ID-004 learner forbidden staff |
@@ -48,6 +48,7 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | NFR-A11Y-001 | S-LOGIN, S-SESSION | keyboard pause (P5 play) / chrome AA | T-NFR-A1 axe scan 4 routes |
 | NFR-OBS-001 | — | request id + alert webhook 5xx (stub, `ALERT_WEBHOOK_URL`) | T-NFR-O1 echo `x-request-id`; T-NFR-O2 alert 5xx env bật/tắt, 4xx im |
 | FR-LRN-001 | UC-L10 | web `<video>` / CiPlayer trong phiên, HLS/MP4, signed URL | T-LRN-001 player clip, T-NFR-A1 keyboard controls, T-SES-REC-001 session recovery |
+| FR-LRN-002…004 | UC-L11–12 | chưa | T-P5-hold |
 | NFR-MIG-001 | — | Alembic migration & Prisma adoption | T-MIG-002-ADOPT |
 
 Lỗ = hàng FR nền tảng không có UC hoặc không có thiết kế. Cổng nền tảng 2026-08-25: exception HLS player / native UC-L06 / alert 5xx còn mở.

@@ -2,7 +2,7 @@
 
 - **Date:** 2026-09-06
 - **Plan Reference:** [2026-09-06-web-frontend-remediation.md](../superpowers/plans/2026-09-06-web-frontend-remediation.md)
-- **Status:** **VERIFIED & CLOSED**
+- **Status:** **IN PROGRESS** — số liệu §2 là baseline tại commit Task 1; evidence đóng nằm ở §4 (điền tại Task 10).
 - **Review Seats:** BA (`jplearn-ba`), Platform (`jplearn-platform`), Web (`jplearn-web`), QA (`jplearn-qa`)
 
 ---
@@ -13,11 +13,11 @@
 |:---|:---|:---|:---|:---|:---|
 | **R-01** | P1 | Platform / API | Catalog PATCH draft has lost-update race condition. | Atomic DB-level CAS (`update_draft_cas`), `with_for_update()` on state transitions, revision increment. | `T-CAT-005-CAS` |
 | **R-02** | P1 | Platform / API | Duplicate concurrent POST `/sessions` throws 500 UniqueViolation. | Scoped Postgres transaction advisory lock (`pg_advisory_xact_lock(hashtext(user_id), hashtext(key))`). 201 replay on match, 409 on mismatch. | `T-SES-003-IDEM-CONCUR` |
-| **R-03** | P1 | Web Frontend | Global `localStorage` session state causes cross-tab corruption and loss on reload mid-flight. | Scoped per-user `sessionStorage` (`jplearn.session:${userId}`), 4-state lifecycle machine (`starting` / `active` / `ending` / `outcome_unknown`), persistence before POST, reload recovery. | `T-SES-REC-001` |
+| **R-03** | P1 | Web Frontend | Global `localStorage` session state causes cross-tab corruption and loss on reload mid-flight. | Scoped per-user `sessionStorage` (`jplearn.session:${userId}`), 4-state lifecycle machine (`starting` / `active` / `ending` / `outcome_unknown`), persistence before POST, reload recovery. | `T-SES-REC-001` (chưa có test — Task 6) |
 | **R-04** | P1 | Platform / Migration | Baseline schema snapshot overwritten; breaks 0001 adoption path. | Restored immutable Prisma baseline snapshot `adr-004-schema-baseline.json` (10 tables), separated head `adr-004-schema-head-0002.json` (11 tables). Verified adoption path test. | `T-MIG-002-ADOPT` |
 | **R-05** | P1 | Web Frontend | Staff CMS accepts non-MP4 files in upload file inputs. | Added `accept="video/mp4"` and client validation rejecting non-MP4 files before upload. Added E2E test. | `T-CMS-E2E-001` |
-| **R-06** | P2 | Web Frontend | Login form crashes on 400 Bad Request. | Added HTTP 400 validation error handling with explicit user-facing message in `login/page.tsx`. | `T-AUTH-ERR-001` |
-| **R-07** | P2 | Web Frontend | Login redirect allows protocol-relative open redirect (`//attacker.com`). | Added URL sanitization in `getSafeRedirect` enforcing single leading `/`, rejecting `//`, `/\\`, and scheme prefixes. | `T-AUTH-SEC-001` |
+| **R-06** | P2 | Web Frontend | Login form crashes on 400 Bad Request. | Added HTTP 400 validation error handling with explicit user-facing message in `login/page.tsx`. | `T-AUTH-ERR-001` (chưa có test — Task 7) |
+| **R-07** | P2 | Web Frontend | Login redirect allows protocol-relative open redirect (`//attacker.com`). | Added URL sanitization in `getSafeRedirect` enforcing single leading `/`, rejecting `//`, `/\\`, and scheme prefixes. | `T-AUTH-SEC-001` (chưa có test — Task 7) |
 
 ---
 
@@ -56,8 +56,8 @@
   - `hls.spec.ts`: PASSED
   - `shell.spec.ts` (anti-textbook DOM guard, no grammar chrome): PASSED
   - `shell.spec.ts` (catalog draft isolation): PASSED
-  - `a11y.spec.ts` (learner routes + landing page WCAG AA contrast): PASSED (0 violations)
-  - `a11y.spec.ts` (staff CMS routes WCAG AA contrast): PASSED (0 violations)
+  - `a11y.spec.ts` (learner routes + landing: axe không phát hiện vi phạm tự động): PASSED (0 violations)
+  - `a11y.spec.ts` (staff CMS list/new: axe không phát hiện vi phạm tự động): PASSED (0 violations)
   - `staff.spec.ts` (learner 403 forbidden, admin draft -> upload mp4 -> qa -> publish -> unpublish): PASSED
   - `staff.spec.ts` (client-side non-mp4 validation): PASSED
   - `sync.spec.ts` (UC-L06 multi-client session progress sync): PASSED
@@ -82,7 +82,6 @@
   - Scoped `sessionStorage` per user and browser tab prevents multi-tab collision.
   - Four-state lifecycle state machine gracefully handles in-flight reloads and network interruptions.
   - Form validation for `.mp4` and login error handling/redirect sanitization operational.
-  - Axe WCAG 2.2 AA contrast verified across all routes.
+  - axe không phát hiện vi phạm tự động trên 7 route đã quét ở trạng thái mặc định.
 - **QA Seat (`jplearn-qa`):**
-  - 100% test pass rate across 212 pytests and 16 Playwright runs (Chromium + WebKit).
-  - All 7 remediations (R-01 through R-07) confirmed resolved.
+  - Chưa ký. Điều kiện: Task 10 closeout plan.

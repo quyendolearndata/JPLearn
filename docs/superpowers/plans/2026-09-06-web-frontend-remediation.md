@@ -1,8 +1,8 @@
 # Kế hoạch khắc phục Web Frontend & Staff CMS
 
-Ngày: 2026-09-06. Trạng thái: **PROPOSED — chưa triển khai**.
+Ngày: 2026-09-06. Trạng thái: **REMEDIATION IN PROGRESS** — code R-01…R-07 đã có (commit Task 1 của [closeout plan](2026-09-06-remediation-closeout.md)); acceptance C0/C4/C5/C6 và một phần C2/C3 chưa đủ. Chỉ đổi sang COMPLETED khi closeout plan xong Task 10.
 Kế thừa: [kế hoạch Mốc A/B](2026-09-06-web-frontend-implementation.md).
-Baseline code đang review: `00576eb` + working tree chưa commit.
+Baseline code đang review: `8bd0b44` (Task 1 closeout commits on `codex/fastapi-backend-hardening`).
 
 Mục tiêu của đợt này là sửa các lỗi concurrency, migration và khôi phục phiên;
 sau đó bổ sung bằng chứng đúng phạm vi để có thể đóng Mốc A và Mốc B.
@@ -44,14 +44,14 @@ DB dev, volume `jplearn_postgres_data` hoặc media dev.
 
 **Owner:** BA + QA. **Phạm vi:** tài liệu, không đổi runtime.
 
-- [ ] Đổi trạng thái trong `walkthrough.md` từ “hoàn thành toàn diện” thành
+- [x] Đổi trạng thái trong `walkthrough.md` từ “hoàn thành toàn diện” thành
   `REMEDIATION IN PROGRESS`; giữ nguyên số test đã chạy nhưng ghi rõ đó là baseline.
-- [ ] Sửa mô tả a11y thành: axe không phát hiện vi phạm tự động trên bốn learner route
+- [x] Sửa mô tả a11y thành: axe không phát hiện vi phạm tự động trên bốn learner route
   và state đã quét. Không dùng kết quả đó để tuyên bố toàn bộ WCAG 2.2 AA.
-- [ ] Tách bằng chứng `test:guard` (field/schema cấm) khỏi E2E banned chrome (text UI cấm).
-- [ ] Bổ sung test IDs cho catalog concurrency, session idempotency concurrency,
+- [x] Tách bằng chứng `test:guard` (field/schema cấm) khỏi E2E banned chrome (text UI cấm).
+- [x] Bổ sung test IDs cho catalog concurrency, session idempotency concurrency,
   migration adoption, session recovery và CMS handoff vào traceability trước khi đóng.
-- [ ] Ghi rõ manual walkthrough là hướng dẫn thao tác; chỉ đổi thành evidence khi có
+- [x] Ghi rõ manual walkthrough là hướng dẫn thao tác; chỉ đổi thành evidence khi có
   người chạy, revision, môi trường, kết quả và lỗi quan sát được.
 
 **Exit:** tài liệu không còn khẳng định PASS cho ca chưa kiểm; danh sách acceptance
@@ -63,25 +63,25 @@ DB dev, volume `jplearn_postgres_data` hoặc media dev.
 
 ### Thiết kế
 
-- [ ] Khôi phục `docs/qa/adr-004-schema-baseline.json` và packaged resource tương ứng
+- [x] Khôi phục `docs/qa/adr-004-schema-baseline.json` và packaged resource tương ứng
   đúng snapshot Prisma/`0001_prisma_baseline` bất biến tại `00576eb`.
-- [ ] Tạo snapshot mới cho schema **head/0002** với tên phân biệt rõ, ở docs và
+- [x] Tạo snapshot mới cho schema **head/0002** với tên phân biệt rõ, ở docs và
   package resource. Không gọi snapshot head là “Prisma baseline”.
-- [ ] `stamp 0001_prisma_baseline` phải verify snapshot 0001; `stamp head` chỉ được
+- [x] `stamp 0001_prisma_baseline` phải verify snapshot 0001; `stamp head` chỉ được
   verify snapshot head. `upgrade head` trên DB đã stamp 0001 phải thực thi 0002.
-- [ ] Giữ migration `0002_session_idem_rev.py` là migration tiến; không nhét cấu trúc
+- [x] Giữ migration `0002_session_idem_rev.py` là migration tiến; không nhét cấu trúc
   0002 vào 0001 và không sửa lịch sử migration đã dùng.
-- [ ] Cập nhật test/schema helper để chọn expected snapshot theo revision thay vì dùng
+- [x] Cập nhật test/schema helper để chọn expected snapshot theo revision thay vì dùng
   một file cho cả adoption và head.
 
 ### Test đỏ bắt buộc trước sửa
 
-- [ ] Dựng DB ở revision 0001, tạo dữ liệu đại diện, xóa riêng `alembic_version`,
+- [x] Dựng DB ở revision 0001, tạo dữ liệu đại diện, xóa riêng `alembic_version`,
   `stamp 0001`, rồi `upgrade head`; xác nhận dữ liệu còn nguyên, `revision=1`, bảng
   idempotency tồn tại và Alembic current là 0002.
-- [ ] DB đúng 0001 được stamp 0001; DB lệch 0001 bị từ chối.
-- [ ] DB đúng head được stamp head; DB chỉ ở 0001 bị từ chối khi stamp head.
-- [ ] Upgrade mới từ empty và downgrade/upgrade có chủ đích đều khớp snapshot đúng revision.
+- [x] DB đúng 0001 được stamp 0001; DB lệch 0001 bị từ chối.
+- [x] DB đúng head được stamp head; DB chỉ ở 0001 bị từ chối khi stamp head.
+- [x] Upgrade mới từ empty và downgrade/upgrade có chủ đích đều khớp snapshot đúng revision.
 
 **Exit:** cả fresh install và đường Prisma adoption→0001→0002 PASS trên PostgreSQL test;
 hai snapshot có checksum/evidence riêng.
@@ -92,27 +92,27 @@ hai snapshot có checksum/evidence riêng.
 
 ### Thiết kế
 
-- [ ] Thay `get → so revision → update` bằng compare-and-swap tại database cho PATCH:
+- [x] Thay `get → so revision → update` bằng compare-and-swap tại database cho PATCH:
   `UPDATE ... WHERE id=:id AND status='draft' AND revision=:expected`, đồng thời
   set metadata và `revision=revision+1`, dùng `RETURNING` để lấy kết quả.
-- [ ] Repository trả kết quả phân biệt `updated`, `not_found`, `wrong_status`,
+- [x] Repository trả kết quả phân biệt `updated`, `not_found`, `wrong_status`,
   `revision_conflict`; handler map đúng 404/400/409 mà không dựa vào thông báo chuỗi.
-- [ ] Serialize các transition submit-QA, publish và unpublish bằng row lock hoặc CAS
+- [x] Serialize các transition submit-QA, publish và unpublish bằng row lock hoặc CAS
   chung. Mọi transition tăng revision. PATCH đang chờ sau transition phải fail theo
   status/revision, không được ghi status cũ trở lại.
-- [ ] Media/publish invariant tiếp tục được kiểm trong cùng transaction; không giảm
+- [x] Media/publish invariant tiếp tục được kiểm trong cùng transaction; không giảm
   quyền admin publish hoặc bỏ kiểm storage.
-- [ ] Giữ port/application không phụ thuộc SQLAlchemy; thao tác nguyên tử nằm trong
+- [x] Giữ port/application không phụ thuộc SQLAlchemy; thao tác nguyên tử nằm trong
   repository adapter với contract rõ.
 
 ### Test bắt buộc
 
-- [ ] Hai PATCH thật sự đồng thời cùng revision, dùng barrier thay cho sleep:
+- [x] Hai PATCH thật sự đồng thời cùng revision, dùng barrier thay cho sleep:
   đúng một 200, một 409; DB có revision tăng đúng một và metadata của winner.
-- [ ] Race PATCH với submit-QA: kết quả cuối chỉ là draft đã sửa hoặc level_qa từ
+- [x] Race PATCH với submit-QA: kết quả cuối chỉ là draft đã sửa hoặc level_qa từ
   bản đã serialize; không có level_qa với metadata/revision bị ghi ngược.
 - [ ] Race PATCH với publish/unpublish tương ứng; state machine và revision không lùi.
-- [ ] Test stale tuần tự, wrong status, not found và teacher/admin permissions vẫn PASS.
+- [x] Test stale tuần tự, wrong status, not found và teacher/admin permissions vẫn PASS.
 
 **Exit:** không có lost update; mọi catalog mutation cạnh tranh có một thứ tự commit
 kiểm chứng được và response phản ánh đúng kết quả database.
@@ -123,28 +123,28 @@ kiểm chứng được và response phản ánh đúng kết quả database.
 
 ### Thiết kế
 
-- [ ] Serialize theo `(user_id, idempotency_key)` trong transaction trước khi đọc/tạo.
+- [x] Serialize theo `(user_id, idempotency_key)` trong transaction trước khi đọc/tạo.
   Chọn một primitive PostgreSQL có ownership theo transaction (ví dụ keyed advisory
   transaction lock) hoặc atomic reservation có kết quả `claimed/existing/conflict`.
   Encapsulate primitive trong persistence adapter; application dùng contract port.
-- [ ] Sau khi giành quyền, đọc lại key: cùng request hash trả đúng session đã lưu;
+- [x] Sau khi giành quyền, đọc lại key: cùng request hash trả đúng session đã lưu;
   khác hash trả 409; key chưa có mới tạo session, events và key trong cùng transaction.
-- [ ] Không bắt `IntegrityError` rồi tiếp tục dùng session SQLAlchemy đã failed.
+- [x] Không bắt `IntegrityError` rồi tiếp tục dùng session SQLAlchemy đã failed.
   Nếu dùng unique conflict làm arbitration, rollback/savepoint và đọc winner bằng
   transaction hợp lệ trước khi trả response.
-- [ ] Response replay dùng cùng session DTO và không phát thêm `session_started`,
+- [x] Response replay dùng cùng session DTO và không phát thêm `session_started`,
   `level_exposed`, không ghi lại device/progress ngoài semantics đã chốt.
 - [ ] Giới hạn/validate độ dài Idempotency-Key và document thời gian lưu; giữ header optional.
 
 ### Test bắt buộc
 
-- [ ] Hai request đồng thời cùng user/key/body: cả hai trả thành công cùng session ID;
+- [x] Hai request đồng thời cùng user/key/body: cả hai trả thành công cùng session ID;
   DB chỉ có một session, một idempotency row và đúng một cặp event start/level.
-- [ ] Cùng key nhưng body khác chạy đồng thời/tuần tự: một winner, request khác 409.
+- [x] Cùng key nhưng body khác chạy đồng thời/tuần tự: một winner, request khác 409.
 - [ ] Cùng key ở hai user tạo hai session độc lập; không rò session giữa user.
 - [ ] Inject lỗi trước commit: không để key mồ côi hoặc session/event nửa vời; retry sau
   rollback tạo đúng một session.
-- [ ] Request không có key giữ hành vi hiện hành và contract cũ.
+- [x] Request không có key giữ hành vi hiện hành và contract cũ.
 
 **Exit:** retry đồng thời không trả 500 và không tạo/emit trùng; evidence kiểm trực tiếp
 row/event, không chỉ so response ID.

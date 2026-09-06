@@ -1,6 +1,6 @@
 # Báo Cáo Thực Thi: Web Frontend & Staff CMS (Mốc A & Mốc B)
 
-Kế hoạch [docs/superpowers/plans/2026-09-06-web-frontend-implementation.md](file:///Users/quyendo/Documents/Learn/JPLearn/docs/superpowers/plans/2026-09-06-web-frontend-implementation.md) đã được hoàn thành toàn diện trên toàn bộ các vai trò (BA, Design, Web, Platform, QA).
+> **Trạng thái: REMEDIATION IN PROGRESS.** Kế hoạch [Mốc A/B](docs/superpowers/plans/2026-09-06-web-frontend-implementation.md) đã có code đầy đủ; kế hoạch [remediation](docs/superpowers/plans/2026-09-06-web-frontend-remediation.md) đang đóng theo [closeout plan](docs/superpowers/plans/2026-09-06-remediation-closeout.md). Số test dưới đây là **baseline hồi quy** tại commit Task 1, không phải nghiệm thu cuối.
 
 ---
 
@@ -13,7 +13,7 @@ Kế hoạch [docs/superpowers/plans/2026-09-06-web-frontend-implementation.md](
 - **Phiên Học Trực Tiếp ([apps/web/src/app/session/page.tsx](file:///Users/quyendo/Documents/Learn/JPLearn/apps/web/src/app/session/page.tsx)):**
   - Trình phát media `<CiPlayer>` linh hoạt: ưu tiên luồng thích ứng HLS (`.m3u8`), tự động fallback MP4.
   - Chống trùng lặp yêu cầu qua header `Idempotency-Key` trên `POST /sessions`.
-  - Khôi phục phiên học gián đoạn qua `localStorage` (`jplearn_active_session`) và xác thực trạng thái máy chủ `GET /sessions/{id}`.
+  - Khôi phục phiên học gián đoạn qua `sessionStorage` tách theo user và tab (`jplearn.session:<userId>`), state machine `starting → active → ending → outcome_unknown`, xác thực trạng thái máy chủ qua `GET /sessions/{id}`.
   - Đồng hồ đếm thời gian thực khi học, nút Bắt đầu / Kết thúc rõ ràng, và bảng tổng kết tiến độ ngay sau phiên.
 - **Tiến Độ Học Tập ([apps/web/src/app/progress/page.tsx](file:///Users/quyendo/Documents/Learn/JPLearn/apps/web/src/app/progress/page.tsx)):** Hiển thị số phút CI tích luỹ và cấp độ hiện tại, tự động đồng bộ khi quay lại trang.
 
@@ -30,7 +30,7 @@ Kế hoạch [docs/superpowers/plans/2026-09-06-web-frontend-implementation.md](
 - **Migration & Database ([apps/api-python/src/jplearn_api/migrations/versions/0002_session_idem_rev.py](file:///Users/quyendo/Documents/Learn/JPLearn/apps/api-python/src/jplearn_api/migrations/versions/0002_session_idem_rev.py)):**
   - Tạo bảng `session_idempotency_keys` lưu trữ khoá chống lặp phiên học.
   - Bổ sung cột `revision` (integer, default 1) trên bảng `catalog_items`.
-  - Cập nhật baseline [docs/qa/adr-004-schema-baseline.json](file:///Users/quyendo/Documents/Learn/JPLearn/docs/qa/adr-004-schema-baseline.json).
+  - Snapshot Prisma `0001` ([docs/qa/adr-004-schema-baseline.json](docs/qa/adr-004-schema-baseline.json), 10 bảng) **bất biến**; snapshot head `0002` tách riêng ([docs/qa/adr-004-schema-head-0002.json](docs/qa/adr-004-schema-head-0002.json), 11 bảng).
 - **API & OpenAPI:**
   - Cập nhật [docs/sad/03-design/openapi.yaml](file:///Users/quyendo/Documents/Learn/JPLearn/docs/sad/03-design/openapi.yaml) đồng bộ 100% với mã nguồn.
   - Hỗ trợ `GET /sessions/{id}`, `Idempotency-Key` trên `POST /sessions`, `GET /staff/catalog`, `GET /staff/catalog/{id}`, và `PATCH /staff/catalog/{id}`.
@@ -46,7 +46,7 @@ Kế hoạch [docs/superpowers/plans/2026-09-06-web-frontend-implementation.md](
 ```bash
 pnpm test:guard
 ```
-- **Kết quả:** `0 errors` — Không chứa bất kỳ từ khoá hoặc cột chrome bị cấm (`Ngữ pháp`, `Flashcard`, `Bản dịch`).
+- **Kết quả:** `0 errors` — Không chứa cột/field schema cấm (`vocabulary_score`, `grammar_lesson_id`, `textbook_percent`, `translation_vi`). Text chrome cấm (`Ngữ pháp`, `Flashcard`, `Bản dịch`) do `shell.spec.ts` kiểm, không phải guard.
 
 ### B. Kiểm Thử Kiểu Dữ Liệu & Bản Dựng Web
 ```bash
@@ -61,32 +61,35 @@ pnpm --filter @jplearn/web build
 ```bash
 cd apps/api-python && uv run pytest
 ```
-- **Kết quả:** `208 passed` trong 25.3s.
+- **Kết quả:** `212 passed` trong 30.39s (baseline Task 1).
   - `tests/test_openapi_diff.py`: 7/7 PASSED (0 sai lệch giữa contract OpenAPI và FastAPI router).
   - `tests/test_schema_ddl.py`: 8/8 PASSED (0 sai lệch cấu trúc bảng DDL so với baseline ADR-004).
   - `tests/test_sessions.py`: 11/11 PASSED (kiểm thử chống lặp Idempotency-Key và endpoint khôi phục).
   - `tests/test_catalog.py`: 7/7 PASSED (kiểm thử optimistic locking revision và CRUD staff).
+  - `tests/test_catalog_concurrency.py`: 2/2 PASSED (CAS PATCH đồng thời và race PATCH × submit-QA).
+  - `tests/test_sessions_concurrency.py`: 2/2 PASSED (idempotency replay đồng thời và payload 409).
 
 ### D. Kiểm Thử E2E Playwright Trên Trình Duyệt Thật (Chromium)
 ```bash
 ./apps/api-python/differential/web-e2e-python.sh --project=chromium
 ```
-- **Kết quả:** `5 passed (2.3m)`
-  - `hls.spec.ts`: Phát luồng HLS thật `.m3u8` qua `CiPlayer` thành công (`2.2s`).
-  - `shell.spec.ts (login & progress)`: Vượt qua xác nhận không chứa banned chrome (`7.9s`).
-  - `shell.spec.ts (catalog)`: Hiển thị đúng nội dung đã xuất bản, ẩn bản thảo (`1.3s`).
-  - `a11y.spec.ts`: Đạt toàn bộ chuẩn WCAG 2 AA contrast ratio, tiêu đề trang và ARIA semantic trên toàn bộ route người học (`9.7s`).
-  - `sync.spec.ts`: Chạy phiên học kéo dài thật >60s giữa 2 ngữ cảnh trình duyệt riêng biệt, đồng bộ chính xác từng phút tích luỹ (`2.3m`).
+- **Kết quả:** `8 passed (2.2m)` (baseline Chromium Task 1)
+  - `hls.spec.ts`: Phát luồng HLS thật `.m3u8` qua `CiPlayer` thành công.
+  - `shell.spec.ts (login & progress)`: Chrome không chứa text kênh tắt (`Ngữ pháp`, `Flashcard`, `Bản dịch`).
+  - `shell.spec.ts (catalog)`: Hiển thị đúng nội dung đã xuất bản, ẩn bản thảo.
+  - `a11y.spec.ts`: axe không phát hiện vi phạm tự động (contrast, document-title, ARIA) trên 5 route learner và 2 route staff ở trạng thái mặc định. Không phải audit WCAG 2.2 AA toàn diện.
+  - `staff.spec.ts`: vòng đời CMS admin (403 learner, draft → upload MP4 → QA → publish → unpublish) và chặn tệp không phải `.mp4`.
+  - `sync.spec.ts`: Chạy phiên học kéo dài thật >60s giữa 2 ngữ cảnh trình duyệt riêng biệt, đồng bộ chính xác từng phút tích luỹ.
 
 ### E. Kiểm Thử E2E Playwright Trên WebKit (Safari Engine)
 ```bash
 ./apps/api-python/differential/web-e2e-python.sh --project=webkit
 ```
-- **Kết quả:** `5 passed (2.2m)` — Vượt qua 100% các ca kiểm thử tương tự trên WebKit.
+- **Kết quả:** `8 passed (2.3m)` trên WebKit engine (không phải thiết bị iPhone/iPad thật).
 
 ---
 
-## 3. Hướng Dẫn Trải Nghiệm Thủ Công (Manual Walkthrough)
+## 3. Hướng Dẫn Thao Tác Thủ Công (không phải evidence)
 
 1. **Khởi chạy ứng dụng:**
    - Terminal 1 (API): `cd apps/api-python && PYTHONPATH=src uv run uvicorn jplearn_api.entrypoints.http.app:app --port 3002`
