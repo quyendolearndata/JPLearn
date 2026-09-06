@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type Hls from "hls.js";
 
 // NFR-PERF-002: phát hls_url khi có (Safari native, hls.js cho Chrome/Firefox),
@@ -17,6 +17,7 @@ export function CiPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastPositionRef = useRef(0);
   const shouldResumeRef = useRef(false);
+  const [paused, setPaused] = useState(true);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -35,6 +36,7 @@ export function CiPlayer({
         lastPositionRef.current = video.currentTime;
       }
       shouldResumeRef.current = !video.paused;
+      setPaused(video.paused);
     };
     video.addEventListener("timeupdate", rememberPlayback);
     video.addEventListener("seeking", rememberPlayback);
@@ -150,12 +152,29 @@ export function CiPlayer({
     };
   }, [hlsUrl, onSourceFailure, playbackUrl]);
 
+  const togglePlayback = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      void video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  };
+
   return (
-    <video
-      ref={videoRef}
-      controls
-      playsInline
-      style={{ width: "100%", maxWidth: "40rem" }}
-    />
+    <div>
+      <div style={{ padding: "0.5rem 0.75rem", background: "var(--bg-subtle)" }}>
+        <button type="button" onClick={togglePlayback} aria-pressed={!paused}>
+          {paused ? "Phát" : "Tạm dừng"}
+        </button>
+      </div>
+      <video
+        ref={videoRef}
+        controls
+        playsInline
+        style={{ width: "100%", maxWidth: "40rem" }}
+      />
+    </div>
   );
 }

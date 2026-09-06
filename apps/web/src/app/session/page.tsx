@@ -927,7 +927,11 @@ function SessionContent() {
         )}
       </div>
 
-      <p className="status-text" style={{ marginTop: "0.5rem", fontWeight: 700, color: sessionId ? "#15803d" : "var(--charcoal)" }}>
+      <p
+        className="status-text"
+        role={recoveryPhase === "unverified" ? "alert" : undefined}
+        style={{ marginTop: "0.5rem", fontWeight: 700, color: sessionId ? "#15803d" : "var(--charcoal)" }}
+      >
         {status}
       </p>
 

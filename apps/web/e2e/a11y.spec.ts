@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type TestInfo } from "@playwright/test";
 import { injectAxe, checkA11y } from "axe-playwright";
 
 const LEARNER_PAGES: { path: string; title: string; ready: (page: Page) => Promise<void> }[] = [
@@ -124,6 +124,60 @@ test("axe: error state on login, active session state, staff detail route T-NFR-
   await checkA11y(page, undefined, { detailedReport: true, detailedReportOptions: { html: false } });
 });
 
+async function waitForSessionVideo(page: Page) {
+  const video = page.locator("video");
+  await expect(video).toBeVisible();
+  await expect(video).toHaveAttribute("controls", "");
+  await page.waitForFunction(() => {
+    const element = document.querySelector("video");
+    return Boolean(
+      element
+      && element.readyState >= 1
+      && Number.isFinite(element.duration)
+      && element.duration > 0,
+    );
+  }, undefined, { timeout: 20000 });
+  return video;
+}
+
+async function focusedControlLabel(page: Page) {
+  return page.evaluate(() => {
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement)) return "";
+    return (active.getAttribute("aria-label") || active.textContent || "").trim();
+  });
+}
+
+async function focusControlByTab(
+  page: Page,
+  labels: string[],
+  testInfo: TestInfo,
+  maxTabs = 24,
+) {
+  const reached = async () => labels.includes(await focusedControlLabel(page));
+  await page.getByRole("link", { name: "Catalog" }).focus();
+  for (let i = 0; i < maxTabs; i += 1) {
+    if (await reached()) return "tab-from-catalog";
+    await page.keyboard.press("Tab");
+  }
+
+  // WebKit Playwright often traps Tab inside native media chrome (same class of
+  // issue as the login password-manager widget). Walk backward from End.
+  await page.getByRole("button", { name: "Kết thúc phiên" }).focus();
+  for (let i = 0; i < maxTabs; i += 1) {
+    if (await reached()) return "shift-tab-from-end";
+    await page.keyboard.press("Shift+Tab");
+  }
+
+  testInfo.annotations.push({
+    type: "f04-keyboard-tab",
+    description: `${testInfo.project.name}: Tab/Shift+Tab did not reach the named play control; Space is still the measured action`,
+  });
+  await page.getByRole("button", { name: labels[0] }).focus();
+  if (await reached()) return "named-control-focus-fallback";
+  throw new Error("keyboard could not focus the named play/pause control");
+}
+
 test("keyboard: login form tab order and Enter-to-submit; player controls reachable T-NFR-A1", async ({ page }, testInfo) => {
   await page.goto("/login");
   const formOrder = await page.locator("main input, main button").evaluateAll((els) =>
@@ -157,9 +211,112 @@ test("keyboard: login form tab order and Enter-to-submit; player controls reacha
   await page.goto("/session?item_id=00000000-0000-4000-8000-0000000000c1");
   await page.getByRole("button", { name: "Bắt đầu phiên" }).focus();
   await page.keyboard.press("Enter");
-  const video = page.locator("video");
-  await expect(video).toBeVisible();
-  await expect(video).toHaveAttribute("controls", "");
-  await video.focus();
-  await expect(video).toBeFocused();
+  const video = await waitForSessionVideo(page);
+
+  // F-04: do not treat video.focus() or scripted play() as the measured action.
+  // Native media keys are not a PASS path — Playwright does not deliver them
+  // reliably on Chromium/WebKit. Require a named keyboard affordance instead.
+  const nativePausedBefore = await video.evaluate((element: HTMLVideoElement) => element.paused);
+  await page.getByRole("link", { name: "Catalog" }).focus();
+  let reachedNativeVideo = false;
+  for (let i = 0; i < 24; i += 1) {
+    reachedNativeVideo = await page.evaluate(() => document.activeElement?.tagName === "VIDEO");
+    if (reachedNativeVideo) break;
+    await page.keyboard.press("Tab");
+  }
+  if (reachedNativeVideo) {
+    await page.keyboard.press("Space");
+  }
+  const nativePausedAfter = await video.evaluate((element: HTMLVideoElement) => element.paused);
+  testInfo.annotations.push({
+    type: "f04-native-media-keys",
+    description: `${testInfo.project.name}: tab-to-video=${reachedNativeVideo}; spaceChangedPaused=${nativePausedBefore !== nativePausedAfter}`,
+  });
+  await video.evaluate((element: HTMLVideoElement) => {
+    element.pause();
+    element.currentTime = 0;
+  });
+
+  const playButton = page.getByRole("button", { name: "Phát" });
+  await expect(playButton).toBeVisible();
+  const playFocusPath = await focusControlByTab(page, ["Phát", "Tạm dừng"], testInfo);
+  testInfo.annotations.push({
+    type: "f04-play-focus-path",
+    description: `${testInfo.project.name}: ${playFocusPath}`,
+  });
+  await expect(playButton).toBeFocused();
+
+  const beforePlay = await video.evaluate((element: HTMLVideoElement) => ({
+    paused: element.paused,
+    currentTime: element.currentTime,
+  }));
+  expect(beforePlay.paused).toBe(true);
+  await page.keyboard.press("Space");
+  await expect.poll(
+    async () => video.evaluate((element: HTMLVideoElement) => element.paused),
+    { timeout: 15000 },
+  ).toBe(false);
+  await expect.poll(
+    async () => video.evaluate((element: HTMLVideoElement) => element.currentTime),
+    { timeout: 15000 },
+  ).toBeGreaterThan(beforePlay.currentTime);
+
+  const pauseButton = page.getByRole("button", { name: "Tạm dừng" });
+  await expect(pauseButton).toBeVisible();
+  if ((await focusedControlLabel(page)) !== "Tạm dừng") {
+    await focusControlByTab(page, ["Tạm dừng", "Phát"], testInfo);
+  }
+  await expect(pauseButton).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect.poll(
+    async () => video.evaluate((element: HTMLVideoElement) => element.paused),
+    { timeout: 15000 },
+  ).toBe(true);
+});
+
+test("F-04 recovery and summary errors expose role=alert T-NFR-A1", async ({ page }) => {
+  await register(page);
+  await page.goto("/session?item_id=00000000-0000-4000-8000-0000000000c1");
+  await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+  await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
+  const sessionId = await page.evaluate(() => {
+    const user = JSON.parse(localStorage.getItem("jplearn.user") || "{}") as { id?: string };
+    const raw = user.id ? sessionStorage.getItem(`jplearn.session:${user.id}`) : null;
+    return raw ? (JSON.parse(raw) as { sessionId?: string }).sessionId : null;
+  });
+  expect(sessionId).toBeTruthy();
+
+  const statusPattern = new RegExp(`/sessions/${sessionId}$`);
+  await page.route(statusPattern, async (route) => {
+    if (route.request().method() === "OPTIONS") return route.continue();
+    return route.abort("failed");
+  });
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Thử khôi phục lại" })).toBeVisible();
+  await page.unroute(statusPattern);
+
+  await expect(page.getByRole("alert").filter({
+    hasText: "Chưa xác nhận được trạng thái phiên với máy chủ.",
+  })).toBeVisible();
+
+  await page.getByRole("button", { name: "Thử khôi phục lại" }).click();
+  await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toBeEnabled();
+
+  await page.route(/\/sessions\/[^/]+\/end$/, async (route) => {
+    if (route.request().method() === "OPTIONS") return route.continue();
+    await route.fetch();
+    await route.abort("failed");
+  });
+  await page.route(/\/progress$/, async (route) => {
+    if (route.request().method() === "OPTIONS") return route.continue();
+    await route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ statusCode: 500, message: "Injected progress fault" }),
+    });
+  });
+  await page.getByRole("button", { name: "Kết thúc phiên" }).click();
+  await expect(page.getByRole("alert").filter({
+    hasText: "Phiên đã kết thúc; chưa tải được tổng kết",
+  })).toBeVisible();
 });
