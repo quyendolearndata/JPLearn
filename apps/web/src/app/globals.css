@@ -169,8 +169,7 @@ textarea {
 }
 
 input:disabled,
-select:disabled,
-button:disabled {
+select:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -181,7 +180,7 @@ button,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: inherit;
+  font-family: ui-sans-serif, system-ui, sans-serif;
   font-weight: 800;
   font-size: 0.95rem;
   padding: 0.65rem 1.4rem;
@@ -208,7 +207,8 @@ button:active:not(:disabled),
 }
 
 .btn-primary {
-  background: var(--pink);
+  /* #e5006b + white is ~4.56:1 — flakes under axe on the session summary CTA. */
+  background: #9f1239;
   color: #ffffff;
 }
 
@@ -217,8 +217,20 @@ button:active:not(:disabled),
 }
 
 .btn-danger {
-  background: #b91c1c;
-  color: #ffffff;
+  /* Dark red on rose tint — white-on-#b91c1c failed axe on the session CTA
+     (glyph antialiasing against the card). Pair matches .status-error. */
+  background: #fee2e2;
+  color: #7f1d1d;
+}
+
+/* NFR-A11Y-001: disabled pink/red + white + opacity 0.6 fails WCAG AA on the
+   session page (Bắt đầu phiên stays disabled while the clip plays). */
+button:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+  background: #d6d3d1;
+  color: #1c1917;
+  box-shadow: 1.5px 1.5px 0px var(--charcoal);
 }
 
 .button-group {

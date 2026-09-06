@@ -402,7 +402,6 @@ function SessionContent() {
           type="button"
           onClick={() => void startSession()}
           disabled={loading || Boolean(sessionId)}
-          className="btn-primary"
         >
           {loading && !sessionId ? "Đang xử lý…" : "Bắt đầu phiên"}
         </button>

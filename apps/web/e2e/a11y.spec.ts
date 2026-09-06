@@ -66,6 +66,7 @@ test("chrome learner đạt contrast AA + mọi route có document title T-NFR-A
     await ready(page);
     // NFR-A11Y-001 (#36): mọi route learner phải có document title có ý nghĩa.
     await expect(page).toHaveTitle(title);
+    await page.evaluate(() => document.fonts.ready);
     await injectAxe(page);
     // Rule thuộc card #34 (contrast, WCAG AA) + #36 (document-title).
     await checkA11y(page, undefined, {
@@ -81,10 +82,84 @@ test("chrome staff CMS đạt contrast AA + mọi route có document title T-NFR
     await page.goto(path);
     await ready(page);
     await expect(page).toHaveTitle(title);
+    await page.evaluate(() => document.fonts.ready);
     await injectAxe(page);
     await checkA11y(page, undefined, {
       detailedReport: true,
       detailedReportOptions: { html: false },
     });
   }
+});
+
+test("axe: error state on login, active session state, staff detail route T-NFR-A1", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill("bad");
+  await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await expect(page.locator("p.status-error")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await injectAxe(page);
+  await checkA11y(page, undefined, { detailedReport: true, detailedReportOptions: { html: false } });
+
+  await register(page);
+  await page.goto("/session?item_id=00000000-0000-4000-8000-0000000000c1");
+  await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+  await expect(page.locator("video")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await injectAxe(page);
+  await checkA11y(page, undefined, { detailedReport: true, detailedReportOptions: { html: false } });
+  await page.getByRole("button", { name: "Kết thúc phiên" }).click();
+  await expect(page.getByText("Tổng kết phiên học")).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await injectAxe(page);
+  await checkA11y(page, undefined, { detailedReport: true, detailedReportOptions: { html: false } });
+
+  await page.goto("/login");
+  await page.getByRole("button", { name: "Đăng xuất" }).click();
+  await expect(page.getByRole("button", { name: "Đăng nhập" })).toBeVisible();
+  await loginAdmin(page);
+  await page.goto("/staff/00000000-0000-4000-8000-0000000000c1");
+  await expect(page.getByText("Đã xuất bản (published)", { exact: true })).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await injectAxe(page);
+  await checkA11y(page, undefined, { detailedReport: true, detailedReportOptions: { html: false } });
+});
+
+test("keyboard: login form tab order and Enter-to-submit; player controls reachable T-NFR-A1", async ({ page }, testInfo) => {
+  await page.goto("/login");
+  const formOrder = await page.locator("main input, main button").evaluateAll((els) =>
+    els.map((el) => {
+      if (el instanceof HTMLInputElement) {
+        const label = document.querySelector(`label[for="${el.id}"]`);
+        return (label?.textContent || el.id).trim();
+      }
+      return (el.textContent || "").trim();
+    }),
+  );
+  expect(formOrder).toEqual(["Email", "Mật khẩu", "Đăng nhập", "Đăng ký"]);
+
+  await page.getByLabel("Email").focus();
+  await page.keyboard.press("Tab");
+  await expect(page.getByLabel("Mật khẩu")).toBeFocused();
+  // Playwright WebKit does not deliver Tab past the password field the same way
+  // Chromium does (password-manager widget). Chromium covers the full CTA walk.
+  if (testInfo.project.name === "chromium") {
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "Đăng nhập" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "Đăng ký" })).toBeFocused();
+  }
+  await page.getByLabel("Email").fill(`k${Date.now()}@example.com`);
+  await page.getByLabel("Mật khẩu").fill("password10");
+  await page.getByRole("button", { name: "Đăng ký" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL("/");
+
+  await page.goto("/session?item_id=00000000-0000-4000-8000-0000000000c1");
+  await page.getByRole("button", { name: "Bắt đầu phiên" }).focus();
+  await page.keyboard.press("Enter");
+  const video = page.locator("video");
+  await expect(video).toBeVisible();
+  await expect(video).toHaveAttribute("controls", "");
+  await video.focus();
+  await expect(video).toBeFocused();
 });
