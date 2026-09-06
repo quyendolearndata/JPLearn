@@ -16,6 +16,14 @@ export interface ApiErrorResponse {
   details?: unknown;
 }
 
+function requestBearerToken(headers: Headers, authToken?: string): string | null {
+  if (authToken) return authToken;
+  const authorization = headers.get("Authorization");
+  if (!authorization) return null;
+  const match = /^Bearer\s+(.+)$/i.exec(authorization);
+  return match?.[1] ?? null;
+}
+
 export async function api(
   path: string,
   opts: RequestInit & { token?: string } = {},
@@ -51,11 +59,14 @@ export async function api(
   }
 
   // Centralized 401 Unauthorized handling for authenticated requests
-  const hadAuth = Boolean(authToken || headers.has("Authorization"));
+  const sentToken = requestBearerToken(headers, authToken);
+  const hadAuth = Boolean(sentToken);
   if (res.status === 401 && hadAuth && !path.startsWith("/auth/login") && !path.startsWith("/auth/register")) {
     if (typeof window !== "undefined") {
       try {
         const { clearSession } = await import("./auth-storage");
+        const currentToken = localStorage.getItem("jplearn.access_token");
+        if (!sentToken || currentToken !== sentToken) return res;
         clearSession();
         if (window.location.pathname !== "/login") {
           const currentPath = window.location.pathname + window.location.search;

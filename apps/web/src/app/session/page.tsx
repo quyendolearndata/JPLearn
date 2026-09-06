@@ -13,7 +13,9 @@ import {
 } from "../../lib/session-recovery";
 import {
   clearSessionRecord,
+  inspectSessionRecord,
   newIdempotencyKey,
+  prepareStartingSession,
   readSessionRecord,
   recoveryRequestFor,
   writeSessionRecord,
@@ -100,12 +102,18 @@ function SessionContent() {
     }
     try { localStorage.removeItem("jplearn_active_session"); } catch {}
 
-    const stored = readSessionRecord(userId);
-    if (!stored) {
+    const inspection = inspectSessionRecord(userId);
+    if (inspection.kind === "unavailable") {
+      setStatus("Không thể truy cập dữ liệu phiên trên trình duyệt.");
+      setRecoveryPhase("unverified");
+      return;
+    }
+    if (inspection.kind === "empty") {
       setRecoveryPhase("ready");
       setStatus("");
       return;
     }
+    const stored = inspection.record;
 
     const recoveryRequest = recoveryRequestFor(stored);
     if (!recoveryRequest) {
@@ -307,28 +315,37 @@ function SessionContent() {
       return;
     }
 
-    if (readSessionRecord(userId)) {
+    const startedAtIso = new Date().toISOString();
+    const preparation = prepareStartingSession(
+      inspectSessionRecord(userId),
+      {
+        startedAt: startedAtIso,
+        itemId: requestedItemId || undefined,
+      },
+      newIdempotencyKey,
+    );
+    if (preparation.kind === "unavailable") {
+      setRecoveryPhase("unverified");
+      setStatus("Không thể truy cập dữ liệu phiên trên trình duyệt.");
+      return;
+    }
+    if (preparation.kind === "existing") {
       setRecoveryPhase("unverified");
       setStatus("Cần khôi phục phiên đã lưu trước khi bắt đầu phiên mới.");
       return;
     }
 
+    // Persist "starting" state BEFORE sending POST /sessions
+    const startingRecord = preparation.record;
+    if (!writeSessionRecord(userId, startingRecord)) {
+      setRecoveryPhase("unverified");
+      setStatus("Không thể lưu dữ liệu phiên trên trình duyệt.");
+      return;
+    }
+
     setLoading(true);
     setCompletedSummary(null);
-
-    const idempotencyKey = newIdempotencyKey();
-    const startedAtIso = new Date().toISOString();
-
-    // Persist "starting" state BEFORE sending POST /sessions
-    const startingRecord: StoredSession = {
-      v: 1,
-      state: "starting",
-      idempotencyKey,
-      startedAt: startedAtIso,
-      itemId: requestedItemId || undefined,
-      deviceClass: "web",
-    };
-    writeSessionRecord(userId, startingRecord);
+    const idempotencyKey = startingRecord.idempotencyKey;
 
     try {
       const res = await api("/sessions", {

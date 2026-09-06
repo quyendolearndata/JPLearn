@@ -28,7 +28,18 @@ export type SessionRecoveryRequest =
       itemId?: string;
     };
 
+export type SessionRecordInspection =
+  | { kind: "unavailable" }
+  | { kind: "empty" }
+  | { kind: "record"; record: StoredSession };
+
+export type StartSessionPreparation =
+  | { kind: "unavailable" }
+  | { kind: "existing"; record: StoredSession }
+  | { kind: "starting"; record: StoredSession };
+
 const PREFIX = "jplearn.session:";
+const ACCESS_PROBE_KEY = `${PREFIX}__access_probe__`;
 const STATES: readonly SessionLifecycleState[] = ["starting", "active", "ending", "outcome_unknown"];
 const ALLOWED_KEYS = new Set(["v", "state", "idempotencyKey", "deviceClass", "startedAt", "itemId", "sessionId"]);
 
@@ -45,6 +56,32 @@ function store(): Storage | null {
   }
 }
 
+function accessibleStore(): Storage | null {
+  const s = store();
+  if (!s) return null;
+  let previous: string | null = null;
+  let readPrevious = false;
+  try {
+    previous = s.getItem(ACCESS_PROBE_KEY);
+    readPrevious = true;
+    s.setItem(ACCESS_PROBE_KEY, "ok");
+    if (s.getItem(ACCESS_PROBE_KEY) !== "ok") throw new Error("sessionStorage write verification failed");
+    if (previous === null) s.removeItem(ACCESS_PROBE_KEY);
+    else s.setItem(ACCESS_PROBE_KEY, previous);
+    return s;
+  } catch {
+    if (readPrevious) {
+      try {
+        if (previous === null) s.removeItem(ACCESS_PROBE_KEY);
+        else s.setItem(ACCESS_PROBE_KEY, previous);
+      } catch {
+        // Storage remains unavailable.
+      }
+    }
+    return null;
+  }
+}
+
 function isValid(x: unknown): x is StoredSession {
   if (!x || typeof x !== "object") return false;
   const r = x as Record<string, unknown>;
@@ -56,29 +93,82 @@ function isValid(x: unknown): x is StoredSession {
   return true;
 }
 
-export function readSessionRecord(userId: string): StoredSession | null {
-  const s = store();
-  if (!s) return null;
+export function inspectSessionRecord(userId: string): SessionRecordInspection {
+  const s = accessibleStore();
+  if (!s) return { kind: "unavailable" };
   const key = sessionStorageKey(userId);
-  const raw = s.getItem(key);
-  if (raw === null) return null;
+  let raw: string | null;
+  try {
+    raw = s.getItem(key);
+  } catch {
+    return { kind: "unavailable" };
+  }
+  if (raw === null) return { kind: "empty" };
   try {
     const parsed: unknown = JSON.parse(raw);
-    if (isValid(parsed)) return parsed;
+    if (isValid(parsed)) return { kind: "record", record: parsed };
   } catch {
-    /* fallthrough */
+    try {
+      s.removeItem(key);
+    } catch {
+      return { kind: "unavailable" };
+    }
+    return { kind: "empty" };
   }
-  s.removeItem(key);
-  return null;
+  try {
+    s.removeItem(key);
+  } catch {
+    return { kind: "unavailable" };
+  }
+  return { kind: "empty" };
 }
 
-export function writeSessionRecord(userId: string, rec: StoredSession): void {
+export function readSessionRecord(userId: string): StoredSession | null {
+  const inspected = inspectSessionRecord(userId);
+  return inspected.kind === "record" ? inspected.record : null;
+}
+
+export function writeSessionRecord(userId: string, rec: StoredSession): boolean {
   if (!isValid(rec)) throw new Error("StoredSession must not carry catalog/media payload");
-  store()?.setItem(sessionStorageKey(userId), JSON.stringify(rec));
+  const s = accessibleStore();
+  if (!s) return false;
+  const serialized = JSON.stringify(rec);
+  try {
+    s.setItem(sessionStorageKey(userId), serialized);
+    return s.getItem(sessionStorageKey(userId)) === serialized;
+  } catch {
+    return false;
+  }
 }
 
 export function clearSessionRecord(userId: string): void {
-  store()?.removeItem(sessionStorageKey(userId));
+  try {
+    store()?.removeItem(sessionStorageKey(userId));
+  } catch {
+    // Best effort for unavailable storage.
+  }
+}
+
+export function prepareStartingSession(
+  inspection: SessionRecordInspection,
+  input: { startedAt: string; itemId?: string },
+  createKey: () => string = newIdempotencyKey,
+): StartSessionPreparation {
+  if (inspection.kind === "unavailable") return { kind: "unavailable" };
+  if (inspection.kind === "record") {
+    return { kind: "existing", record: inspection.record };
+  }
+  return {
+    kind: "starting",
+    record: {
+      v: 1,
+      state: "starting",
+      idempotencyKey: createKey(),
+      startedAt: input.startedAt,
+      itemId: input.itemId,
+      deviceClass: "web",
+    },
+  };
 }
 
 export function recoveryRequestFor(stored: StoredSession): SessionRecoveryRequest | null {

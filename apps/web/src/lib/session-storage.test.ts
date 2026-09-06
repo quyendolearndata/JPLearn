@@ -6,7 +6,9 @@ import {
   readSessionRecord,
   writeSessionRecord,
   clearSessionRecord,
+  inspectSessionRecord,
   newIdempotencyKey,
+  prepareStartingSession,
   recoveryRequestFor,
   type StoredSession,
 } from "./session-storage";
@@ -20,12 +22,70 @@ class MemoryStorage {
   clear() { this.m.clear(); }
 }
 (globalThis as unknown as { window: unknown }).window = globalThis;
-(globalThis as unknown as { sessionStorage: MemoryStorage }).sessionStorage = new MemoryStorage();
+const memoryStorage = new MemoryStorage();
 
-beforeEach(() => (globalThis as unknown as { sessionStorage: MemoryStorage }).sessionStorage.clear());
+beforeEach(() => {
+  memoryStorage.clear();
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    writable: true,
+    value: memoryStorage,
+  });
+});
 
 const rec = (over: Partial<StoredSession> = {}): StoredSession => ({
   v: 1, state: "starting", idempotencyKey: "k1", deviceClass: "web", startedAt: "2026-09-06T00:00:00.000Z", ...over,
+});
+
+test("T-SES-REC-001: storage unavailable is distinct from an empty record", () => {
+  assert.deepEqual(inspectSessionRecord("u1"), { kind: "empty" });
+
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    get() {
+      throw new Error("storage blocked");
+    },
+  });
+  assert.deepEqual(inspectSessionRecord("u1"), { kind: "unavailable" });
+
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    writable: true,
+    value: {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error("storage is read-only");
+      },
+      removeItem: () => {},
+    },
+  });
+  assert.deepEqual(inspectSessionRecord("u1"), { kind: "unavailable" });
+});
+
+test("T-SES-REC-001: unavailable storage blocks start without minting a key", () => {
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    writable: true,
+    value: {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error("storage is read-only");
+      },
+      removeItem: () => {},
+    },
+  });
+  let minted = 0;
+  const result = prepareStartingSession(
+    inspectSessionRecord("u1"),
+    { startedAt: "2026-09-06T00:00:00.000Z", itemId: "item-1" },
+    () => {
+      minted += 1;
+      return "new-key";
+    },
+  );
+
+  assert.deepEqual(result, { kind: "unavailable" });
+  assert.equal(minted, 0);
 });
 
 test("T-SES-REC-001: key is scoped per user", () => {
