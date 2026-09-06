@@ -26,6 +26,7 @@ from jplearn_api.entrypoints.http.security import require_user
 router = APIRouter()
 
 DEVICE_CLASSES = ("web", "phone", "ipad")
+IDEMPOTENCY_KEY_MAX_LENGTH = 128
 
 
 @router.post(
@@ -41,12 +42,27 @@ DEVICE_CLASSES = ("web", "phone", "ipad")
 )
 async def start_session(
     body: SessionStartBody,
-    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+    idempotency_key: str | None = Header(
+        default=None,
+        alias="Idempotency-Key",
+        max_length=IDEMPOTENCY_KEY_MAX_LENGTH,
+        description=(
+            "Optional. Max 128 chars. Scoped per (user, key). Same key + same body "
+            "replays the stored session (201); same key + different body returns 409. "
+            "Keys are retained for the lifetime of the session row (ON DELETE CASCADE); "
+            "no TTL sweep in Q1."
+        ),
+    ),
     session: AsyncSession = Depends(get_session),
     user: UserDTO = Depends(require_user),
 ) -> LearningSessionPublic:
     if body.device_class not in DEVICE_CLASSES:
         raise HTTPException(status_code=400, detail="device_class is required")
+    if idempotency_key is not None and len(idempotency_key) > IDEMPOTENCY_KEY_MAX_LENGTH:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Idempotency-Key must be at most {IDEMPOTENCY_KEY_MAX_LENGTH} characters",
+        )
     uow = create_uow(session)
     request_hash = (
         hashlib.sha256(body.device_class.encode()).hexdigest()

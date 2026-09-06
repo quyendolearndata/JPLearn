@@ -48,8 +48,8 @@ async def client_factory(postgres_url: str):
         )
         app = create_app(settings)
         async with lifespan(app):
-            async def _make_client():
-                transport = ASGITransport(app=app)
+            async def _make_client(*, raise_app_exceptions: bool = True):
+                transport = ASGITransport(app=app, raise_app_exceptions=raise_app_exceptions)
                 return AsyncClient(transport=transport, base_url="http://test")
 
             yield _make_client
@@ -162,3 +162,112 @@ async def test_concurrent_start_session_same_key_different_body(client_factory, 
         assert session_count == 1, f"Expected exactly 1 session in DB, got {session_count}"
     finally:
         await conn.close()
+
+
+async def _count_rows(postgres_url: str, user_id: str) -> tuple[int, int, int]:
+    conn = await asyncpg.connect(postgres_url.replace("postgresql+asyncpg://", "postgresql://"))
+    try:
+        sessions = await conn.fetchval("SELECT COUNT(*) FROM learning_sessions WHERE user_id = $1", user_id)
+        keys = await conn.fetchval("SELECT COUNT(*) FROM session_idempotency_keys WHERE user_id = $1", user_id)
+        events = await conn.fetchval("SELECT COUNT(*) FROM learning_events WHERE user_id = $1", user_id)
+        return sessions, keys, events
+    finally:
+        await conn.close()
+
+
+@pytest.mark.asyncio
+async def test_same_key_two_users_creates_two_isolated_sessions(client_factory, postgres_url: str):
+    """T-SES-003-IDEM-CONCUR: idempotency scope is (user_id, key); the same key across users must not leak sessions."""
+    make_client = client_factory
+    c = await make_client()
+    user_a, token_a = await _create_learner_token(c)
+    user_b, token_b = await _create_learner_token(c)
+    key = f"shared-{uuid4()}"
+    barrier = asyncio.Barrier(2)
+
+    async def worker(token: str):
+        cc = await make_client()
+        await barrier.wait()
+        return await cc.post(
+            "/sessions",
+            headers={"Authorization": f"Bearer {token}", "Idempotency-Key": key},
+            json={"device_class": "web"},
+        )
+
+    ra, rb = await asyncio.gather(worker(token_a), worker(token_b))
+    assert ra.status_code == 201 and rb.status_code == 201
+    assert ra.json()["id"] != rb.json()["id"]
+
+    # Owner check: A must not read B's session and vice versa.
+    cross = await c.get(f"/sessions/{rb.json()['id']}", headers={"Authorization": f"Bearer {token_a}"})
+    assert cross.status_code == 403
+
+    assert await _count_rows(postgres_url, user_a) == (1, 1, 2)
+    assert await _count_rows(postgres_url, user_b) == (1, 1, 2)
+
+
+@pytest.mark.asyncio
+async def test_failure_before_commit_leaves_no_orphan_key_and_retry_creates_one_session(
+    client_factory, postgres_url: str, monkeypatch: pytest.MonkeyPatch
+):
+    """T-SES-003-IDEM-CONCUR: if the transaction fails after session/events were staged, nothing persists; retry with the same key creates exactly one session."""
+    from jplearn_api.adapters.persistence.learning_repository import SqlAlchemyLearningRepository
+
+    make_client = client_factory
+    c = await make_client()
+    user_id, token = await _create_learner_token(c)
+    key = f"fault-{uuid4()}"
+
+    original = SqlAlchemyLearningRepository.save_idempotency
+    calls = {"n": 0}
+
+    async def failing_once(self, *args, **kwargs):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("injected failure before commit")
+        return await original(self, *args, **kwargs)
+
+    monkeypatch.setattr(SqlAlchemyLearningRepository, "save_idempotency", failing_once)
+
+    # raise_app_exceptions=False so the injected error surfaces as HTTP 500 instead of propagating into the test.
+    faulty = await make_client(raise_app_exceptions=False)
+
+    first = await faulty.post(
+        "/sessions",
+        headers={"Authorization": f"Bearer {token}", "Idempotency-Key": key},
+        json={"device_class": "web"},
+    )
+    assert first.status_code == 500
+    assert await _count_rows(postgres_url, user_id) == (0, 0, 0), "rollback must leave no session/key/event"
+
+    retry = await c.post(
+        "/sessions",
+        headers={"Authorization": f"Bearer {token}", "Idempotency-Key": key},
+        json={"device_class": "web"},
+    )
+    assert retry.status_code == 201, retry.text
+    assert await _count_rows(postgres_url, user_id) == (1, 1, 2)
+
+
+@pytest.mark.asyncio
+async def test_idempotency_key_longer_than_128_is_400(client_factory):
+    """T-SES-003-IDEM-CONCUR: header length is bounded so the (user_id,key) PK stays cheap to hash and index."""
+    make_client = client_factory
+    c = await make_client()
+    _, token = await _create_learner_token(c)
+    res = await c.post(
+        "/sessions",
+        headers={"Authorization": f"Bearer {token}", "Idempotency-Key": "k" * 129},
+        json={"device_class": "web"},
+    )
+    assert res.status_code == 400
+    body = res.json()
+    message = body.get("message") or body.get("detail") or ""
+    assert "Idempotency-Key" in str(message)
+
+    ok = await c.post(
+        "/sessions",
+        headers={"Authorization": f"Bearer {token}", "Idempotency-Key": "k" * 128},
+        json={"device_class": "web"},
+    )
+    assert ok.status_code == 201

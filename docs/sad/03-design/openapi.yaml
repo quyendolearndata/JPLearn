@@ -491,7 +491,11 @@ paths:
         - in: header
           name: Idempotency-Key
           required: false
-          schema: { type: string, nullable: true }
+          description: >-
+            Optional. Max 128 chars. Scoped per (user, key). Same key + same body replays the stored
+            session (201); same key + different body returns 409. Keys are retained for the lifetime of
+            the session row (ON DELETE CASCADE); no TTL sweep in Q1.
+          schema: { type: string, nullable: true, maxLength: 128 }
       requestBody:
         content:
           application/json:

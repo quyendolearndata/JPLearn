@@ -134,15 +134,15 @@ kiểm chứng được và response phản ánh đúng kết quả database.
   transaction hợp lệ trước khi trả response.
 - [x] Response replay dùng cùng session DTO và không phát thêm `session_started`,
   `level_exposed`, không ghi lại device/progress ngoài semantics đã chốt.
-- [ ] Giới hạn/validate độ dài Idempotency-Key và document thời gian lưu; giữ header optional.
+- [x] Giới hạn/validate độ dài Idempotency-Key và document thời gian lưu; giữ header optional.
 
 ### Test bắt buộc
 
 - [x] Hai request đồng thời cùng user/key/body: cả hai trả thành công cùng session ID;
   DB chỉ có một session, một idempotency row và đúng một cặp event start/level.
 - [x] Cùng key nhưng body khác chạy đồng thời/tuần tự: một winner, request khác 409.
-- [ ] Cùng key ở hai user tạo hai session độc lập; không rò session giữa user.
-- [ ] Inject lỗi trước commit: không để key mồ côi hoặc session/event nửa vời; retry sau
+- [x] Cùng key ở hai user tạo hai session độc lập; không rò session giữa user.
+- [x] Inject lỗi trước commit: không để key mồ côi hoặc session/event nửa vời; retry sau
   rollback tạo đúng một session.
 - [x] Request không có key giữ hành vi hiện hành và contract cũ.
 
