@@ -82,6 +82,21 @@ wait_http() { # url, name
   exit 1
 }
 
+STALE="$(docker ps --filter "name=jplearn-web-e2e-" --format '{{.Names}}' | grep -v "$E2E_PROJECT" || true)"
+if [[ -n "$STALE" ]]; then
+  echo "== stale E2E containers detected (previous run did not clean up): ==" >&2
+  echo "$STALE" >&2
+  if [[ "${JPLEARN_E2E_PRUNE_STALE:-}" == "true" ]]; then
+    while read -r name; do
+      proj="${name%-db-test-1}"
+      "$VENV_PY" "$REPO/apps/api-python/differential/db.py" --project "$proj" down >/dev/null 2>&1 || true
+    done <<<"$STALE"
+  else
+    echo "   set JPLEARN_E2E_PRUNE_STALE=true to remove them, or run: docker compose -p <name-without--db-test-1> down -v" >&2
+    exit 2
+  fi
+fi
+
 echo "== 1/5 docker db-test (Alembic migrate + seed) [project=$E2E_PROJECT] =="
 DB_LINE="$("$VENV_PY" "$REPO/apps/api-python/differential/db.py" --project "$E2E_PROJECT" up | grep E2E_DB_READY)"
 DATABASE_URL="${DB_LINE#E2E_DB_READY }"
