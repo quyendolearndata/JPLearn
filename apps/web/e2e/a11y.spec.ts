@@ -148,6 +148,15 @@ async function focusedControlLabel(page: Page) {
   });
 }
 
+async function describeFocus(page: Page) {
+  return page.evaluate(() => {
+    const active = document.activeElement;
+    if (!(active instanceof HTMLElement)) return "(none)";
+    const label = (active.getAttribute("aria-label") || active.textContent || "").trim();
+    return `${active.tagName.toLowerCase()}:${label.slice(0, 80)}`;
+  });
+}
+
 async function focusControlByTab(
   page: Page,
   labels: string[],
@@ -163,19 +172,21 @@ async function focusControlByTab(
 
   // WebKit Playwright often traps Tab inside native media chrome (same class of
   // issue as the login password-manager widget). Walk backward from End.
+  // Scripted getByRole(...).focus() on Phát/Tạm dừng is not a PASS path.
   await page.getByRole("button", { name: "Kết thúc phiên" }).focus();
   for (let i = 0; i < maxTabs; i += 1) {
     if (await reached()) return "shift-tab-from-end";
     await page.keyboard.press("Shift+Tab");
   }
 
+  const lastFocus = await describeFocus(page);
   testInfo.annotations.push({
-    type: "f04-keyboard-tab",
-    description: `${testInfo.project.name}: Tab/Shift+Tab did not reach the named play control; Space is still the measured action`,
+    type: "f04-play-focus-path",
+    description: `${testInfo.project.name}: fail; lastFocus=${lastFocus}`,
   });
-  await page.getByRole("button", { name: labels[0] }).focus();
-  if (await reached()) return "named-control-focus-fallback";
-  throw new Error("keyboard could not focus the named play/pause control");
+  throw new Error(
+    `${testInfo.project.name}: Tab/Shift+Tab never reached ${labels.join(" / ")}; last focus ${lastFocus}`,
+  );
 }
 
 test("keyboard: login form tab order and Enter-to-submit; player controls reachable T-NFR-A1", async ({ page }, testInfo) => {
@@ -263,15 +274,21 @@ test("keyboard: login form tab order and Enter-to-submit; player controls reacha
 
   const pauseButton = page.getByRole("button", { name: "Tạm dừng" });
   await expect(pauseButton).toBeVisible();
-  if ((await focusedControlLabel(page)) !== "Tạm dừng") {
-    await focusControlByTab(page, ["Tạm dừng", "Phát"], testInfo);
-  }
+  const pauseFocusPath = (await focusedControlLabel(page)) === "Tạm dừng"
+    ? "stayed-on-control"
+    : await focusControlByTab(page, ["Tạm dừng", "Phát"], testInfo);
+  testInfo.annotations.push({
+    type: "f04-pause-focus-path",
+    description: `${testInfo.project.name}: ${pauseFocusPath}`,
+  });
   await expect(pauseButton).toBeFocused();
   await page.keyboard.press("Space");
   await expect.poll(
     async () => video.evaluate((element: HTMLVideoElement) => element.paused),
     { timeout: 15000 },
   ).toBe(true);
+
+  console.log(`[F-04] ${testInfo.project.name} ${JSON.stringify(testInfo.annotations)}`);
 });
 
 test("F-04 recovery and summary errors expose role=alert T-NFR-A1", async ({ page }) => {

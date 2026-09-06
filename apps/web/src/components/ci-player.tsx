@@ -165,7 +165,7 @@ export function CiPlayer({
   return (
     <div>
       <div style={{ padding: "0.5rem 0.75rem", background: "var(--bg-subtle)" }}>
-        <button type="button" onClick={togglePlayback} aria-pressed={!paused}>
+        <button type="button" tabIndex={0} onClick={togglePlayback} aria-pressed={!paused}>
           {paused ? "Phát" : "Tạm dừng"}
         </button>
       </div>
@@ -173,6 +173,7 @@ export function CiPlayer({
         ref={videoRef}
         controls
         playsInline
+        tabIndex={-1}
         style={{ width: "100%", maxWidth: "40rem" }}
       />
     </div>
