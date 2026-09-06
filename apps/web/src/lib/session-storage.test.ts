@@ -181,8 +181,23 @@ test("newIdempotencyKey returns distinct, header-safe values ≤128 chars", () =
   assert.match(a, /^[A-Za-z0-9-]{8,128}$/);
 });
 
-test("T-SES-REC-001: invalid idempotency keys are neither persisted nor replayed", () => {
-  for (const idempotencyKey of ["", "   ", "short", "has_underscore", "a".repeat(129)]) {
+test("T-SES-REC-001: short and typical header-safe persisted keys remain replayable", () => {
+  for (const idempotencyKey of ["k", "short", "has_underscore", "key!#$%&'*+-.^_`|~"]) {
+    const stored = rec({ idempotencyKey });
+    sessionStorage.setItem(sessionStorageKey("u1"), JSON.stringify(stored));
+    assert.deepEqual(inspectSessionRecord("u1"), { kind: "record", record: stored });
+    assert.equal(writeSessionRecord("u1", stored), true);
+    assert.deepEqual(recoveryRequestFor(stored), {
+      kind: "replay_start",
+      idempotencyKey,
+      deviceClass: "web",
+      itemId: undefined,
+    });
+  }
+});
+
+test("T-SES-REC-001: unsafe idempotency keys are neither persisted nor replayed", () => {
+  for (const idempotencyKey of ["", "   ", "line\rbreak", "line\nbreak", "nul\u0000key", "a".repeat(129)]) {
     sessionStorage.setItem(
       sessionStorageKey("u1"),
       JSON.stringify(rec({ idempotencyKey })),

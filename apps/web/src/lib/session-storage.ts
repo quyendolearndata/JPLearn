@@ -46,7 +46,13 @@ const PREFIX = "jplearn.session:";
 const ACCESS_PROBE_KEY = `${PREFIX}__access_probe__`;
 const STATES: readonly SessionLifecycleState[] = ["starting", "active", "ending", "outcome_unknown"];
 const ALLOWED_KEYS = new Set(["v", "state", "idempotencyKey", "deviceClass", "startedAt", "itemId", "sessionId"]);
-const IDEMPOTENCY_KEY_PATTERN = /^[A-Za-z0-9-]{8,128}$/;
+const HEADER_SAFE_VALUE_PATTERN = /^[\t\x20-\x7E]+$/;
+
+function isValidPersistedIdempotencyKey(value: unknown): value is string {
+  if (typeof value !== "string" || !HEADER_SAFE_VALUE_PATTERN.test(value)) return false;
+  const trimmedLength = value.trim().length;
+  return trimmedLength >= 1 && trimmedLength <= 128;
+}
 
 export function sessionStorageKey(userId: string): string {
   return `${PREFIX}${userId}`;
@@ -93,8 +99,7 @@ function isValid(x: unknown): x is StoredSession {
   if (r.v !== 1) return false;
   if (!STATES.includes(r.state as SessionLifecycleState)) return false;
   if (
-    typeof r.idempotencyKey !== "string"
-    || !IDEMPOTENCY_KEY_PATTERN.test(r.idempotencyKey)
+    !isValidPersistedIdempotencyKey(r.idempotencyKey)
     || typeof r.startedAt !== "string"
   ) return false;
   if (r.deviceClass !== "web") return false;
@@ -208,7 +213,7 @@ export function prepareStartingSession(
 
 export function recoveryRequestFor(stored: StoredSession): SessionRecoveryRequest | null {
   if (stored.state === "starting") {
-    if (!IDEMPOTENCY_KEY_PATTERN.test(stored.idempotencyKey)) return null;
+    if (!isValidPersistedIdempotencyKey(stored.idempotencyKey)) return null;
     return {
       kind: "replay_start",
       idempotencyKey: stored.idempotencyKey,
