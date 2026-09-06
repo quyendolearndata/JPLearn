@@ -1,0 +1,2 @@
+Scanned *.log for JWT_SECRET, Bearer tokens, access_token, DATABASE_URL passwords, BOOTSTRAP_ADMIN_PASSWORD.
+No secret matches found. Logs left as captured. Isolated E2E used known test JWT/DB fixtures but did not print them.

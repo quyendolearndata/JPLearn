@@ -1,0 +1,3 @@
+candidate_sha=41a4009fed53f8ff43bf5527a16d0976993293ff
+branch=codex/fastapi-backend-hardening
+dirty_before_bytes=      55

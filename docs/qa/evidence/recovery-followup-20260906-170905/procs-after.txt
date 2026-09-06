@@ -1,0 +1,3 @@
+(none) leftover jplearn-web-e2e / next start / playwright test after cleanup
+jplearn_postgres_data volume still present (not reset)
+no jplearn-web-e2e-* containers or compose projects after both E2E runs
