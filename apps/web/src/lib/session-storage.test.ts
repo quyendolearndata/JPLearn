@@ -9,6 +9,7 @@ import {
   inspectSessionRecord,
   newIdempotencyKey,
   prepareStartingSession,
+  promoteToActive,
   recoveryRequestFor,
   type StoredSession,
 } from "./session-storage";
@@ -35,6 +36,46 @@ beforeEach(() => {
 
 const rec = (over: Partial<StoredSession> = {}): StoredSession => ({
   v: 1, state: "starting", idempotencyKey: "k1", deviceClass: "web", startedAt: "2026-09-06T00:00:00.000Z", ...over,
+});
+
+test("T-SES-REC-001: failed active persistence stays unverified with the recoverable pointer", () => {
+  const result = promoteToActive(
+    rec({ idempotencyKey: "persisted-key" }),
+    "session-1",
+    "2026-09-06T00:01:00.000Z",
+    () => false,
+  );
+
+  assert.deepEqual(result, {
+    kind: "unverified",
+    record: rec({
+      state: "active",
+      idempotencyKey: "persisted-key",
+      sessionId: "session-1",
+      startedAt: "2026-09-06T00:01:00.000Z",
+    }),
+  });
+});
+
+test("T-SES-REC-001: non-starting records without sessionId are rejected", () => {
+  assert.throws(
+    () => writeSessionRecord("u1", rec({ state: "ending" })),
+    /sessionId/,
+  );
+});
+
+test("T-SES-REC-001: terminal clear must be confirmed before storage is empty", () => {
+  writeSessionRecord("u1", rec());
+  assert.equal(clearSessionRecord("u1"), true);
+  assert.deepEqual(inspectSessionRecord("u1"), { kind: "empty" });
+
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    get() {
+      throw new Error("storage blocked");
+    },
+  });
+  assert.equal(clearSessionRecord("u1"), false);
 });
 
 test("T-SES-REC-001: storage unavailable is distinct from an empty record", () => {

@@ -16,10 +16,10 @@ import {
   inspectSessionRecord,
   newIdempotencyKey,
   prepareStartingSession,
+  promoteToActive,
   readSessionRecord,
   recoveryRequestFor,
   writeSessionRecord,
-  type StoredSession,
 } from "../../lib/session-storage";
 
 function currentUserId(): string | null {
@@ -117,9 +117,13 @@ function SessionContent() {
 
     const recoveryRequest = recoveryRequestFor(stored);
     if (!recoveryRequest) {
-      clearSessionRecord(userId);
-      setStatus("Dữ liệu khôi phục phiên không hợp lệ.");
-      setRecoveryPhase("ready");
+      const cleared = clearSessionRecord(userId);
+      setStatus(
+        cleared
+          ? "Dữ liệu khôi phục phiên không hợp lệ."
+          : "Dữ liệu khôi phục phiên không hợp lệ và chưa thể xóa khỏi trình duyệt.",
+      );
+      setRecoveryPhase(cleared ? "ready" : "unverified");
       return;
     }
 
@@ -144,12 +148,16 @@ function SessionContent() {
           const disposition = classifyReplayFailure(res.status);
           if (disposition === "auth") return;
           if (disposition === "terminal") {
-            clearSessionRecord(userId);
+            const cleared = clearSessionRecord(userId);
             setSessionId(null);
             setStartedAt(null);
             setClip(null);
-            setStatus("Không thể khôi phục phiên do khóa chống trùng bị xung đột.");
-            setRecoveryPhase("ready");
+            setStatus(
+              cleared
+                ? "Không thể khôi phục phiên do khóa chống trùng bị xung đột."
+                : "Khóa chống trùng bị xung đột và chưa thể xóa dữ liệu phiên.",
+            );
+            setRecoveryPhase(cleared ? "ready" : "unverified");
             return;
           }
           const err = await parseApiError(res);
@@ -168,25 +176,33 @@ function SessionContent() {
         }
 
         if (body.ended_at) {
-          clearSessionRecord(userId);
+          const cleared = clearSessionRecord(userId);
           setSessionId(null);
           setStartedAt(null);
           setClip(null);
-          setStatus("Phiên đã kết thúc.");
-          setRecoveryPhase("ready");
+          setStatus(
+            cleared
+              ? "Phiên đã kết thúc."
+              : "Phiên đã kết thúc nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
+          );
+          setRecoveryPhase(cleared ? "ready" : "unverified");
           return;
         }
 
-        const active: StoredSession = {
-          ...stored,
-          state: "active",
-          sessionId: body.id,
-          startedAt: body.started_at,
-        };
-        writeSessionRecord(userId, active);
-        setSessionId(body.id);
-        setStartedAt(new Date(active.startedAt));
-        setElapsedSeconds(Math.max(0, Math.floor((Date.now() - new Date(active.startedAt).getTime()) / 1000)));
+        const promotion = promoteToActive(
+          stored,
+          body.id,
+          body.started_at,
+          (record) => writeSessionRecord(userId, record),
+        );
+        setSessionId(promotion.record.sessionId!);
+        setStartedAt(new Date(promotion.record.startedAt));
+        setElapsedSeconds(Math.max(0, Math.floor((Date.now() - new Date(promotion.record.startedAt).getTime()) / 1000)));
+        if (promotion.kind === "unverified") {
+          setStatus("Phiên đang chạy nhưng chưa lưu được trạng thái trên trình duyệt.");
+          setRecoveryPhase("unverified");
+          return;
+        }
         await loadClip(recoveryRequest.itemId, isCurrentAttempt);
         if (!isCurrentAttempt()) return;
         setStatus("Phiên đang chạy (đã khôi phục).");
@@ -202,16 +218,18 @@ function SessionContent() {
       if (!isCurrentAttempt()) return;
       if (res.status === 401) return;
       if (res.status === 403 || res.status === 404) {
-        clearSessionRecord(userId);
+        const cleared = clearSessionRecord(userId);
         setSessionId(null);
         setStartedAt(null);
         setClip(null);
         setStatus(
-          res.status === 403
-            ? "Bạn không có quyền khôi phục phiên này."
-            : "Phiên cần khôi phục không còn tồn tại.",
+          cleared
+            ? res.status === 403
+              ? "Bạn không có quyền khôi phục phiên này."
+              : "Phiên cần khôi phục không còn tồn tại."
+            : "Phiên không thể khôi phục và chưa thể xóa dữ liệu trên trình duyệt.",
         );
-        setRecoveryPhase("ready");
+        setRecoveryPhase(cleared ? "ready" : "unverified");
         return;
       }
       if (!res.ok) {
@@ -231,7 +249,7 @@ function SessionContent() {
       }
 
       if (data.ended_at) {
-        clearSessionRecord(userId);
+        const cleared = clearSessionRecord(userId);
         setSessionId(null);
         setStartedAt(null);
         setClip(null);
@@ -248,17 +266,31 @@ function SessionContent() {
             durationSeconds: data.duration_seconds ?? 0,
           });
         }
-        setStatus("Phiên đã kết thúc.");
-        setRecoveryPhase("ready");
+        setStatus(
+          cleared
+            ? "Phiên đã kết thúc."
+            : "Phiên đã kết thúc nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
+        );
+        setRecoveryPhase(cleared ? "ready" : "unverified");
         return;
       }
 
       // Still active on the server.
-      const start = new Date(data.started_at);
-      setSessionId(recoveryRequest.sessionId);
+      const promotion = promoteToActive(
+        stored,
+        recoveryRequest.sessionId,
+        data.started_at,
+        (record) => writeSessionRecord(userId, record),
+      );
+      const start = new Date(promotion.record.startedAt);
+      setSessionId(promotion.record.sessionId!);
       setStartedAt(start);
       setElapsedSeconds(Math.max(0, Math.floor((Date.now() - start.getTime()) / 1000)));
-      writeSessionRecord(userId, { ...stored, state: "active" });
+      if (promotion.kind === "unverified") {
+        setStatus("Phiên đang chạy nhưng chưa lưu được trạng thái trên trình duyệt.");
+        setRecoveryPhase("unverified");
+        return;
+      }
       await loadClip(recoveryRequest.itemId, isCurrentAttempt);
       if (!isCurrentAttempt()) return;
       setStatus(stored.state === "active" ? "Phiên đang chạy." : "Phiên vẫn đang chạy trên máy chủ — hãy kết thúc lại.");
@@ -361,9 +393,13 @@ function SessionContent() {
         const disposition = classifyReplayFailure(res.status);
         if (disposition === "auth") return;
         if (disposition === "terminal") {
-          clearSessionRecord(userId);
-          setStatus("Không thể bắt đầu phiên do khóa chống trùng bị xung đột.");
-          setRecoveryPhase("ready");
+          const cleared = clearSessionRecord(userId);
+          setStatus(
+            cleared
+              ? "Không thể bắt đầu phiên do khóa chống trùng bị xung đột."
+              : "Khóa chống trùng bị xung đột và chưa thể xóa dữ liệu phiên.",
+          );
+          setRecoveryPhase(cleared ? "ready" : "unverified");
           return;
         }
         const err = await parseApiError(res);
@@ -380,21 +416,21 @@ function SessionContent() {
       }
 
       // IMMEDIATELY update sessionStorage to "active" BEFORE fetching catalog
-      const activeRecord: StoredSession = {
-        v: 1,
-        state: "active",
-        sessionId: body.id,
-        itemId: requestedItemId || undefined,
-        idempotencyKey,
-        startedAt: body.started_at,
-        deviceClass: "web",
-      };
-      writeSessionRecord(userId, activeRecord);
-
-      const start = new Date(activeRecord.startedAt);
-      setSessionId(body.id);
+      const promotion = promoteToActive(
+        startingRecord,
+        body.id,
+        body.started_at,
+        (record) => writeSessionRecord(userId, record),
+      );
+      const start = new Date(promotion.record.startedAt);
+      setSessionId(promotion.record.sessionId!);
       setStartedAt(start);
       setElapsedSeconds(0);
+      if (promotion.kind === "unverified") {
+        setStatus("Phiên đang chạy nhưng chưa lưu được trạng thái trên trình duyệt.");
+        setRecoveryPhase("unverified");
+        return;
+      }
 
       await loadClip(requestedItemId);
     } catch {
@@ -413,7 +449,7 @@ function SessionContent() {
     if (!token || !sessionId || !userId) return;
 
     const rec = readSessionRecord(userId);
-    if (rec) writeSessionRecord(userId, { ...rec, state: "ending" });
+    if (rec) writeSessionRecord(userId, { ...rec, state: "ending", sessionId });
 
     setLoading(true);
     try {
@@ -424,13 +460,13 @@ function SessionContent() {
 
       if (!res.ok) {
         const latest = readSessionRecord(userId);
-        if (latest) writeSessionRecord(userId, { ...latest, state: "outcome_unknown" });
+        if (latest) writeSessionRecord(userId, { ...latest, state: "outcome_unknown", sessionId });
 
         const checkRes = await api(`/sessions/${sessionId}`, { token });
         if (checkRes.ok) {
           const checkData = await parseApiResponse<{ ended_at?: string; duration_seconds?: number }>(checkRes);
           if (checkData?.ended_at) {
-            clearSessionRecord(userId);
+            const cleared = clearSessionRecord(userId);
             const progressRes = await api("/progress", { token });
             const progress = progressRes.ok
               ? await parseApiResponse<{
@@ -445,7 +481,12 @@ function SessionContent() {
             });
             setSessionId(null);
             setClip(null);
-            setStatus("Đã kết thúc phiên.");
+            setStatus(
+              cleared
+                ? "Đã kết thúc phiên."
+                : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
+            );
+            setRecoveryPhase(cleared ? "ready" : "unverified");
             return;
           }
         }
@@ -459,7 +500,7 @@ function SessionContent() {
         current_ci_level: number;
       }>(res);
 
-      clearSessionRecord(userId);
+      const cleared = clearSessionRecord(userId);
       setCompletedSummary({
         minutesComprehensible: progress?.minutes_comprehensible ?? 0,
         currentCiLevel: progress?.current_ci_level ?? 0,
@@ -467,19 +508,29 @@ function SessionContent() {
       });
       setSessionId(null);
       setClip(null);
-      setStatus("Đã kết thúc phiên.");
+      setStatus(
+        cleared
+          ? "Đã kết thúc phiên."
+          : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
+      );
+      setRecoveryPhase(cleared ? "ready" : "unverified");
     } catch {
       const latest = readSessionRecord(userId);
-      if (latest) writeSessionRecord(userId, { ...latest, state: "outcome_unknown" });
+      if (latest) writeSessionRecord(userId, { ...latest, state: "outcome_unknown", sessionId });
       try {
         const checkRes = await api(`/sessions/${sessionId}`, { token });
         if (checkRes.ok) {
           const checkData = await parseApiResponse<{ ended_at?: string }>(checkRes);
           if (checkData?.ended_at) {
-            clearSessionRecord(userId);
+            const cleared = clearSessionRecord(userId);
             setSessionId(null);
             setClip(null);
-            setStatus("Đã kết thúc phiên.");
+            setStatus(
+              cleared
+                ? "Đã kết thúc phiên."
+                : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
+            );
+            setRecoveryPhase(cleared ? "ready" : "unverified");
             return;
           }
         }

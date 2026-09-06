@@ -38,6 +38,10 @@ export type StartSessionPreparation =
   | { kind: "existing"; record: StoredSession }
   | { kind: "starting"; record: StoredSession };
 
+export type ActiveSessionPromotion =
+  | { kind: "ready"; record: StoredSession }
+  | { kind: "unverified"; record: StoredSession };
+
 const PREFIX = "jplearn.session:";
 const ACCESS_PROBE_KEY = `${PREFIX}__access_probe__`;
 const STATES: readonly SessionLifecycleState[] = ["starting", "active", "ending", "outcome_unknown"];
@@ -89,6 +93,8 @@ function isValid(x: unknown): x is StoredSession {
   if (!STATES.includes(r.state as SessionLifecycleState)) return false;
   if (typeof r.idempotencyKey !== "string" || typeof r.startedAt !== "string") return false;
   if (r.deviceClass !== "web") return false;
+  if (r.sessionId !== undefined && typeof r.sessionId !== "string") return false;
+  if (r.state !== "starting" && (typeof r.sessionId !== "string" || !r.sessionId)) return false;
   for (const k of Object.keys(r)) if (!ALLOWED_KEYS.has(k)) return false;
   return true;
 }
@@ -129,7 +135,9 @@ export function readSessionRecord(userId: string): StoredSession | null {
 }
 
 export function writeSessionRecord(userId: string, rec: StoredSession): boolean {
-  if (!isValid(rec)) throw new Error("StoredSession must not carry catalog/media payload");
+  if (!isValid(rec)) {
+    throw new Error("StoredSession must include sessionId outside starting and must not carry catalog/media payload");
+  }
   const s = accessibleStore();
   if (!s) return false;
   const serialized = JSON.stringify(rec);
@@ -141,12 +149,34 @@ export function writeSessionRecord(userId: string, rec: StoredSession): boolean 
   }
 }
 
-export function clearSessionRecord(userId: string): void {
+export function clearSessionRecord(userId: string): boolean {
+  const s = accessibleStore();
+  if (!s) return false;
   try {
-    store()?.removeItem(sessionStorageKey(userId));
+    const key = sessionStorageKey(userId);
+    s.removeItem(key);
+    return s.getItem(key) === null;
   } catch {
-    // Best effort for unavailable storage.
+    return false;
   }
+}
+
+export function promoteToActive(
+  stored: StoredSession,
+  sessionId: string,
+  startedAt: string,
+  persist: (record: StoredSession) => boolean,
+): ActiveSessionPromotion {
+  const record: StoredSession = {
+    ...stored,
+    state: "active",
+    sessionId,
+    startedAt,
+  };
+  return {
+    kind: persist(record) ? "ready" : "unverified",
+    record,
+  };
 }
 
 export function prepareStartingSession(
