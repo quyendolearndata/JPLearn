@@ -52,7 +52,7 @@
 
 **Files:** toàn bộ working tree hiện tại (53 file, base `00576eb`).
 
-- [ ] **Step 1: Xác nhận baseline xanh trước khi commit**
+- [x] **Step 1: Xác nhận baseline xanh trước khi commit**
 
 Run: `cd apps/api-python && uv run pytest -q -p no:cacheprovider 2>&1 | tail -2`
 Expected: `212 passed, 2 warnings in ~30s`
@@ -60,7 +60,7 @@ Expected: `212 passed, 2 warnings in ~30s`
 Run: `pnpm test:guard && pnpm --filter @jplearn/web exec tsc --noEmit && echo OK`
 Expected: `OK`
 
-- [ ] **Step 2: Commit migration + snapshot (R-04)**
+- [x] **Step 2: Commit migration + snapshot (R-04)**
 
 ```bash
 git add apps/api-python/src/jplearn_api/migrations/versions/0002_session_idem_rev.py \
@@ -74,21 +74,21 @@ git add apps/api-python/src/jplearn_api/migrations/versions/0002_session_idem_re
 git commit -m "feat(api): migration 0002 idempotency keys + catalog revision, separate head snapshot (NFR-MIG-001, R-04)"
 ```
 
-- [ ] **Step 3: Commit backend CAS + advisory lock (R-01, R-02)**
+- [x] **Step 3: Commit backend CAS + advisory lock (R-01, R-02)**
 
 ```bash
 git add apps/api-python
 git commit -m "feat(api): atomic draft CAS and advisory-locked session idempotency (FR-CAT-005, FR-SES-001, R-01, R-02)"
 ```
 
-- [ ] **Step 4: Commit web + SAD docs (R-03, R-05, R-06, R-07)**
+- [x] **Step 4: Commit web + SAD docs (R-03, R-05, R-06, R-07)**
 
 ```bash
 git add apps/web docs/sad landing_preview.html
 git commit -m "feat(web): learner shell, staff CMS, scoped session storage (FR-LRN-001, FR-CMS-002, R-03, R-05, R-06, R-07)"
 ```
 
-- [ ] **Step 5: Commit tài liệu kế hoạch/evidence tạm**
+- [x] **Step 5: Commit tài liệu kế hoạch/evidence tạm**
 
 ```bash
 git add docs/superpowers docs/qa walkthrough.md
@@ -109,7 +109,7 @@ Expected: `0`
 - Modify: `docs/qa/remediation-evidence-2026-09-06.md`
 - Modify: `docs/sad/03-design/traceability.md`
 
-- [ ] **Step 1: Đổi trạng thái kế hoạch remediation**
+- [x] **Step 1: Đổi trạng thái kế hoạch remediation**
 
 Thay dòng 3 của `2026-09-06-web-frontend-remediation.md`:
 
@@ -119,7 +119,7 @@ Ngày: 2026-09-06. Trạng thái: **REMEDIATION IN PROGRESS** — code R-01…R-
 
 Tick (`- [x]`) đúng các mục đã có bằng chứng: toàn bộ C1 (§4 — `test_stamp_adopts_a_database_built_before_alembic` kiểm đủ), 5 mục "Thiết kế" của C2 (§5), mục "Hai PATCH thật sự đồng thời", "Race PATCH với submit-QA", "Test stale tuần tự…" của C2, 4 mục "Thiết kế" đầu của C3 (§6, **không** tick mục "Giới hạn/validate độ dài Idempotency-Key"), 2 mục test đầu của C3 và mục "Request không có key giữ hành vi hiện hành". Mọi mục khác giữ `- [ ]`.
 
-- [ ] **Step 2: Sửa `walkthrough.md`**
+- [x] **Step 2: Sửa `walkthrough.md`**
 
 Thay đoạn mở đầu (dòng 3):
 
@@ -147,7 +147,7 @@ Mục 2.D/E: `5 passed` → `8 passed`, thêm `staff.spec.ts` (2 ca) và `a11y.s
 
 Mục 3: đổi tiêu đề thành "Hướng Dẫn Thao Tác Thủ Công (không phải evidence)".
 
-- [ ] **Step 3: Sửa evidence doc**
+- [x] **Step 3: Sửa evidence doc**
 
 `docs/qa/remediation-evidence-2026-09-06.md`:
 - Dòng `- **Status:** **VERIFIED & CLOSED**` → `- **Status:** **IN PROGRESS** — số liệu §2 là baseline tại commit Task 1; evidence đóng nằm ở §4 (điền tại Task 10).`
@@ -155,7 +155,7 @@ Mục 3: đổi tiêu đề thành "Hướng Dẫn Thao Tác Thủ Công (không
 - Xoá 2 bullet của QA Seat; thay bằng `- Chưa ký. Điều kiện: Task 10 closeout plan.`
 - Cột Traceability của R-03: `T-SES-REC-001 (chưa có test — Task 6)`; R-06: `T-AUTH-ERR-001 (chưa có test — Task 7)`; R-07: `T-AUTH-SEC-001 (chưa có test — Task 7)`.
 
-- [ ] **Step 4: Khôi phục hàng P5 hold và thêm test ID mới vào traceability**
+- [x] **Step 4: Khôi phục hàng P5 hold và thêm test ID mới vào traceability**
 
 Trong `docs/sad/03-design/traceability.md`, ngay sau hàng `FR-LRN-001`, thêm lại:
 
@@ -165,7 +165,7 @@ Trong `docs/sad/03-design/traceability.md`, ngay sau hàng `FR-LRN-001`, thêm l
 
 Sửa hàng `FR-ID-001` cột Test: `T-ID-001 register+login, T-AUTH-ERR-001 login 400 hiển thị, T-AUTH-SEC-001 redirect an toàn`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add docs walkthrough.md
@@ -313,7 +313,7 @@ async def test_race_patch_vs_unpublish_revision_never_regresses(client_factory, 
 Run: `cd apps/api-python && uv run pytest tests/test_catalog_concurrency.py -v -p no:cacheprovider`
 Expected: 4 passed. Nếu test mới FAIL, đó là lỗi thật của CAS/lock — sửa ở `catalog_repository.py`/`handlers/catalog.py`, không nới assertion. (Hai test này là **acceptance** còn thiếu, không phải red-green cho code mới; kỳ vọng xanh ngay vì `update_draft_cas` đã đúng.)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/api-python/tests/test_catalog_concurrency.py
@@ -335,7 +335,7 @@ git commit -m "test(api): race PATCH vs publish/unpublish keeps state machine an
 - Consumes: `SqlAlchemyLearningRepository.save_idempotency(self, user_id, key, session_id, request_hash)` tại `adapters/persistence/learning_repository.py:97`; fixture `client_factory`, `_create_learner_token(client) -> (user_id, token)`.
 - Produces: hằng `IDEMPOTENCY_KEY_MAX_LENGTH = 128` trong `routers/sessions.py`.
 
-- [ ] **Step 1: Test cross-user và fault-injection (kỳ vọng xanh) + test độ dài key (kỳ vọng đỏ)**
+- [x] **Step 1: Test cross-user và fault-injection (kỳ vọng xanh) + test độ dài key (kỳ vọng đỏ)**
 
 Trước hết sửa fixture `client_factory` trong `test_sessions_concurrency.py` để cho phép tắt raise:
 
@@ -455,14 +455,14 @@ async def test_idempotency_key_longer_than_128_is_400(client_factory):
     assert ok.status_code == 201
 ```
 
-- [ ] **Step 2: Chạy, xác nhận 2 xanh 1 đỏ**
+- [x] **Step 2: Chạy, xác nhận 2 xanh 1 đỏ**
 
 Run: `cd apps/api-python && uv run pytest tests/test_sessions_concurrency.py -v -p no:cacheprovider`
 Expected: `test_same_key_two_users…` PASS, `test_failure_before_commit…` PASS, `test_idempotency_key_longer_than_128_is_400` FAIL (`assert 201 == 400`).
 
 Nếu `test_failure_before_commit…` FAIL với rows ≠ (0,0,0): UoW không rollback khi handler ném lỗi — kiểm `SqlAlchemyUnitOfWork.__aexit__` tại `adapters/persistence/unit_of_work.py:36`; đây là bug thật, sửa ở đó.
 
-- [ ] **Step 3: Thêm giới hạn độ dài trong router**
+- [x] **Step 3: Thêm giới hạn độ dài trong router**
 
 Trong `routers/sessions.py`, sau `DEVICE_CLASSES = (...)` thêm:
 
@@ -480,7 +480,7 @@ Trong `start_session`, ngay sau kiểm `device_class`:
         )
 ```
 
-- [ ] **Step 4: Cập nhật OpenAPI**
+- [x] **Step 4: Cập nhật OpenAPI**
 
 Trong `docs/sad/03-design/openapi.yaml` thay block header param:
 
@@ -495,12 +495,12 @@ Trong `docs/sad/03-design/openapi.yaml` thay block header param:
           schema: { type: string, nullable: true, maxLength: 128 }
 ```
 
-- [ ] **Step 5: Chạy lại focused + contract**
+- [x] **Step 5: Chạy lại focused + contract**
 
 Run: `cd apps/api-python && uv run pytest tests/test_sessions_concurrency.py tests/test_sessions.py tests/test_openapi_diff.py tests/test_openapi_mutation_suite.py tests/test_contract.py -q -p no:cacheprovider`
 Expected: all passed. Nếu `test_openapi_diff` báo lệch vì `maxLength`/`description` không có trong schema FastAPI sinh ra: thêm `max_length=128` và `description=` vào `Header(...)` trong router để hai phía khớp, rồi chạy lại.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/api-python/tests/test_sessions_concurrency.py apps/api-python/src/jplearn_api/entrypoints/http/routers/sessions.py docs/sad/03-design/openapi.yaml
@@ -546,7 +546,7 @@ export function newIdempotencyKey(): string;
 export function getSafeRedirect(target: string | null | undefined): string;
 ```
 
-- [ ] **Step 1: Thêm test runner unit cho web**
+- [x] **Step 1: Thêm test runner unit cho web**
 
 `apps/web/package.json`:
 
@@ -563,7 +563,7 @@ export function getSafeRedirect(target: string | null | undefined): string;
 
 Thêm vào `devDependencies`: `"tsx": "^4.19.2"`, `"@types/node": "^22.10.0"` (cần cho `node:test`/`node:assert` khi `tsc --noEmit` quét `src/lib/*.test.ts`). Run: `pnpm install --filter @jplearn/web` → Expected: lockfile cập nhật, không lỗi.
 
-- [ ] **Step 2: Viết test đỏ cho safe-redirect**
+- [x] **Step 2: Viết test đỏ cho safe-redirect**
 
 `apps/web/src/lib/safe-redirect.test.ts`:
 
@@ -588,7 +588,7 @@ test("T-AUTH-SEC-001: rejects protocol-relative, backslash, scheme and empty tar
 Run: `pnpm --filter @jplearn/web test:unit`
 Expected: FAIL — `Cannot find module './safe-redirect'`.
 
-- [ ] **Step 3: Implement safe-redirect**
+- [x] **Step 3: Implement safe-redirect**
 
 `apps/web/src/lib/safe-redirect.ts`:
 
@@ -612,7 +612,7 @@ export function getSafeRedirect(target: string | null | undefined): string {
 
 Run: `pnpm --filter @jplearn/web test:unit` → Expected: 2 passed.
 
-- [ ] **Step 4: Viết test đỏ cho session-storage**
+- [x] **Step 4: Viết test đỏ cho session-storage**
 
 `apps/web/src/lib/session-storage.test.ts`:
 
@@ -682,7 +682,7 @@ test("newIdempotencyKey returns distinct, header-safe values ≤128 chars", () =
 
 Run: `pnpm --filter @jplearn/web test:unit` → Expected: FAIL `Cannot find module './session-storage'`.
 
-- [ ] **Step 5: Implement session-storage**
+- [x] **Step 5: Implement session-storage**
 
 `apps/web/src/lib/session-storage.ts`:
 
@@ -765,7 +765,7 @@ export function newIdempotencyKey(): string {
 
 Run: `pnpm --filter @jplearn/web test:unit` → Expected: 7 passed (2 + 5).
 
-- [ ] **Step 6: Nối `login/page.tsx` với module mới**
+- [x] **Step 6: Nối `login/page.tsx` với module mới**
 
 Xoá hàm `getSafeRedirect` cục bộ (dòng 8–19) và thêm import:
 
@@ -773,7 +773,7 @@ Xoá hàm `getSafeRedirect` cục bộ (dòng 8–19) và thêm import:
 import { getSafeRedirect } from "../../lib/safe-redirect";
 ```
 
-- [ ] **Step 7: `logout()` xoá record phiên của user hiện tại**
+- [x] **Step 7: `logout()` xoá record phiên của user hiện tại**
 
 Trong `auth-storage.ts`, thêm import đầu file:
 
@@ -790,7 +790,7 @@ Trong `logout()`, ngay trước `clearSession();` thêm:
 
 (Policy: logout là hành động chủ đích của user → record phiên UI của user đó bị bỏ; server vẫn giữ session active và owner-check là nguồn quyền. Ghi policy này vào `docs/sad/03-design/ui-shell.md` hàng S-SESSION: "logout xoá record phiên UI của user hiện tại; không end session trên server".)
 
-- [ ] **Step 8: Viết lại phần storage trong `session/page.tsx`**
+- [x] **Step 8: Viết lại phần storage trong `session/page.tsx`**
 
 Thay các định nghĩa `SessionLifecycleState`, `StoredSession`, `getStorageKey` (dòng 11–43) bằng:
 
@@ -925,12 +925,12 @@ Trong `startSession`: thay `const storageKey = getStorageKey();` bằng `const u
 
 Trong `endSession`: tương tự — đọc `const rec = readSessionRecord(userId)`; `if (rec) writeSessionRecord(userId, { ...rec, state: "ending" })`; ở nhánh lỗi `writeSessionRecord(userId, { ...rec, state: "outcome_unknown" })`; khi xác nhận ended `clearSessionRecord(userId)`.
 
-- [ ] **Step 9: Kiểm compile + lint kiểu**
+- [x] **Step 9: Kiểm compile + lint kiểu**
 
 Run: `pnpm --filter @jplearn/web test` → Expected: `tsc` 0 lỗi, unit 7 passed.
 Run: `rg -n "sessionStorage\.|clip\?:|activeRecord\.clip" apps/web/src/app/session/page.tsx` → Expected: không có kết quả.
 
-- [ ] **Step 10: Cập nhật ui-shell policy + commit**
+- [x] **Step 10: Cập nhật ui-shell policy + commit**
 
 Trong `docs/sad/03-design/ui-shell.md` hàng `S-SESSION`, cột Ghi chú thêm: "record `sessionStorage` theo user/tab, không lưu clip/signed URL; logout xoá record UI của user hiện tại, không end server session."
 
@@ -961,7 +961,7 @@ await page.route(/\/sessions$/, async (route) => {
 });
 ```
 
-- [ ] **Step 1: Viết spec**
+- [x] **Step 1: Viết spec**
 
 `apps/web/e2e/recovery.spec.ts`:
 
@@ -1135,17 +1135,17 @@ test.describe("Session recovery T-SES-REC-001", () => {
 });
 ```
 
-- [ ] **Step 2: Chạy chromium chỉ spec này**
+- [x] **Step 2: Chạy chromium chỉ spec này**
 
 Run: `./apps/api-python/differential/web-e2e-python.sh --project=chromium e2e/recovery.spec.ts`
 Expected: `6 passed`. Nếu ca 1 fail vì `route.fetch()` không được gọi do preflight CORS (OPTIONS): Playwright route chỉ intercept request chính; nếu thấy request `OPTIONS` bị abort, thêm `if (route.request().method() === "OPTIONS") return route.continue();` đầu handler.
 
-- [ ] **Step 3: Chạy webkit**
+- [x] **Step 3: Chạy webkit**
 
 Run: `./apps/api-python/differential/web-e2e-python.sh --project=webkit e2e/recovery.spec.ts`
 Expected: `6 passed`.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/web/e2e/recovery.spec.ts
@@ -1168,7 +1168,7 @@ git commit -m "test(web): session recovery E2E — lost start/end responses, off
 
 **Interfaces (Produces):** tài khoản E2E `teacher@e2e.local` / `password10` (role `teacher` only) chỉ tồn tại trong DB Compose `jplearn-web-e2e-<run>`.
 
-- [ ] **Step 1: Script cấp role trong DB cô lập**
+- [x] **Step 1: Script cấp role trong DB cô lập**
 
 `apps/api-python/differential/grant_role.py`:
 
@@ -1211,7 +1211,7 @@ if __name__ == "__main__":
     sys.exit(asyncio.run(main(*sys.argv[1:4])))
 ```
 
-- [ ] **Step 2: Harness tạo teacher sau bước seed**
+- [x] **Step 2: Harness tạo teacher sau bước seed**
 
 Trong `web-e2e-python.sh`, sau dòng `echo "   published item $ITEM_ID, asset $ASSET_ID (+hls)"` thêm:
 
@@ -1223,7 +1223,7 @@ curl -fsS -X POST "http://localhost:$PY_PORT/auth/register" \
 "$VENV_PY" "$REPO/apps/api-python/differential/grant_role.py" "$DATABASE_URL" teacher@e2e.local teacher
 ```
 
-- [ ] **Step 3: Client validation `.mp4` AND mime; option Audio disabled**
+- [x] **Step 3: Client validation `.mp4` AND mime; option Audio disabled**
 
 Ở cả hai file staff (`new/page.tsx` dòng 104 & 290; `[id]/page.tsx` dòng 181 & 632), thay điều kiện thành:
 
@@ -1241,7 +1241,7 @@ Option Audio ở cả hai select:
 
 Ghi vào `docs/sad/02-analysis/use-cases.md` UC-T02 phần "Ngoại lệ": "Q1: `media_type=audio` giữ trong schema, UI vô hiệu hoá lựa chọn vì upload chỉ nhận MP4 (FR-CMS-001). BA quyết định 2026-09-06."
 
-- [ ] **Step 4: Viết lại `staff.spec.ts`**
+- [x] **Step 4: Viết lại `staff.spec.ts`**
 
 ```ts
 import { test, expect, type Page } from "@playwright/test";
@@ -1394,7 +1394,7 @@ test.describe("Staff CMS T-CMS-E2E-001", () => {
 
 Nếu nút lưu có nhãn khác `/Lưu thay đổi/`, đọc `apps/web/src/app/staff/[id]/page.tsx` (form `onSubmit={handleSaveChanges}`) và dùng đúng nhãn — không đổi nhãn UI để chiều test.
 
-- [ ] **Step 5: `auth.spec.ts` (T-AUTH-SEC-001, T-AUTH-ERR-001)**
+- [x] **Step 5: `auth.spec.ts` (T-AUTH-SEC-001, T-AUTH-ERR-001)**
 
 ```ts
 import { test, expect } from "@playwright/test";
@@ -1427,14 +1427,14 @@ test("T-AUTH-ERR-001: a 400 validation error from the API is shown verbatim in t
 });
 ```
 
-- [ ] **Step 6: Chạy hai spec trên chromium + webkit**
+- [x] **Step 6: Chạy hai spec trên chromium + webkit**
 
 Run: `./apps/api-python/differential/web-e2e-python.sh --project=chromium e2e/staff.spec.ts e2e/auth.spec.ts`
 Expected: `7 passed`.
 Run: `./apps/api-python/differential/web-e2e-python.sh --project=webkit e2e/staff.spec.ts e2e/auth.spec.ts`
 Expected: `7 passed`.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/api-python/differential/grant_role.py apps/api-python/differential/web-e2e-python.sh apps/web/src/app/staff apps/web/e2e/staff.spec.ts apps/web/e2e/auth.spec.ts docs/sad/02-analysis/use-cases.md
