@@ -155,32 +155,32 @@ row/event, không chỉ so response ID.
 
 ### State và storage
 
-- [ ] Dùng `sessionStorage` để tách tab, key có user ID đã xác thực, ví dụ
+- [x] Dùng `sessionStorage` để tách tab, key có user ID đã xác thực, ví dụ
   `jplearn.session:<userId>`. Không dùng một `jplearn_active_session` chung toàn trình duyệt.
-- [ ] Record có version và state: `starting | active | ending | outcome_unknown`,
+- [x] Record có version và state: `starting | active | ending | outcome_unknown`,
   gồm idempotencyKey, itemId, sessionId nếu đã biết và startedAt sau response.
-- [ ] Sinh key bằng `crypto.randomUUID()` và persist state `starting` **trước** POST.
+- [x] Sinh key bằng `crypto.randomUUID()` và persist state `starting` **trước** POST.
   Không lưu object catalog hoặc signed playback/HLS URL; recovery luôn đọc catalog mới.
-- [ ] Nếu reload ở `starting`, gửi lại POST với đúng key. Nếu có sessionId, gọi
+- [x] Nếu reload ở `starting`, gửi lại POST với đúng key. Nếu có sessionId, gọi
   `GET /sessions/{id}` để xác nhận active/ended trước khi vẽ nút.
-- [ ] Persist `active` ngay sau khi nhận session response, trước khi fetch catalog.
+- [x] Persist `active` ngay sau khi nhận session response, trước khi fetch catalog.
   Lỗi catalog/player không được làm mất quyền end session.
-- [ ] Khi POST end mất response do network, chuyển `outcome_unknown`, gọi GET session;
+- [x] Khi POST end mất response do network, chuyển `outcome_unknown`, gọi GET session;
   ended thì đọc progress và clear record, active thì giữ ID/cho retry end, GET cũng lỗi
   thì giữ record và hiển thị trạng thái chưa xác nhận.
-- [ ] Login user khác trong cùng tab không đọc/clear record user cũ; logout chỉ clear
+- [x] Login user khác trong cùng tab không đọc/clear record user cũ; logout chỉ clear
   auth và record của user hiện tại theo policy đã ghi. Server owner check vẫn là nguồn quyền.
-- [ ] Validate redirect chỉ nhận path nội bộ có đúng một leading slash; từ chối `//host`.
+- [x] Validate redirect chỉ nhận path nội bộ có đúng một leading slash; từ chối `//host`.
 
 ### Test Playwright bắt buộc
 
-- [ ] Chặn response start sau khi server commit → reload → client retry cùng key →
+- [x] Chặn response start sau khi server commit → reload → client retry cùng key →
   một session, UI khôi phục đúng ID.
-- [ ] Start thành công → reload/chuyển route/quay lại → active session và nút end còn đúng.
-- [ ] Chặn response end sau commit → GET xác nhận ended → progress đúng, không end/event lần hai.
-- [ ] Mất mạng cả end và recovery GET → không báo ended, record còn để thử lại.
-- [ ] Hai tab cùng user không ghi đè record; đổi user không nhận phiên của user trước.
-- [ ] URL media hết hạn/item unpublish: refetch catalog có giới hạn; không dùng lại signed URL đã lưu.
+- [x] Start thành công → reload/chuyển route/quay lại → active session và nút end còn đúng.
+- [x] Chặn response end sau commit → GET xác nhận ended → progress đúng, không end/event lần hai.
+- [x] Mất mạng cả end và recovery GET → không báo ended, record còn để thử lại.
+- [x] Hai tab cùng user không ghi đè record; đổi user không nhận phiên của user trước.
+- [x] URL media hết hạn/item unpublish: refetch catalog có giới hạn; không dùng lại signed URL đã lưu.
 
 **Exit Mốc A về recovery:** mọi trạng thái mất response/reload có đường xử lý xác định;
 không tạo session mới vì mất key và không báo thành công khi server chưa được xác nhận.
