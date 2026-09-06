@@ -886,7 +886,6 @@ function SessionContent() {
       mediaManualRetryRef.current
       || !mountedRef.current
       || !currentSessionId
-      || !targetItemId
       || activeOperationRef.current !== null
     ) return;
 

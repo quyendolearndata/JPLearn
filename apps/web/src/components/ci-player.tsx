@@ -16,6 +16,7 @@ export function CiPlayer({
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastPositionRef = useRef(0);
+  const shouldResumeRef = useRef(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -24,42 +25,56 @@ export function CiPlayer({
     if (Number.isFinite(video.currentTime) && video.currentTime > 0) {
       lastPositionRef.current = video.currentTime;
     }
-    const shouldResume = !video.paused;
     let disposed = false;
     let hls: Hls | null = null;
     let removeSourceError = () => {};
+    let removeRestorePlayback = () => {};
 
-    const rememberPosition = () => {
+    const rememberPlayback = () => {
       if (Number.isFinite(video.currentTime) && video.currentTime > 0) {
         lastPositionRef.current = video.currentTime;
       }
+      shouldResumeRef.current = !video.paused;
     };
-    video.addEventListener("timeupdate", rememberPosition);
-    video.addEventListener("seeking", rememberPosition);
+    video.addEventListener("timeupdate", rememberPlayback);
+    video.addEventListener("seeking", rememberPlayback);
+    video.addEventListener("play", rememberPlayback);
+    video.addEventListener("pause", rememberPlayback);
 
-    const restorePlayback = () => {
-      if (disposed) return;
-      const savedPosition = lastPositionRef.current;
-      if (savedPosition > 0) {
-        const maximum = Number.isFinite(video.duration)
-          ? Math.max(0, video.duration - 0.05)
-          : savedPosition;
-        video.currentTime = Math.min(savedPosition, maximum);
-      }
-      if (shouldResume) void video.play().catch(() => {});
-    };
-
-    const setSource = (source: string) => {
+    const registerRestorePlayback = (shouldResume = shouldResumeRef.current) => {
+      removeRestorePlayback();
+      let finished = false;
+      const restorePlayback = () => {
+        if (disposed || finished) return;
+        finished = true;
+        const savedPosition = lastPositionRef.current;
+        if (savedPosition > 0) {
+          const maximum = Number.isFinite(video.duration)
+            ? Math.max(0, video.duration - 0.05)
+            : savedPosition;
+          video.currentTime = Math.min(savedPosition, maximum);
+        }
+        if (shouldResume) void video.play().catch(() => {});
+      };
       video.addEventListener("loadedmetadata", restorePlayback, { once: true });
+      removeRestorePlayback = () => {
+        finished = true;
+        video.removeEventListener("loadedmetadata", restorePlayback);
+      };
+      return restorePlayback;
+    };
+
+    const setSource = (source: string, shouldResume?: boolean) => {
+      registerRestorePlayback(shouldResume);
       video.src = source;
     };
 
     const reportFailure = () => {
-      rememberPosition();
+      rememberPlayback();
       onSourceFailure?.();
     };
 
-    const useMp4OrReport = () => {
+    const useMp4OrReport = (shouldResume?: boolean) => {
       removeSourceError();
       if (!playbackUrl) {
         reportFailure();
@@ -68,7 +83,7 @@ export function CiPlayer({
       const onMp4Error = () => reportFailure();
       video.addEventListener("error", onMp4Error);
       removeSourceError = () => video.removeEventListener("error", onMp4Error);
-      setSource(playbackUrl);
+      setSource(playbackUrl, shouldResume);
     };
 
     if (!hlsUrl) {
@@ -76,10 +91,10 @@ export function CiPlayer({
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       let usingMp4 = false;
       const onNativeError = () => {
-        rememberPosition();
+        rememberPlayback();
         if (!usingMp4 && playbackUrl) {
           usingMp4 = true;
-          setSource(playbackUrl);
+          useMp4OrReport(shouldResumeRef.current);
           return;
         }
         reportFailure();
@@ -94,14 +109,27 @@ export function CiPlayer({
           useMp4OrReport();
           return;
         }
-        hls = new HlsCtor();
-        hls.on(HlsCtor.Events.ERROR, (_event, data) => {
-          if (!data.fatal) return;
-          rememberPosition();
+        let fallbackStarted = false;
+        const fallbackFromHls = () => {
+          if (fallbackStarted) return;
+          fallbackStarted = true;
+          rememberPlayback();
+          const shouldResume = shouldResumeRef.current;
           hls?.destroy();
           hls = null;
-          useMp4OrReport();
+          useMp4OrReport(shouldResume);
+        };
+        const onHlsMediaError = () => fallbackFromHls();
+        video.addEventListener("error", onHlsMediaError);
+        removeSourceError = () => video.removeEventListener("error", onHlsMediaError);
+        const startPosition = lastPositionRef.current > 0 ? lastPositionRef.current : -1;
+        hls = new HlsCtor({ startPosition });
+        hls.on(HlsCtor.Events.ERROR, (_event, data) => {
+          if (!data.fatal) return;
+          fallbackFromHls();
         });
+        const restorePlayback = registerRestorePlayback();
+        hls.on(HlsCtor.Events.MANIFEST_PARSED, restorePlayback);
         hls.loadSource(hlsUrl);
         hls.attachMedia(video);
       }).catch(() => {
@@ -111,10 +139,12 @@ export function CiPlayer({
 
     return () => {
       disposed = true;
-      rememberPosition();
-      video.removeEventListener("timeupdate", rememberPosition);
-      video.removeEventListener("seeking", rememberPosition);
-      video.removeEventListener("loadedmetadata", restorePlayback);
+      rememberPlayback();
+      video.removeEventListener("timeupdate", rememberPlayback);
+      video.removeEventListener("seeking", rememberPlayback);
+      video.removeEventListener("play", rememberPlayback);
+      video.removeEventListener("pause", rememberPlayback);
+      removeRestorePlayback();
       removeSourceError();
       hls?.destroy();
     };

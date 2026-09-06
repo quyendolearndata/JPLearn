@@ -731,6 +731,27 @@ test.describe("Session recovery T-SES-REC-001", () => {
     expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
   });
 
+  test("F-03 manual retry can choose the default after initial catalog failure T-LRN-001", async ({ page }) => {
+    const { userId } = await register(page);
+    let catalogGets = 0;
+    await page.route(/\/catalog$/, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      catalogGets += 1;
+      if (catalogGets === 1) return route.abort("failed");
+      await route.continue();
+    });
+
+    await page.goto("/session");
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    await expect(page.getByText("Phiên đang chạy. Chưa tải được nguồn video.")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Thử tải lại video" })).toBeEnabled();
+
+    await page.getByRole("button", { name: "Thử tải lại video" }).click();
+    await expect.poll(() => catalogGets).toBe(2);
+    await expect(page.locator("video")).toBeVisible();
+    expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
+  });
+
   test("F-03 dual-source faults use one auto refetch and manual retry starts a new cycle T-LRN-001", async ({ page }) => {
     const { userId } = await register(page);
     let catalogGets = 0;
@@ -833,5 +854,12 @@ test.describe("Session recovery T-SES-REC-001", () => {
     await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toBeEnabled();
     await page.getByRole("button", { name: "Kết thúc phiên" }).click();
     await expect(page.getByRole("heading", { name: "Tổng kết phiên học" })).toBeVisible();
+
+    await page.goto(`/session?item_id=${SEED_PUBLISHED_ITEM}`);
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    await expect(page.getByText("Nội dung này không còn khả dụng.")).toBeVisible();
+    await expect(page.locator("video")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toBeEnabled();
+    expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
   });
 });
