@@ -30,3 +30,23 @@ class ListPublishedCatalogQuery:
 @dataclass(frozen=True)
 class GetLearnerProgressQuery:
     user_id: str
+
+
+@dataclass(frozen=True)
+class GetSessionQuery:
+    session_id: str
+    user_id: str
+
+
+@dataclass(frozen=True)
+class ListStaffCatalogQuery:
+    status: str | None = None
+    ci_level: int | None = None
+    limit: int = 50
+    offset: int = 0
+
+
+@dataclass(frozen=True)
+class GetStaffCatalogItemQuery:
+    item_id: str
+

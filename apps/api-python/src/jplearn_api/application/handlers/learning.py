@@ -11,8 +11,9 @@ from jplearn_api.application.ports.repositories import LearningRepository
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
 from jplearn_api.application.queries import GetLearnerProgressQuery
 from jplearn_api.application.read_models import LearnerProgressDTO, LearningSessionDTO
-from jplearn_api.domain.errors import EntityNotFoundError, ForbiddenError
+from jplearn_api.domain.errors import ConflictError, EntityNotFoundError, ForbiddenError
 from jplearn_api.domain.learning import LearningSession, minutes_from_duration
+from jplearn_api.application.queries import GetLearnerProgressQuery, GetSessionQuery
 
 
 def _now_naive() -> datetime:
@@ -36,6 +37,23 @@ async def handle_start_session(
     )
 
     async with uow:
+        if cmd.idempotency_key:
+            await uow.learning.acquire_idempotency_lock(cmd.user_id, cmd.idempotency_key)
+            existing = await uow.learning.get_idempotency_session(cmd.user_id, cmd.idempotency_key)
+            if existing is not None:
+                existing_session_id, recorded_hash = existing
+                if recorded_hash != (cmd.request_hash or ""):
+                    raise ConflictError("Idempotency key conflict: request payload mismatch")
+                existing_session = await uow.learning.get_session(existing_session_id)
+                if existing_session is not None:
+                    return LearningSessionDTO(
+                        id=existing_session.id,
+                        device_class=existing_session.device_class,
+                        started_at=existing_session.started_at,
+                        ended_at=existing_session.ended_at,
+                        duration_seconds=existing_session.duration_seconds,
+                    )
+
         await uow.learning.create_session(session)
         await uow.learning.upsert_device(cmd.user_id, cmd.device_class, started_at)
 
@@ -51,6 +69,9 @@ async def handle_start_session(
             {"ci_level": progress.current_ci_level},
             clock(),
         )
+        if cmd.idempotency_key:
+            await uow.learning.save_idempotency(cmd.user_id, cmd.idempotency_key, session.id, cmd.request_hash or "")
+
         await uow.commit()
 
     return LearningSessionDTO(
@@ -60,6 +81,26 @@ async def handle_start_session(
         ended_at=session.ended_at,
         duration_seconds=session.duration_seconds,
     )
+
+
+async def handle_get_session(
+    query: GetSessionQuery,
+    repo: LearningRepository,
+) -> LearningSessionDTO:
+    """Read learning session state."""
+    session = await repo.get_session(query.session_id)
+    if session is None:
+        raise EntityNotFoundError("Session not found")
+    if session.user_id != query.user_id:
+        raise ForbiddenError("Forbidden")
+    return LearningSessionDTO(
+        id=session.id,
+        device_class=session.device_class,
+        started_at=session.started_at,
+        ended_at=session.ended_at,
+        duration_seconds=session.duration_seconds,
+    )
+
 
 
 async def handle_end_session(

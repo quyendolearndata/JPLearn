@@ -96,11 +96,28 @@ class CatalogItemStaff(BaseModel):
     title_internal: str
     has_l1_translation: Literal[False]
     status: Literal["draft", "level_qa", "published", "archived"]
+    revision: int = 1
 
+
+class CatalogItemPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    revision: int
+    topic_id: str | None = None
+    ci_level: int | None = Field(default=None, ge=0, le=4)
+    duration_seconds: int | None = Field(default=None, ge=1)
+    media_type: Literal["video", "audio"] | None = None
+    visual_support: Literal["high", "medium", "low"] | None = None
+    title_internal: str | None = None
+
+
+class CatalogStaffList(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    items: list[CatalogItemStaff]
 
 
 class SessionStartBody(BaseModel):
     device_class: Literal["web", "phone", "ipad"]
+
 
 
 class LearningSessionPublic(BaseModel):

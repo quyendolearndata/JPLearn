@@ -29,6 +29,8 @@ class CatalogItemStaffDTO:
     title_internal: str
     has_l1_translation: bool
     status: str
+    revision: int = 1
+
 
 
 @dataclass(frozen=True)

@@ -171,3 +171,52 @@ def test_teacher_cannot_publish(live_client):
         headers={"Authorization": f"Bearer {token}"},
     )
     assert publish.status_code == 403
+
+
+def test_staff_catalog_list_get_and_patch_draft(live_client):
+    admin = _admin(live_client)
+    created = live_client.post(
+        "/staff/catalog",
+        headers={"Authorization": f"Bearer {admin}"},
+        json=_create_body(title_internal="orig-title", ci_level=2),
+    )
+    assert created.status_code == 201
+    item_id = created.json()["id"]
+    assert created.json()["revision"] == 1
+
+    # List staff catalog
+    listed = live_client.get(
+        "/staff/catalog?ci_level=2&status=draft",
+        headers={"Authorization": f"Bearer {admin}"},
+    )
+    assert listed.status_code == 200
+    assert any(i["id"] == item_id for i in listed.json()["items"])
+
+    # Get staff item by id
+    got = live_client.get(
+        f"/staff/catalog/{item_id}",
+        headers={"Authorization": f"Bearer {admin}"},
+    )
+    assert got.status_code == 200
+    assert got.json()["id"] == item_id
+    assert got.json()["title_internal"] == "orig-title"
+
+    # Patch draft item
+    patched = live_client.patch(
+        f"/staff/catalog/{item_id}",
+        headers={"Authorization": f"Bearer {admin}"},
+        json={"revision": 1, "title_internal": "updated-title", "ci_level": 3},
+    )
+    assert patched.status_code == 200
+    assert patched.json()["title_internal"] == "updated-title"
+    assert patched.json()["ci_level"] == 3
+    assert patched.json()["revision"] == 2
+
+    # Patch with stale revision fails with 409
+    stale_patch = live_client.patch(
+        f"/staff/catalog/{item_id}",
+        headers={"Authorization": f"Bearer {admin}"},
+        json={"revision": 1, "title_internal": "stale-update"},
+    )
+    assert stale_patch.status_code == 409
+

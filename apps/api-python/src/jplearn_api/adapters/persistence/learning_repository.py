@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -40,6 +40,22 @@ class SqlAlchemyLearningRepository(LearningRepository):
         self._session.add(orm_session)
         await self._session.flush()
 
+    async def get_session(self, session_id: str) -> DomainLearningSession | None:
+        result = await self._session.execute(
+            select(OrmLearningSession).where(OrmLearningSession.id == session_id),
+        )
+        orm_session = result.scalar_one_or_none()
+        if orm_session is None:
+            return None
+        return DomainLearningSession(
+            id=orm_session.id,
+            user_id=orm_session.user_id,
+            device_class=orm_session.device_class,
+            started_at=orm_session.started_at,
+            ended_at=orm_session.ended_at,
+            duration_seconds=orm_session.duration_seconds,
+        )
+
     async def lock_and_get_session(self, session_id: str) -> DomainLearningSession | None:
         stmt = (
             select(OrmLearningSession)
@@ -59,7 +75,38 @@ class SqlAlchemyLearningRepository(LearningRepository):
             duration_seconds=orm_session.duration_seconds,
         )
 
+    async def acquire_idempotency_lock(self, user_id: str, key: str) -> None:
+        """Acquire a transaction-scoped advisory lock for (user_id, idempotency_key)."""
+        await self._session.execute(
+            text("SELECT pg_advisory_xact_lock(hashtext(:user_id), hashtext(:key))"),
+            {"user_id": user_id, "key": key},
+        )
+
+    async def get_idempotency_session(self, user_id: str, key: str) -> tuple[str, str] | None:
+        from jplearn_api.adapters.persistence.models import SessionIdempotencyKey
+        stmt = select(SessionIdempotencyKey).where(
+            SessionIdempotencyKey.user_id == user_id,
+            SessionIdempotencyKey.key == key,
+        )
+        result = await self._session.execute(stmt)
+        record = result.scalar_one_or_none()
+        if record is None:
+            return None
+        return (record.session_id, record.request_hash)
+
+    async def save_idempotency(self, user_id: str, key: str, session_id: str, request_hash: str) -> None:
+        from jplearn_api.adapters.persistence.models import SessionIdempotencyKey
+        record = SessionIdempotencyKey(
+            user_id=user_id,
+            key=key,
+            session_id=session_id,
+            request_hash=request_hash,
+        )
+        self._session.add(record)
+        await self._session.flush()
+
     async def update_session(self, session: DomainLearningSession) -> None:
+
         result = await self._session.execute(
             select(OrmLearningSession).where(OrmLearningSession.id == session.id),
         )

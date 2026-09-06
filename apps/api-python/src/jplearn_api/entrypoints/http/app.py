@@ -138,7 +138,7 @@ def create_app(
                                             "schema": {"$ref": "#/components/schemas/Http401Error"}
                                         }
                                     }
-                            elif code in ("400", "403", "404", "500"):
+                            elif code in ("400", "403", "404", "409", "500"):
                                 if "content" not in resp:
                                     resp["content"] = {
                                         "application/json": {

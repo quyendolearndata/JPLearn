@@ -278,6 +278,39 @@ class FakeCatalogRepository(CatalogRepository):
         item = self.items.get(item_id)
         return copy.deepcopy(item) if item else None
 
+    async def get_by_id_for_update(self, item_id: str) -> Any:
+        return await self.get_by_id(item_id)
+
+    async def update_draft_cas(
+        self,
+        item_id: str,
+        expected_revision: int,
+        topic_id: str,
+        ci_level: int,
+        duration_seconds: int,
+        media_type: str,
+        visual_support: str,
+        title_internal: str,
+    ) -> Any:
+        from jplearn_api.application.ports.repositories import UpdateDraftResult, UpdateDraftResultStatus
+        self._auto_register()
+        item = self.items.get(item_id)
+        if item is None:
+            return UpdateDraftResult(status=UpdateDraftResultStatus.NOT_FOUND)
+        if item.status != "draft":
+            return UpdateDraftResult(status=UpdateDraftResultStatus.WRONG_STATUS, current_item=item)
+        if item.revision != expected_revision:
+            return UpdateDraftResult(status=UpdateDraftResultStatus.REVISION_CONFLICT, current_item=item)
+
+        item.topic_id = topic_id
+        item.ci_level = ci_level
+        item.duration_seconds = duration_seconds
+        item.media_type = media_type
+        item.visual_support = visual_support
+        item.title_internal = title_internal
+        item.revision += 1
+        return UpdateDraftResult(status=UpdateDraftResultStatus.SUCCESS, current_item=copy.deepcopy(item))
+
     async def add(self, item: Any) -> None:
         self._auto_register()
         self.items[item.id] = copy.deepcopy(item)
@@ -337,9 +370,28 @@ class FakeLearningRepository(LearningRepository):
         if _active_fake_uow.get() is None:
             self.commit_transaction()
 
+    async def get_session(self, session_id: str) -> Any:
+        self._auto_register()
+        return self.sessions.get(session_id)
+
     async def lock_and_get_session(self, session_id: str) -> Any:
         self._auto_register()
         return self.sessions.get(session_id)
+
+    async def acquire_idempotency_lock(self, user_id: str, key: str) -> None:
+        pass
+
+    async def get_idempotency_session(self, user_id: str, key: str) -> tuple[str, str] | None:
+        self._auto_register()
+        if not hasattr(self, "idempotency"):
+            self.idempotency = {}
+        return self.idempotency.get((user_id, key))
+
+    async def save_idempotency(self, user_id: str, key: str, session_id: str, request_hash: str) -> None:
+        self._auto_register()
+        if not hasattr(self, "idempotency"):
+            self.idempotency = {}
+        self.idempotency[(user_id, key)] = (session_id, request_hash)
 
     async def update_session(self, session: Any) -> None:
         self._auto_register()

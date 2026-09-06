@@ -4,11 +4,18 @@ from __future__ import annotations
 
 from time import time
 
-from sqlalchemy import select
+from typing import Any
+
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from jplearn_api.application.ports.repositories import CatalogQueryPort, CatalogRepository
+from jplearn_api.application.ports.repositories import (
+    CatalogQueryPort,
+    CatalogRepository,
+    UpdateDraftResult,
+    UpdateDraftResultStatus,
+)
 from jplearn_api.application.read_models import CatalogItemPublicDTO
 from jplearn_api.domain.catalog import CatalogItem as DomainCatalogItem, MediaRef
 from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem, Topic
@@ -36,6 +43,7 @@ def _to_domain(orm_item: OrmCatalogItem) -> DomainCatalogItem:
         visual_support=orm_item.visual_support,
         title_internal=orm_item.title_internal,
         created_by=orm_item.created_by,
+        revision=getattr(orm_item, "revision", 1),
         has_l1_translation=orm_item.has_l1_translation,
         spoken_language=orm_item.spoken_language,
         status=orm_item.status,
@@ -44,7 +52,7 @@ def _to_domain(orm_item: OrmCatalogItem) -> DomainCatalogItem:
 
 
 class SqlAlchemyCatalogRepository(CatalogRepository):
-    """PostgreSQL/SQLAlchemy implementation of CatalogRepository."""
+    """Repository for managing catalog items."""
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -58,6 +66,73 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
         orm_item = result.scalar_one_or_none()
         return _to_domain(orm_item) if orm_item else None
 
+    async def get_by_id_for_update(self, item_id: str) -> DomainCatalogItem | None:
+        result = await self._session.execute(
+            select(OrmCatalogItem)
+            .options(selectinload(OrmCatalogItem.media))
+            .where(OrmCatalogItem.id == item_id)
+            .with_for_update(),
+        )
+        orm_item = result.scalar_one_or_none()
+        return _to_domain(orm_item) if orm_item else None
+
+    async def update_draft_cas(
+        self,
+        item_id: str,
+        expected_revision: int,
+        topic_id: str | None = None,
+        ci_level: int | None = None,
+        duration_seconds: int | None = None,
+        media_type: str | None = None,
+        visual_support: str | None = None,
+        title_internal: str | None = None,
+    ) -> UpdateDraftResult:
+        values_to_update: dict[str, Any] = {
+            "revision": OrmCatalogItem.revision + 1,
+        }
+        if topic_id is not None:
+            values_to_update["topic_id"] = topic_id
+        if ci_level is not None:
+            values_to_update["ci_level"] = ci_level
+        if duration_seconds is not None:
+            values_to_update["duration_seconds"] = duration_seconds
+        if media_type is not None:
+            values_to_update["media_type"] = media_type
+        if visual_support is not None:
+            values_to_update["visual_support"] = visual_support
+        if title_internal is not None:
+            values_to_update["title_internal"] = title_internal
+
+        update_stmt = (
+            update(OrmCatalogItem)
+            .where(
+                OrmCatalogItem.id == item_id,
+                OrmCatalogItem.status == "draft",
+                OrmCatalogItem.revision == expected_revision,
+            )
+            .values(**values_to_update)
+            .returning(OrmCatalogItem)
+        )
+        result = await self._session.execute(update_stmt)
+        orm_item = result.scalar_one_or_none()
+        if orm_item is not None:
+            await self._session.flush()
+            await self._session.refresh(orm_item, ["media"])
+            return UpdateDraftResult(
+                status=UpdateDraftResultStatus.UPDATED,
+                item=_to_domain(orm_item),
+            )
+
+        # Inspect failure reason
+        stmt = select(OrmCatalogItem).where(OrmCatalogItem.id == item_id)
+        check_res = await self._session.execute(stmt)
+        existing = check_res.scalar_one_or_none()
+        if existing is None:
+            return UpdateDraftResult(status=UpdateDraftResultStatus.NOT_FOUND)
+        if existing.status != "draft":
+            return UpdateDraftResult(status=UpdateDraftResultStatus.WRONG_STATUS)
+        return UpdateDraftResult(status=UpdateDraftResultStatus.REVISION_CONFLICT)
+
     async def add(self, item: DomainCatalogItem) -> None:
         orm_item = OrmCatalogItem(
             id=item.id,
@@ -68,6 +143,7 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
             visual_support=item.visual_support,
             title_internal=item.title_internal,
             created_by=item.created_by,
+            revision=item.revision,
             has_l1_translation=item.has_l1_translation,
             spoken_language=item.spoken_language,
             status=item.status,
@@ -81,13 +157,41 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
         )
         orm_item = result.scalar_one_or_none()
         if orm_item is not None:
+            orm_item.topic_id = item.topic_id
+            orm_item.ci_level = item.ci_level
+            orm_item.duration_seconds = item.duration_seconds
+            orm_item.media_type = item.media_type
+            orm_item.visual_support = item.visual_support
+            orm_item.title_internal = item.title_internal
             orm_item.status = item.status
             orm_item.has_l1_translation = item.has_l1_translation
+            orm_item.revision = item.revision
             await self._session.flush()
+
+    async def list_staff(
+        self,
+        status: str | None = None,
+        ci_level: int | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[DomainCatalogItem]:
+        stmt = (
+            select(OrmCatalogItem)
+            .options(selectinload(OrmCatalogItem.media))
+            .order_by(OrmCatalogItem.id.desc())
+        )
+        if status is not None:
+            stmt = stmt.where(OrmCatalogItem.status == status)
+        if ci_level is not None:
+            stmt = stmt.where(OrmCatalogItem.ci_level == ci_level)
+        stmt = stmt.limit(limit).offset(offset)
+        result = await self._session.execute(stmt)
+        return [_to_domain(row) for row in result.scalars().all()]
 
     async def topic_exists(self, topic_id: str) -> bool:
         topic = await self._session.get(Topic, topic_id)
         return topic is not None
+
 
 
 class SqlAlchemyCatalogQueryAdapter(CatalogQueryPort):

@@ -48,10 +48,31 @@ class UserRepository(Protocol):
         ...
 
 
+from enum import Enum
+from dataclasses import dataclass
+
+
+class UpdateDraftResultStatus(str, Enum):
+    UPDATED = "updated"
+    NOT_FOUND = "not_found"
+    WRONG_STATUS = "wrong_status"
+    REVISION_CONFLICT = "revision_conflict"
+
+
+@dataclass(frozen=True)
+class UpdateDraftResult:
+    status: UpdateDraftResultStatus
+    item: CatalogItem | None = None
+
+
 class CatalogRepository(Protocol):
     """Port for loading and persisting CatalogItem aggregates."""
 
     async def get_by_id(self, item_id: str) -> CatalogItem | None:
+        ...
+
+    async def get_by_id_for_update(self, item_id: str) -> CatalogItem | None:
+        """Lock row with SELECT FOR UPDATE to serialize state transitions."""
         ...
 
     async def add(self, item: CatalogItem) -> None:
@@ -60,7 +81,30 @@ class CatalogRepository(Protocol):
     async def update(self, item: CatalogItem) -> None:
         ...
 
+    async def update_draft_cas(
+        self,
+        item_id: str,
+        expected_revision: int,
+        topic_id: str | None = None,
+        ci_level: int | None = None,
+        duration_seconds: int | None = None,
+        media_type: str | None = None,
+        visual_support: str | None = None,
+        title_internal: str | None = None,
+    ) -> UpdateDraftResult:
+        """Atomically update a draft item with compare-and-swap on revision."""
+        ...
+
     async def topic_exists(self, topic_id: str) -> bool:
+        ...
+
+    async def list_staff(
+        self,
+        status: str | None = None,
+        ci_level: int | None = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[CatalogItem]:
         ...
 
 
@@ -74,13 +118,26 @@ class CatalogQueryPort(Protocol):
 class LearningRepository(Protocol):
     """Port for session and progress persistence with row-locking support."""
 
+    async def acquire_idempotency_lock(self, user_id: str, key: str) -> None:
+        """Acquire transaction-scoped advisory lock on (user_id, idempotency_key)."""
+        ...
+
     async def create_session(self, session: LearningSession) -> None:
+        ...
+
+    async def get_session(self, session_id: str) -> LearningSession | None:
         ...
 
     async def lock_and_get_session(self, session_id: str) -> LearningSession | None:
         ...
 
     async def update_session(self, session: LearningSession) -> None:
+        ...
+
+    async def get_idempotency_session(self, user_id: str, key: str) -> tuple[str, str] | None:
+        ...
+
+    async def save_idempotency(self, user_id: str, key: str, session_id: str, request_hash: str) -> None:
         ...
 
     async def upsert_device(self, user_id: str, device_class: str, last_seen_at: datetime) -> None:
@@ -104,6 +161,7 @@ class LearningRepository(Protocol):
         created_at: datetime,
     ) -> None:
         ...
+
 
 
 class MediaRepository(Protocol):

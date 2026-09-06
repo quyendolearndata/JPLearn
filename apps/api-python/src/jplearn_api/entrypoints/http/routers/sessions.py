@@ -1,18 +1,21 @@
-from fastapi import APIRouter, Depends, HTTPException
+import hashlib
+from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.application.commands import EndLearningSessionCommand, StartLearningSessionCommand
 from jplearn_api.application.handlers.learning import (
     handle_end_session,
     handle_get_progress,
+    handle_get_session,
     handle_start_session,
 )
-from jplearn_api.application.queries import GetLearnerProgressQuery
+from jplearn_api.application.queries import GetLearnerProgressQuery, GetSessionQuery
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_learning_repository, create_uow
 from jplearn_api.entrypoints.http.datetime_adapt import to_json_z
 from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_session
 from jplearn_api.domain.errors import (
+    ConflictError,
     EntityNotFoundError,
     ForbiddenError,
     SessionAlreadyEndedError,
@@ -20,7 +23,7 @@ from jplearn_api.domain.errors import (
 from jplearn_api.entrypoints.http.schemas import LearnerProgressPublic, LearningSessionPublic, SessionStartBody
 from jplearn_api.entrypoints.http.security import require_user
 
-router = APIRouter(tags=["Session", "Progress"])
+router = APIRouter()
 
 DEVICE_CLASSES = ("web", "phone", "ipad")
 
@@ -32,18 +35,34 @@ DEVICE_CLASSES = ("web", "phone", "ipad")
     operation_id="startSession",
     tags=["Session"],
     openapi_extra={"x-jplearn-fr": ["FR-SES-001", "FR-SES-003", "FR-EVT-001", "FR-EVT-003"]},
+    responses={
+        409: {"description": "Idempotency key conflict"},
+    },
 )
 async def start_session(
     body: SessionStartBody,
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
     session: AsyncSession = Depends(get_session),
     user: UserDTO = Depends(require_user),
 ) -> LearningSessionPublic:
     if body.device_class not in DEVICE_CLASSES:
         raise HTTPException(status_code=400, detail="device_class is required")
     uow = create_uow(session)
-    cmd = StartLearningSessionCommand(user_id=user.id, device_class=body.device_class)
+    request_hash = (
+        hashlib.sha256(body.device_class.encode()).hexdigest()
+        if idempotency_key
+        else None
+    )
+    cmd = StartLearningSessionCommand(
+        user_id=user.id,
+        device_class=body.device_class,
+        idempotency_key=idempotency_key,
+        request_hash=request_hash,
+    )
     try:
         dto = await handle_start_session(cmd, uow)
+    except ConflictError:
+        raise HTTPException(status_code=409, detail="Idempotency key conflict")
     except EntityNotFoundError:
         raise HTTPException(status_code=500, detail="Missing learner progress")
 
@@ -54,6 +73,41 @@ async def start_session(
         ended_at=to_json_z(dto.ended_at) if dto.ended_at else None,
         duration_seconds=dto.duration_seconds,
     )
+
+
+@router.get(
+    "/sessions/{id}",
+    response_model=LearningSessionPublic,
+    operation_id="getSession",
+    tags=["Session"],
+    openapi_extra={"x-jplearn-fr": ["FR-SES-001", "FR-SES-002"]},
+    responses={
+        403: {"description": "Forbidden"},
+        404: {"description": "Session not found"},
+    },
+)
+async def get_session_by_id(
+    id: UUIDPath,
+    session: AsyncSession = Depends(get_session),
+    user: UserDTO = Depends(require_user),
+) -> LearningSessionPublic:
+    repo = create_learning_repository(session)
+    query = GetSessionQuery(session_id=id, user_id=user.id)
+    try:
+        dto = await handle_get_session(query, repo)
+    except ForbiddenError:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    except EntityNotFoundError:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    return LearningSessionPublic(
+        id=dto.id,
+        device_class=dto.device_class,
+        started_at=to_json_z(dto.started_at),
+        ended_at=to_json_z(dto.ended_at) if dto.ended_at else None,
+        duration_seconds=dto.duration_seconds,
+    )
+
 
 
 @router.post(

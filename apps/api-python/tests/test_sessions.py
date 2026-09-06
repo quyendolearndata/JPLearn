@@ -357,3 +357,67 @@ async def test_end_session_failure_rolls_back_atomically(live_database_url: str)
     finally:
         await conn.close()
 
+
+def test_session_idempotency_and_get_session(live_client):
+    user_token = register(live_client).json()["access_token"]
+    other_token = register(live_client).json()["access_token"]
+    idem_key = "idem-test-key-123"
+
+    # Start with Idempotency-Key
+    start1 = live_client.post(
+        "/sessions",
+        headers={"Authorization": f"Bearer {user_token}", "Idempotency-Key": idem_key},
+        json={"device_class": "web"},
+    )
+    assert start1.status_code == 201
+    session_id = start1.json()["id"]
+
+    # Re-send identical request with same key -> returns same session
+    start2 = live_client.post(
+        "/sessions",
+        headers={"Authorization": f"Bearer {user_token}", "Idempotency-Key": idem_key},
+        json={"device_class": "web"},
+    )
+    assert start2.status_code in (200, 201)
+    assert start2.json()["id"] == session_id
+
+    # Re-send same key with different body -> 409 Conflict
+    start_conflict = live_client.post(
+        "/sessions",
+        headers={"Authorization": f"Bearer {user_token}", "Idempotency-Key": idem_key},
+        json={"device_class": "phone"},
+    )
+    assert start_conflict.status_code == 409
+
+    # GET /sessions/{id} while active
+    got = live_client.get(
+        f"/sessions/{session_id}",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert got.status_code == 200
+    assert got.json()["id"] == session_id
+    assert got.json()["ended_at"] is None
+
+    # GET /sessions/{id} forbidden for other user
+    forbidden = live_client.get(
+        f"/sessions/{session_id}",
+        headers={"Authorization": f"Bearer {other_token}"},
+    )
+    assert forbidden.status_code == 403
+
+    # End session
+    end_res = live_client.post(
+        f"/sessions/{session_id}/end",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert end_res.status_code == 200
+
+    # GET /sessions/{id} after ended -> shows ended_at
+    got_ended = live_client.get(
+        f"/sessions/{session_id}",
+        headers={"Authorization": f"Bearer {user_token}"},
+    )
+    assert got_ended.status_code == 200
+    assert got_ended.json()["ended_at"] is not None
+
+

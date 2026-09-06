@@ -11,14 +11,24 @@ from jplearn_api.application.commands import (
     PublishCatalogItemCommand,
     SubmitCatalogForQaCommand,
     UnpublishCatalogItemCommand,
+    UpdateDraftCatalogItemCommand,
 )
 from jplearn_api.application.ports.repositories import CatalogQueryPort, CatalogRepository
 from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
-from jplearn_api.application.queries import ListPublishedCatalogQuery
+from jplearn_api.application.queries import (
+    GetStaffCatalogItemQuery,
+    ListPublishedCatalogQuery,
+    ListStaffCatalogQuery,
+)
 from jplearn_api.application.read_models import CatalogItemPublicDTO, CatalogItemStaffDTO
 from jplearn_api.domain.catalog import CatalogItem
-from jplearn_api.domain.errors import EntityNotFoundError, InvalidDomainStateError, MediaInvariantError
+from jplearn_api.domain.errors import (
+    ConflictError,
+    EntityNotFoundError,
+    InvalidDomainStateError,
+    MediaInvariantError,
+)
 
 
 def _to_staff_dto(item: CatalogItem) -> CatalogItemStaffDTO:
@@ -32,7 +42,9 @@ def _to_staff_dto(item: CatalogItem) -> CatalogItemStaffDTO:
         title_internal=item.title_internal,
         has_l1_translation=item.has_l1_translation,
         status=item.status,
+        revision=item.revision,
     )
+
 
 
 async def handle_create_catalog_item(
@@ -68,13 +80,20 @@ async def handle_create_catalog_item(
     return _to_staff_dto(item)
 
 
+from jplearn_api.application.ports.repositories import (
+    CatalogQueryPort,
+    CatalogRepository,
+    UpdateDraftResultStatus,
+)
+
+
 async def handle_submit_qa(
     cmd: SubmitCatalogForQaCommand,
     uow: AsyncUnitOfWork,
 ) -> CatalogItemStaffDTO:
     """Submit a draft item for QA."""
     async with uow:
-        item = await uow.catalog.get_by_id(cmd.item_id)
+        item = await uow.catalog.get_by_id_for_update(cmd.item_id)
         if item is None:
             raise EntityNotFoundError("Catalog item not found")
         item.submit_for_qa()
@@ -91,7 +110,7 @@ async def handle_publish(
 ) -> CatalogItemStaffDTO:
     """Publish a level_qa item ensuring media presence and storage availability."""
     async with uow:
-        item = await uow.catalog.get_by_id(cmd.item_id)
+        item = await uow.catalog.get_by_id_for_update(cmd.item_id)
         if item is None:
             raise EntityNotFoundError("Catalog item not found")
 
@@ -121,7 +140,7 @@ async def handle_unpublish(
 ) -> CatalogItemStaffDTO:
     """Unpublish a published item back to draft."""
     async with uow:
-        item = await uow.catalog.get_by_id(cmd.item_id)
+        item = await uow.catalog.get_by_id_for_update(cmd.item_id)
         if item is None:
             raise EntityNotFoundError("Catalog item not found")
         item.unpublish()
@@ -137,7 +156,7 @@ async def handle_archive(
 ) -> None:
     """Archive a catalog item."""
     async with uow:
-        item = await uow.catalog.get_by_id(cmd.item_id)
+        item = await uow.catalog.get_by_id_for_update(cmd.item_id)
         if item is None:
             raise EntityNotFoundError("Catalog item not found")
         item.archive()
@@ -151,3 +170,64 @@ async def handle_list_published(
 ) -> list[CatalogItemPublicDTO]:
     """Retrieve published items formatted for public consumption."""
     return await query_port.list_published(query.ci_level)
+
+
+async def handle_list_staff_catalog(
+    query: ListStaffCatalogQuery,
+    repo: CatalogRepository,
+) -> list[CatalogItemStaffDTO]:
+    """Retrieve internal catalog items with optional filtering and pagination."""
+    items = await repo.list_staff(
+        status=query.status,
+        ci_level=query.ci_level,
+        limit=query.limit,
+        offset=query.offset,
+    )
+    return [_to_staff_dto(i) for i in items]
+
+
+async def handle_get_staff_catalog_item(
+    query: GetStaffCatalogItemQuery,
+    repo: CatalogRepository,
+) -> CatalogItemStaffDTO:
+    """Retrieve single catalog item with internal metadata."""
+    item = await repo.get_by_id(query.item_id)
+    if item is None:
+        raise EntityNotFoundError("Catalog item not found")
+    return _to_staff_dto(item)
+
+
+async def handle_update_draft_catalog_item(
+    cmd: UpdateDraftCatalogItemCommand,
+    uow: AsyncUnitOfWork,
+) -> CatalogItemStaffDTO:
+    """Update draft item metadata with atomic compare-and-swap on revision."""
+    async with uow:
+        if cmd.topic_id is not None:
+            topic_exists = await uow.catalog.topic_exists(cmd.topic_id)
+            if not topic_exists:
+                raise InvalidDomainStateError("Unknown topic_id")
+
+        result = await uow.catalog.update_draft_cas(
+            item_id=cmd.item_id,
+            expected_revision=cmd.revision,
+            topic_id=cmd.topic_id,
+            ci_level=cmd.ci_level,
+            duration_seconds=cmd.duration_seconds,
+            media_type=cmd.media_type,
+            visual_support=cmd.visual_support,
+            title_internal=cmd.title_internal,
+        )
+
+        if result.status == UpdateDraftResultStatus.NOT_FOUND:
+            raise EntityNotFoundError("Catalog item not found")
+        if result.status == UpdateDraftResultStatus.WRONG_STATUS:
+            raise InvalidDomainStateError("Only draft items can be modified")
+        if result.status == UpdateDraftResultStatus.REVISION_CONFLICT:
+            raise ConflictError("Revision conflict: item was modified by another user")
+
+        assert result.item is not None
+        await uow.commit()
+
+    return _to_staff_dto(result.item)
+
