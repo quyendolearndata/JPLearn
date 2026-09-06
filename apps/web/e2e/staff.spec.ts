@@ -1,154 +1,146 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import path from "node:path";
 import fs from "node:fs";
 
-function getTestMp4Path(): string {
+function stockMp4(): string {
   const candidates = [
     path.resolve(__dirname, "../../../media/stock/mp4/level-0-wash-hands.mp4"),
     path.resolve(process.cwd(), "../../media/stock/mp4/level-0-wash-hands.mp4"),
-    path.resolve(process.cwd(), "media/stock/mp4/level-0-wash-hands.mp4"),
-    "/Users/quyendo/Documents/Learn/JPLearn/media/stock/mp4/level-0-wash-hands.mp4",
   ];
-  for (const c of candidates) {
-    if (fs.existsSync(c)) return c;
-  }
-  throw new Error("Could not find test MP4 file");
+  const hit = candidates.find((c) => fs.existsSync(c));
+  if (!hit) throw new Error("stock mp4 missing");
+  return hit;
 }
 
-test.describe("Staff CMS E2E Lifecycle & RBAC (T-CMS-E2E-001)", () => {
-  const uniqueId = Date.now();
-  const learnerEmail = `learner-staff-${uniqueId}@example.com`;
-  const draftTitle = `E2E CI Clip ${uniqueId}`;
+async function login(page: Page, email: string) {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Mật khẩu").fill("password10");
+  await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await expect(page).toHaveURL("/");
+}
+async function register(page: Page) {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(`l${Date.now()}${Math.floor(Math.random() * 1e4)}@example.com`);
+  await page.getByLabel("Mật khẩu").fill("password10");
+  await page.getByRole("button", { name: "Đăng ký" }).click();
+  await expect(page).toHaveURL("/");
+}
+async function createDraft(page: Page, title: string): Promise<string> {
+  await page.goto("/staff/new");
+  await page.getByLabel(/Tiêu đề nội bộ/i).fill(title);
+  await page.getByLabel(/Thời lượng/i).fill("30");
+  await page.getByRole("button", { name: "Tạo bản nháp bài học" }).click();
+  await expect(page).toHaveURL(/\/staff\/[0-9a-f-]+/);
+  return page.url().split("/staff/")[1].split("?")[0];
+}
 
-  test("learner is forbidden, admin manages full draft -> qa -> publish -> unpublish lifecycle", async ({
-    browser,
-  }) => {
+test.describe("Staff CMS T-CMS-E2E-001", () => {
+  test("teacher drafts+uploads+submits (no publish button); admin publishes; learner sees; admin unpublishes — each step survives reload", async ({ browser }) => {
     test.setTimeout(180_000);
-    const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000";
+    const title = `E2E handoff ${Date.now()}`;
 
-    // -------------------------------------------------------------
-    // 1. Learner registration & RBAC check
-    // -------------------------------------------------------------
-    const learnerCtx = await browser.newContext({ baseURL: baseUrl });
-    const learnerPage = await learnerCtx.newPage();
+    const learnerCtx = await browser.newContext();
+    const learner = await learnerCtx.newPage();
+    await register(learner);
+    await learner.goto("/staff");
+    await expect(learner.getByRole("heading", { name: "Không có quyền truy cập" })).toBeVisible();
 
-    await learnerPage.goto("/login");
-    await learnerPage.getByLabel("Email").fill(learnerEmail);
-    await learnerPage.getByLabel("Mật khẩu").fill("password10");
-    await learnerPage.getByRole("button", { name: "Đăng ký" }).click();
-    await expect(learnerPage).toHaveURL("/");
+    const teacherCtx = await browser.newContext();
+    const teacher = await teacherCtx.newPage();
+    await login(teacher, "teacher@e2e.local");
+    const itemId = await createDraft(teacher, title);
+    await teacher.reload();
+    await expect(teacher.getByText("Bản nháp (draft)", { exact: true })).toBeVisible();
+    await expect(teacher.getByLabel(/Tiêu đề nội bộ/i)).toHaveValue(title);
 
-    // Learner tries visiting /staff -> must see 403 / "Không có quyền truy cập"
-    await learnerPage.goto("/staff");
-    await expect(learnerPage.getByRole("heading", { name: "Không có quyền truy cập" })).toBeVisible();
+    await teacher.locator("input#upload").setInputFiles(stockMp4());
+    await teacher.getByRole("button", { name: "Tải lên tệp MP4", exact: true }).click();
+    await expect(teacher.getByText("Tải tệp media lên thành công!")).toBeVisible();
+    await teacher.reload();
+    await teacher.getByRole("button", { name: "Nộp kiểm định QA" }).click();
+    await expect(teacher.getByText("Chờ kiểm duyệt QA (level_qa)", { exact: true })).toBeVisible();
+    await teacher.reload();
+    await expect(teacher.getByText("Chờ kiểm duyệt QA (level_qa)", { exact: true })).toBeVisible();
+    await expect(teacher.getByRole("button", { name: "Xuất bản bài học" })).toHaveCount(0);
+    await teacherCtx.close();
 
-    // -------------------------------------------------------------
-    // 2. Admin logs in & accesses /staff
-    // -------------------------------------------------------------
-    const adminCtx = await browser.newContext({ baseURL: baseUrl });
-    const adminPage = await adminCtx.newPage();
+    await learner.goto("/catalog");
+    await expect(learner.locator(`a[href*="${itemId}"]`)).toHaveCount(0);
 
-    await adminPage.goto("/login");
-    await adminPage.getByLabel("Email").fill("admin@jplearn.local");
-    await adminPage.getByLabel("Mật khẩu").fill("password10");
-    await adminPage.getByRole("button", { name: "Đăng nhập" }).click();
-    await expect(adminPage).toHaveURL("/");
+    const adminCtx = await browser.newContext();
+    const admin = await adminCtx.newPage();
+    await login(admin, "admin@jplearn.local");
+    await admin.goto("/staff");
+    await expect(admin.getByRole("heading", { name: "Quản trị nội dung CI" })).toBeVisible();
+    await admin.goto(`/staff/${itemId}`);
+    await admin.getByRole("button", { name: "Xuất bản bài học" }).click();
+    await expect(admin.getByText("Đã xuất bản (published)", { exact: true })).toBeVisible();
+    await admin.reload();
+    await expect(admin.getByText("Đã xuất bản (published)", { exact: true })).toBeVisible();
 
-    await adminPage.goto("/staff");
-    await expect(adminPage.getByRole("heading", { name: "Quản trị nội dung CI" })).toBeVisible();
+    await learner.goto("/catalog");
+    await expect(learner.locator(`a[href*="${itemId}"]`)).toBeVisible();
+    await expect(learner.getByText(title)).toHaveCount(0);
 
-    // -------------------------------------------------------------
-    // 3. Admin creates new draft catalog item
-    // -------------------------------------------------------------
-    await adminPage.getByRole("link", { name: "+ Tạo bài học mới" }).click();
-    await expect(adminPage).toHaveURL("/staff/new");
-    await expect(adminPage.getByRole("heading", { name: "Tạo bài học mới (Bản nháp)" })).toBeVisible();
+    await admin.getByRole("button", { name: "Gỡ xuất bản (Về nháp)" }).click();
+    await expect(admin.getByText("Bản nháp (draft)", { exact: true })).toBeVisible();
+    await learner.goto("/catalog");
+    await expect(learner.locator(`a[href*="${itemId}"]`)).toHaveCount(0);
 
-    await adminPage.getByLabel(/Tiêu đề nội bộ/i).fill(draftTitle);
-    await adminPage.getByLabel(/Thời lượng/i).fill("30");
-    await adminPage.getByRole("button", { name: "Tạo bản nháp bài học" }).click();
-
-    // Navigates to /staff/[id]
-    await expect(adminPage).toHaveURL(/\/staff\/[0-9a-f-]+/);
-    const itemId = adminPage.url().split("/staff/")[1].split("?")[0];
-    await expect(adminPage.getByText("Bản nháp (draft)", { exact: true })).toBeVisible();
-
-    // -------------------------------------------------------------
-    // 4. Learner verifies catalog does NOT show draft item
-    // -------------------------------------------------------------
-    await learnerPage.goto("/catalog");
-    await expect(learnerPage.locator(`a[href*="${itemId}"]`)).toHaveCount(0);
-
-    // -------------------------------------------------------------
-    // 5. Admin uploads MP4 media
-    // -------------------------------------------------------------
-    const mp4Path = getTestMp4Path();
-    await adminPage.locator("input#upload").setInputFiles(mp4Path);
-    await adminPage.getByRole("button", { name: "Tải lên tệp MP4", exact: true }).click();
-    await expect(adminPage.getByText("Tải tệp media lên thành công!")).toBeVisible();
-
-    // -------------------------------------------------------------
-    // 6. Admin submits for QA
-    // -------------------------------------------------------------
-    await adminPage.getByRole("button", { name: "Nộp kiểm định QA" }).click();
-    await expect(adminPage.getByText("Chờ kiểm duyệt QA (level_qa)", { exact: true })).toBeVisible();
-
-    // Learner still cannot see item in catalog
-    await learnerPage.goto("/catalog");
-    await expect(learnerPage.locator(`a[href*="${itemId}"]`)).toHaveCount(0);
-
-    // -------------------------------------------------------------
-    // 7. Admin publishes the item
-    // -------------------------------------------------------------
-    await adminPage.getByRole("button", { name: "Xuất bản bài học" }).click();
-    await expect(adminPage.getByText("Đã xuất bản (published)", { exact: true })).toBeVisible();
-
-    // -------------------------------------------------------------
-    // 8. Learner verifies catalog NOW shows the published item!
-    // -------------------------------------------------------------
-    await learnerPage.goto("/catalog");
-    await expect(learnerPage.locator(`a[href*="${itemId}"]`)).toBeVisible();
-
-    // -------------------------------------------------------------
-    // 9. Admin unpublishes the item
-    // -------------------------------------------------------------
-    await adminPage.getByRole("button", { name: "Gỡ xuất bản (Về nháp)" }).click();
-    await expect(adminPage.getByText("Bản nháp (draft)", { exact: true })).toBeVisible();
-
-    // -------------------------------------------------------------
-    // 10. Learner verifies catalog no longer shows unpublished item
-    // -------------------------------------------------------------
-    await learnerPage.goto("/catalog");
-    await expect(learnerPage.locator(`a[href*="${itemId}"]`)).toHaveCount(0);
-
-    await learnerCtx.close();
     await adminCtx.close();
+    await learnerCtx.close();
   });
 
-  test("client-side validation rejects non-mp4 file in staff upload", async ({ browser }) => {
-    const baseUrl = process.env.PLAYWRIGHT_TEST_BASE_URL ?? "http://localhost:3000";
-    const ctx = await browser.newContext({ baseURL: baseUrl });
-    const page = await ctx.newPage();
+  test("publish without media is refused and status stays level_qa", async ({ page }) => {
+    await login(page, "admin@jplearn.local");
+    await createDraft(page, `no-media ${Date.now()}`);
+    await page.getByRole("button", { name: "Nộp kiểm định QA" }).click();
+    await expect(page.getByText("Chờ kiểm duyệt QA (level_qa)", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Xuất bản bài học" }).click();
+    await expect(page.getByText(/Cannot publish without media/)).toBeVisible();
+    await expect(page.getByText("Đã xuất bản (published)", { exact: true })).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByText("Chờ kiểm duyệt QA (level_qa)", { exact: true })).toBeVisible();
+  });
 
-    // Login as admin
-    await page.goto("/login");
-    await page.getByLabel("Email").fill("admin@jplearn.local");
-    await page.getByLabel("Mật khẩu").fill("password10");
-    await page.getByRole("button", { name: "Đăng nhập" }).click();
-    await expect(page).toHaveURL("/");
+  test("upload failure keeps the draft and shows an error", async ({ page }) => {
+    await login(page, "admin@jplearn.local");
+    await createDraft(page, `upload-fail ${Date.now()}`);
+    await page.route(/\/staff\/catalog\/[^/]+\/media$/, (route) =>
+      route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ detail: "storage unavailable" }) }),
+    );
+    await page.locator("input#upload").setInputFiles(stockMp4());
+    await page.getByRole("button", { name: "Tải lên tệp MP4", exact: true }).click();
+    await expect(page.getByText("storage unavailable")).toBeVisible();
+    await expect(page.getByText("Bản nháp (draft)", { exact: true })).toBeVisible();
+  });
 
-    // Visit /staff/new and attempt to select a non-mp4 file
-    await page.goto("/staff/new");
-    await expect(page.getByRole("heading", { name: "Tạo bài học mới (Bản nháp)" })).toBeVisible();
-    await page.locator("input#mediaFile").setInputFiles({
-      name: "invalid-file.txt",
-      mimeType: "text/plain",
-      buffer: Buffer.from("plain text content"),
-    });
+  test("stale revision → 409 → reload button loads the winner", async ({ browser }) => {
+    const ctx = await browser.newContext();
+    const p1 = await ctx.newPage();
+    await login(p1, "admin@jplearn.local");
+    const itemId = await createDraft(p1, `stale ${Date.now()}`);
+    const p2 = await ctx.newPage();
+    await p2.goto(`/staff/${itemId}`);
+    await p2.getByLabel(/Tiêu đề nội bộ/i).fill("winner title");
+    await p2.getByRole("button", { name: /Lưu thay đổi/ }).click();
+    await expect(p2.getByText(/Đã lưu thay đổi thành công \(Phiên bản v2\)/)).toBeVisible();
 
-    // Error alert must appear
-    await expect(page.getByText("Chỉ chấp nhận tệp video định dạng MP4 (.mp4).")).toBeVisible();
-
+    await p1.getByLabel(/Tiêu đề nội bộ/i).fill("loser title");
+    await p1.getByRole("button", { name: /Lưu thay đổi/ }).click();
+    await expect(p1.getByText(/Xung đột phiên bản/)).toBeVisible();
+    await p1.getByRole("button", { name: "Tải lại dữ liệu" }).click();
+    await expect(p1.getByLabel(/Tiêu đề nội bộ/i)).toHaveValue("winner title");
     await ctx.close();
+  });
+
+  test("client-side validation rejects non-mp4 in both staff forms", async ({ page }) => {
+    await login(page, "admin@jplearn.local");
+    await page.goto("/staff/new");
+    await page.locator("input#mediaFile").setInputFiles({ name: "x.txt", mimeType: "text/plain", buffer: Buffer.from("t") });
+    await expect(page.getByText("Chỉ chấp nhận tệp video định dạng MP4 (.mp4).")).toBeVisible();
+    await expect(page.locator("input#mediaFile")).toHaveAttribute("accept", "video/mp4");
+    await expect(page.locator('select option[value="audio"]')).toBeDisabled();
   });
 });

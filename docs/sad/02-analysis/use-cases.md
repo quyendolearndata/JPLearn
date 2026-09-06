@@ -158,7 +158,7 @@ Chặt UML thì login là precondition; v1 mô hình include vì mọi UC học 
   3. Hệ thống tạo item `draft`, `has_l1_translation=false` (không checkbox “thêm bản dịch” v1).
   4. Hệ thống không expose item này trên GET `/catalog` học viên.
 - **Kịch bản phụ (extend):** không.
-- **Ngoại lệ:** Learner → 403. Không nhảy `draft` → `published` từ màn này. Không include UC-T03 (upload là bước BPMN riêng, mục 5).
+- **Ngoại lệ:** Learner → 403. Không nhảy `draft` → `published` từ màn này. Không include UC-T03 (upload là bước BPMN riêng, mục 5). Q1: `media_type=audio` giữ trong schema, UI vô hiệu hoá lựa chọn vì upload chỉ nhận MP4 (FR-CMS-001). BA quyết định 2026-09-06.
 - **Quan hệ:** «include» UC-T01.
 
 ### UC-T03 Upload media

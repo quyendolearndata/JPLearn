@@ -7,6 +7,8 @@ import { api, parseApiError, parseApiResponse } from "../../../lib/api";
 import { getToken, getUser, hasRole } from "../../../lib/auth-storage";
 import type { CatalogItemStaff } from "../page";
 
+const isMp4 = (f: File) => f.name.toLowerCase().endsWith(".mp4") && (f.type === "" || f.type === "video/mp4");
+
 const TOPICS = [
   { id: "daily_home", label: "Sinh hoạt gia đình" },
   { id: "food", label: "Ẩm thực & Nấu ăn" },
@@ -178,7 +180,7 @@ function StaffItemDetailContent() {
     const token = getToken();
     if (!token) return;
 
-    if (!uploadFile.name.toLowerCase().endsWith(".mp4") && uploadFile.type !== "video/mp4") {
+    if (!isMp4(uploadFile)) {
       setErrorMsg("Chỉ chấp nhận tệp video định dạng MP4 (.mp4).");
       return;
     }
@@ -569,7 +571,7 @@ function StaffItemDetailContent() {
                   className="input w-full text-sm bg-background disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="video">Video</option>
-                  <option value="audio">Audio</option>
+                  <option value="audio" disabled>Audio (Q1 chưa hỗ trợ tải tệp audio)</option>
                 </select>
               </div>
 
@@ -629,7 +631,7 @@ function StaffItemDetailContent() {
                   accept="video/mp4"
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null;
-                    if (file && !file.name.toLowerCase().endsWith(".mp4") && file.type !== "video/mp4") {
+                    if (file && !isMp4(file)) {
                       setErrorMsg("Chỉ chấp nhận tệp video định dạng MP4 (.mp4).");
                       setUploadFile(null);
                       e.target.value = "";

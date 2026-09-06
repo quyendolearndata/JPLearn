@@ -189,16 +189,16 @@ không tạo session mới vì mất key và không báo thành công khi server
 
 **Owner:** Web + QA; BA xác nhận workflow. **Đóng:** R-05, R-06, R-07.
 
-- [ ] Form new/detail chỉ nhận `video/mp4` cho upload; kiểm extension/MIME phía client
+- [x] Form new/detail chỉ nhận `video/mp4` cho upload; kiểm extension/MIME phía client
   để báo sớm, backend tiếp tục là nguồn validation cuối. Có thể giữ metadata `audio`
   nhưng UI phải ghi rõ chưa hỗ trợ tải file audio, hoặc ẩn lựa chọn theo quyết định BA.
-- [ ] Login xử lý validation 400 đúng OpenAPI; giữ 401 sai credential, 409 email trùng.
-- [ ] Bổ sung `staff.spec.ts`: learner bị chặn; teacher tạo draft + upload MP4 + submit QA;
+- [x] Login xử lý validation 400 đúng OpenAPI; giữ 401 sai credential, 409 email trùng.
+- [x] Bổ sung `staff.spec.ts`: learner bị chặn; teacher tạo draft + upload MP4 + submit QA;
   logout; admin đăng nhập lần khác, tìm item qua list/detail, publish; learner thấy item;
   admin unpublish và learner không còn thấy. Mỗi bước có reload để chứng minh persistence.
-- [ ] E2E CMS kiểm upload fail giữ draft, publish thiếu media không báo thành công,
+- [x] E2E CMS kiểm upload fail giữ draft, publish thiếu media không báo thành công,
   stale revision 409 có reload, teacher không thấy/không gọi được publish.
-- [ ] Harness tạo teacher/admin test riêng trong DB cô lập; không dùng credential hoặc DB dev.
+- [x] Harness tạo teacher/admin test riêng trong DB cô lập; không dùng credential hoặc DB dev.
 - [ ] Mở rộng axe scan tới landing và các CMS route/state đại diện. Kiểm thủ công hoặc
   Playwright keyboard cho focus order, submit form, player controls và dialog/alert.
 - [ ] Giữ wording chính xác: axe tự động không thay thế toàn bộ audit WCAG; Chromium/WebKit

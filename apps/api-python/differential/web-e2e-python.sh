@@ -126,6 +126,12 @@ curl -fsS -X POST "http://localhost:$PY_PORT/staff/media/$ASSET_ID/hls" \
   -H "Authorization: Bearer $TOKEN" >/dev/null
 echo "   published item $ITEM_ID, asset $ASSET_ID (+hls)"
 
+echo "== 3b/5 teacher E2E account (isolated DB only) =="
+curl -fsS -X POST "http://localhost:$PY_PORT/auth/register" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"teacher@e2e.local","password":"password10"}' >/dev/null
+"$VENV_PY" "$REPO/apps/api-python/differential/grant_role.py" "$DATABASE_URL" teacher@e2e.local teacher
+
 echo "== 4/5 web :$WEB_PORT → API :$PY_PORT [workspace=$WEB_WORKSPACE] =="
 (
   cd "$WEB_WORKSPACE"

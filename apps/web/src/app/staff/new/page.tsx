@@ -7,6 +7,8 @@ import { catalogWriteFields } from "@jplearn/cms-schema";
 import { api, parseApiError, parseApiResponse } from "../../../lib/api";
 import { getToken, getUser, hasRole } from "../../../lib/auth-storage";
 
+const isMp4 = (f: File) => f.name.toLowerCase().endsWith(".mp4") && (f.type === "" || f.type === "video/mp4");
+
 const TOPICS = [
   { id: "daily_home", label: "Sinh hoạt gia đình" },
   { id: "food", label: "Ẩm thực & Nấu ăn" },
@@ -101,7 +103,7 @@ export default function NewCatalogItemPage() {
 
       // 2. If initial media file is provided, validate and upload it immediately
       if (mediaFile) {
-        if (!mediaFile.name.toLowerCase().endsWith(".mp4") && mediaFile.type !== "video/mp4") {
+        if (!isMp4(mediaFile)) {
           setErrorMsg("Chỉ chấp nhận tệp video định dạng MP4 (.mp4).");
           setSubmitting(false);
           return;
@@ -254,7 +256,7 @@ export default function NewCatalogItemPage() {
               className="input w-full text-sm bg-background"
             >
               <option value="video">Video</option>
-              <option value="audio">Audio</option>
+              <option value="audio" disabled>Audio (Q1 chưa hỗ trợ tải tệp audio)</option>
             </select>
           </div>
 
@@ -287,7 +289,7 @@ export default function NewCatalogItemPage() {
             accept="video/mp4"
             onChange={(e) => {
               const file = e.target.files?.[0] || null;
-              if (file && !file.name.toLowerCase().endsWith(".mp4") && file.type !== "video/mp4") {
+              if (file && !isMp4(file)) {
                 setErrorMsg("Chỉ chấp nhận tệp video định dạng MP4 (.mp4).");
                 setMediaFile(null);
                 e.target.value = "";
