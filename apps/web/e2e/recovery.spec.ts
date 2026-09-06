@@ -18,6 +18,7 @@ async function createPublishedCompanion(
   request: APIRequestContext,
   apiRoot: string,
   token: string,
+  titleInternal = `F-03 companion ${Date.now()}`,
 ): Promise<string> {
   const headers = { Authorization: `Bearer ${token}` };
   const created = await request.post(`${apiRoot}/staff/catalog`, {
@@ -28,11 +29,12 @@ async function createPublishedCompanion(
       duration_seconds: 30,
       media_type: "video",
       visual_support: "high",
-      title_internal: `F-03 companion ${Date.now()}`,
+      title_internal: titleInternal,
     },
   });
   expect(created.ok()).toBeTruthy();
   const itemId = (await created.json()).id as string;
+  expect(itemId).not.toBe(SEED_PUBLISHED_ITEM);
 
   const uploaded = await request.post(`${apiRoot}/staff/catalog/${itemId}/media`, {
     headers,
@@ -48,6 +50,18 @@ async function createPublishedCompanion(
   expect((await request.post(`${apiRoot}/staff/catalog/${itemId}/submit-qa`, { headers })).ok()).toBeTruthy();
   expect((await request.post(`${apiRoot}/staff/catalog/${itemId}/publish`, { headers })).ok()).toBeTruthy();
   return itemId;
+}
+
+async function publishedCatalogIds(
+  request: APIRequestContext,
+  apiRoot: string,
+  token: string,
+): Promise<string[]> {
+  const catalog = await request.get(`${apiRoot}/catalog`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  expect(catalog.ok()).toBeTruthy();
+  return ((await catalog.json()).items as Array<{ id: string }>).map((catalogItem) => catalogItem.id);
 }
 
 async function register(page: Page): Promise<{ email: string; userId: string; token: string }> {
@@ -800,45 +814,59 @@ test.describe("Session recovery T-SES-REC-001", () => {
 
   test("F-03 real unpublish keeps target unavailable instead of playing another item T-SES-REC-001 T-LRN-001", async ({ page, request }) => {
     test.setTimeout(120_000);
-    const { userId, token: learnerToken } = await register(page);
-    const initialCatalog = page.waitForResponse(
-      (response) => response.request().method() === "GET" && /\/catalog$/.test(response.url()),
+    const registerResponse = page.waitForResponse(
+      (response) => response.request().method() === "POST" && /\/auth\/register$/.test(response.url()),
     );
-    await page.route(/\/catalog$/, async (route) => {
-      if (route.request().method() === "OPTIONS") return route.continue();
-      const response = await route.fetch();
-      const body = await response.json() as { items: Array<Record<string, unknown>> };
-      body.items = body.items.map((catalogItem) => (
-        catalogItem.id === SEED_PUBLISHED_ITEM
-          ? { ...catalogItem, hls_url: null }
-          : catalogItem
-      ));
-      await route.fulfill({ response, json: body });
-    });
-
-    await page.goto(`/session?item_id=${SEED_PUBLISHED_ITEM}`);
-    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
-    const catalogResponse = await initialCatalog;
-    await expect(page.locator("video")).toBeVisible();
-    const apiRoot = new URL(catalogResponse.url()).origin;
+    const { userId, token: learnerToken } = await register(page);
+    const apiRoot = new URL((await registerResponse).url()).origin;
 
     const adminLogin = await request.post(`${apiRoot}/auth/login`, {
       data: { email: "admin@jplearn.local", password: "password10" },
     });
     expect(adminLogin.ok()).toBeTruthy();
     const adminToken = (await adminLogin.json()).access_token as string;
-    const companionId = await createPublishedCompanion(request, apiRoot, adminToken);
-    const learnerCatalog = await request.get(`${apiRoot}/catalog`, {
-      headers: { Authorization: `Bearer ${learnerToken}` },
-    });
-    const publishedIds = ((await learnerCatalog.json()).items as Array<{ id: string }>).map((catalogItem) => catalogItem.id);
-    expect(publishedIds).toContain(SEED_PUBLISHED_ITEM);
-    expect(publishedIds).toContain(companionId);
+    const itemA = await createPublishedCompanion(
+      request,
+      apiRoot,
+      adminToken,
+      `F-03 disposable A ${Date.now()}`,
+    );
+    const itemB = await createPublishedCompanion(
+      request,
+      apiRoot,
+      adminToken,
+      `F-03 companion B ${Date.now()}`,
+    );
+    expect(await publishedCatalogIds(request, apiRoot, learnerToken)).toEqual(
+      expect.arrayContaining([itemA, itemB, SEED_PUBLISHED_ITEM]),
+    );
 
-    const unpublished = await request.post(`${apiRoot}/staff/catalog/${SEED_PUBLISHED_ITEM}/unpublish`, {
+    await page.route(/\/catalog$/, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      const response = await route.fetch();
+      const body = await response.json() as { items: Array<Record<string, unknown>> };
+      body.items = body.items.map((catalogItem) => (
+        catalogItem.id === itemA
+          ? { ...catalogItem, hls_url: null }
+          : catalogItem
+      ));
+      await route.fulfill({ response, json: body });
+    });
+
+    await page.goto(`/session?item_id=${itemA}`);
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    await expect(page.locator("video")).toBeVisible();
+
+    const unpublished = await request.post(`${apiRoot}/staff/catalog/${itemA}/unpublish`, {
       headers: { Authorization: `Bearer ${adminToken}` },
     });
     expect(unpublished.ok()).toBeTruthy();
+    expect(itemA).not.toBe(SEED_PUBLISHED_ITEM);
+    const stillPublished = await publishedCatalogIds(request, apiRoot, learnerToken);
+    expect(stillPublished).toContain(itemB);
+    expect(stillPublished).toContain(SEED_PUBLISHED_ITEM);
+    expect(stillPublished).not.toContain(itemA);
+
     await page.locator("video").evaluate((element: HTMLVideoElement) => {
       element.dispatchEvent(new Event("error"));
     });
@@ -846,7 +874,7 @@ test.describe("Session recovery T-SES-REC-001", () => {
     await expect(page.getByText("Nội dung này không còn khả dụng.")).toBeVisible();
     await expect(page.locator("video")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toBeEnabled();
-    expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
+    expect((await readRecord(page, userId))?.itemId).toBe(itemA);
 
     await page.reload();
     await expect(page.getByText("Nội dung này không còn khả dụng.")).toBeVisible();
@@ -855,11 +883,14 @@ test.describe("Session recovery T-SES-REC-001", () => {
     await page.getByRole("button", { name: "Kết thúc phiên" }).click();
     await expect(page.getByRole("heading", { name: "Tổng kết phiên học" })).toBeVisible();
 
-    await page.goto(`/session?item_id=${SEED_PUBLISHED_ITEM}`);
+    await page.goto(`/session?item_id=${itemA}`);
     await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
     await expect(page.getByText("Nội dung này không còn khả dụng.")).toBeVisible();
     await expect(page.locator("video")).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toBeEnabled();
-    expect((await readRecord(page, userId))?.itemId).toBe(SEED_PUBLISHED_ITEM);
+    expect((await readRecord(page, userId))?.itemId).toBe(itemA);
+    expect(await publishedCatalogIds(request, apiRoot, learnerToken)).toEqual(
+      expect.arrayContaining([itemB, SEED_PUBLISHED_ITEM]),
+    );
   });
 });
