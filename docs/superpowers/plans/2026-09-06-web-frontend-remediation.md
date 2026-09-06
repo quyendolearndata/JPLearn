@@ -2,7 +2,8 @@
 
 Ngày: 2026-09-06. Trạng thái: **REMEDIATION IN PROGRESS** — C4 được mở lại theo [kế hoạch recovery follow-up](2026-09-06-web-frontend-recovery-followup.md), vì F-01–F-03 chưa đủ bằng chứng; C5 keyboard/manual vẫn **PARTIAL**. Các kết quả lịch sử tại `fd838d2` được giữ nguyên, không mở lại R-01, R-02 hoặc R-04.
 Kế thừa: [kế hoạch Mốc A/B](2026-09-06-web-frontend-implementation.md).
-Baseline code đang review: `8bd0b44` (Task 1 closeout commits on `codex/fastapi-backend-hardening`).
+Baseline recovery đang review: `c2329a5`. `8bd0b44` được giữ lại như baseline
+closeout trước đây của Task 1, không phải baseline hiện hành cho recovery.
 
 Mục tiêu của đợt này là sửa các lỗi concurrency, migration và khôi phục phiên;
 sau đó bổ sung bằng chứng đúng phạm vi để có thể đóng Mốc A và Mốc B.

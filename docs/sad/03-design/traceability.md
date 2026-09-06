@@ -18,9 +18,9 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | FR-CAT-003 | UC-L02 | query ci_level | T-CAT-003 |
 | FR-CAT-004 | UC-L02, UC-T02 | CatalogItemPublic không field dịch | T-CAT-004 schema |
 | FR-CAT-005 | UC-T02, UC-T02b, UC-T05 | staff create, GET /staff/catalog, PATCH /staff/catalog/{id} | T-CAT-005 staff list & edit, T-CAT-005-CAS atomic CAS |
-| FR-SES-001 | UC-L03, UC-L10 | POST /sessions (Idempotency-Key), GET /sessions/{id} | T-SES-001 start, T-SES-004 idempotency & status, T-SES-003-IDEM-CONCUR concurrency lock; scenario F-01 không ghi đè phiên chưa xác nhận |
-| FR-SES-002 | UC-L04 | POST /sessions/{id}/end | T-SES-002; scenario F-02 ended path dùng chung luồng tổng kết |
-| FR-SES-003 | UC-L03 | session không cần media | T-SES-003; scenario F-01 giữ key/state khi retry |
+| FR-SES-001 | UC-L03, UC-L10 | POST /sessions (Idempotency-Key), GET /sessions/{id} | T-SES-001 start, T-SES-004 idempotency & status, T-SES-003-IDEM-CONCUR concurrency lock; T-SES-REC-001; scenario F-01 không ghi đè phiên chưa xác nhận |
+| FR-SES-002 | UC-L04 | POST /sessions/{id}/end | T-SES-002; T-SES-REC-001; scenario F-02 ended path dùng chung luồng tổng kết |
+| FR-SES-003 | UC-L03 | session không cần media | T-SES-003; T-SES-REC-001; scenario F-01 giữ key/state khi retry |
 | FR-PRG-001 | UC-L04, UC-L05 | minutes tăng khi end. ADR-003 D10 resolved tại FastAPI hardening: `SELECT ... FOR UPDATE` exactly-once | T-PRG-001; scenario F-02 tải progress sau ended |
 | FR-PRG-002 | UC-L05 | current_ci_level | T-PRG-002; scenario F-02 tổng kết có dữ liệu progress thật |
 | FR-PRG-003 | UC-L05 | OpenAPI additionalProperties false | T-PRG-003 no extra scores |
