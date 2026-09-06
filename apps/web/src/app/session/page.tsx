@@ -8,6 +8,10 @@ import { api, parseApiError, parseApiResponse } from "../../lib/api";
 import { getToken, getUser } from "../../lib/auth-storage";
 import { CiPlayer } from "../../components/ci-player";
 import {
+  classifyReplayFailure,
+  isLearningSessionResponse,
+} from "../../lib/session-recovery";
+import {
   clearSessionRecord,
   newIdempotencyKey,
   readSessionRecord,
@@ -27,24 +31,6 @@ interface EndSummary {
 }
 
 type RecoveryPhase = "initializing" | "verifying" | "ready" | "unverified";
-
-interface LearningSessionResponse {
-  id: string;
-  device_class: "web" | "phone" | "ipad";
-  started_at: string;
-  ended_at: string | null;
-  duration_seconds: number | null;
-}
-
-function isLearningSessionResponse(value: unknown, expectedId?: string): value is LearningSessionResponse {
-  if (!value || typeof value !== "object") return false;
-  const session = value as Record<string, unknown>;
-  if (typeof session.id !== "string" || (expectedId && session.id !== expectedId)) return false;
-  if (!["web", "phone", "ipad"].includes(session.device_class as string)) return false;
-  if (typeof session.started_at !== "string") return false;
-  if (session.ended_at !== null && typeof session.ended_at !== "string") return false;
-  return session.duration_seconds === null || typeof session.duration_seconds === "number";
-}
 
 const TOPIC_NAMES: Record<string, string> = {
   daily_home: "Sinh hoạt gia đình",
@@ -147,7 +133,17 @@ function SessionContent() {
 
         if (!isCurrentAttempt()) return;
         if (!res.ok) {
-          if (res.status === 401) return;
+          const disposition = classifyReplayFailure(res.status);
+          if (disposition === "auth") return;
+          if (disposition === "terminal") {
+            clearSessionRecord(userId);
+            setSessionId(null);
+            setStartedAt(null);
+            setClip(null);
+            setStatus("Không thể khôi phục phiên do khóa chống trùng bị xung đột.");
+            setRecoveryPhase("ready");
+            return;
+          }
           const err = await parseApiError(res);
           if (!isCurrentAttempt()) return;
           setStatus(err.message || "Không thể khôi phục phiên.");
@@ -345,6 +341,14 @@ function SessionContent() {
       });
 
       if (!res.ok) {
+        const disposition = classifyReplayFailure(res.status);
+        if (disposition === "auth") return;
+        if (disposition === "terminal") {
+          clearSessionRecord(userId);
+          setStatus("Không thể bắt đầu phiên do khóa chống trùng bị xung đột.");
+          setRecoveryPhase("ready");
+          return;
+        }
         const err = await parseApiError(res);
         setStatus(err.message || "Không thể bắt đầu phiên.");
         setRecoveryPhase("unverified");

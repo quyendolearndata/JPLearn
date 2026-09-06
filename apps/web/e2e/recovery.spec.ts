@@ -163,6 +163,36 @@ test.describe("Session recovery T-SES-REC-001", () => {
     expect(new Set(replayKeys)).toEqual(new Set([starting?.idempotencyKey as string]));
   });
 
+  test("F-01 starting replay 409 is terminal and allows a new start T-SES-REC-001", async ({ page }) => {
+    const { userId } = await register(page);
+    const starting = {
+      v: 1,
+      state: "starting",
+      idempotencyKey: "conflicting-key",
+      startedAt: "2026-09-06T00:00:00.000Z",
+      itemId: SEED_PUBLISHED_ITEM,
+      deviceClass: "web",
+    };
+    await page.evaluate(({ key, record }) => sessionStorage.setItem(key, JSON.stringify(record)), {
+      key: `jplearn.session:${userId}`,
+      record: starting,
+    });
+    await page.route(/\/sessions$/, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      return route.fulfill({
+        status: 409,
+        contentType: "application/json",
+        body: JSON.stringify({ statusCode: 409, message: "Idempotency key conflict" }),
+      });
+    });
+
+    await page.goto("/session");
+    await expect(page.getByText("Không thể khôi phục phiên do khóa chống trùng bị xung đột.")).toBeVisible();
+    expect(await readRecord(page, userId)).toBeNull();
+    await expect(page.getByRole("button", { name: "Thử khôi phục lại" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Bắt đầu phiên" })).toBeEnabled();
+  });
+
   test("F-01 starting replay returned ended does not restore End or send it twice T-SES-REC-001", async ({ page, request }) => {
     const { userId, token } = await register(page);
     const startResponse = page.waitForResponse((response) =>
