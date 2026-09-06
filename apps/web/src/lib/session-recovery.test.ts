@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  classifyEndedProgress,
   classifyReplayFailure,
   classifySessionRecoveryBootstrap,
   classifySessionStatusFailure,
@@ -15,6 +16,40 @@ const validRequiredFields = {
   device_class: "web",
   started_at: "2026-09-06T08:00:00Z",
 };
+
+test("T-SES-REC-001 F-02: ended progress uses valid required fields and server duration", () => {
+  assert.deepEqual(classifyEndedProgress({
+    responseOk: true,
+    body: { minutes_comprehensible: 12, current_ci_level: 2 },
+    durationSeconds: 125,
+    fallbackDurationSeconds: 9,
+  }), {
+    kind: "loaded",
+    summary: {
+      minutesComprehensible: 12,
+      currentCiLevel: 2,
+      durationSeconds: 125,
+    },
+  });
+});
+
+test("T-SES-REC-001 F-02: ended progress HTTP 500 stays unavailable without fake numbers", () => {
+  assert.deepEqual(classifyEndedProgress({
+    responseOk: false,
+    body: { minutes_comprehensible: 12, current_ci_level: 2 },
+    durationSeconds: 125,
+    fallbackDurationSeconds: 9,
+  }), { kind: "unavailable" });
+});
+
+test("T-SES-REC-001 F-02: ended progress omitting a required field stays unavailable", () => {
+  assert.deepEqual(classifyEndedProgress({
+    responseOk: true,
+    body: { minutes_comprehensible: 12 },
+    durationSeconds: 125,
+    fallbackDurationSeconds: 9,
+  }), { kind: "unavailable" });
+});
 
 test("T-SES-REC-001: session recovery cannot become ready before authenticated identity", () => {
   assert.deepEqual(classifySessionRecoveryBootstrap(null, null), { kind: "awaiting_identity" });

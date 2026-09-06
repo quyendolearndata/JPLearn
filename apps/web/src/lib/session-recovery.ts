@@ -30,6 +30,16 @@ export type SessionStatusClassification =
   | { kind: "active"; session: LearningSessionResponse }
   | { kind: "ended"; session: LearningSessionResponse };
 
+export interface EndSummary {
+  minutesComprehensible: number;
+  currentCiLevel: number;
+  durationSeconds: number;
+}
+
+export type EndedProgressTransition =
+  | { kind: "loaded"; summary: EndSummary }
+  | { kind: "unavailable" };
+
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DATE_TIME_PATTERN =
@@ -84,6 +94,39 @@ export function classifySessionStatusResponse(
   return value.ended_at
     ? { kind: "ended", session: value }
     : { kind: "active", session: value };
+}
+
+export function classifyEndedProgress(input: {
+  responseOk: boolean;
+  body: unknown;
+  durationSeconds?: number | null;
+  fallbackDurationSeconds: number;
+}): EndedProgressTransition {
+  if (!input.responseOk || !input.body || typeof input.body !== "object" || Array.isArray(input.body)) {
+    return { kind: "unavailable" };
+  }
+  const progress = input.body as Record<string, unknown>;
+  if (
+    !Number.isInteger(progress.minutes_comprehensible)
+    || (progress.minutes_comprehensible as number) < 0
+    || !Number.isInteger(progress.current_ci_level)
+    || (progress.current_ci_level as number) < 0
+    || (progress.current_ci_level as number) > 4
+  ) {
+    return { kind: "unavailable" };
+  }
+  const durationSeconds =
+    Number.isInteger(input.durationSeconds) && (input.durationSeconds as number) >= 0
+      ? input.durationSeconds as number
+      : input.fallbackDurationSeconds;
+  return {
+    kind: "loaded",
+    summary: {
+      minutesComprehensible: progress.minutes_comprehensible as number,
+      currentCiLevel: progress.current_ci_level as number,
+      durationSeconds,
+    },
+  };
 }
 
 export function classifySessionRecoveryBootstrap(

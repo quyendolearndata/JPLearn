@@ -23,6 +23,46 @@ async function readRecord(page: Page, userId: string) {
   }, `jplearn.session:${userId}`);
 }
 
+async function mockEndedDuration(page: Page, sessionId: string, durationSeconds: number) {
+  const pattern = new RegExp(`/sessions/${sessionId}$`);
+  await page.route(pattern, async (route) => {
+    if (route.request().method() === "OPTIONS") return route.continue();
+    const response = await route.fetch();
+    const body = await response.json() as Record<string, unknown>;
+    await route.fulfill({
+      response,
+      json: { ...body, duration_seconds: durationSeconds },
+    });
+  });
+  return pattern;
+}
+
+async function mockProgress(page: Page, progress: { minutes: number; level: number }) {
+  const pattern = /\/progress$/;
+  await page.route(pattern, async (route) => {
+    if (route.request().method() === "OPTIONS") return route.continue();
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        minutes_comprehensible: progress.minutes,
+        current_ci_level: progress.level,
+      }),
+    });
+  });
+  return pattern;
+}
+
+async function expectSummary(
+  page: Page,
+  expected: { duration: string; minutes: number; level: number },
+) {
+  await expect(page.getByRole("heading", { name: "Tổng kết phiên học" })).toBeVisible();
+  await expect(page.getByText(`Thời lượng: ${expected.duration}`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Tổng tích luỹ: ${expected.minutes} phút`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`Cấp độ CI: Cấp ${expected.level}`, { exact: true })).toBeVisible();
+}
+
 test.describe("Session recovery T-SES-REC-001", () => {
   test("F-01 pending active GET disables Start and cannot POST a new session T-SES-REC-001", async ({ page }) => {
     const { userId } = await register(page);
@@ -219,7 +259,7 @@ test.describe("Session recovery T-SES-REC-001", () => {
       if (req.method() === "POST" && /\/sessions\/[^/]+\/end$/.test(req.url())) browserEndPosts += 1;
     });
     await page.reload();
-    await expect(page.getByText("Phiên đã kết thúc.")).toBeVisible();
+    await expect(page.getByText("Đã kết thúc phiên.")).toBeVisible();
     await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toHaveCount(0);
     expect(await readRecord(page, userId)).toBeNull();
     expect(browserEndPosts).toBe(0);
@@ -377,13 +417,15 @@ test.describe("Session recovery T-SES-REC-001", () => {
     expect(await readRecord(page, userId)).toBeNull();
   });
 
-  test("end response lost after commit → GET confirms ended → summary shown, no second end", async ({ page, request }) => {
+  test("F-02 end response lost after commit → GET confirms ended → real summary shown, no second end T-SES-REC-001", async ({ page, request }) => {
     const { userId, token } = await register(page);
     await page.goto("/session");
     await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
     await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
     const rec = await readRecord(page, userId);
     const sessionId = rec?.sessionId as string;
+    await mockEndedDuration(page, sessionId, 125);
+    await mockProgress(page, { minutes: 12, level: 2 });
 
     let endUrl = "";
     await page.route(/\/sessions\/[^/]+\/end$/, async (route) => {
@@ -394,6 +436,7 @@ test.describe("Session recovery T-SES-REC-001", () => {
     });
     await page.getByRole("button", { name: "Kết thúc phiên" }).click();
     await expect(page.getByText("Đã kết thúc phiên.")).toBeVisible();
+    await expectSummary(page, { duration: "02:05", minutes: 12, level: 2 });
     expect(await readRecord(page, userId)).toBeNull();
 
     const again = await request.post(endUrl, { headers: { Authorization: `Bearer ${token}` } });
@@ -401,6 +444,100 @@ test.describe("Session recovery T-SES-REC-001", () => {
     const got = await request.get(endUrl.replace(/\/end$/, ""), { headers: { Authorization: `Bearer ${token}` } });
     expect((await got.json()).id).toBe(sessionId);
     expect((await got.json()).ended_at).not.toBeNull();
+  });
+
+  test("F-02 progress HTTP 500 after ended confirmation keeps recovery and retry loads summary without second end T-SES-REC-001", async ({ page }) => {
+    const { userId } = await register(page);
+    await page.goto("/session");
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
+    const rec = await readRecord(page, userId);
+    const sessionId = rec?.sessionId as string;
+    await mockEndedDuration(page, sessionId, 125);
+
+    let endPosts = 0;
+    page.on("request", (request) => {
+      if (request.method() === "POST" && /\/sessions\/[^/]+\/end$/.test(request.url())) endPosts += 1;
+    });
+    await page.route(/\/sessions\/[^/]+\/end$/, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      await route.fetch();
+      await route.abort("failed");
+    });
+    const progressPattern = /\/progress$/;
+    await page.route(progressPattern, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      await route.fulfill({
+        status: 500,
+        contentType: "application/json",
+        body: JSON.stringify({ statusCode: 500, message: "Injected progress fault" }),
+      });
+    });
+
+    await page.getByRole("button", { name: "Kết thúc phiên" }).click();
+    await expect(page.getByText("Phiên đã kết thúc; chưa tải được tổng kết", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tổng kết phiên học" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Thử tải lại tổng kết" })).toBeEnabled();
+    expect(await readRecord(page, userId)).toMatchObject({ state: "outcome_unknown", sessionId });
+    expect(endPosts).toBe(1);
+
+    await page.unroute(progressPattern);
+    await mockProgress(page, { minutes: 12, level: 2 });
+    await page.getByRole("button", { name: "Thử tải lại tổng kết" }).click();
+    await expectSummary(page, { duration: "02:05", minutes: 12, level: 2 });
+    expect(await readRecord(page, userId)).toBeNull();
+    expect(endPosts).toBe(1);
+  });
+
+  test("F-02 reload with progress offline keeps ended reference and next reload loads summary without POST end T-SES-REC-001", async ({ page, request }) => {
+    const { userId, token } = await register(page);
+    const startResponsePromise = page.waitForResponse((response) =>
+      response.request().method() === "POST" && /\/sessions$/.test(response.url()),
+    );
+    await page.goto("/session");
+    await page.getByRole("button", { name: "Bắt đầu phiên" }).click();
+    const startResponse = await startResponsePromise;
+    await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
+    const rec = await readRecord(page, userId);
+    const sessionId = rec?.sessionId as string;
+    const ended = await request.post(`${startResponse.url()}/${sessionId}/end`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    expect(ended.ok()).toBeTruthy();
+    await page.evaluate((key) => {
+      const stored = JSON.parse(sessionStorage.getItem(key) || "{}");
+      sessionStorage.setItem(key, JSON.stringify({ ...stored, state: "outcome_unknown" }));
+    }, `jplearn.session:${userId}`);
+    await mockEndedDuration(page, sessionId, 125);
+
+    let browserEndPosts = 0;
+    page.on("request", (browserRequest) => {
+      if (
+        browserRequest.method() === "POST"
+        && /\/sessions\/[^/]+\/end$/.test(browserRequest.url())
+      ) browserEndPosts += 1;
+    });
+    const progressPattern = /\/progress$/;
+    await page.route(progressPattern, async (route) => {
+      if (route.request().method() === "OPTIONS") return route.continue();
+      await route.abort("failed");
+    });
+
+    await page.reload();
+    await expect(page.getByText("Phiên đã kết thúc; chưa tải được tổng kết", { exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tổng kết phiên học" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Kết thúc phiên" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Thử tải lại tổng kết" })).toBeEnabled();
+    expect(await readRecord(page, userId)).toMatchObject({ state: "outcome_unknown", sessionId });
+    expect(browserEndPosts).toBe(0);
+
+    await page.unroute(progressPattern);
+    await mockProgress(page, { minutes: 12, level: 2 });
+    await page.reload();
+    await expectSummary(page, { duration: "02:05", minutes: 12, level: 2 });
+    expect(await readRecord(page, userId)).toBeNull();
+    expect(browserEndPosts).toBe(0);
   });
 
   test("end and status check both offline → not reported ended, record kept for retry", async ({ page }) => {

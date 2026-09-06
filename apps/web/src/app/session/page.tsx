@@ -8,6 +8,7 @@ import { api, parseApiError, parseApiResponse } from "../../lib/api";
 import { getToken, getUser } from "../../lib/auth-storage";
 import { CiPlayer } from "../../components/ci-player";
 import {
+  classifyEndedProgress,
   classifyReplayFailure,
   classifySessionRecoveryBootstrap,
   classifySessionStatusFailure,
@@ -15,6 +16,7 @@ import {
   createSessionOperationGuard,
   isLearningSessionResponse,
   isSessionOperationCurrent,
+  type EndSummary,
 } from "../../lib/session-recovery";
 import {
   clearSessionRecord,
@@ -29,12 +31,6 @@ import {
 
 function currentUserId(): string | null {
   return getUser()?.id ?? null;
-}
-
-interface EndSummary {
-  minutesComprehensible: number;
-  currentCiLevel: number;
-  durationSeconds: number;
 }
 
 type RecoveryPhase = "initializing" | "verifying" | "ready" | "unverified";
@@ -61,6 +57,7 @@ function SessionContent() {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [loading, setLoading] = useState(false);
   const [completedSummary, setCompletedSummary] = useState<EndSummary | null>(null);
+  const [summaryUnavailable, setSummaryUnavailable] = useState(false);
   const [recoveryPhase, setRecoveryPhase] = useState<RecoveryPhase>("initializing");
   const [activeOperation, setActiveOperation] = useState<"recovery" | "start" | "end" | null>(null);
 
@@ -89,6 +86,77 @@ function SessionContent() {
     if (!shouldApply()) return;
     setClip(playable);
     setStatus(playable ? "Phiên đang chạy." : "Phiên đang chạy. Chưa có clip published.");
+  }, []);
+
+  const handleEndedSession = useCallback(async (input: {
+    token: string;
+    userId: string;
+    sessionId: string;
+    durationSeconds?: number | null;
+    fallbackDurationSeconds: number;
+    progressResult?: { responseOk: boolean; body: unknown };
+    signal: AbortSignal;
+    isCurrent: () => boolean;
+  }) => {
+    if (!input.isCurrent()) return;
+    const latest = readSessionRecord(input.userId);
+    if (latest) {
+      writeSessionRecord(input.userId, {
+        ...latest,
+        state: "outcome_unknown",
+        sessionId: input.sessionId,
+      });
+    }
+    setSessionId(null);
+    setStartedAt(null);
+    setElapsedSeconds(0);
+    setClip(null);
+    setCompletedSummary(null);
+    setSummaryUnavailable(false);
+    setRecoveryPhase("verifying");
+    setStatus("Đang tải tổng kết...");
+
+    let progressResult = input.progressResult;
+    if (!progressResult) {
+      try {
+        const progressResponse = await api("/progress", {
+          token: input.token,
+          signal: input.signal,
+        });
+        if (!input.isCurrent()) return;
+        progressResult = {
+          responseOk: progressResponse.ok,
+          body: progressResponse.ok
+            ? await parseApiResponse<unknown>(progressResponse)
+            : null,
+        };
+      } catch {
+        progressResult = { responseOk: false, body: null };
+      }
+    }
+    if (!input.isCurrent()) return;
+
+    const transition = classifyEndedProgress({
+      responseOk: progressResult.responseOk,
+      body: progressResult.body,
+      durationSeconds: input.durationSeconds,
+      fallbackDurationSeconds: input.fallbackDurationSeconds,
+    });
+    if (transition.kind === "unavailable") {
+      setStatus("Phiên đã kết thúc; chưa tải được tổng kết");
+      setSummaryUnavailable(true);
+      setRecoveryPhase("unverified");
+      return;
+    }
+
+    const cleared = clearSessionRecord(input.userId);
+    setCompletedSummary(transition.summary);
+    setStatus(
+      cleared
+        ? "Đã kết thúc phiên."
+        : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
+    );
+    setRecoveryPhase(cleared ? "ready" : "unverified");
   }, []);
 
   // Check and recover session from scoped sessionStorage
@@ -184,16 +252,18 @@ function SessionContent() {
         }
 
         if (body.ended_at) {
-          const cleared = clearSessionRecord(userId);
-          setSessionId(null);
-          setStartedAt(null);
-          setClip(null);
-          setStatus(
-            cleared
-              ? "Phiên đã kết thúc."
-              : "Phiên đã kết thúc nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
-          );
-          setRecoveryPhase(cleared ? "ready" : "unverified");
+          await handleEndedSession({
+            token,
+            userId,
+            sessionId: body.id,
+            durationSeconds: body.duration_seconds,
+            fallbackDurationSeconds: Math.max(
+              0,
+              Math.floor((Date.parse(body.ended_at) - Date.parse(body.started_at)) / 1000),
+            ),
+            signal: controller.signal,
+            isCurrent: isCurrentAttempt,
+          });
           return;
         }
 
@@ -257,29 +327,18 @@ function SessionContent() {
       }
 
       if (data.ended_at) {
-        const cleared = clearSessionRecord(userId);
-        setSessionId(null);
-        setStartedAt(null);
-        setClip(null);
-        if (stored.state === "ending" || stored.state === "outcome_unknown") {
-          const progressRes = await api("/progress", { token });
-          if (!isCurrentAttempt()) return;
-          const progress = progressRes.ok
-            ? await parseApiResponse<{ minutes_comprehensible: number; current_ci_level: number }>(progressRes)
-            : null;
-          if (!isCurrentAttempt()) return;
-          setCompletedSummary({
-            minutesComprehensible: progress?.minutes_comprehensible ?? 0,
-            currentCiLevel: progress?.current_ci_level ?? 0,
-            durationSeconds: data.duration_seconds ?? 0,
-          });
-        }
-        setStatus(
-          cleared
-            ? "Phiên đã kết thúc."
-            : "Phiên đã kết thúc nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
-        );
-        setRecoveryPhase(cleared ? "ready" : "unverified");
+        await handleEndedSession({
+          token,
+          userId,
+          sessionId: data.id,
+          durationSeconds: data.duration_seconds,
+          fallbackDurationSeconds: Math.max(
+            0,
+            Math.floor((Date.parse(data.ended_at) - Date.parse(data.started_at)) / 1000),
+          ),
+          signal: controller.signal,
+          isCurrent: isCurrentAttempt,
+        });
         return;
       }
 
@@ -313,7 +372,7 @@ function SessionContent() {
         if (operationAbortRef.current === controller) operationAbortRef.current = null;
       }
     }
-  }, [loadClip]);
+  }, [handleEndedSession, loadClip]);
 
   useEffect(() => {
     void checkActiveSession();
@@ -396,6 +455,7 @@ function SessionContent() {
     setActiveOperation("start");
     setLoading(true);
     setCompletedSummary(null);
+    setSummaryUnavailable(false);
     const idempotencyKey = startingRecord.idempotencyKey;
 
     try {
@@ -547,32 +607,20 @@ function SessionContent() {
           return;
         }
         if (checked.kind === "ended") {
-          const cleared = clearSessionRecord(userId);
-          const progressRes = await api("/progress", {
+          await handleEndedSession({
             token,
+            userId,
+            sessionId: checked.session.id,
+            durationSeconds: checked.session.duration_seconds,
+            fallbackDurationSeconds: Math.max(
+              0,
+              Math.floor(
+                (Date.parse(checked.session.ended_at!) - Date.parse(checked.session.started_at)) / 1000,
+              ),
+            ),
             signal: controller.signal,
+            isCurrent: isCurrentOperation,
           });
-          if (!isCurrentOperation()) return;
-          const progress = progressRes.ok
-            ? await parseApiResponse<{
-                minutes_comprehensible: number;
-                current_ci_level: number;
-              }>(progressRes)
-            : null;
-          if (!isCurrentOperation()) return;
-          setCompletedSummary({
-            minutesComprehensible: progress?.minutes_comprehensible ?? 0,
-            currentCiLevel: progress?.current_ci_level ?? 0,
-            durationSeconds: checked.session.duration_seconds ?? elapsedSeconds,
-          });
-          setSessionId(null);
-          setClip(null);
-          setStatus(
-            cleared
-              ? "Đã kết thúc phiên."
-              : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
-          );
-          setRecoveryPhase(cleared ? "ready" : "unverified");
           return;
         }
         const err = await parseApiError(res);
@@ -581,26 +629,19 @@ function SessionContent() {
         return;
       }
 
-      const progress = await parseApiResponse<{
-        minutes_comprehensible: number;
-        current_ci_level: number;
-      }>(res);
+      const progress = await parseApiResponse<unknown>(res);
       if (!isCurrentOperation()) return;
 
-      const cleared = clearSessionRecord(userId);
-      setCompletedSummary({
-        minutesComprehensible: progress?.minutes_comprehensible ?? 0,
-        currentCiLevel: progress?.current_ci_level ?? 0,
-        durationSeconds: elapsedSeconds,
+      await handleEndedSession({
+        token,
+        userId,
+        sessionId: targetSessionId,
+        durationSeconds: null,
+        fallbackDurationSeconds: elapsedSeconds,
+        progressResult: { responseOk: true, body: progress },
+        signal: controller.signal,
+        isCurrent: isCurrentOperation,
       });
-      setSessionId(null);
-      setClip(null);
-      setStatus(
-        cleared
-          ? "Đã kết thúc phiên."
-          : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
-      );
-      setRecoveryPhase(cleared ? "ready" : "unverified");
     } catch {
       if (!isCurrentOperation()) return;
       const latest = readSessionRecord(userId);
@@ -630,15 +671,20 @@ function SessionContent() {
           return;
         }
         if (checked.kind === "ended") {
-          const cleared = clearSessionRecord(userId);
-          setSessionId(null);
-          setClip(null);
-          setStatus(
-            cleared
-              ? "Đã kết thúc phiên."
-              : "Đã kết thúc phiên nhưng chưa thể xóa dữ liệu phiên trên trình duyệt.",
-          );
-          setRecoveryPhase(cleared ? "ready" : "unverified");
+          await handleEndedSession({
+            token,
+            userId,
+            sessionId: checked.session.id,
+            durationSeconds: checked.session.duration_seconds,
+            fallbackDurationSeconds: Math.max(
+              0,
+              Math.floor(
+                (Date.parse(checked.session.ended_at!) - Date.parse(checked.session.started_at)) / 1000,
+              ),
+            ),
+            signal: controller.signal,
+            isCurrent: isCurrentOperation,
+          });
           return;
         }
       } catch {
@@ -725,7 +771,7 @@ function SessionContent() {
             onClick={() => void checkActiveSession()}
             disabled={loading || activeOperation !== null}
           >
-            Thử khôi phục lại
+            {summaryUnavailable ? "Thử tải lại tổng kết" : "Thử khôi phục lại"}
           </button>
         )}
         {sessionId && (
