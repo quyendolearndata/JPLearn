@@ -879,8 +879,8 @@ async def test_upload_does_not_rollback_while_cancelled_commit_is_still_running(
     rollback_raced_commit = False
 
     class BarrierSession:
-        async def get(self, *args):
-            return object()
+        async def scalar(self, *args):
+            return SimpleNamespace(status="draft")
 
         def add(self, instance) -> None:
             pass
@@ -930,7 +930,7 @@ async def test_upload_does_not_rollback_while_cancelled_commit_is_still_running(
         )
     )
 
-    await commit_entered.wait()
+    await asyncio.wait_for(commit_entered.wait(), timeout=5)
     task.cancel()
     await asyncio.sleep(0.05)
 

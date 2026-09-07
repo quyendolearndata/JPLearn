@@ -129,7 +129,7 @@ def stamp(
         import asyncio
         from jplearn_api.schema_snapshot import diff, snapshot_url
 
-        if revision in ("head", "0002_cms_reviews") and baseline_path is None:
+        if revision in ("head", "0002_cms_reviews") and baseline_path is None and not os.environ.get("SCHEMA_BASELINE_PATH"):
             baseline_path = MIGRATIONS_DIR.parent / "resources" / "adr-006-schema-baseline.json"
         expected = load_baseline_schema(baseline_path)
         actual = asyncio.run(snapshot_url(url))
