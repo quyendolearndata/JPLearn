@@ -55,6 +55,8 @@ jobs:
       - run: PYTHONPATH=src uv run python -m jplearn_api.entrypoints.cli.migrate upgrade
         working-directory: apps/api-python
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: uv run ruff check .
+        working-directory: apps/api-python
       - run: uv run pytest
         working-directory: apps/api-python
       - run: PYTHONPATH=src uv run python -m jplearn_api.tooling.openapi_diff
