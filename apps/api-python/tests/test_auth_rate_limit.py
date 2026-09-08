@@ -34,6 +34,14 @@ def test_throttle_is_scoped_per_normalized_email(live_client: TestClient) -> Non
     assert _attempt(live_client, "b@jplearn.local").status_code in (400, 401)
 
 
+def test_throttle_is_scoped_per_stripped_email(live_client: TestClient) -> None:
+    email = "throttle@jplearn.local"
+    for _ in range(10):
+        _attempt(live_client, email)
+
+    assert _attempt(live_client, f" {email} ").status_code == 429
+
+
 def test_throttle_window_expires(live_client: TestClient) -> None:
     limiter = live_client.app.state.login_rate_limiter
     key = "127.0.0.1|window@jplearn.local"

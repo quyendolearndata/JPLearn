@@ -6,6 +6,7 @@ from time import monotonic
 
 from fastapi import HTTPException, Request
 
+from jplearn_api.domain.identity import UserAccount
 from jplearn_api.entrypoints.http.schemas import LoginBody
 
 
@@ -63,7 +64,7 @@ class LoginRateLimiter:
 
 def enforce_login_rate_limit(body: LoginBody, request: Request) -> None:
     client_ip = request.client.host if request.client is not None else "unknown"
-    key = f"{client_ip}|{body.email.lower()}"
+    key = f"{client_ip}|{UserAccount.normalize_email(body.email)}"
     limiter: LoginRateLimiter = request.app.state.login_rate_limiter
     if not limiter.check(key):
         raise HTTPException(
