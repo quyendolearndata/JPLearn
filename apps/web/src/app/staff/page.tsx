@@ -16,6 +16,8 @@ export interface CatalogItemStaff {
   has_l1_translation: false;
   status: "draft" | "level_qa" | "published" | "archived";
   revision: number;
+  qa_round: number;
+  reviews?: { id: string; qa_round: number; decision: "approve" | "reject"; notes: string; reviewed_by: string; reviewed_at: string }[];
 }
 
 const TOPIC_LABELS: Record<string, string> = {

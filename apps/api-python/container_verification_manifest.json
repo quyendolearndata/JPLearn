@@ -1,17 +1,17 @@
 {
   "status": "PASS",
-  "commit_sha": "b9194df4241e627ea8ae8b1342d99bdb88b2d422",
+  "commit_sha": "3e66f1e6f1000f43a5fc8e461317ca534541810f",
   "provenance": {
-    "source_status_pre": "CLEAN",
-    "source_status_post": "CLEAN",
-    "git_dirty_files_pre": 0,
-    "git_dirty_files_post": 0,
-    "worktree_clean": true
+    "source_status_pre": "DIRTY (44 files)",
+    "source_status_post": "DIRTY (44 files)",
+    "git_dirty_files_pre": 44,
+    "git_dirty_files_post": 44,
+    "worktree_clean": false
   },
   "image_tag": "jplearn-api-python:hardened",
-  "image_id": "sha256:501568b6e764abd8beeae8547cdaf0f071955d4b313fc82bf3f319c5fc0e8e48",
-  "start_time_utc": "2026-09-05T14:54:47Z",
-  "end_time_utc": "2026-09-05T14:55:07Z",
+  "image_id": "sha256:9eb72866a4bdfbe85cfb00470a04500ef814afd932f94aef968bb55f91583e0b",
+  "start_time_utc": "2026-09-08T08:12:50Z",
+  "end_time_utc": "2026-09-08T08:13:12Z",
   "tests": {
     "non_root_uid": {
       "uid": 10001,

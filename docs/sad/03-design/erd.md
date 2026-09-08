@@ -90,3 +90,10 @@ erDiagram
 3. Cấm migration thêm `vocabulary_score` / `grammar_lesson_id` / `translation_vi` trên catalog/progress.
 
 Seed: flags false; topics taxonomy; một admin; catalog trống.
+
+## ADR-006 — CMS review records
+
+`catalog_items.qa_round`: integer, default 0, increments on submission.
+`catalog_reviews`: id (TEXT PK), catalog_item_id (FK), qa_round (integer), decision
+(approve/reject), notes (TEXT), reviewed_by (users FK), reviewed_at (UTC TIMESTAMP without timezone).
+Unique (catalog_item_id, qa_round); reject requires a nonblank note. Migration: 0002_cms_reviews.

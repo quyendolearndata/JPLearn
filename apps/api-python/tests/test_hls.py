@@ -1,3 +1,4 @@
+from helpers import approve_catalog
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -96,6 +97,7 @@ def test_register_serves_manifest_and_segments(live_client):
         f"/staff/catalog/{item_id}/submit-qa",
         headers={"Authorization": f"Bearer {admin}"},
     ).status_code == 200
+    approve_catalog(live_client, admin, item_id)
     assert live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {admin}"},
@@ -139,6 +141,7 @@ def test_publish_rejects_hls_segment_changed_after_qa(live_client):
     ).status_code == 200
 
     root = Path(live_client.app.state.settings.storage_root)
+    approve_catalog(live_client, admin, item_id)
     (root / "hls" / asset_id / "segment-000.ts").write_bytes(b"tampered segment")
     published = live_client.post(
         f"/staff/catalog/{item_id}/publish",
@@ -161,6 +164,7 @@ def test_signed_manifest_rewrites_segment_uris(live_client):
         f"/staff/catalog/{item_id}/submit-qa",
         headers={"Authorization": f"Bearer {admin}"},
     ).status_code == 200
+    approve_catalog(live_client, admin, item_id)
     assert live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {admin}"},

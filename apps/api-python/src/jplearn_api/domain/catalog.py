@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from jplearn_api.domain.errors import InvalidDomainStateError, MediaInvariantError
 
@@ -21,6 +22,16 @@ class MediaRef:
     hls_bundle_sha256: str | None = None
 
 
+@dataclass(frozen=True)
+class CatalogReview:
+    id: str
+    qa_round: int
+    decision: str
+    notes: str
+    reviewed_by: str
+    reviewed_at: datetime
+
+
 @dataclass
 class CatalogItem:
     """Catalog item aggregate root managing state machine and publication invariants."""
@@ -34,6 +45,8 @@ class CatalogItem:
     title_internal: str
     created_by: str
     revision: int = 1
+    qa_round: int = 0
+    reviews: list[CatalogReview] = field(default_factory=list)
     has_l1_translation: bool = False
     spoken_language: str = "ja"
     status: str = "draft"
@@ -43,6 +56,7 @@ class CatalogItem:
         """Transition draft item to level_qa."""
         if self.status != "draft":
             raise InvalidDomainStateError("Only draft items can be submitted for QA")
+        self.qa_round += 1
         self.status = "level_qa"
         self.revision += 1
 

@@ -509,6 +509,8 @@ async def handle_register_hls(
         candidate = await target_repo.get_by_id(asset_id)
         if candidate is None:
             raise EntityNotFoundError("Media asset not found")
+        if await uow.media.get_catalog_item_status(candidate.catalog_item_id) != "draft":
+            raise InvalidDomainStateError("HLS registration requires draft catalog status")
 
     # Storage traversal and hashing happen without holding a database transaction.
     inspection = await inspect_hls_bundle(storage, asset_id)

@@ -193,3 +193,19 @@ flowchart LR
 
 Prod không nằm trong Q1. Phần staging trong sơ đồ là topology mục tiêu, không phải
 bằng chứng hạ tầng đã provision/nghiệm thu; R-09 vẫn HOLD, xem [deployment.md](deployment.md).
+
+
+## CMS QA integration (FR-CMS-002, 2026-09-08)
+
+```mermaid
+stateDiagram-v2
+    draft --> level_qa: submit / increment qa_round and freeze source
+    level_qa --> draft: reject with notes / record reviewer and unfreeze
+    level_qa --> level_qa: approve / persist verdict for current round
+    level_qa --> published: admin publish / approval and source integrity required
+    published --> draft: admin unpublish
+```
+
+The review handler uses the catalog row lock and the same unit of work as content freezing.
+Re-submission creates a new round; previous approvals remain in history but cannot authorize it.
+Both existing migration histories converge at `0019_merge_cms_reviews`.

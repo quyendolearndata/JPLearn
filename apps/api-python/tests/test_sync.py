@@ -10,6 +10,7 @@ many device classes appear.
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
 import asyncpg
@@ -67,8 +68,8 @@ def _shift_started_at(client, session_id: str, seconds: int) -> None:
     _run(
         client,
         lambda conn: conn.execute(
-            "UPDATE learning_sessions SET started_at = NOW() - make_interval(secs => $1) WHERE id = $2",
-            seconds + 2,
+            "UPDATE learning_sessions SET started_at = $1 WHERE id = $2",
+            (datetime.now(timezone.utc) - timedelta(seconds=seconds + 2)).replace(tzinfo=None),
             session_id,
         ),
     )

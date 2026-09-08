@@ -1,0 +1,4364 @@
+{
+  "enums": {
+    "CatalogStatus": [
+      "draft",
+      "level_qa",
+      "published",
+      "archived"
+    ],
+    "DeviceClass": [
+      "web",
+      "phone",
+      "ipad"
+    ],
+    "EventType": [
+      "session_started",
+      "session_ended",
+      "minutes_comprehensible",
+      "level_exposed"
+    ],
+    "MediaType": [
+      "video",
+      "audio"
+    ],
+    "Role": [
+      "learner",
+      "teacher",
+      "admin"
+    ],
+    "VisualSupport": [
+      "high",
+      "medium",
+      "low"
+    ]
+  },
+  "tables": {
+    "ai_job_attempts": {
+      "attempt_number": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 6
+      },
+      "evidence": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "idempotency_key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "job_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "lease_expires_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 6
+      },
+      "provider": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "provider_request_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "resolution_hash": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "resolved_by": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "state": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 6
+      },
+      "usage": {
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "ai_quota_accounts": {
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "is_active": {
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "default": "true",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "max_audio_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "3600",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "max_cost_micros": {
+        "data_type": "bigint",
+        "udt_name": "int8",
+        "is_nullable": "NO",
+        "default": "10000000",
+        "character_maximum_length": null,
+        "numeric_precision": 64,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "max_input_tokens": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1000000",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "max_output_tokens": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "500000",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "name": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "policy_version": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'v1'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "reserved_audio_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "reserved_cost_micros": {
+        "data_type": "bigint",
+        "udt_name": "int8",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 64,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "reserved_input_tokens": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "reserved_output_tokens": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "used_audio_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "used_cost_micros": {
+        "data_type": "bigint",
+        "udt_name": "int8",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 64,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "used_input_tokens": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "used_output_tokens": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "ai_usage_ledger": {
+      "account_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "attempt": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "audio_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "cost_micros": {
+        "data_type": "bigint",
+        "udt_name": "int8",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 64,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "currency": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'USD'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "description": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "idempotency_key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "input_tokens": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "job_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "kind": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "output_tokens": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "policy_version": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'v1'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "provider": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "provider_request_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "settled_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "status": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'reserved'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "approved_scene_texts": {
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "content_version_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "end_time_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "is_active": {
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "default": "true",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "scene_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "scene_index": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "start_time_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "text_ja": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "transcript_revision_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      }
+    },
+    "catalog_items": {
+      "ci_level": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "created_by": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "duration_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "has_l1_translation": {
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "default": "false",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "media_type": {
+        "data_type": "USER-DEFINED",
+        "udt_name": "MediaType",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "qa_round": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "revision": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "spoken_language": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'ja'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "status": {
+        "data_type": "USER-DEFINED",
+        "udt_name": "CatalogStatus",
+        "is_nullable": "NO",
+        "default": "'draft'::\"CatalogStatus\"",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "title_internal": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "topic_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "visual_support": {
+        "data_type": "USER-DEFINED",
+        "udt_name": "VisualSupport",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "catalog_reviews": {
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "decision": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "notes": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "qa_round": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "reviewed_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "reviewed_by": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "collection_scenes": {
+      "added_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "collection_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "position": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "scene_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "content_jobs": {
+      "applied_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "applied_by": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "attempt": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "attempt_token": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "config_hash": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "content_version_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "created_by": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "error_message": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "idempotency_key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "language": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'ja'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "lease_expires_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "max_attempts": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "3",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "progress": {
+        "data_type": "double precision",
+        "udt_name": "float8",
+        "is_nullable": "NO",
+        "default": "0.0",
+        "character_maximum_length": null,
+        "numeric_precision": 53,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "provenance": {
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "default": "'{}'::jsonb",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "result_draft": {
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "source_hash": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "status": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'queued'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "task": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      }
+    },
+    "content_report_audit": {
+      "actor_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "from_status": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "reason": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "report_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "revision": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "to_status": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "content_reports": {
+      "assignee_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "category": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "content_version_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "description": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "idempotency_key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "internal_note": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "position_ms": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "public_reply": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "request_hash": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "resolution_version_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "revision": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "scene_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "status": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'open'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "content_versions": {
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "duration_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "duration_source": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'legacy_metadata'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "hls_bundle_sha256": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "is_frozen": {
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "default": "false",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "is_published": {
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "default": "false",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "measured_duration_ms": {
+        "data_type": "bigint",
+        "udt_name": "int8",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 64,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "media_asset_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "media_hls_url": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "media_storage_key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "published_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "revision": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "source_sha256": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "version_number": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      }
+    },
+    "devices": {
+      "device_class": {
+        "data_type": "USER-DEFINED",
+        "udt_name": "DeviceClass",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "last_seen_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "feature_flags": {
+      "key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "value": {
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "default": "false",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "history_deletions": {
+      "attempts": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "completed_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "cutoff_time": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "error_message": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "records_deleted": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "status": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'queued'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "language_analysis_jobs": {
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "completed_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "created_by": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "error_message": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "idempotency_key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "results": {
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "status": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'queued'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "transcript_revision_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "learner_daily_activity": {
+      "active_ms": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "date": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "goal_met": {
+        "data_type": "boolean",
+        "udt_name": "bool",
+        "is_nullable": "NO",
+        "default": "false",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "goal_minutes": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "15",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "policy_revision": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "timezone": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'Asia/Ho_Chi_Minh'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "learner_library_state": {
+      "collection_count": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "learner_playback_state": {
+      "active_playback_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "client_instance_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "current_epoch": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "device_class": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "lease_expires_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "learner_progress": {
+      "current_ci_level": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "minutes_comprehensible": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "learning_events": {
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "payload": {
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "session_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "type": {
+        "data_type": "USER-DEFINED",
+        "udt_name": "EventType",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "learning_preference_versions": {
+      "daily_goal_minutes": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "effective_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "revision": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "timezone": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "learning_preferences": {
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "daily_goal_minutes": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "15",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "effective_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "preferred_topic_ids": {
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "default": "'[]'::jsonb",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "revision": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "timezone": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'Asia/Ho_Chi_Minh'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "learning_sessions": {
+      "device_class": {
+        "data_type": "USER-DEFINED",
+        "udt_name": "DeviceClass",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "duration_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "ended_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "started_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "media_assets": {
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "hls_bundle_sha256": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "hls_url": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "measured_duration_ms": {
+        "data_type": "bigint",
+        "udt_name": "int8",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 64,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "mime": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "playback_url": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "source_sha256": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "storage_key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "personal_collections": {
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "idempotency_key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "name": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "request_hash": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "revision": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "playback_checkpoints": {
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "content_version_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "position_ms": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "playback_receipts": {
+      "accepted_delta_ms": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "cumulative_active_ms": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "playback_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "request_hash": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "response_payload": {
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "seq": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      }
+    },
+    "playback_start_receipts": {
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "idempotency_key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "playback_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "request_hash": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "response": {
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "playbacks": {
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "client_instance_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "closed_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "content_version_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "device_class": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "epoch": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "last_client_cumulative_ms": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "last_position_ms": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "last_seq": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "last_server_time": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "status": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'active'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "total_active_ms": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "saved_scenes": {
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "saved_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "scene_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "scenes": {
+      "content_version_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "end_time_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "scene_index": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "start_time_seconds": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "title_jp": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "transcript_jp": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "series": {
+      "ci_level": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "description": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "revision": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "status": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'draft'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "title": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "topic_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      }
+    },
+    "series_items": {
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "position": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "series_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "session_idempotency_keys": {
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "key": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "request_hash": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "session_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "topics": {
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "label_internal": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "transcript_revisions": {
+      "approved_by": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "catalog_item_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "content_version_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "created_by": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "provenance": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'manual_teacher'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "return_reason": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "YES",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "revision": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "1",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      },
+      "segments": {
+        "data_type": "jsonb",
+        "udt_name": "jsonb",
+        "is_nullable": "NO",
+        "default": "'[]'::jsonb",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "status": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": "'draft'::text",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "updated_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      }
+    },
+    "user_roles": {
+      "role": {
+        "data_type": "USER-DEFINED",
+        "udt_name": "Role",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "user_id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      }
+    },
+    "users": {
+      "created_at": {
+        "data_type": "timestamp without time zone",
+        "udt_name": "timestamp",
+        "is_nullable": "NO",
+        "default": "CURRENT_TIMESTAMP",
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": 3
+      },
+      "email": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "id": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "password_hash": {
+        "data_type": "text",
+        "udt_name": "text",
+        "is_nullable": "NO",
+        "default": null,
+        "character_maximum_length": null,
+        "numeric_precision": null,
+        "numeric_scale": null,
+        "datetime_precision": null
+      },
+      "token_version": {
+        "data_type": "integer",
+        "udt_name": "int4",
+        "is_nullable": "NO",
+        "default": "0",
+        "character_maximum_length": null,
+        "numeric_precision": 32,
+        "numeric_scale": 0,
+        "datetime_precision": null
+      }
+    }
+  },
+  "constraints": {
+    "ai_attempt_job_number_key": {
+      "table": "ai_job_attempts",
+      "type": "u",
+      "definition": "UNIQUE (job_id, attempt_number)"
+    },
+    "ai_attempt_number_check": {
+      "table": "ai_job_attempts",
+      "type": "c",
+      "definition": "CHECK ((attempt_number > 0))"
+    },
+    "ai_attempt_state_check": {
+      "table": "ai_job_attempts",
+      "type": "c",
+      "definition": "CHECK ((state = ANY (ARRAY['running'::text, 'outcome_unknown'::text, 'settled'::text, 'not_billed'::text])))"
+    },
+    "ai_job_attempts_idempotency_key_key": {
+      "table": "ai_job_attempts",
+      "type": "u",
+      "definition": "UNIQUE (idempotency_key)"
+    },
+    "ai_job_attempts_job_id_fkey": {
+      "table": "ai_job_attempts",
+      "type": "f",
+      "definition": "FOREIGN KEY (job_id) REFERENCES content_jobs(id) ON DELETE RESTRICT"
+    },
+    "ai_job_attempts_pkey": {
+      "table": "ai_job_attempts",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "ai_job_attempts_resolved_by_fkey": {
+      "table": "ai_job_attempts",
+      "type": "f",
+      "definition": "FOREIGN KEY (resolved_by) REFERENCES users(id) ON DELETE RESTRICT"
+    },
+    "ai_quota_accounts_pkey": {
+      "table": "ai_quota_accounts",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "ai_quota_accounts_reserved_bounds": {
+      "table": "ai_quota_accounts",
+      "type": "c",
+      "definition": "CHECK (((reserved_audio_seconds >= 0) AND (reserved_input_tokens >= 0) AND (reserved_output_tokens >= 0) AND (reserved_cost_micros >= 0)))"
+    },
+    "ai_quota_accounts_used_bounds": {
+      "table": "ai_quota_accounts",
+      "type": "c",
+      "definition": "CHECK (((used_audio_seconds >= 0) AND (used_input_tokens >= 0) AND (used_output_tokens >= 0) AND (used_cost_micros >= 0)))"
+    },
+    "ai_quota_accounts_user_fkey": {
+      "table": "ai_quota_accounts",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "ai_usage_ledger_account_fkey": {
+      "table": "ai_usage_ledger",
+      "type": "f",
+      "definition": "FOREIGN KEY (account_id) REFERENCES ai_quota_accounts(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "ai_usage_ledger_account_idem_kind_key": {
+      "table": "ai_usage_ledger",
+      "type": "u",
+      "definition": "UNIQUE (account_id, idempotency_key, kind)"
+    },
+    "ai_usage_ledger_pkey": {
+      "table": "ai_usage_ledger",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "ai_usage_ledger_user_fkey": {
+      "table": "ai_usage_ledger",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "approved_scene_texts_catalog_item_fkey": {
+      "table": "approved_scene_texts",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "approved_scene_texts_content_version_fkey": {
+      "table": "approved_scene_texts",
+      "type": "f",
+      "definition": "FOREIGN KEY (content_version_id) REFERENCES content_versions(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "approved_scene_texts_pkey": {
+      "table": "approved_scene_texts",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "approved_scene_texts_scene_fkey": {
+      "table": "approved_scene_texts",
+      "type": "f",
+      "definition": "FOREIGN KEY (scene_id) REFERENCES scenes(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "approved_scene_texts_transcript_rev_fkey": {
+      "table": "approved_scene_texts",
+      "type": "f",
+      "definition": "FOREIGN KEY (transcript_revision_id) REFERENCES transcript_revisions(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "approved_scene_texts_version_scene_rev_key": {
+      "table": "approved_scene_texts",
+      "type": "u",
+      "definition": "UNIQUE (content_version_id, scene_id, transcript_revision_id)"
+    },
+    "catalog_items_created_by_fkey": {
+      "table": "catalog_items",
+      "type": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "catalog_items_pkey": {
+      "table": "catalog_items",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "catalog_items_published_without_l1_translation": {
+      "table": "catalog_items",
+      "type": "c",
+      "definition": "CHECK (((status <> 'published'::\"CatalogStatus\") OR (has_l1_translation = false)))"
+    },
+    "catalog_items_topic_id_fkey": {
+      "table": "catalog_items",
+      "type": "f",
+      "definition": "FOREIGN KEY (topic_id) REFERENCES topics(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "catalog_reviews_catalog_item_id_fkey": {
+      "table": "catalog_reviews",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id)"
+    },
+    "catalog_reviews_decision_check": {
+      "table": "catalog_reviews",
+      "type": "c",
+      "definition": "CHECK ((decision = ANY (ARRAY['approve'::text, 'reject'::text])))"
+    },
+    "catalog_reviews_item_round_key": {
+      "table": "catalog_reviews",
+      "type": "u",
+      "definition": "UNIQUE (catalog_item_id, qa_round)"
+    },
+    "catalog_reviews_pkey": {
+      "table": "catalog_reviews",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "catalog_reviews_reject_notes_check": {
+      "table": "catalog_reviews",
+      "type": "c",
+      "definition": "CHECK (((decision <> 'reject'::text) OR (length(btrim(notes)) > 0)))"
+    },
+    "catalog_reviews_reviewed_by_fkey": {
+      "table": "catalog_reviews",
+      "type": "f",
+      "definition": "FOREIGN KEY (reviewed_by) REFERENCES users(id)"
+    },
+    "collection_scenes_collection_user_fkey": {
+      "table": "collection_scenes",
+      "type": "f",
+      "definition": "FOREIGN KEY (collection_id, user_id) REFERENCES personal_collections(id, user_id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "collection_scenes_pkey": {
+      "table": "collection_scenes",
+      "type": "p",
+      "definition": "PRIMARY KEY (collection_id, \"position\")"
+    },
+    "collection_scenes_saved_scene_fkey": {
+      "table": "collection_scenes",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id, scene_id) REFERENCES saved_scenes(user_id, scene_id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "collection_scenes_unique_scene": {
+      "table": "collection_scenes",
+      "type": "u",
+      "definition": "UNIQUE (collection_id, scene_id)"
+    },
+    "content_jobs_applied_by_fkey": {
+      "table": "content_jobs",
+      "type": "f",
+      "definition": "FOREIGN KEY (applied_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL"
+    },
+    "content_jobs_catalog_item_fkey": {
+      "table": "content_jobs",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "content_jobs_content_version_fkey": {
+      "table": "content_jobs",
+      "type": "f",
+      "definition": "FOREIGN KEY (content_version_id) REFERENCES content_versions(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "content_jobs_created_by_fkey": {
+      "table": "content_jobs",
+      "type": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "content_jobs_pkey": {
+      "table": "content_jobs",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "content_jobs_status_check": {
+      "table": "content_jobs",
+      "type": "c",
+      "definition": "CHECK ((status = ANY (ARRAY['queued'::text, 'running'::text, 'succeeded'::text, 'failed'::text, 'cancelled'::text])))"
+    },
+    "content_jobs_task_check": {
+      "table": "content_jobs",
+      "type": "c",
+      "definition": "CHECK ((task = ANY (ARRAY['transcript'::text, 'segmentation'::text])))"
+    },
+    "content_jobs_user_idem_uniq": {
+      "table": "content_jobs",
+      "type": "u",
+      "definition": "UNIQUE (created_by, idempotency_key)"
+    },
+    "content_report_audit_actor_id_fkey": {
+      "table": "content_report_audit",
+      "type": "f",
+      "definition": "FOREIGN KEY (actor_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "content_report_audit_pkey": {
+      "table": "content_report_audit",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "content_report_audit_report_id_fkey": {
+      "table": "content_report_audit",
+      "type": "f",
+      "definition": "FOREIGN KEY (report_id) REFERENCES content_reports(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "content_reports_assignee_id_fkey": {
+      "table": "content_reports",
+      "type": "f",
+      "definition": "FOREIGN KEY (assignee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL"
+    },
+    "content_reports_catalog_item_id_fkey": {
+      "table": "content_reports",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "content_reports_content_version_id_fkey": {
+      "table": "content_reports",
+      "type": "f",
+      "definition": "FOREIGN KEY (content_version_id) REFERENCES content_versions(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "content_reports_pkey": {
+      "table": "content_reports",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "content_reports_resolution_version_id_fkey": {
+      "table": "content_reports",
+      "type": "f",
+      "definition": "FOREIGN KEY (resolution_version_id) REFERENCES content_versions(id) ON UPDATE CASCADE ON DELETE SET NULL"
+    },
+    "content_reports_scene_id_fkey": {
+      "table": "content_reports",
+      "type": "f",
+      "definition": "FOREIGN KEY (scene_id) REFERENCES scenes(id) ON UPDATE CASCADE ON DELETE SET NULL"
+    },
+    "content_reports_user_id_fkey": {
+      "table": "content_reports",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "content_reports_user_idempotency_unique": {
+      "table": "content_reports",
+      "type": "u",
+      "definition": "UNIQUE (user_id, idempotency_key)"
+    },
+    "content_versions_catalog_item_id_fkey": {
+      "table": "content_versions",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "content_versions_item_version_key": {
+      "table": "content_versions",
+      "type": "u",
+      "definition": "UNIQUE (catalog_item_id, version_number)"
+    },
+    "content_versions_pkey": {
+      "table": "content_versions",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "devices_pkey": {
+      "table": "devices",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "devices_user_id_fkey": {
+      "table": "devices",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "feature_flags_pkey": {
+      "table": "feature_flags",
+      "type": "p",
+      "definition": "PRIMARY KEY (key)"
+    },
+    "history_deletions_pkey": {
+      "table": "history_deletions",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "history_deletions_user_id_fkey": {
+      "table": "history_deletions",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "language_analysis_jobs_catalog_item_fkey": {
+      "table": "language_analysis_jobs",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "language_analysis_jobs_created_by_fkey": {
+      "table": "language_analysis_jobs",
+      "type": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "language_analysis_jobs_pkey": {
+      "table": "language_analysis_jobs",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "language_analysis_jobs_transcript_rev_fkey": {
+      "table": "language_analysis_jobs",
+      "type": "f",
+      "definition": "FOREIGN KEY (transcript_revision_id) REFERENCES transcript_revisions(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "learner_daily_activity_pkey": {
+      "table": "learner_daily_activity",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id, date, policy_revision)"
+    },
+    "learner_daily_activity_user_id_fkey": {
+      "table": "learner_daily_activity",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "learner_library_state_pkey": {
+      "table": "learner_library_state",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id)"
+    },
+    "learner_library_state_user_id_fkey": {
+      "table": "learner_library_state",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "learner_playback_state_pkey": {
+      "table": "learner_playback_state",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id)"
+    },
+    "learner_playback_state_user_id_fkey": {
+      "table": "learner_playback_state",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "learner_progress_pkey": {
+      "table": "learner_progress",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id)"
+    },
+    "learner_progress_user_id_fkey": {
+      "table": "learner_progress",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "learning_events_pkey": {
+      "table": "learning_events",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "learning_events_session_id_fkey": {
+      "table": "learning_events",
+      "type": "f",
+      "definition": "FOREIGN KEY (session_id) REFERENCES learning_sessions(id) ON UPDATE CASCADE ON DELETE SET NULL"
+    },
+    "learning_events_user_id_fkey": {
+      "table": "learning_events",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "learning_preference_versions_daily_goal_minutes_check": {
+      "table": "learning_preference_versions",
+      "type": "c",
+      "definition": "CHECK (((daily_goal_minutes >= 0) AND (daily_goal_minutes <= 120)))"
+    },
+    "learning_preference_versions_pkey": {
+      "table": "learning_preference_versions",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id, effective_at)"
+    },
+    "learning_preference_versions_user_id_fkey": {
+      "table": "learning_preference_versions",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    "learning_preferences_pkey": {
+      "table": "learning_preferences",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id)"
+    },
+    "learning_preferences_user_id_fkey": {
+      "table": "learning_preferences",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "learning_sessions_pkey": {
+      "table": "learning_sessions",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "learning_sessions_user_id_fkey": {
+      "table": "learning_sessions",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "media_assets_catalog_item_id_fkey": {
+      "table": "media_assets",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "media_assets_pkey": {
+      "table": "media_assets",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "personal_collections_id_user_unique": {
+      "table": "personal_collections",
+      "type": "u",
+      "definition": "UNIQUE (id, user_id)"
+    },
+    "personal_collections_pkey": {
+      "table": "personal_collections",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "personal_collections_user_id_fkey": {
+      "table": "personal_collections",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "personal_collections_user_idempotency_unique": {
+      "table": "personal_collections",
+      "type": "u",
+      "definition": "UNIQUE (user_id, idempotency_key)"
+    },
+    "playback_checkpoints_catalog_item_id_fkey": {
+      "table": "playback_checkpoints",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "playback_checkpoints_content_version_id_fkey": {
+      "table": "playback_checkpoints",
+      "type": "f",
+      "definition": "FOREIGN KEY (content_version_id) REFERENCES content_versions(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "playback_checkpoints_pkey": {
+      "table": "playback_checkpoints",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id, catalog_item_id)"
+    },
+    "playback_checkpoints_user_id_fkey": {
+      "table": "playback_checkpoints",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "playback_receipts_pkey": {
+      "table": "playback_receipts",
+      "type": "p",
+      "definition": "PRIMARY KEY (playback_id, seq)"
+    },
+    "playback_receipts_playback_id_fkey": {
+      "table": "playback_receipts",
+      "type": "f",
+      "definition": "FOREIGN KEY (playback_id) REFERENCES playbacks(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "playback_start_receipts_pkey": {
+      "table": "playback_start_receipts",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id, idempotency_key)"
+    },
+    "playback_start_receipts_user_id_fkey": {
+      "table": "playback_start_receipts",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE"
+    },
+    "playbacks_catalog_item_id_fkey": {
+      "table": "playbacks",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "playbacks_content_version_id_fkey": {
+      "table": "playbacks",
+      "type": "f",
+      "definition": "FOREIGN KEY (content_version_id) REFERENCES content_versions(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "playbacks_pkey": {
+      "table": "playbacks",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "playbacks_user_id_fkey": {
+      "table": "playbacks",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "saved_scenes_pkey": {
+      "table": "saved_scenes",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "saved_scenes_scene_id_fkey": {
+      "table": "saved_scenes",
+      "type": "f",
+      "definition": "FOREIGN KEY (scene_id) REFERENCES scenes(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "saved_scenes_user_id_fkey": {
+      "table": "saved_scenes",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "saved_scenes_user_scene_unique": {
+      "table": "saved_scenes",
+      "type": "u",
+      "definition": "UNIQUE (user_id, scene_id)"
+    },
+    "scenes_content_version_id_fkey": {
+      "table": "scenes",
+      "type": "f",
+      "definition": "FOREIGN KEY (content_version_id) REFERENCES content_versions(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "scenes_pkey": {
+      "table": "scenes",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "scenes_timing_check": {
+      "table": "scenes",
+      "type": "c",
+      "definition": "CHECK (((start_time_seconds >= 0) AND (end_time_seconds > start_time_seconds)))"
+    },
+    "scenes_version_index_key": {
+      "table": "scenes",
+      "type": "u",
+      "definition": "UNIQUE (content_version_id, scene_index)"
+    },
+    "series_items_catalog_item_id_fkey": {
+      "table": "series_items",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "series_items_pkey": {
+      "table": "series_items",
+      "type": "p",
+      "definition": "PRIMARY KEY (series_id, \"position\")"
+    },
+    "series_items_series_id_fkey": {
+      "table": "series_items",
+      "type": "f",
+      "definition": "FOREIGN KEY (series_id) REFERENCES series(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "series_items_unique_item_key": {
+      "table": "series_items",
+      "type": "u",
+      "definition": "UNIQUE (series_id, catalog_item_id)"
+    },
+    "series_pkey": {
+      "table": "series",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "series_topic_id_fkey": {
+      "table": "series",
+      "type": "f",
+      "definition": "FOREIGN KEY (topic_id) REFERENCES topics(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "session_idempotency_keys_pkey": {
+      "table": "session_idempotency_keys",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id, key)"
+    },
+    "session_idempotency_keys_session_id_fkey": {
+      "table": "session_idempotency_keys",
+      "type": "f",
+      "definition": "FOREIGN KEY (session_id) REFERENCES learning_sessions(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "session_idempotency_keys_user_id_fkey": {
+      "table": "session_idempotency_keys",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "topics_pkey": {
+      "table": "topics",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "transcript_revisions_approved_by_fkey": {
+      "table": "transcript_revisions",
+      "type": "f",
+      "definition": "FOREIGN KEY (approved_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL"
+    },
+    "transcript_revisions_catalog_item_fkey": {
+      "table": "transcript_revisions",
+      "type": "f",
+      "definition": "FOREIGN KEY (catalog_item_id) REFERENCES catalog_items(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "transcript_revisions_content_version_fkey": {
+      "table": "transcript_revisions",
+      "type": "f",
+      "definition": "FOREIGN KEY (content_version_id) REFERENCES content_versions(id) ON UPDATE CASCADE ON DELETE CASCADE"
+    },
+    "transcript_revisions_created_by_fkey": {
+      "table": "transcript_revisions",
+      "type": "f",
+      "definition": "FOREIGN KEY (created_by) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "transcript_revisions_item_version_rev_key": {
+      "table": "transcript_revisions",
+      "type": "u",
+      "definition": "UNIQUE (catalog_item_id, content_version_id, revision)"
+    },
+    "transcript_revisions_pkey": {
+      "table": "transcript_revisions",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    },
+    "user_roles_pkey": {
+      "table": "user_roles",
+      "type": "p",
+      "definition": "PRIMARY KEY (user_id, role)"
+    },
+    "user_roles_user_id_fkey": {
+      "table": "user_roles",
+      "type": "f",
+      "definition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE RESTRICT"
+    },
+    "users_pkey": {
+      "table": "users",
+      "type": "p",
+      "definition": "PRIMARY KEY (id)"
+    }
+  },
+  "indexes": {
+    "ai_attempt_job_number_key": {
+      "table": "ai_job_attempts",
+      "definition": "CREATE UNIQUE INDEX ai_attempt_job_number_key ON public.ai_job_attempts USING btree (job_id, attempt_number)"
+    },
+    "ai_attempt_state_lease_idx": {
+      "table": "ai_job_attempts",
+      "definition": "CREATE INDEX ai_attempt_state_lease_idx ON public.ai_job_attempts USING btree (state, lease_expires_at)"
+    },
+    "ai_job_attempts_idempotency_key_key": {
+      "table": "ai_job_attempts",
+      "definition": "CREATE UNIQUE INDEX ai_job_attempts_idempotency_key_key ON public.ai_job_attempts USING btree (idempotency_key)"
+    },
+    "ai_job_attempts_pkey": {
+      "table": "ai_job_attempts",
+      "definition": "CREATE UNIQUE INDEX ai_job_attempts_pkey ON public.ai_job_attempts USING btree (id)"
+    },
+    "ai_quota_accounts_pkey": {
+      "table": "ai_quota_accounts",
+      "definition": "CREATE UNIQUE INDEX ai_quota_accounts_pkey ON public.ai_quota_accounts USING btree (id)"
+    },
+    "ai_quota_accounts_user_idx": {
+      "table": "ai_quota_accounts",
+      "definition": "CREATE INDEX ai_quota_accounts_user_idx ON public.ai_quota_accounts USING btree (user_id)"
+    },
+    "ai_usage_ledger_account_created_idx": {
+      "table": "ai_usage_ledger",
+      "definition": "CREATE INDEX ai_usage_ledger_account_created_idx ON public.ai_usage_ledger USING btree (account_id, created_at)"
+    },
+    "ai_usage_ledger_account_idem_kind_key": {
+      "table": "ai_usage_ledger",
+      "definition": "CREATE UNIQUE INDEX ai_usage_ledger_account_idem_kind_key ON public.ai_usage_ledger USING btree (account_id, idempotency_key, kind)"
+    },
+    "ai_usage_ledger_job_status_idx": {
+      "table": "ai_usage_ledger",
+      "definition": "CREATE INDEX ai_usage_ledger_job_status_idx ON public.ai_usage_ledger USING btree (job_id, status)"
+    },
+    "ai_usage_ledger_pkey": {
+      "table": "ai_usage_ledger",
+      "definition": "CREATE UNIQUE INDEX ai_usage_ledger_pkey ON public.ai_usage_ledger USING btree (id)"
+    },
+    "ai_usage_ledger_provider_req_att_kind_key": {
+      "table": "ai_usage_ledger",
+      "definition": "CREATE UNIQUE INDEX ai_usage_ledger_provider_req_att_kind_key ON public.ai_usage_ledger USING btree (provider, provider_request_id, attempt, kind) WHERE (provider_request_id IS NOT NULL)"
+    },
+    "ai_usage_ledger_user_created_idx": {
+      "table": "ai_usage_ledger",
+      "definition": "CREATE INDEX ai_usage_ledger_user_created_idx ON public.ai_usage_ledger USING btree (user_id, created_at)"
+    },
+    "approved_scene_texts_active_item_idx": {
+      "table": "approved_scene_texts",
+      "definition": "CREATE INDEX approved_scene_texts_active_item_idx ON public.approved_scene_texts USING btree (is_active, catalog_item_id)"
+    },
+    "approved_scene_texts_pkey": {
+      "table": "approved_scene_texts",
+      "definition": "CREATE UNIQUE INDEX approved_scene_texts_pkey ON public.approved_scene_texts USING btree (id)"
+    },
+    "approved_scene_texts_scene_idx": {
+      "table": "approved_scene_texts",
+      "definition": "CREATE INDEX approved_scene_texts_scene_idx ON public.approved_scene_texts USING btree (scene_id)"
+    },
+    "approved_scene_texts_version_scene_rev_key": {
+      "table": "approved_scene_texts",
+      "definition": "CREATE UNIQUE INDEX approved_scene_texts_version_scene_rev_key ON public.approved_scene_texts USING btree (content_version_id, scene_id, transcript_revision_id)"
+    },
+    "catalog_items_pkey": {
+      "table": "catalog_items",
+      "definition": "CREATE UNIQUE INDEX catalog_items_pkey ON public.catalog_items USING btree (id)"
+    },
+    "catalog_reviews_item_round_key": {
+      "table": "catalog_reviews",
+      "definition": "CREATE UNIQUE INDEX catalog_reviews_item_round_key ON public.catalog_reviews USING btree (catalog_item_id, qa_round)"
+    },
+    "catalog_reviews_pkey": {
+      "table": "catalog_reviews",
+      "definition": "CREATE UNIQUE INDEX catalog_reviews_pkey ON public.catalog_reviews USING btree (id)"
+    },
+    "collection_scenes_pkey": {
+      "table": "collection_scenes",
+      "definition": "CREATE UNIQUE INDEX collection_scenes_pkey ON public.collection_scenes USING btree (collection_id, \"position\")"
+    },
+    "collection_scenes_unique_scene": {
+      "table": "collection_scenes",
+      "definition": "CREATE UNIQUE INDEX collection_scenes_unique_scene ON public.collection_scenes USING btree (collection_id, scene_id)"
+    },
+    "collection_scenes_user_scene_idx": {
+      "table": "collection_scenes",
+      "definition": "CREATE INDEX collection_scenes_user_scene_idx ON public.collection_scenes USING btree (user_id, scene_id)"
+    },
+    "content_jobs_item_version_idx": {
+      "table": "content_jobs",
+      "definition": "CREATE INDEX content_jobs_item_version_idx ON public.content_jobs USING btree (catalog_item_id, content_version_id)"
+    },
+    "content_jobs_pkey": {
+      "table": "content_jobs",
+      "definition": "CREATE UNIQUE INDEX content_jobs_pkey ON public.content_jobs USING btree (id)"
+    },
+    "content_jobs_status_lease_idx": {
+      "table": "content_jobs",
+      "definition": "CREATE INDEX content_jobs_status_lease_idx ON public.content_jobs USING btree (status, lease_expires_at)"
+    },
+    "content_jobs_user_idem_uniq": {
+      "table": "content_jobs",
+      "definition": "CREATE UNIQUE INDEX content_jobs_user_idem_uniq ON public.content_jobs USING btree (created_by, idempotency_key)"
+    },
+    "content_report_audit_pkey": {
+      "table": "content_report_audit",
+      "definition": "CREATE UNIQUE INDEX content_report_audit_pkey ON public.content_report_audit USING btree (id)"
+    },
+    "content_report_audit_report_idx": {
+      "table": "content_report_audit",
+      "definition": "CREATE INDEX content_report_audit_report_idx ON public.content_report_audit USING btree (report_id, created_at)"
+    },
+    "content_reports_catalog_item_idx": {
+      "table": "content_reports",
+      "definition": "CREATE INDEX content_reports_catalog_item_idx ON public.content_reports USING btree (catalog_item_id, created_at DESC)"
+    },
+    "content_reports_pkey": {
+      "table": "content_reports",
+      "definition": "CREATE UNIQUE INDEX content_reports_pkey ON public.content_reports USING btree (id)"
+    },
+    "content_reports_status_updated_idx": {
+      "table": "content_reports",
+      "definition": "CREATE INDEX content_reports_status_updated_idx ON public.content_reports USING btree (status, updated_at DESC, id DESC)"
+    },
+    "content_reports_user_created_idx": {
+      "table": "content_reports",
+      "definition": "CREATE INDEX content_reports_user_created_idx ON public.content_reports USING btree (user_id, created_at DESC, id DESC)"
+    },
+    "content_reports_user_idempotency_unique": {
+      "table": "content_reports",
+      "definition": "CREATE UNIQUE INDEX content_reports_user_idempotency_unique ON public.content_reports USING btree (user_id, idempotency_key)"
+    },
+    "content_versions_item_version_key": {
+      "table": "content_versions",
+      "definition": "CREATE UNIQUE INDEX content_versions_item_version_key ON public.content_versions USING btree (catalog_item_id, version_number)"
+    },
+    "content_versions_pkey": {
+      "table": "content_versions",
+      "definition": "CREATE UNIQUE INDEX content_versions_pkey ON public.content_versions USING btree (id)"
+    },
+    "devices_pkey": {
+      "table": "devices",
+      "definition": "CREATE UNIQUE INDEX devices_pkey ON public.devices USING btree (id)"
+    },
+    "devices_user_id_device_class_key": {
+      "table": "devices",
+      "definition": "CREATE UNIQUE INDEX devices_user_id_device_class_key ON public.devices USING btree (user_id, device_class)"
+    },
+    "feature_flags_pkey": {
+      "table": "feature_flags",
+      "definition": "CREATE UNIQUE INDEX feature_flags_pkey ON public.feature_flags USING btree (key)"
+    },
+    "history_deletions_pkey": {
+      "table": "history_deletions",
+      "definition": "CREATE UNIQUE INDEX history_deletions_pkey ON public.history_deletions USING btree (id)"
+    },
+    "history_deletions_status_idx": {
+      "table": "history_deletions",
+      "definition": "CREATE INDEX history_deletions_status_idx ON public.history_deletions USING btree (status, created_at)"
+    },
+    "history_deletions_user_created_idx": {
+      "table": "history_deletions",
+      "definition": "CREATE INDEX history_deletions_user_created_idx ON public.history_deletions USING btree (user_id, created_at DESC)"
+    },
+    "language_analysis_jobs_idempotency_idx": {
+      "table": "language_analysis_jobs",
+      "definition": "CREATE INDEX language_analysis_jobs_idempotency_idx ON public.language_analysis_jobs USING btree (idempotency_key) WHERE (idempotency_key IS NOT NULL)"
+    },
+    "language_analysis_jobs_item_rev_idx": {
+      "table": "language_analysis_jobs",
+      "definition": "CREATE INDEX language_analysis_jobs_item_rev_idx ON public.language_analysis_jobs USING btree (catalog_item_id, transcript_revision_id)"
+    },
+    "language_analysis_jobs_pkey": {
+      "table": "language_analysis_jobs",
+      "definition": "CREATE UNIQUE INDEX language_analysis_jobs_pkey ON public.language_analysis_jobs USING btree (id)"
+    },
+    "learner_daily_activity_pkey": {
+      "table": "learner_daily_activity",
+      "definition": "CREATE UNIQUE INDEX learner_daily_activity_pkey ON public.learner_daily_activity USING btree (user_id, date, policy_revision)"
+    },
+    "learner_daily_activity_user_date_idx": {
+      "table": "learner_daily_activity",
+      "definition": "CREATE INDEX learner_daily_activity_user_date_idx ON public.learner_daily_activity USING btree (user_id, date DESC)"
+    },
+    "learner_library_state_pkey": {
+      "table": "learner_library_state",
+      "definition": "CREATE UNIQUE INDEX learner_library_state_pkey ON public.learner_library_state USING btree (user_id)"
+    },
+    "learner_playback_state_pkey": {
+      "table": "learner_playback_state",
+      "definition": "CREATE UNIQUE INDEX learner_playback_state_pkey ON public.learner_playback_state USING btree (user_id)"
+    },
+    "learner_progress_pkey": {
+      "table": "learner_progress",
+      "definition": "CREATE UNIQUE INDEX learner_progress_pkey ON public.learner_progress USING btree (user_id)"
+    },
+    "learning_events_pkey": {
+      "table": "learning_events",
+      "definition": "CREATE UNIQUE INDEX learning_events_pkey ON public.learning_events USING btree (id)"
+    },
+    "learning_preference_versions_pkey": {
+      "table": "learning_preference_versions",
+      "definition": "CREATE UNIQUE INDEX learning_preference_versions_pkey ON public.learning_preference_versions USING btree (user_id, effective_at)"
+    },
+    "learning_preferences_pkey": {
+      "table": "learning_preferences",
+      "definition": "CREATE UNIQUE INDEX learning_preferences_pkey ON public.learning_preferences USING btree (user_id)"
+    },
+    "learning_sessions_pkey": {
+      "table": "learning_sessions",
+      "definition": "CREATE UNIQUE INDEX learning_sessions_pkey ON public.learning_sessions USING btree (id)"
+    },
+    "media_assets_pkey": {
+      "table": "media_assets",
+      "definition": "CREATE UNIQUE INDEX media_assets_pkey ON public.media_assets USING btree (id)"
+    },
+    "personal_collections_id_user_unique": {
+      "table": "personal_collections",
+      "definition": "CREATE UNIQUE INDEX personal_collections_id_user_unique ON public.personal_collections USING btree (id, user_id)"
+    },
+    "personal_collections_pkey": {
+      "table": "personal_collections",
+      "definition": "CREATE UNIQUE INDEX personal_collections_pkey ON public.personal_collections USING btree (id)"
+    },
+    "personal_collections_user_created_idx": {
+      "table": "personal_collections",
+      "definition": "CREATE INDEX personal_collections_user_created_idx ON public.personal_collections USING btree (user_id, created_at DESC, id DESC)"
+    },
+    "personal_collections_user_idempotency_unique": {
+      "table": "personal_collections",
+      "definition": "CREATE UNIQUE INDEX personal_collections_user_idempotency_unique ON public.personal_collections USING btree (user_id, idempotency_key)"
+    },
+    "playback_checkpoints_pkey": {
+      "table": "playback_checkpoints",
+      "definition": "CREATE UNIQUE INDEX playback_checkpoints_pkey ON public.playback_checkpoints USING btree (user_id, catalog_item_id)"
+    },
+    "playback_checkpoints_user_updated_idx": {
+      "table": "playback_checkpoints",
+      "definition": "CREATE INDEX playback_checkpoints_user_updated_idx ON public.playback_checkpoints USING btree (user_id, updated_at DESC)"
+    },
+    "playback_receipts_pkey": {
+      "table": "playback_receipts",
+      "definition": "CREATE UNIQUE INDEX playback_receipts_pkey ON public.playback_receipts USING btree (playback_id, seq)"
+    },
+    "playback_start_receipts_pkey": {
+      "table": "playback_start_receipts",
+      "definition": "CREATE UNIQUE INDEX playback_start_receipts_pkey ON public.playback_start_receipts USING btree (user_id, idempotency_key)"
+    },
+    "playbacks_catalog_item_idx": {
+      "table": "playbacks",
+      "definition": "CREATE INDEX playbacks_catalog_item_idx ON public.playbacks USING btree (catalog_item_id, created_at DESC)"
+    },
+    "playbacks_pkey": {
+      "table": "playbacks",
+      "definition": "CREATE UNIQUE INDEX playbacks_pkey ON public.playbacks USING btree (id)"
+    },
+    "playbacks_user_created_idx": {
+      "table": "playbacks",
+      "definition": "CREATE INDEX playbacks_user_created_idx ON public.playbacks USING btree (user_id, created_at DESC, id DESC)"
+    },
+    "saved_scenes_pkey": {
+      "table": "saved_scenes",
+      "definition": "CREATE UNIQUE INDEX saved_scenes_pkey ON public.saved_scenes USING btree (id)"
+    },
+    "saved_scenes_user_saved_at_idx": {
+      "table": "saved_scenes",
+      "definition": "CREATE INDEX saved_scenes_user_saved_at_idx ON public.saved_scenes USING btree (user_id, saved_at DESC, id DESC)"
+    },
+    "saved_scenes_user_scene_unique": {
+      "table": "saved_scenes",
+      "definition": "CREATE UNIQUE INDEX saved_scenes_user_scene_unique ON public.saved_scenes USING btree (user_id, scene_id)"
+    },
+    "scenes_pkey": {
+      "table": "scenes",
+      "definition": "CREATE UNIQUE INDEX scenes_pkey ON public.scenes USING btree (id)"
+    },
+    "scenes_version_index_key": {
+      "table": "scenes",
+      "definition": "CREATE UNIQUE INDEX scenes_version_index_key ON public.scenes USING btree (content_version_id, scene_index)"
+    },
+    "series_items_pkey": {
+      "table": "series_items",
+      "definition": "CREATE UNIQUE INDEX series_items_pkey ON public.series_items USING btree (series_id, \"position\")"
+    },
+    "series_items_unique_item_key": {
+      "table": "series_items",
+      "definition": "CREATE UNIQUE INDEX series_items_unique_item_key ON public.series_items USING btree (series_id, catalog_item_id)"
+    },
+    "series_pkey": {
+      "table": "series",
+      "definition": "CREATE UNIQUE INDEX series_pkey ON public.series USING btree (id)"
+    },
+    "series_status_idx": {
+      "table": "series",
+      "definition": "CREATE INDEX series_status_idx ON public.series USING btree (status)"
+    },
+    "series_topic_id_idx": {
+      "table": "series",
+      "definition": "CREATE INDEX series_topic_id_idx ON public.series USING btree (topic_id)"
+    },
+    "session_idempotency_keys_pkey": {
+      "table": "session_idempotency_keys",
+      "definition": "CREATE UNIQUE INDEX session_idempotency_keys_pkey ON public.session_idempotency_keys USING btree (user_id, key)"
+    },
+    "topics_pkey": {
+      "table": "topics",
+      "definition": "CREATE UNIQUE INDEX topics_pkey ON public.topics USING btree (id)"
+    },
+    "transcript_revisions_item_status_idx": {
+      "table": "transcript_revisions",
+      "definition": "CREATE INDEX transcript_revisions_item_status_idx ON public.transcript_revisions USING btree (catalog_item_id, status)"
+    },
+    "transcript_revisions_item_version_rev_key": {
+      "table": "transcript_revisions",
+      "definition": "CREATE UNIQUE INDEX transcript_revisions_item_version_rev_key ON public.transcript_revisions USING btree (catalog_item_id, content_version_id, revision)"
+    },
+    "transcript_revisions_pkey": {
+      "table": "transcript_revisions",
+      "definition": "CREATE UNIQUE INDEX transcript_revisions_pkey ON public.transcript_revisions USING btree (id)"
+    },
+    "user_roles_pkey": {
+      "table": "user_roles",
+      "definition": "CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (user_id, role)"
+    },
+    "users_email_key": {
+      "table": "users",
+      "definition": "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)"
+    },
+    "users_pkey": {
+      "table": "users",
+      "definition": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+    }
+  }
+}

@@ -1,0 +1,131 @@
+========================================================================
+ JPLearn FastAPI Container Verification Gate (Hardened R-08/B)
+========================================================================
+Commit SHA: 3e66f1e6f1000f43a5fc8e461317ca534541810f (dirty files: 44)
+Started At (UTC): 2026-09-08T08:12:50Z
+
+--- [1/7] Building Container Image: jplearn-api-python:hardened ---
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.27kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+#2 DONE 1.8s
+
+#3 [internal] load metadata for ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff
+#3 DONE 2.1s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 128B done
+#4 DONE 0.0s
+
+#5 FROM ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff
+#5 resolve ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff done
+#5 DONE 0.0s
+
+#6 [base  1/11] FROM docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+#6 resolve docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 3.95MB 0.0s done
+#7 DONE 0.0s
+
+#8 [base  2/11] COPY --from=ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff /uv /uvx /bin/
+#8 CACHED
+
+#9 [base  6/11] COPY pyproject.toml uv.lock README.md ./
+#9 CACHED
+
+#10 [base  5/11] RUN useradd -u 10001 -d /app -s /bin/sh appuser
+#10 CACHED
+
+#11 [base  7/11] RUN uv sync --frozen --no-dev --no-install-project
+#11 CACHED
+
+#12 [base  3/11] RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+#12 CACHED
+
+#13 [base  4/11] WORKDIR /app
+#13 CACHED
+
+#14 [base  8/11] COPY alembic.ini ./alembic.ini
+#14 CACHED
+
+#15 [base  9/11] COPY src/ ./src/
+#15 DONE 0.0s
+
+#16 [base 10/11] RUN uv sync --frozen --no-dev
+#16 0.291    Building jplearn-api @ file:///app
+#16 2.118       Built jplearn-api @ file:///app
+#16 2.120 Prepared 1 package in 1.83s
+#16 2.125 Installed 1 package in 5ms
+#16 2.277 Bytecode compiled 977 files in 151ms
+#16 2.277  + jplearn-api==0.1.0 (from file:///app)
+#16 DONE 2.3s
+
+#17 [base 11/11] RUN mkdir -p /app/storage && chown -R appuser:appuser /app
+#17 DONE 1.8s
+
+#18 exporting to image
+#18 exporting layers
+#18 exporting layers 1.9s done
+#18 exporting manifest sha256:2c61e41024ee181ce72557b80922db8f62ed316e0c3eca9ecd14f6a77ac2bf83
+#18 exporting manifest sha256:2c61e41024ee181ce72557b80922db8f62ed316e0c3eca9ecd14f6a77ac2bf83 done
+#18 exporting config sha256:2ad345f8b5f8f91147f868d5e31bf3494f398c984bd096b73c307490ab2f60ed done
+#18 exporting attestation manifest sha256:43da1ff123df9e12ee3fdc90eff708ce2338d936fabf35630344609a114fd3e8 done
+#18 exporting manifest list sha256:9eb72866a4bdfbe85cfb00470a04500ef814afd932f94aef968bb55f91583e0b done
+#18 naming to docker.io/library/jplearn-api-python:hardened done
+#18 unpacking to docker.io/library/jplearn-api-python:hardened
+#18 unpacking to docker.io/library/jplearn-api-python:hardened 0.3s done
+#18 DONE 2.2s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/fxic33w6xr8dv9067mpg95rzw
+Image ID: sha256:9eb72866a4bdfbe85cfb00470a04500ef814afd932f94aef968bb55f91583e0b
+
+--- [2/7] Verifying Non-root Execution (UID 10001) ---
+Container user ID: 10001
+✓ Non-root UID 10001 verified
+
+--- [3/7] Verifying Packaged Wheel Resources ---
+Successfully loaded 10 baseline tables without repo fallback
+✓ Packaged resource loading and fail-closed verified
+
+--- [4/7] Verifying CLI Exit Codes ---
+✓ jplearn-migrate --help returned 0
+✓ jplearn-migrate invalid_cmd returned 2
+
+--- [5/7] Verifying Database Adoption Stamp Safety & Migrations ---
+Waiting for PostgreSQL to be ready...
+Testing stamp on empty database...
+✓ Stamp on empty database failed closed with verified reason
+Running migration upgrade head...
+✓ Upgrade head succeeded
+✓ Current revision checked
+Running idempotent seed...
+✓ Seed completed successfully
+
+--- [6/7] Verifying Schema Divergence Detection & Live Adoption ---
+✓ Schema divergence detection verified: stamp failed closed
+Populated DB counts before adoption: users=1, catalog_items=2
+✓ Adoption stamp on populated baseline succeeded
+✓ Baseline adoption verified: version=0001_prisma_baseline, data counts unchanged (users=1, items=2)
+
+--- [7/7] Verifying Container Readiness & Liveness Probe Isolation ---
+Waiting for container API to start...
+✓ Initial probes healthy: health=200, ready=200, body={"ok":true,"database":"up","storage":"up"}
+Testing degraded storage probe...
+✓ Storage probe degradation verified: ready=503 (storage:down, db:up), liveness=200
+Testing degraded database probe...
+✓ Database probe degradation verified: ready=503 (db:down, storage:up), liveness=200
+
+========================================================================
+✓ ALL CONTAINER VERIFICATION GATES PASSED!
+Manifest written to: /private/tmp/jplearn-integrate-main-20260908/apps/api-python/container_verification_manifest.json
+========================================================================
+==> Cleaning up verification resources...
+jplearn-api-verify-65775
+jplearn-pg-verify-65775
+jplearn-verify-net-65775

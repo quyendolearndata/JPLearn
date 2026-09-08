@@ -234,7 +234,9 @@ async def _create_level_qa_item_with_media(client: AsyncClient, token: str) -> t
     assert upload.status_code == 201, upload.text
     qa = await client.post(f"/staff/catalog/{item_id}/submit-qa", headers=headers)
     assert qa.status_code == 200, qa.text
-    return item_id, qa.json()["revision"]
+    reviewed = await client.post(f"/staff/catalog/{item_id}/review", headers=headers, json={"decision": "approve"})
+    assert reviewed.status_code == 200, reviewed.text
+    return item_id, reviewed.json()["revision"]
 
 
 @pytest.mark.asyncio
@@ -244,7 +246,7 @@ async def test_race_patch_vs_publish_never_writes_draft_back(client_factory, pos
     admin = await make_client()
     token = await _create_admin_token(admin, postgres_url)
     item_id, rev_qa = await _create_level_qa_item_with_media(admin, token)
-    assert rev_qa == 2
+    assert rev_qa == 3
 
     barrier = asyncio.Barrier(2)
 
@@ -268,7 +270,7 @@ async def test_race_patch_vs_publish_never_writes_draft_back(client_factory, pos
 
     final = (await admin.get(f"/staff/catalog/{item_id}", headers={"Authorization": f"Bearer {token}"})).json()
     assert final["status"] == "published"
-    assert final["revision"] == 3
+    assert final["revision"] == rev_qa + 1
     assert final["title_internal"] == "race-publish-item"
 
 
@@ -283,7 +285,7 @@ async def test_race_patch_vs_unpublish_revision_never_regresses(client_factory, 
     published = await admin.post(f"/staff/catalog/{item_id}/publish", headers=headers)
     assert published.status_code == 200
     rev_published = published.json()["revision"]
-    assert rev_published == 3
+    assert rev_published == 4
 
     barrier = asyncio.Barrier(2)
 
@@ -307,14 +309,14 @@ async def test_race_patch_vs_unpublish_revision_never_regresses(client_factory, 
 
     final = (await admin.get(f"/staff/catalog/{item_id}", headers=headers)).json()
     assert final["status"] == "draft"
-    assert final["revision"] == 4
+    assert final["revision"] == rev_published + 1
     assert final["title_internal"] == "race-publish-item"
 
-    # A PATCH carrying the fresh revision must now succeed and bump to 5.
+    # A PATCH carrying the fresh revision must succeed and increment it once.
     ok = await admin.patch(
         f"/staff/catalog/{item_id}",
         headers=headers,
-        json={"revision": 4, "title_internal": "edited-after-unpublish"},
+        json={"revision": final["revision"], "title_internal": "edited-after-unpublish"},
     )
     assert ok.status_code == 200, ok.text
-    assert ok.json()["revision"] == 5
+    assert ok.json()["revision"] == final["revision"] + 1

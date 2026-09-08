@@ -27,7 +27,7 @@ def test_resources_and_contract_resolve_outside_working_directory(tmp_path, monk
     assert len(load_baseline_schema("0010_transcripts_analysis")["tables"]) == 31
     assert len(load_baseline_schema("0011_ai_quota_and_usage_ledger")["tables"]) == 33
     assert len(load_baseline_schema("0012_content_jobs")["tables"]) == 34
-    assert len(load_baseline_schema("head")["tables"]) == 37
+    assert len(load_baseline_schema("head")["tables"]) == 38
 
 
     assert handwritten_spec_path().is_file()

@@ -28,7 +28,7 @@ from pg_harness import (
 )
 
 BASELINE_0001 = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-004-schema-baseline.json"
-BASELINE_HEAD = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-004-schema-head-0018.json"
+BASELINE_HEAD = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-004-schema-head-0019.json"
 
 
 BANNED_COLUMNS = ("vocabulary_score", "grammar_lesson_id", "textbook_percent", "translation_vi")
@@ -138,7 +138,7 @@ def test_stamp_adopts_a_database_built_before_alembic(alembic_database: str) -> 
 
     # 4. Confirm data & schema properties
     ver, rev_val = asyncio.run(get_revision_and_data())
-    assert ver == "0018_hls_bundle_integrity"
+    assert ver == "0019_merge_cms_reviews"
     assert rev_val == 1, "Catalog items must have default revision=1 after migration 0002"
 
 
@@ -247,3 +247,40 @@ def test_destructive_downgrade_blocked_in_staging_and_production(
     monkeypatch.setenv("ALLOW_DESTRUCTIVE_DOWNGRADE", "true")
     downgrade("base", alembic_database)
     upgrade(alembic_database)
+
+
+@pytest.mark.parametrize("source_revision", ["0018_hls_bundle_integrity", "0002_cms_reviews"])
+def test_merge_upgrade_preserves_each_branch_data(alembic_database, source_revision):
+    """Both remote migration lineages upgrade without losing business data."""
+    downgrade("base", alembic_database)
+    upgrade(alembic_database, revision=source_revision)
+    seed_database(alembic_database)
+
+    async def prepare():
+        conn = await asyncpg.connect(alembic_database)
+        try:
+            item_id = await conn.fetchval("SELECT id FROM catalog_items ORDER BY id LIMIT 1")
+            user_id = await conn.fetchval("SELECT id FROM users ORDER BY id LIMIT 1")
+            await conn.execute("UPDATE catalog_items SET title_internal='preserved merge fixture' WHERE id=$1", item_id)
+            if source_revision == "0002_cms_reviews":
+                await conn.execute("UPDATE catalog_items SET qa_round=1 WHERE id=$1", item_id)
+                await conn.execute("INSERT INTO catalog_reviews VALUES ('merge-review', $1, 1, 'approve', 'preserve original decision', $2, CURRENT_TIMESTAMP)", item_id, user_id)
+            return item_id
+        finally:
+            await conn.close()
+    item_id = asyncio.run(prepare())
+    upgrade(alembic_database)
+
+    async def verify():
+        conn = await asyncpg.connect(alembic_database)
+        try:
+            assert await conn.fetchval("SELECT version_num FROM alembic_version") == "0019_merge_cms_reviews"
+            assert await conn.fetchval("SELECT title_internal FROM catalog_items WHERE id=$1", item_id) == "preserved merge fixture"
+            if source_revision == "0002_cms_reviews":
+                assert await conn.fetchval("SELECT notes FROM catalog_reviews WHERE id='merge-review'") == "preserve original decision"
+            else:
+                assert await conn.fetchval("SELECT count(*) FROM catalog_reviews") == 0
+        finally:
+            await conn.close()
+    asyncio.run(verify())
+    assert not diff(json.loads(BASELINE_HEAD.read_text()), asyncio.run(snapshot_url(alembic_database)))

@@ -1,3 +1,4 @@
+from helpers import approve_catalog
 from helpers import ensure_topics, grant_role, insert_media, register
 
 
@@ -56,6 +57,7 @@ def test_draft_hidden_until_qa_and_publish_without_l1_fields(live_client):
         headers={"Authorization": f"Bearer {admin}"},
     )
     assert qa.status_code == 200
+    approve_catalog(live_client, admin, item_id)
     published = live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {admin}"},
@@ -107,6 +109,7 @@ def test_publish_without_media_then_after_media(live_client):
     assert blocked.status_code == 400
     assert "without media" in str(blocked.json()["message"])
     insert_media(live_client, item_id)
+    approve_catalog(live_client, admin, item_id)
     published = live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {admin}"},
@@ -138,6 +141,7 @@ def test_unpublish_hides_from_learners(live_client):
         f"/staff/catalog/{item_id}/submit-qa",
         headers={"Authorization": f"Bearer {admin}"},
     ).status_code == 200
+    approve_catalog(live_client, admin, item_id)
     assert live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {admin}"},

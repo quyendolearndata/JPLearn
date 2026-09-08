@@ -136,6 +136,9 @@ curl -fsS -X POST "http://localhost:$PY_PORT/staff/media/$ASSET_ID/hls" \
   -H "Authorization: Bearer $TOKEN" >/dev/null
 curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/submit-qa" \
   -H "Authorization: Bearer $TOKEN" >/dev/null
+curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/review" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"decision":"approve","notes":"E2E fixture QA"}' >/dev/null
 curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/publish" \
   -H "Authorization: Bearer $TOKEN" >/dev/null
 

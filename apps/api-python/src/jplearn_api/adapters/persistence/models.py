@@ -98,6 +98,8 @@ class CatalogItem(Base):
     title_internal: Mapped[str] = mapped_column(Text)
     created_by: Mapped[str] = mapped_column(Text, ForeignKey("users.id"))
     revision: Mapped[int] = mapped_column(Integer, default=1, server_default="1")
+    qa_round: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    reviews: Mapped[list["CatalogReview"]] = relationship(order_by="CatalogReview.qa_round")
     media: Mapped[list["MediaAsset"]] = relationship(back_populates="catalog_item")
     content_versions: Mapped[list["ContentVersion"]] = relationship(
         back_populates="catalog_item",
@@ -759,3 +761,19 @@ class AiAttemptModel(Base):
     evidence: Mapped[str | None] = mapped_column(Text, nullable=True)
     resolved_by: Mapped[str | None] = mapped_column(Text, ForeignKey("users.id", ondelete="RESTRICT"), nullable=True)
     resolution_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class CatalogReview(Base):
+    __tablename__ = "catalog_reviews"
+    __table_args__ = (
+        UniqueConstraint("catalog_item_id", "qa_round", name="catalog_reviews_item_round_key"),
+        CheckConstraint("decision IN ('approve', 'reject')", name="catalog_reviews_decision_check"),
+        CheckConstraint("decision <> 'reject' OR length(btrim(notes)) > 0", name="catalog_reviews_reject_notes_check"),
+    )
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    catalog_item_id: Mapped[str] = mapped_column(Text, ForeignKey("catalog_items.id"))
+    qa_round: Mapped[int] = mapped_column(Integer)
+    decision: Mapped[str] = mapped_column(Text)
+    notes: Mapped[str] = mapped_column(Text)
+    reviewed_by: Mapped[str] = mapped_column(Text, ForeignKey("users.id"))
+    reviewed_at: Mapped[datetime] = mapped_column(DateTime(timezone=False))

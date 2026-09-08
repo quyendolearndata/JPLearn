@@ -11,7 +11,6 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install
-      - run: pnpm --filter @jplearn/api exec prisma generate
       - run: pnpm test:guard
       - run: pnpm --filter @jplearn/domain test
       - run: pnpm --filter @jplearn/web test
@@ -55,6 +54,7 @@ jobs:
       # Alembic owns DDL (ADR-004); pytest applies migrations through pg_harness.
       - run: PYTHONPATH=src uv run python -m jplearn_api.entrypoints.cli.migrate upgrade
         working-directory: apps/api-python
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: uv run pytest
         working-directory: apps/api-python
       - run: PYTHONPATH=src uv run python -m jplearn_api.tooling.openapi_diff

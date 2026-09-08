@@ -123,3 +123,12 @@ Phạm vi: **nền tảng**. Yêu cầu học đầy đủ đánh dấu `Deferre
 > **R0 — Engineering decision, 2026-09-07; local verification 2026-09-08:** Hợp đồng sửa đã có kiểm chứng local. Đây không phải chữ ký BA/CTO/Pedagogy/Ops hoặc cho phép production.
 
 NFR-RET-001 hiện giữ nguyên raw playback 90 ngày và aggregate vĩnh viễn. Đề xuất retention khác chưa được duyệt; không chạy destructive retention theo mốc đề xuất. Xóa history theo yêu cầu người dùng là use case riêng.
+
+## CMS clarification — ADR-008 (integrated 2026-09-08)
+
+FR-CAT-005 includes staff list/detail and editing draft metadata. FR-CMS-002 requires a
+persisted approve/reject decision for the current submission, with internal rejection notes.
+Only Admin publishes; Teacher/Admin may act as LevelQA under existing roles. Metadata/media
+changes require draft and a fresh submission/review before republish. See ADR-008 for acceptance.
+
+Integration retains mandatory revision-based PATCH concurrency control and merges both migration histories at `0019_merge_cms_reviews`.

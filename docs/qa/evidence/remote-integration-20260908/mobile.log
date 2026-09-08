@@ -1,0 +1,16 @@
+
+> @jplearn/mobile@1.0.0 test /private/tmp/jplearn-integrate-main-20260908/apps/mobile
+> jest
+
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151001: [0mIf you have issues related to imports, you should consider setting `esModuleInterop` to `true` in your TypeScript configuration file (usually `tsconfig.json`). See https://blogs.msdn.microsoft.com/typescript/2018/01/31/announcing-typescript-2-7/#easier-ecmascript-module-interoperability for more information.
+PASS src/pickClipSource.test.ts
+PASS src/deviceClass.test.ts
+PASS src/playbackTracker.test.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        1.432 s
+Ran all test suites.

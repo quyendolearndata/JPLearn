@@ -818,35 +818,46 @@ paths:
       security:
       - bearerAuth: []
       parameters:
-      - in: query
-        name: status
+      - name: status
+        in: query
         required: false
         schema:
-          type: string
-          nullable: true
-      - in: query
-        name: ci_level
+          anyOf:
+          - enum:
+            - draft
+            - level_qa
+            - published
+            - archived
+            type: string
+          - type: 'null'
+          title: Status
+      - name: ci_level
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: integer
+            maximum: 4
+            minimum: 0
+          - type: 'null'
+          title: Ci Level
+      - name: limit
+        in: query
         required: false
         schema:
           type: integer
-          minimum: 0
-          maximum: 4
-          nullable: true
-      - in: query
-        name: limit
-        required: false
-        schema:
-          type: integer
-          minimum: 1
           maximum: 100
+          minimum: 1
           default: 50
-      - in: query
-        name: offset
+          title: Limit
+      - name: offset
+        in: query
         required: false
         schema:
           type: integer
           minimum: 0
           default: 0
+          title: Offset
       responses:
         '200':
           content:
@@ -903,10 +914,11 @@ paths:
           format: uuid
       responses:
         '200':
+          description: Successful Response
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalogItemStaff'
+                $ref: '#/components/schemas/CatalogItemDetail'
         '403':
           description: Not teacher or admin
           content:
@@ -3699,6 +3711,56 @@ paths:
       x-jplearn-fr:
       - FR-STAFF-001
       - FR-AI-001
+  /staff/catalog/{id}/review:
+    post:
+      tags:
+      - CMS
+      summary: Review Catalog Item
+      operationId: reviewCatalogItem
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalogReviewBody'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogItemStaff'
+        '400':
+          description: Invalid review or workflow state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
+          description: Not teacher or admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Catalog item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-CMS-002
+      - NFR-SEC-002
 components:
   parameters:
     RequestIdHeader:
@@ -3925,66 +3987,122 @@ components:
         title_internal:
           type: string
     CatalogItemStaff:
-      allOf:
-      - $ref: '#/components/schemas/CatalogItemWrite'
-      - type: object
-        required:
-        - id
-        - status
-        - has_l1_translation
-        properties:
-          id:
-            type: string
-            format: uuid
-          status:
-            type: string
-            enum:
-            - draft
-            - level_qa
-            - published
-            - archived
-          has_l1_translation:
-            type: boolean
-            enum:
-            - false
-          revision:
-            type: integer
-            default: 1
-    CatalogItemPatch:
-      type: object
-      required:
-      - revision
       properties:
-        revision:
-          type: integer
+        id:
+          type: string
+          format: uuid
+          title: Id
         topic_id:
           type: string
-          nullable: true
+          title: Topic Id
         ci_level:
           type: integer
-          minimum: 0
-          maximum: 4
-          nullable: true
+          title: Ci Level
         duration_seconds:
           type: integer
-          minimum: 1
-          nullable: true
+          title: Duration Seconds
         media_type:
           type: string
           enum:
           - video
           - audio
-          nullable: true
+          title: Media Type
         visual_support:
           type: string
           enum:
           - high
           - medium
           - low
-          nullable: true
+          title: Visual Support
         title_internal:
           type: string
-          nullable: true
+          title: Title Internal
+        has_l1_translation:
+          type: boolean
+          const: false
+          title: Has L1 Translation
+        status:
+          type: string
+          enum:
+          - draft
+          - level_qa
+          - published
+          - archived
+          title: Status
+        revision:
+          type: integer
+          title: Revision
+          default: 1
+        qa_round:
+          type: integer
+          title: Qa Round
+          default: 0
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - topic_id
+      - ci_level
+      - duration_seconds
+      - media_type
+      - visual_support
+      - title_internal
+      - has_l1_translation
+      - status
+      title: CatalogItemStaff
+    CatalogItemPatch:
+      properties:
+        revision:
+          type: integer
+          title: Revision
+        topic_id:
+          anyOf:
+          - type: string
+            minLength: 1
+          - type: 'null'
+          title: Topic Id
+        ci_level:
+          anyOf:
+          - type: integer
+            maximum: 4.0
+            minimum: 0.0
+          - type: 'null'
+          title: Ci Level
+        duration_seconds:
+          anyOf:
+          - type: integer
+            minimum: 1.0
+          - type: 'null'
+          title: Duration Seconds
+        media_type:
+          anyOf:
+          - type: string
+            enum:
+            - video
+            - audio
+          - type: 'null'
+          title: Media Type
+        visual_support:
+          anyOf:
+          - type: string
+            enum:
+            - high
+            - medium
+            - low
+          - type: 'null'
+          title: Visual Support
+        title_internal:
+          anyOf:
+          - type: string
+            maxLength: 500
+            minLength: 1
+          - type: 'null'
+          title: Title Internal
+      additionalProperties: false
+      type: object
+      required:
+      - revision
+      title: CatalogItemPatch
     CatalogStaffList:
       type: object
       required:
@@ -5681,7 +5799,10 @@ components:
       title: LearnerActivityResponsePublic
     LearningPolicyPublic:
       type: object
-      required: [daily_goal_minutes, timezone, effective_at]
+      required:
+      - daily_goal_minutes
+      - timezone
+      - effective_at
       properties:
         daily_goal_minutes:
           type: integer
@@ -6432,7 +6553,8 @@ components:
           maximum: 86400
           minimum: 0
           deprecated: true
-          description: Compatibility hint only; quota is estimated from server-observed media duration.
+          description: Compatibility hint only; quota is estimated from server-observed
+            media duration.
         estimated_cost_micros:
           type: integer
           title: Estimated Cost Micros
@@ -6440,7 +6562,8 @@ components:
           maximum: 1000000000
           minimum: 0
           deprecated: true
-          description: Compatibility hint only; quota uses the versioned server pricing policy.
+          description: Compatibility hint only; quota uses the versioned server pricing
+            policy.
     ApplyContentJobRequest:
       title: ApplyContentJobRequest
       type: object
@@ -6526,3 +6649,131 @@ components:
           type: string
           format: date-time
           title: Updated At
+    CatalogReviewBody:
+      properties:
+        decision:
+          type: string
+          enum:
+          - approve
+          - reject
+          title: Decision
+        notes:
+          type: string
+          maxLength: 2000
+          title: Notes
+          default: ''
+      additionalProperties: false
+      type: object
+      required:
+      - decision
+      title: CatalogReviewBody
+    CatalogReviewPublic:
+      properties:
+        id:
+          type: string
+          title: Id
+        qa_round:
+          type: integer
+          title: Qa Round
+        decision:
+          type: string
+          enum:
+          - approve
+          - reject
+          title: Decision
+        notes:
+          type: string
+          title: Notes
+        reviewed_by:
+          type: string
+          title: Reviewed By
+        reviewed_at:
+          type: string
+          format: date-time
+          title: Reviewed At
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - qa_round
+      - decision
+      - notes
+      - reviewed_by
+      - reviewed_at
+      title: CatalogReviewPublic
+    CatalogItemDetail:
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        topic_id:
+          type: string
+          title: Topic Id
+        ci_level:
+          type: integer
+          title: Ci Level
+        duration_seconds:
+          type: integer
+          title: Duration Seconds
+        media_type:
+          type: string
+          enum:
+          - video
+          - audio
+          title: Media Type
+        visual_support:
+          type: string
+          enum:
+          - high
+          - medium
+          - low
+          title: Visual Support
+        title_internal:
+          type: string
+          title: Title Internal
+        has_l1_translation:
+          type: boolean
+          const: false
+          title: Has L1 Translation
+        status:
+          type: string
+          enum:
+          - draft
+          - level_qa
+          - published
+          - archived
+          title: Status
+        revision:
+          type: integer
+          title: Revision
+          default: 1
+        qa_round:
+          type: integer
+          title: Qa Round
+        media:
+          items:
+            $ref: '#/components/schemas/MediaAssetStaff'
+          type: array
+          title: Media
+        reviews:
+          items:
+            $ref: '#/components/schemas/CatalogReviewPublic'
+          type: array
+          title: Reviews
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - topic_id
+      - ci_level
+      - duration_seconds
+      - media_type
+      - visual_support
+      - title_internal
+      - has_l1_translation
+      - status
+      - qa_round
+      - media
+      - reviews
+      title: CatalogItemDetail

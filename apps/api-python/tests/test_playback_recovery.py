@@ -39,7 +39,7 @@ async def test_start_replay_final_credit_and_terminal_retry(client_factory, post
         changed = await client.post('/playbacks', headers=headers, json={**payload,'device_id':'other'})
         assert changed.status_code == 409
         pid = first.json()['playback_id']
-        await conn.execute("UPDATE playbacks SET created_at=now()-interval '5 seconds', last_server_time=now()-interval '5 seconds' WHERE id=$1",pid)
+        await conn.execute("UPDATE playbacks SET created_at=$2, last_server_time=$2 WHERE id=$1", pid, (datetime.now(timezone.utc)-timedelta(seconds=5)).replace(tzinfo=None))
         final = {'final_seq':1,'final_position_ms':5000,'final_duration_ms':60000,
             'final_client_cumulative_active_ms':5000,'final_client_epoch':first.json()['epoch']}
         ended = await client.post(f'/playbacks/{pid}/end', headers=headers, json=final)

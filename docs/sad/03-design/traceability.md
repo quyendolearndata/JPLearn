@@ -102,3 +102,13 @@ Lịch sử closeout `fd838d2` (217 / 21+21 / 7) giữ nguyên.
 ### R0 engineering amendment — 2026-09-07
 
 Playback/goal/history rows reference the remediation contract and local engineering evidence. T-WAT-001/002 cover final checkpoint, lease expiry, takeover and receipt retry; T-GOL-001 covers current/pending policy, midnight/DST, active-only và streak; T-HIS-001 covers late packets and deletion cutoff; T-SCN-001 covers staff-only transcript and separately approved learner excerpt. PostgreSQL concurrency, Web E2E và Mobile unit/typecheck đã đạt; thiết bị thật/staging/pilot vẫn thuộc rollout gate. NFR-RET-001 is unchanged pending a separate BA/Ops policy decision.
+
+## CMS completion — ADR-008
+
+| Req | UC | API / model | Tests |
+|---|---|---|---|
+| FR-CAT-005 | UC-T02 | GET staff catalog/list/detail; PATCH draft | test_cms_workflow.py |
+| FR-CMS-002 | UC-T04/Q01/Q02/A01 | POST review; catalog_reviews; qa_round; publish approval gate | test_cms_workflow.py |
+| FR-CMS-001, NFR-SEC-002 | UC-T03 | Draft-only upload/HLS; staff authorization | test_cms_workflow.py |
+
+Integration retains mandatory revision-based PATCH concurrency control and merges both migration histories at `0019_merge_cms_reviews`.

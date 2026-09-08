@@ -64,6 +64,8 @@ function StaffItemDetailContent() {
   const [visualSupport, setVisualSupport] = useState<"high" | "medium" | "low">("high");
   const [titleInternal, setTitleInternal] = useState("");
 
+  const [reviewNotes, setReviewNotes] = useState("");
+
   // Media upload state
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadingMedia, setUploadingMedia] = useState(false);
@@ -276,6 +278,22 @@ function StaffItemDetailContent() {
     }
   };
 
+  const handleReview = async (decision: "approve" | "reject") => {
+    if (!item || actionLoading) return;
+    setActionLoading(true);
+    setErrorMsg(null);
+    try {
+      const res = await api(`/staff/catalog/${item.id}/review`, {
+        method: "POST", body: JSON.stringify({ decision, notes: reviewNotes }),
+      });
+      if (!res.ok) { setErrorMsg((await parseApiError(res)).message); return; }
+      setReviewNotes("");
+      await fetchItem();
+      setSuccessMsg(decision === "approve" ? "Đã ghi nhận duyệt QA." : "Đã trả về bản nháp.");
+    } catch { setErrorMsg("Không ghi nhận được quyết định. Tải lại để kiểm tra trước khi thử lại."); }
+    finally { setActionLoading(false); }
+  };
+
   // Admin Unpublish (back to draft)
   const handleUnpublish = async () => {
     if (!item) return;
@@ -415,6 +433,22 @@ function StaffItemDetailContent() {
           </Link>
         </div>
       </div>
+
+      <section aria-label="Lịch sử kiểm duyệt QA">
+        <h2>Kiểm duyệt QA — vòng {item.qa_round}</h2>
+        {isLevelQa && !item.reviews?.some(r => r.qa_round === item.qa_round) && (
+          <div>
+            <label htmlFor="qa-review-notes">Ghi chú kiểm duyệt</label>
+            <textarea id="qa-review-notes" value={reviewNotes} maxLength={2000} onChange={e => setReviewNotes(e.target.value)} />
+            <button type="button" disabled={actionLoading} onClick={() => void handleReview("approve")}>Duyệt QA</button>
+            <button type="button" disabled={actionLoading || !reviewNotes.trim()} onClick={() => void handleReview("reject")}>Yêu cầu sửa</button>
+          </div>
+        )}
+        <ul>{item.reviews?.map(review => <li key={review.id}>
+          Vòng {review.qa_round}: {review.decision === "approve" ? "Đã duyệt" : "Yêu cầu sửa"} — {review.notes}
+          <span> Người duyệt: {review.reviewed_by}; {review.reviewed_at}</span>
+        </li>)}</ul>
+      </section>
 
       {/* Alerts */}
       {errorMsg && (

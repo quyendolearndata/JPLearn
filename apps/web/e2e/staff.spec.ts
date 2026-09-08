@@ -74,6 +74,9 @@ test.describe("Staff CMS T-CMS-E2E-001", () => {
     await admin.goto("/staff");
     await expect(admin.getByRole("heading", { name: "Quản trị nội dung CI" })).toBeVisible();
     await admin.goto(`/staff/${itemId}`);
+    await admin.getByRole("button", { name: "Duyệt QA", exact: true }).click();
+    await expect(admin.getByText("Đã ghi nhận duyệt QA.", { exact: true })).toBeVisible();
+    await admin.reload();
     await admin.getByRole("button", { name: "Xuất bản bài học" }).click();
     await expect(admin.getByText("Đã xuất bản (published)", { exact: true })).toBeVisible();
     await admin.reload();

@@ -17,8 +17,8 @@ from jplearn_api.application.ports.repositories import (
     UpdateDraftResultStatus,
 )
 from jplearn_api.application.read_models import CatalogItemPublicDTO
-from jplearn_api.domain.catalog import CatalogItem as DomainCatalogItem, MediaRef
-from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem, ContentVersion as OrmContentVersion, Topic
+from jplearn_api.domain.catalog import CatalogItem as DomainCatalogItem, MediaRef, CatalogReview
+from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem, ContentVersion as OrmContentVersion, Topic, CatalogReview as OrmCatalogReview
 from jplearn_api.settings import Settings
 from jplearn_api.adapters.security.signed_url import sign_hls_url, sign_media_url
 
@@ -51,6 +51,8 @@ def _to_domain(orm_item: OrmCatalogItem) -> DomainCatalogItem:
         spoken_language=orm_item.spoken_language,
         status=orm_item.status,
         media=media_refs,
+        qa_round=orm_item.qa_round,
+        reviews=[CatalogReview(r.id, r.qa_round, r.decision, r.notes, r.reviewed_by, r.reviewed_at) for r in orm_item.reviews],
     )
 
 
@@ -63,7 +65,7 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
     async def get_by_id(self, item_id: str) -> DomainCatalogItem | None:
         result = await self._session.execute(
             select(OrmCatalogItem)
-            .options(selectinload(OrmCatalogItem.media))
+            .options(selectinload(OrmCatalogItem.media), selectinload(OrmCatalogItem.reviews))
             .where(OrmCatalogItem.id == item_id),
         )
         orm_item = result.scalar_one_or_none()
@@ -72,7 +74,7 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
     async def get_by_id_for_update(self, item_id: str) -> DomainCatalogItem | None:
         result = await self._session.execute(
             select(OrmCatalogItem)
-            .options(selectinload(OrmCatalogItem.media))
+            .options(selectinload(OrmCatalogItem.media), selectinload(OrmCatalogItem.reviews))
             .where(OrmCatalogItem.id == item_id)
             .with_for_update(),
         )
@@ -120,7 +122,7 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
         orm_item = result.scalar_one_or_none()
         if orm_item is not None:
             await self._session.flush()
-            await self._session.refresh(orm_item, ["media"])
+            await self._session.refresh(orm_item, ["media", "reviews"])
             return UpdateDraftResult(
                 status=UpdateDraftResultStatus.UPDATED,
                 item=_to_domain(orm_item),
@@ -156,7 +158,7 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
 
     async def update(self, item: DomainCatalogItem) -> None:
         result = await self._session.execute(
-            select(OrmCatalogItem).where(OrmCatalogItem.id == item.id),
+            select(OrmCatalogItem).options(selectinload(OrmCatalogItem.reviews)).where(OrmCatalogItem.id == item.id),
         )
         orm_item = result.scalar_one_or_none()
         if orm_item is not None:
@@ -169,6 +171,15 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
             orm_item.status = item.status
             orm_item.has_l1_translation = item.has_l1_translation
             orm_item.revision = item.revision
+            orm_item.qa_round = item.qa_round
+            existing_ids = {r.id for r in orm_item.reviews}
+            for review in item.reviews:
+                if review.id not in existing_ids:
+                    self._session.add(OrmCatalogReview(
+                        id=review.id, catalog_item_id=item.id, qa_round=review.qa_round,
+                        decision=review.decision, notes=review.notes,
+                        reviewed_by=review.reviewed_by, reviewed_at=review.reviewed_at,
+                    ))
             await self._session.flush()
 
     async def list_staff(
@@ -180,8 +191,8 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
     ) -> list[DomainCatalogItem]:
         stmt = (
             select(OrmCatalogItem)
-            .options(selectinload(OrmCatalogItem.media))
-            .order_by(OrmCatalogItem.id.desc())
+            .options(selectinload(OrmCatalogItem.media), selectinload(OrmCatalogItem.reviews))
+            .order_by(OrmCatalogItem.id.asc())
         )
         if status is not None:
             stmt = stmt.where(OrmCatalogItem.status == status)
@@ -204,7 +215,7 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
     ) -> list[DomainCatalogItem]:
         stmt = (
             select(OrmCatalogItem)
-            .options(selectinload(OrmCatalogItem.media))
+            .options(selectinload(OrmCatalogItem.media), selectinload(OrmCatalogItem.reviews))
             .where(OrmCatalogItem.status == "published")
             .order_by(OrmCatalogItem.id.asc())
         )
@@ -236,7 +247,7 @@ class SqlAlchemyCatalogQueryAdapter(CatalogQueryPort):
     async def list_published(self, ci_level: int | None) -> list[CatalogItemPublicDTO]:
         query = (
             select(OrmCatalogItem)
-            .options(selectinload(OrmCatalogItem.media))
+            .options(selectinload(OrmCatalogItem.media), selectinload(OrmCatalogItem.reviews))
             .where(OrmCatalogItem.status == "published")
             .order_by(OrmCatalogItem.id.asc())
         )

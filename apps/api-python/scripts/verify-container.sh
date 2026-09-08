@@ -185,6 +185,10 @@ echo "✓ Seed completed successfully"
 echo ""
 echo "--- [6/7] Verifying Schema Divergence Detection & Live Adoption ---"
 
+# Exercise legacy adoption before applying the CMS revision again.
+docker run --rm --network "$NETWORK_NAME" -e DATABASE_URL="$INTERNAL_DB_URL" \
+  -e ENVIRONMENT=test "$IMAGE_TAG" jplearn-migrate downgrade 0001_prisma_baseline >/dev/null
+
 # 6a: Test schema divergence fails closed on stamp
 docker exec "$PG_CONTAINER" psql -U jplearn -d jplearn_test -c "CREATE INDEX idx_divergence_test ON users (password_hash);" >/dev/null
 docker exec "$PG_CONTAINER" psql -U jplearn -d jplearn_test -c "DROP TABLE alembic_version;" >/dev/null

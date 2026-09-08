@@ -42,10 +42,12 @@ def _create_item(live_client, token: str, **overrides):
 
 
 def _publish(live_client, token: str, item_id: str):
+    from helpers import approve_catalog
     assert live_client.post(
         f"/staff/catalog/{item_id}/submit-qa",
         headers={"Authorization": f"Bearer {token}"},
     ).status_code == 200
+    approve_catalog(live_client, token, item_id)
     assert live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {token}"},

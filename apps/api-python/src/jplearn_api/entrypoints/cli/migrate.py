@@ -62,8 +62,11 @@ def load_baseline_schema(
             raise RuntimeError(f"Malformed baseline schema at {p}: {err}") from err
 
     filename = (
-        "adr-004-schema-head-0018.json"
-        if target_revision in ("head", "0018_hls_bundle_integrity")
+        "adr-004-schema-head-0019.json"
+        if target_revision in ("head", "0019_merge_cms_reviews")
+        else "adr-006-schema-baseline.json" if target_revision == "0002_cms_reviews"
+        else "adr-004-schema-head-0018.json"
+        if target_revision == "0018_hls_bundle_integrity"
         else
         "adr-004-schema-head-0017.json"
         if target_revision == "0017_activity_policy_streak"

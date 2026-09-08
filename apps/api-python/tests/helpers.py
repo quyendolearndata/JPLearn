@@ -82,3 +82,12 @@ def insert_media(client: TestClient, catalog_item_id: str) -> str:
 
     _run(_insert())
     return asset_id
+
+
+def approve_catalog(client: TestClient, token: str, item_id: str) -> None:
+    response = client.post(
+        f"/staff/catalog/{item_id}/review",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"decision": "approve"},
+    )
+    assert response.status_code == 200, response.text

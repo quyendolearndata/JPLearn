@@ -45,6 +45,7 @@ def _to_staff_dto(item: CatalogItem) -> CatalogItemStaffDTO:
         has_l1_translation=item.has_l1_translation,
         status=item.status,
         revision=item.revision,
+        qa_round=item.qa_round,
     )
 
 
@@ -183,6 +184,8 @@ async def handle_publish(
                     f"Cannot publish: media file missing from storage for asset {asset.id} (FR-CAT-002)",
                 )
 
+        if not any(r.qa_round == item.qa_round and r.decision == "approve" for r in item.reviews):
+            raise InvalidDomainStateError("Current QA round must be approved before publishing")
         item.publish()
         await uow.catalog.update(item)
         draft_version = await uow.content.get_current_draft_by_catalog_item_id(cmd.item_id)
@@ -320,3 +323,31 @@ async def handle_update_draft_catalog_item(
         await uow.commit()
 
     return _to_staff_dto(result.item)
+
+
+async def handle_review_catalog(item_id: str, decision: str, notes: str, reviewer_id: str, uow: AsyncUnitOfWork) -> CatalogItemStaffDTO:
+    from datetime import datetime, UTC
+    from jplearn_api.domain.catalog import CatalogReview
+
+    async with uow:
+        item = await uow.catalog.get_by_id_for_update(item_id)
+        if item is None:
+            raise EntityNotFoundError("Catalog item not found")
+        if item.status != "level_qa":
+            raise InvalidDomainStateError("Only level_qa items can be reviewed")
+        if any(r.qa_round == item.qa_round for r in item.reviews):
+            raise InvalidDomainStateError("This QA round has already been reviewed")
+        if decision not in ("approve", "reject") or (decision == "reject" and not notes.strip()):
+            raise InvalidDomainStateError("Rejection requires notes")
+        item.reviews.append(CatalogReview(str(uuid4()), item.qa_round, decision, notes.strip(), reviewer_id, datetime.now(UTC).replace(tzinfo=None)))
+        if decision == "reject":
+            item.return_to_draft()
+            version = await uow.content.get_current_draft_by_catalog_item_id(item_id)
+            if version is not None:
+                version.unfreeze_return_to_draft()
+                await uow.content.update(version)
+        else:
+            item.revision += 1
+        await uow.catalog.update(item)
+        await uow.commit()
+    return _to_staff_dto(item)

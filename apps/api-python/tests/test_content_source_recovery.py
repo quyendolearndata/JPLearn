@@ -22,6 +22,8 @@ async def test_qa_pins_source_and_learner_never_gets_staff_transcript(client_fac
         assert qa.status_code==200,qa.text
         register=await client.post(f"/staff/media/{media.json()['id']}/hls",headers=headers)
         assert register.status_code==400,register.text
+        approval=await client.post(f'/staff/catalog/{item}/review',headers=headers,json={'decision':'approve'})
+        assert approval.status_code==200,approval.text
         published=await client.post(f'/staff/catalog/{item}/publish',headers=headers)
         assert published.status_code==200,published.text
         learner=await client.get(f'/catalog/{item}/content',headers=headers)

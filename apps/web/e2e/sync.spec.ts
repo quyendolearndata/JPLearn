@@ -29,8 +29,7 @@ test("UC-L06 cùng user hai client: cùng catalog published, cùng minutes_compr
   await expect(pageA).toHaveURL("/");
   await pageA.goto("/catalog");
   await expect(pageA.locator("article.catalog-card").first()).toBeVisible();
-  const itemsA = (await pageA.locator("article.catalog-card h3").allInnerTexts()).sort();
-  expect(itemsA.length).toBeGreaterThan(0);
+  expect(await pageA.locator("article.catalog-card").count()).toBeGreaterThan(0);
 
   await pageA.goto("/progress");
   await expect(pageA.getByText("0 phút · cấp 0")).toBeVisible();
@@ -46,8 +45,13 @@ test("UC-L06 cùng user hai client: cùng catalog published, cùng minutes_compr
   await expect(pageB).toHaveURL("/");
   await pageB.goto("/catalog");
   await expect(pageB.locator("article.catalog-card").first()).toBeVisible();
-  const itemsB = (await pageB.locator("article.catalog-card h3").allInnerTexts()).sort();
-  expect(itemsB).toEqual(itemsA);
+  // CMS tests can publish between these visits. Compare fresh snapshots by item URL.
+  await expect(async () => {
+    await Promise.all([pageA.goto("/catalog"), pageB.goto("/catalog")]);
+    await Promise.all([pageA.locator("article.catalog-card").first().waitFor(), pageB.locator("article.catalog-card").first().waitFor()]);
+    const read = (page: import("@playwright/test").Page) => page.locator("article.catalog-card a").evaluateAll(links => links.map(link => link.getAttribute("href")).sort());
+    expect(await read(pageB)).toEqual(await read(pageA));
+  }).toPass({ timeout: 10_000 });
 
   await pageB.goto("/progress");
   await expect(pageB.getByText("0 phút · cấp 0")).toBeVisible();

@@ -48,6 +48,7 @@ async function createPublishedCompanion(
   });
   expect(uploaded.ok()).toBeTruthy();
   expect((await request.post(`${apiRoot}/staff/catalog/${itemId}/submit-qa`, { headers })).ok()).toBeTruthy();
+  expect((await request.post(`${apiRoot}/staff/catalog/${itemId}/review`, { headers, data: { decision: "approve" } })).ok()).toBeTruthy();
   expect((await request.post(`${apiRoot}/staff/catalog/${itemId}/publish`, { headers })).ok()).toBeTruthy();
   return itemId;
 }

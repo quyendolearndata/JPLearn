@@ -1,4 +1,7 @@
 from dataclasses import asdict
+from typing import Literal
+from jplearn_api.application.handlers.catalog import handle_review_catalog
+from jplearn_api.entrypoints.http.schemas import CatalogReviewBody, CatalogItemDetail
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -29,7 +32,7 @@ from jplearn_api.application.queries import (
     SearchScenesQuery,
 )
 from jplearn_api.application.read_models import UserDTO
-from jplearn_api.bootstrap import create_catalog_query, create_catalog_repository, create_uow
+from jplearn_api.bootstrap import create_catalog_query, create_catalog_repository, create_uow, create_media_signer
 from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_app_settings, get_session, get_storage
 from jplearn_api.domain.errors import DomainError, EntityNotFoundError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
@@ -165,7 +168,7 @@ async def list_staff_catalog(
     request: Request,
     session: AsyncSession = Depends(get_session),
     _user: UserDTO = Depends(require_roles("teacher", "admin")),
-    status: str | None = Query(default=None),
+    status: Literal["draft", "level_qa", "published", "archived"] | None = Query(default=None),
     ci_level: int | None = Query(default=None, ge=0, le=4),
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
@@ -182,7 +185,7 @@ async def list_staff_catalog(
 
 @router.get(
     "/staff/catalog/{id}",
-    response_model=CatalogItemStaff,
+    response_model=CatalogItemDetail,
     operation_id="getStaffCatalogItem",
     tags=["CMS"],
     openapi_extra={"x-jplearn-fr": ["FR-CAT-005"]},
@@ -197,12 +200,22 @@ async def get_staff_catalog_item(
     session: AsyncSession = Depends(get_session),
     _user: UserDTO = Depends(require_roles("teacher", "admin")),
 ) -> CatalogItemStaff:
-    repo = create_catalog_repository(session)
-    try:
-        dto = await handle_get_staff_catalog_item(GetStaffCatalogItemQuery(item_id=id), repo)
-    except EntityNotFoundError as exc:
-        raise HTTPException(status_code=404, detail="Catalog item not found") from exc
-    return CatalogItemStaff(**asdict(dto))
+    from jplearn_api.application.handlers.catalog import _to_staff_dto
+    from jplearn_api.entrypoints.http.datetime_adapt import to_json_z
+    signer = create_media_signer(request.app.state.settings)
+    async with create_uow(session) as uow:
+        item = await uow.catalog.get_by_id_for_update(id)
+        if item is None:
+            raise HTTPException(status_code=404, detail="Catalog item not found")
+        return CatalogItemDetail(
+            **asdict(_to_staff_dto(item)),
+            reviews=[dict(asdict(r), reviewed_at=to_json_z(r.reviewed_at)) for r in item.reviews],
+            media=[dict(id=m.id, catalog_item_id=id, storage_key=m.storage_key,
+                        playback_url=signer.sign_playback_url(m.id),
+                        hls_url=signer.sign_hls_url(m.id) if m.hls_url else None, mime=m.mime,
+                        measured_duration_ms=m.measured_duration_ms, source_sha256=m.source_sha256,
+                        hls_bundle_sha256=m.hls_bundle_sha256) for m in item.media],
+        )
 
 
 @router.patch(
@@ -354,4 +367,18 @@ async def unpublish_catalog_item(
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
 
+    return CatalogItemStaff(**asdict(dto))
+
+
+@router.post("/staff/catalog/{id}/review", response_model=CatalogItemStaff,
+    operation_id="reviewCatalogItem", tags=["CMS"],
+    openapi_extra={"x-jplearn-fr": ["FR-CMS-002", "NFR-SEC-002"]},
+    responses={400: {"description": "Invalid review or workflow state"}, 403: {"description": "Not teacher or admin"}, 404: {"description": "Catalog item not found"}})
+async def review_catalog_item(id: UUIDPath, body: CatalogReviewBody,
+    session: AsyncSession = Depends(get_session),
+    user: UserDTO = Depends(require_roles("teacher", "admin"))) -> CatalogItemStaff:
+    try:
+        dto = await handle_review_catalog(id, body.decision, body.notes, user.id, create_uow(session))
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
     return CatalogItemStaff(**asdict(dto))

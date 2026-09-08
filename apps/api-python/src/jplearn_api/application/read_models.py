@@ -30,6 +30,7 @@ class CatalogItemStaffDTO:
     has_l1_translation: bool
     status: str
     revision: int = 1
+    qa_round: int = 0
 
 
 

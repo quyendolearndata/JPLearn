@@ -876,6 +876,9 @@ async def test_catalog_use_cases_in_memory():
     # Stage media to storage
     storage.keys.add("m1.bin")
 
+    from jplearn_api.application.handlers.catalog import handle_review_catalog
+    await handle_review_catalog(item_dto.id, "approve", "Reviewed fixture", "teacher", uow)
+
     # 6. Publish succeeds
     pub_dto = await handle_publish(PublishCatalogItemCommand(item_id=item_dto.id), uow, storage)
     assert pub_dto.status == "published"

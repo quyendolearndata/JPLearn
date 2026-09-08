@@ -619,3 +619,12 @@ Không vẽ `UC-L11`…`UC-L13` trên sơ đồ v1.
 | FR-NEG-* | Không có UC dương; QA kiểm vắng feature |
 
 > R0 engineering amendment 2026-09-07; local verification 2026-09-08: contract trên đã có API/Web/Mobile engineering evidence nhưng không thay chữ ký BA/CTO/Pedagogy/Ops hoặc cho phép production. Full transcript chỉ staff; learner scene metadata không full transcript, search chỉ excerpt Nhật đã duyệt.
+
+## UC-T02 / Q02 completion — ADR-008
+
+Teacher/Admin can retrieve the staff list and item detail, edit a draft, and submit for QA.
+Every submission increments the QA round. A review records reviewer, time, verdict and notes;
+reject requires notes and returns to draft. Approval is valid only for that round.
+Media and metadata are immutable outside draft. Admin publish requires the current approval.
+
+Integration retains mandatory revision-based PATCH concurrency control and merges both migration histories at `0019_merge_cms_reviews`.
