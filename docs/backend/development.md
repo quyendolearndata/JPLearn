@@ -102,7 +102,10 @@ uv run pytest tests/test_openapi_diff.py tests/test_openapi_mutation_suite.py -q
 
 Pytest tự dựng DB `jplearn_test` cô lập. Nếu truyền `JPLEARN_TEST_DATABASE_URL`,
 pathname **phải** là `/jplearn_test` và DB phải dành riêng cho test; tên đúng không
-đảm bảo dữ liệu an toàn nếu bạn trỏ nhầm instance. Không truyền URL DB dev/staging.
+đảm bảo dữ liệu an toàn nếu bạn trỏ nhầm instance. Harness xác minh kết nối SQL
+thật bằng chính URL test, gồm credentials và database, trước khi tái sử dụng DB;
+một TCP port đang mở nhưng sai tài khoản không được xem là DB test hợp lệ. Không
+truyền URL DB dev/staging.
 
 Từ repo root, test tích hợp toàn stack:
 
