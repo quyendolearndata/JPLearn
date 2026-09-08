@@ -59,6 +59,8 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | FR-LRN-002…004 | UC-L11–12 | chưa | T-P5-hold |
 | FR-SCN-001 | UC-T06, UC-T09, UC-L14 | content_versions, scenes + PUT /staff/catalog/{id}/content, GET /catalog/{id}/content | T-SCN-001 scene breakdown & transcript, T-SCN-CAS concurrency |
 | FR-SER-001 | UC-T07 | series, episodes + POST/PATCH /staff/series | T-SER-001 series ordering & lookup |
+| FR-JPA-001 | UC-T10 | S-STAFF-STUDIO; GET/PUT transcript + submit-qa/approve/return-to-draft | T-JPA transcript revision, provenance, CAS và approval projection |
+| FR-AI-001 | UC-T08 | S-STAFF-STUDIO/JOBS/AI-USAGE; content jobs + usage ledger | T-AI job lifecycle, source drift, quota và usage summary |
 | FR-RSM-001 | UC-L16 | playback checkpoints + GET /me/resume/{catalog_item_id} | T-RSM-001 position resume cross-device |
 | FR-WAT-001 | UC-L17, UC-L24 | playbacks + PUT /playbacks/{id}/checkpoints/{seq}; POST start/end; cumulative15s/lease45s | T-WAT-001 active watch accounting, T-WAT-002 lease takeover |
 | FR-HIS-001 | UC-L19 | GET/DELETE /me/watch-history + deletion job/cutoff/tombstone | T-HIS-001 history cursor pagination & clear |
@@ -73,6 +75,8 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | NFR-MIG-001 | — | Alembic migration & Prisma adoption | T-MIG-002-ADOPT |
 
 Lỗ = hàng FR nền tảng không có UC hoặc không có thiết kế. Cổng nền tảng 2026-08-25: exception HLS player / native UC-L06 / alert 5xx còn mở.
+
+Contract gap: các route `content-reports` hiện tái sử dụng `FR-RPT-001`, `UC-L24` và `UC-T09`, trong khi SRS/use-case gán các ID này lần lượt cho thống kê thời gian học, single-playback lease và freeze content khi submit QA. Hai màn S-MY-REPORTS/S-STAFF-REPORTS đã bám đúng API hiện hành nhưng chưa được coi là đã trace tới requirement cho đến khi BA cấp ID riêng.
 
 ### Ghi chú scenario recovery follow-up (2026-09-06)
 

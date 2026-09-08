@@ -393,6 +393,10 @@ function StaffItemDetailContent() {
           </div>
         </div>
 
+        <Link href={`/staff/${item.id}/studio`} className="btn btn-secondary text-sm">
+          Mở Scenes & Transcript
+        </Link>
+
         {/* Action button bar */}
         <div className="flex flex-wrap items-center gap-2">
           {isDraft && (

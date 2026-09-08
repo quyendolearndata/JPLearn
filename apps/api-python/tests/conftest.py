@@ -25,6 +25,7 @@ def _settings(database_url: str | None = None) -> Settings:
         api_public_url=os.environ.get("API_PUBLIC_URL"),
         storage_root=os.environ.get("STORAGE_ROOT"),
         openapi_ui=False,
+        _env_file=None,
     )
 
 

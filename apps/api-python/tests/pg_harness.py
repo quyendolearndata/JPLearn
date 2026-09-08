@@ -4,7 +4,6 @@ import asyncio
 import atexit
 import os
 import signal
-import socket
 import subprocess
 import sys
 import time
@@ -188,13 +187,17 @@ def stop_docker_postgres(project_name: str) -> None:
 
 
 def _can_connect(database_url: str) -> bool:
-    parsed = urlparse(database_url)
-    host = parsed.hostname or "127.0.0.1"
-    port = parsed.port or 5432
+    async def probe() -> None:
+        conn = await asyncpg.connect(database_url, timeout=1.5)
+        try:
+            await conn.fetchval("SELECT 1", timeout=1.5)
+        finally:
+            await conn.close(timeout=1.5)
+
     try:
-        with socket.create_connection((host, port), timeout=1.5):
-            return True
-    except OSError:
+        asyncio.run(probe())
+        return True
+    except Exception:
         return False
 
 

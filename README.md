@@ -38,8 +38,8 @@ Hệ thống quản lý theo mô hình monorepo bằng `pnpm` workspace kết h�
   - **Theo dõi phát trực tuyến chuẩn xác (`/playbacks`):** Heartbeat chu kỳ 15 giây, kiểm soát lease 45 giây, số thứ tự `seq` tăng đơn điệu, cơ chế chiếm quyền phát giữa các thiết bị (`epoch` takeover), lưu biên nhận xử lý chống lặp (`Idempotency-Key` / receipts), giới hạn trôi đồng hồ (drift limit) và bảo vệ mốc cắt xóa lịch sử (`deletion_cutoff`).
   - **Thời gian tích lũy thực tế (`active_watch_seconds`):** Đo đếm thời gian xem video thực trạng thái `playing` (loại bỏ tua, tạm dừng, buffer) theo từng ngày và so khớp với mục tiêu học tập hàng ngày (`daily_goal_minutes`).
   - **Tác vụ AI bất đồng bộ (trial):** Khung job/quota/lease đã có; provider hiện tại là **synthetic trial** — chưa phải dịch vụ transcription thật. Background worker (`ai_worker.py`) chạy luồng thử nghiệm.
-  - **Trình phát & Phục hồi phiên học Web (`apps/web`):** Trình phát `<CiPlayer>` hỗ trợ luồng thích ứng HLS (`.m3u8`) với fallback MP4; state machine khôi phục phiên học gián đoạn qua `sessionStorage` tách bạch theo từng người dùng và tab trình duyệt.
-  - **Staff CMS (`/staff`):** Cổng quản trị dành cho giáo viên và admin với cơ chế khóa lạc quan (`revision` CAS), tải lên media, nộp kiểm duyệt chất lượng (Level QA) và quy trình xuất bản.
+  - **Learner Web (`apps/web`):** Catalog, Series, Library/Collections, Session, Progress, Watch History và Content Reports dùng chung hợp đồng FastAPI; trình phát `<CiPlayer>` hỗ trợ HLS (`.m3u8`) với fallback MP4 và khôi phục phiên qua `sessionStorage` tách theo người dùng/tab.
+  - **Staff CMS (`/staff`):** Cổng quản trị dành cho teacher/admin gồm catalog/media, content studio cho scenes và transcript tiếng Nhật, series workflow, hàng đợi content reports, AI content jobs và usage ledger. Các thao tác ghi dùng revision CAS và giữ bước duyệt trước khi publish.
 
 ---
 
@@ -114,6 +114,10 @@ pnpm dev:web
 # 3. Mobile App (Expo Metro bundler)
 pnpm dev:mobile
 ```
+
+Dev server ghi artifact vào `apps/web/.next-dev`; production build ghi vào
+`apps/web/.next`. Hai lệnh có thể chạy đồng thời mà không ghi đè chunk của nhau.
+Nếu đặt `NEXT_DIST_DIR`, mỗi process phải dùng một thư mục riêng.
 
 ### Các dịch vụ nền & CLI bổ trợ
 
