@@ -1,10 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
-import type { CatalogItemPublic } from "@jplearn/domain";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type {
+  CatalogItemPublic,
+  RecommendedItemPublic,
+  RecommendationsResponsePublic,
+  Capabilities,
+} from "@jplearn/domain";
 import { api, parseApiResponse } from "../../lib/api";
-import { getToken } from "../../lib/auth-storage";
+import { getToken, subscribeAuth } from "../../lib/auth-storage";
 import { TopicArt } from "../../components/topic-art";
 
 const TOPIC_LABELS: Record<string, string> = {
@@ -22,12 +27,25 @@ const VISUAL_SUPPORT_LABELS: Record<string, string> = {
   low: "Trực quan thấp",
 };
 
+const REASON_TAGS: Record<string, string> = {
+  continue_series: "Tiếp tục chuỗi",
+  preferred_topic: "Chủ đề yêu thích",
+  same_level: "Cùng cấp độ",
+  editor_pick: "Gợi ý chọn lọc",
+};
+
 export default function CatalogPage() {
   const [items, setItems] = useState<CatalogItemPublic[]>([]);
+  const [recommendations, setRecommendations] = useState<RecommendedItemPublic[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingRecs, setLoadingRecs] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [query, setQuery] = useState("");
+  const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
+
+  const catalogGenRef = useRef(0);
+  const recGenRef = useRef(0);
 
   const visibleItems = items.filter((item) =>
     (TOPIC_LABELS[item.topic_id] ?? item.topic_id)
@@ -35,20 +53,71 @@ export default function CatalogPage() {
       .includes(query.toLocaleLowerCase("vi"))
   );
 
-  const fetchCatalog = useCallback(async (level: number | null) => {
-    setLoading(true);
-    setErrorMessage("");
-
+  const loadCapabilities = useCallback(async () => {
     const token = getToken();
+    if (!token) return;
+    try {
+      const res = await api("/capabilities", { token });
+      if (res.ok) {
+        const data = await parseApiResponse<Capabilities>(res);
+        setCapabilities(data);
+      }
+    } catch {
+      // Capabilities fallback is non-fatal
+    }
+  }, []);
+
+  const fetchRecommendations = useCallback(async () => {
+    const token = getToken();
+    if (!token) {
+      setRecommendations([]);
+      return;
+    }
+
+    const gen = ++recGenRef.current;
+    setLoadingRecs(true);
+
+    try {
+      const res = await api("/me/recommendations?limit=4", { token });
+      if (gen !== recGenRef.current) return;
+
+      if (res.ok) {
+        const body = await parseApiResponse<RecommendationsResponsePublic>(res);
+        setRecommendations(body?.items ?? []);
+      } else {
+        setRecommendations([]);
+      }
+    } catch {
+      if (gen === recGenRef.current) {
+        setRecommendations([]);
+      }
+    } finally {
+      if (gen === recGenRef.current) {
+        setLoadingRecs(false);
+      }
+    }
+  }, []);
+
+  const fetchCatalog = useCallback(async (level: number | null) => {
+    const token = getToken();
+    const gen = ++catalogGenRef.current;
+
     if (!token) {
       setLoading(false);
       setErrorMessage("Hãy đăng nhập.");
+      setItems([]);
+      setRecommendations([]);
       return;
     }
+
+    setLoading(true);
+    setErrorMessage("");
 
     try {
       const path = level !== null ? `/catalog?ci_level=${level}` : "/catalog";
       const res = await api(path, { token });
+
+      if (gen !== catalogGenRef.current) return;
 
       if (!res.ok) {
         setErrorMessage("Không thể tải danh mục bài học.");
@@ -59,12 +128,33 @@ export default function CatalogPage() {
       const body = await parseApiResponse<{ items: CatalogItemPublic[] }>(res);
       setItems(body?.items ?? []);
     } catch {
-      setErrorMessage("Lỗi kết nối máy chủ khi tải danh mục.");
-      setItems([]);
+      if (gen === catalogGenRef.current) {
+        setErrorMessage("Lỗi kết nối máy chủ khi tải danh mục.");
+        setItems([]);
+      }
     } finally {
-      setLoading(false);
+      if (gen === catalogGenRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
+
+  useEffect(() => {
+    void loadCapabilities();
+    void fetchRecommendations();
+
+    const unsubscribe = subscribeAuth(() => {
+      catalogGenRef.current += 1;
+      recGenRef.current += 1;
+      void loadCapabilities();
+      void fetchRecommendations();
+      void fetchCatalog(selectedLevel);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [loadCapabilities, fetchRecommendations, fetchCatalog, selectedLevel]);
 
   useEffect(() => {
     void fetchCatalog(selectedLevel);
@@ -130,7 +220,7 @@ export default function CatalogPage() {
       ) : null}
 
       {!loading && errorMessage ? (
-        <div className="status-error">
+        <div className="status-error" role="alert">
           <p>{errorMessage}</p>
           {errorMessage === "Hãy đăng nhập." ? (
             <div style={{ marginTop: "0.75rem" }}>
@@ -149,6 +239,84 @@ export default function CatalogPage() {
           )}
         </div>
       ) : null}
+
+      {/* Recommendations Rail */}
+      {!loading && !errorMessage && recommendations.length > 0 && capabilities?.smart_stream_enabled !== false && (
+        <section style={{ marginBottom: "2.5rem", marginTop: "1.5rem" }} aria-label="Gợi ý cho bạn">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1rem" }}>
+            <h2 style={{ fontSize: "1.25rem", fontWeight: 900 }}>Gợi ý cho bạn</h2>
+            <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+              Phù hợp với cấp độ CI & lịch sử xem
+            </span>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "1rem" }}>
+            {recommendations.map((rec) => {
+              const reasonTag = REASON_TAGS[rec.reason] || "Gợi ý";
+              const topicLabel = TOPIC_LABELS[rec.topic_id] ?? rec.topic_id;
+
+              return (
+                <article
+                  key={rec.catalog_item_id}
+                  data-rec-id={rec.catalog_item_id}
+                  style={{
+                    background: "var(--card-bg)",
+                    border: "2px solid var(--charcoal)",
+                    borderRadius: "var(--radius-md)",
+                    padding: "1rem",
+                    boxShadow: "var(--shadow-solid)",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                      <span
+                        style={{
+                          fontSize: "0.75rem",
+                          fontWeight: 700,
+                          padding: "0.2rem 0.5rem",
+                          borderRadius: "var(--radius-pill)",
+                          background: rec.reason === "continue_series" ? "var(--pink)" : "var(--charcoal)",
+                          color: "#ffffff",
+                        }}
+                      >
+                        {reasonTag}
+                      </span>
+                      <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>Cấp {rec.ci_level}</span>
+                    </div>
+
+                    <h3 style={{ fontSize: "1rem", fontWeight: 800, marginBottom: "0.25rem" }}>
+                      {rec.title_jp || topicLabel}
+                    </h3>
+
+                    {rec.series_title && (
+                      <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "0.5rem" }}>
+                        Chuỗi: {rec.series_title}
+                      </p>
+                    )}
+
+                    <p style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                      Thời lượng: {rec.duration_seconds}s · {topicLabel}
+                    </p>
+                  </div>
+
+                  <div style={{ marginTop: "1rem" }}>
+                    <Link
+                      href={`/session?item_id=${rec.catalog_item_id}`}
+                      className="btn-cta btn-primary"
+                      style={{ width: "100%", boxSizing: "border-box", textAlign: "center", display: "block", fontSize: "0.85rem", padding: "0.4rem" }}
+                    >
+                      Xem ngay ↗
+                    </Link>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {!loading && !errorMessage && visibleItems.length === 0 ? (
         <div style={{ padding: "3rem 1rem", textAlign: "center", background: "#ffffff", border: "2px solid var(--charcoal)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-solid)" }}>

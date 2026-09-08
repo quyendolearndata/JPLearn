@@ -233,36 +233,88 @@ export interface ResumeItemPublic {
 // 6. Learning Preferences, Activity & Watch History (PR5)
 // ---------------------------------------------------------------------------
 
-export interface LearningPreferencesPublic {
-  timezone: string;
+export interface LearningPolicyPublic {
   daily_goal_minutes: number;
-  preferred_topic_ids: string[];
-  revision: number;
+  timezone: string;
+  effective_at: string;
 }
 
-export interface DailyActivityBucketPublic {
-  day: string; // YYYY-MM-DD
+export interface LearningPreferencesPublic {
+  current_policy?: LearningPolicyPublic | null;
+  pending_policy?: LearningPolicyPublic | null;
+  daily_goal_minutes: number;
+  preferred_topic_ids: string[];
+  timezone: string;
+  revision: number;
+  effective_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UpdateLearningPreferencesBody {
+  expected_revision: number;
+  daily_goal_minutes?: number | null;
+  preferred_topic_ids?: string[] | null;
+  timezone?: string | null;
+}
+
+export interface DailyActivityItemPublic {
+  date: string;
+  timezone: string;
+  policy_revision: number;
+  active_ms: number;
   active_watch_seconds: number;
+  goal_minutes: number;
   goal_seconds: number;
   goal_met: boolean;
-  timezone: string;
+  updated_at: string;
+}
+
+export interface LearnerActivityResponsePublic {
+  items: DailyActivityItemPublic[];
+  total_active_watch_seconds: number;
+  days_goal_met: number;
+  current_streak_days: number;
+  longest_streak_days: number;
 }
 
 export interface WatchHistoryItemPublic {
   playback_id: string;
   catalog_item_id: string;
+  title_jp?: string | null;
+  item_type: string;
+  topic_id: string;
+  duration_seconds: number;
+  status: string;
+  last_position_ms: number;
+  total_active_ms: number;
   content_version_id: string;
-  active_watch_seconds: number;
-  started_at: string;
-  ended_at?: string | null;
-  availability: SceneAvailability;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface HistoryDeletionPublic {
-  id: string;
-  status: "queued" | "running" | "completed" | "failed";
+export interface WatchHistoryResponsePublic {
+  items: WatchHistoryItemPublic[];
+  next_cursor?: string | null;
+}
+
+export interface HistoryDeletionCreatedPublic {
+  deletion_id: string;
   cutoff_time: string;
+  status: "queued" | "running" | "completed" | "failed";
+  message: string;
+}
+
+export interface HistoryDeletionStatusPublic {
+  deletion_id: string;
+  user_id: string;
+  cutoff_time: string;
+  status: "queued" | "running" | "completed" | "failed";
+  records_deleted: number;
+  attempts: number;
+  error_message?: string | null;
   created_at: string;
+  updated_at: string;
   completed_at?: string | null;
 }
 
@@ -276,18 +328,33 @@ export type RecommendationReason =
   | "continue_series"
   | "editor_pick";
 
-export interface RecommendationItemPublic {
+export interface RecommendedItemPublic {
   catalog_item_id: string;
-  ci_level: CiLevel;
+  media_type: string;
   topic_id: string;
   duration_seconds: number;
+  ci_level: number;
   reason: RecommendationReason;
+  title_jp?: string | null;
   series_id?: string | null;
+  series_title?: string | null;
 }
 
 export interface RecommendationsResponsePublic {
-  items: RecommendationItemPublic[];
+  items: RecommendedItemPublic[];
   strategy_version: string;
+}
+
+export interface Capabilities {
+  video_scene_breakdown_enabled: boolean;
+  smart_stream_enabled: boolean;
+  interactive_dual_subs_enabled: boolean;
+  immersion_lookup_enabled: boolean;
+  personal_collections_enabled: boolean;
+  content_reports_enabled: boolean;
+  playback_tracking_enabled: boolean;
+  scene_search_enabled: boolean;
+  staff_ai_enabled: boolean;
 }
 
 // ---------------------------------------------------------------------------
