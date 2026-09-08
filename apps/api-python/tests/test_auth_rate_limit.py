@@ -58,6 +58,18 @@ def test_check_drops_all_expired_keys() -> None:
     assert expired_keys.isdisjoint(limiter._timestamps)
 
 
+def test_check_caps_active_keys_without_evicting_updated_key() -> None:
+    limiter = LoginRateLimiter(attempts=10, window_seconds=60, max_keys=2)
+    assert limiter.check("1.1.1.1|a@x.test", now=0.0) is True
+    assert limiter.check("1.1.1.1|b@x.test", now=0.0) is True
+
+    updated_key = "1.1.1.1|c@x.test"
+    assert limiter.check(updated_key, now=1.0) is True
+
+    assert len(limiter._timestamps) == 2
+    assert updated_key in limiter._timestamps
+
+
 def test_throttle_can_be_reset(live_client: TestClient) -> None:
     email = "reset@jplearn.local"
     for _ in range(10):

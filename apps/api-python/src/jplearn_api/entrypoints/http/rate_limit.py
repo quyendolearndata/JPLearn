@@ -10,9 +10,15 @@ from jplearn_api.entrypoints.http.schemas import LoginBody
 
 
 class LoginRateLimiter:
-    def __init__(self, attempts: int, window_seconds: int) -> None:
+    def __init__(
+        self,
+        attempts: int,
+        window_seconds: int,
+        max_keys: int = 4096,
+    ) -> None:
         self._attempts = attempts
         self._window_seconds = window_seconds
+        self._max_keys = max_keys
         self._timestamps: dict[str, deque[float]] = {}
         self._lock = Lock()
 
@@ -43,6 +49,12 @@ class LoginRateLimiter:
             if len(timestamps) >= self._attempts:
                 return False
             timestamps.append(current)
+            if len(self._timestamps) > self._max_keys:
+                oldest_key = min(
+                    (stored_key for stored_key in self._timestamps if stored_key != key),
+                    key=lambda stored_key: self._timestamps[stored_key][-1],
+                )
+                del self._timestamps[oldest_key]
             return True
 
     def reset(self) -> None:
