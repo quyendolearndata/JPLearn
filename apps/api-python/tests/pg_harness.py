@@ -1,6 +1,7 @@
 """Start / migrate jplearn_test. Alembic owns DDL (ADR-004) — never create_all."""
 
 import atexit
+import asyncio
 import os
 import signal
 import socket
@@ -9,6 +10,8 @@ import sys
 import time
 from pathlib import Path
 from urllib.parse import urlparse
+
+import asyncpg
 
 REPO = Path(__file__).resolve().parents[3]
 API_PY = REPO / "apps" / "api-python"
@@ -126,7 +129,7 @@ def start_docker_postgres(project_name: str, *, seed: bool = False, migrate: boo
             container_id = _compose(project_name, ["ps", "--quiet", "db-test"]).stdout.strip()
             if container_id:
                 ready = subprocess.run(
-                    ["docker", "exec", container_id, "pg_isready", "-U", "jplearn_test", "-d", "jplearn_test"],
+                    ["docker", "exec", container_id, "pg_isready", "-h", "127.0.0.1", "-U", "jplearn_test", "-d", "jplearn_test"],
                     capture_output=True,
                 )
                 if ready.returncode == 0:
@@ -139,12 +142,33 @@ def start_docker_postgres(project_name: str, *, seed: bool = False, migrate: boo
         if not port.isdigit():
             raise RuntimeError(f"Could not parse Docker PostgreSQL port: {port_output}")
         database_url = f"postgresql://jplearn_test:jplearn_test@127.0.0.1:{port}/jplearn_test"
+        # The image's temporary initialization server accepts Unix sockets before
+        # the final TCP server starts. Also verify Docker's published host port
+        # before returning, including for fixtures that skip migrations.
+        asyncio.run(_wait_for_database(database_url))
         if migrate:
             migrate_database(database_url, seed=seed)
         return database_url
     except Exception:
         stop_docker_postgres(project_name)
         raise
+
+
+async def _wait_for_database(database_url: str) -> None:
+    assert_test_database_url(database_url)
+    deadline = time.monotonic() + 15
+    while True:
+        try:
+            conn = await asyncpg.connect(database_url, timeout=1)
+            try:
+                await conn.fetchval("SELECT 1", timeout=1)
+            finally:
+                await conn.close(timeout=1)
+            return
+        except (OSError, TimeoutError, asyncpg.CannotConnectNowError):
+            if time.monotonic() >= deadline:
+                raise
+            await asyncio.sleep(0.25)
 
 
 def stop_docker_postgres(project_name: str) -> None:
