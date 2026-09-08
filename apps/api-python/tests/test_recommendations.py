@@ -20,17 +20,26 @@ Validates:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 
+from fakes import (
+    FakeCatalogRepository,
+    FakeContentRepository,
+    FakeLearningRepository,
+    FakePlaybackRepository,
+    FakeSeriesRepository,
+    FakeUnitOfWork,
+)
 from jplearn_api.application.commands import UpdateLearningPreferencesCommand
 from jplearn_api.application.handlers.activity import handle_update_learning_preferences
-from jplearn_api.application.queries import GetRecommendationsQuery
 from jplearn_api.application.handlers.recommendations import (
-    handle_get_recommendations,
     STRATEGY_VERSION,
+    handle_get_recommendations,
 )
+from jplearn_api.application.queries import GetRecommendationsQuery
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.domain.catalog import CatalogItem, MediaRef
 from jplearn_api.domain.content import ContentVersion, Scene
@@ -44,14 +53,6 @@ from jplearn_api.domain.playback import (
 from jplearn_api.domain.recommendation import RecommendationReason
 from jplearn_api.domain.series import Series, SeriesItem
 from jplearn_api.entrypoints.http.security import require_user
-from fakes import (
-    FakeCatalogRepository,
-    FakeContentRepository,
-    FakeLearningRepository,
-    FakePlaybackRepository,
-    FakeSeriesRepository,
-    FakeUnitOfWork,
-)
 
 
 @pytest.fixture
@@ -132,7 +133,7 @@ def make_session(
     created_at: datetime | None = None,
     updated_at: datetime | None = None,
 ) -> PlaybackSession:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     c_at = created_at or now
     u_at = updated_at or c_at
     return PlaybackSession(
@@ -158,6 +159,7 @@ def make_session(
 # ------------------------------------------------------------------------------
 # 1. Continue Series Tests
 # ------------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_continue_series_recommends_next_episode(recommendation_env):
@@ -217,6 +219,7 @@ async def test_continue_series_recommends_next_episode(recommendation_env):
 # 2. Preferred Topic Tests
 # ------------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_preferred_topic_prioritized_over_generic_same_level(recommendation_env):
     uow = recommendation_env["uow"]
@@ -256,6 +259,7 @@ async def test_preferred_topic_prioritized_over_generic_same_level(recommendatio
 # 3. Same Level and Editor Pick Fallback Tests
 # ------------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_same_level_and_editor_pick_fallback(recommendation_env):
     uow = recommendation_env["uow"]
@@ -292,6 +296,7 @@ async def test_same_level_and_editor_pick_fallback(recommendation_env):
 # ------------------------------------------------------------------------------
 # 4. Strict Pedagogical Invariant (FR-NEG) & Privacy Tests
 # ------------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_fr_neg_never_recommends_higher_ci_level(recommendation_env):
@@ -348,6 +353,7 @@ async def test_fr_neg_no_internal_title_exposure(recommendation_env):
 # 5. History Cutoff Isolation Tests (FR-WAT-001)
 # ------------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_cutoff_isolation_resets_series_progress(recommendation_env):
     uow = recommendation_env["uow"]
@@ -375,7 +381,7 @@ async def test_cutoff_isolation_resets_series_progress(recommendation_env):
     await uow.series.add(series)
 
     # User watched ep1 2 hours ago
-    past_time = datetime.now(timezone.utc) - timedelta(hours=2)
+    past_time = datetime.now(UTC) - timedelta(hours=2)
     session = make_session(
         id="sess-old",
         user_id=user_id,
@@ -387,8 +393,8 @@ async def test_cutoff_isolation_resets_series_progress(recommendation_env):
     await uow.playbacks.create_playback(session)
 
     # User requested deletion 1 hour ago (cutoff = past_time + 1h)
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=1)
-    now = datetime.now(timezone.utc)
+    cutoff = datetime.now(UTC) - timedelta(hours=1)
+    now = datetime.now(UTC)
     job = HistoryDeletionJob(
         id="del-job-01",
         user_id=user_id,
@@ -418,6 +424,7 @@ async def test_cutoff_isolation_resets_series_progress(recommendation_env):
 # ------------------------------------------------------------------------------
 # 6. HTTP API Endpoint Contract Tests
 # ------------------------------------------------------------------------------
+
 
 def test_api_recommendations_endpoint_unauthorized(client: TestClient):
     # Without auth token -> 401
@@ -457,7 +464,9 @@ def test_api_recommendations_endpoint_success(client: TestClient, monkeypatch: p
     assert "title_internal" not in first
 
 
-def test_api_recommendations_endpoint_limit_validation(client: TestClient, monkeypatch: pytest.MonkeyPatch, recommendation_env):
+def test_api_recommendations_endpoint_limit_validation(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, recommendation_env
+):
     uow = recommendation_env["uow"]
     monkeypatch.setattr("jplearn_api.entrypoints.http.routers.recommendations.create_uow", lambda session: uow)
 

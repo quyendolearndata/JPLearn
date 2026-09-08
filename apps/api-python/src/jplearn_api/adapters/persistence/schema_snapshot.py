@@ -56,10 +56,7 @@ WHERE schemaname = 'public'
 
 
 async def snapshot(conn: asyncpg.Connection) -> dict:
-    enums = {
-        row["name"]: list(row["labels"])
-        for row in await conn.fetch(ENUMS_SQL)
-    }
+    enums = {row["name"]: list(row["labels"]) for row in await conn.fetch(ENUMS_SQL)}
 
     columns: dict[str, dict[str, dict]] = {}
     for row in await conn.fetch(COLUMNS_SQL):
@@ -97,10 +94,7 @@ async def snapshot(conn: asyncpg.Connection) -> dict:
 
     return {
         "enums": dict(sorted(enums.items())),
-        "tables": {
-            table: dict(sorted(cols.items()))
-            for table, cols in sorted(columns.items())
-        },
+        "tables": {table: dict(sorted(cols.items())) for table, cols in sorted(columns.items())},
         "constraints": dict(sorted(constraints.items())),
         "indexes": dict(sorted(indexes.items())),
     }
@@ -134,7 +128,10 @@ def diff(expected: dict, actual: dict) -> list[str]:
 
 def main() -> int:
     if len(sys.argv) < 2:
-        print("usage: python -m jplearn_api.adapters.persistence.schema_snapshot <database-url> [out.json]", file=sys.stderr)
+        print(
+            "usage: python -m jplearn_api.adapters.persistence.schema_snapshot <database-url> [out.json]",
+            file=sys.stderr,
+        )
         return 2
     result = asyncio.run(snapshot_url(sys.argv[1]))
     payload = json.dumps(result, indent=2, sort_keys=True) + "\n"

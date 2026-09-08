@@ -71,7 +71,7 @@ async def get_my_ai_usage(
             capability_enabled=settings.staff_ai_enabled,
         )
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
     return AiUsageListResponsePublic(
         items=[
@@ -128,7 +128,7 @@ async def get_ai_usage_summary(
             capability_enabled=settings.staff_ai_enabled,
         )
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
     return AiUsageSummaryResponsePublic(
         from_date=dto.from_date,

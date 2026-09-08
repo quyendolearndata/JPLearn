@@ -1,4 +1,5 @@
 """Pin content source and duration metadata; retain explicit legacy provenance."""
+
 from alembic import op
 
 revision = "0014_content_source_snapshot"

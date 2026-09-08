@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import asyncio
 import tempfile
+from pathlib import Path
+from uuid import uuid4
+
+import asyncpg
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from jplearn_api.entrypoints.http.app import create_app
-from jplearn_api.settings import Settings
 from jplearn_api.entrypoints.cli.seed import seed_url
-from pg_harness import start_docker_postgres, stop_docker_postgres
-
-
 from jplearn_api.entrypoints.http.app import create_app, lifespan
+from jplearn_api.settings import Settings
+from pg_harness import start_docker_postgres, stop_docker_postgres
 
 
 @pytest.fixture(scope="module")
@@ -41,15 +42,12 @@ async def client_factory(postgres_url: str):
         )
         app = create_app(settings)
         async with lifespan(app):
+
             async def _make_client():
                 transport = ASGITransport(app=app)
                 return AsyncClient(transport=transport, base_url="http://test")
 
             yield _make_client
-
-
-from uuid import uuid4
-import asyncpg
 
 
 async def _create_admin_token(client: AsyncClient, postgres_url: str) -> str:
@@ -202,8 +200,6 @@ async def test_race_between_patch_and_submit_qa(client_factory, postgres_url: st
         assert final_item["revision"] == 2
 
 
-from pathlib import Path
-
 _STOCK_MP4 = Path(__file__).resolve().parents[3] / "media" / "stock" / "mp4" / "level-0-wash-hands.mp4"
 
 
@@ -241,7 +237,9 @@ async def _create_level_qa_item_with_media(client: AsyncClient, token: str) -> t
 
 @pytest.mark.asyncio
 async def test_race_patch_vs_publish_never_writes_draft_back(client_factory, postgres_url: str):
-    """T-CAT-005-CAS: PATCH racing publish on a level_qa item must never succeed; publish wins, revision only moves forward."""
+    """T-CAT-005-CAS: PATCH racing publish on a level_qa item must never succeed;
+    publish wins, revision only moves forward.
+    """
     make_client = client_factory
     admin = await make_client()
     token = await _create_admin_token(admin, postgres_url)
@@ -276,7 +274,9 @@ async def test_race_patch_vs_publish_never_writes_draft_back(client_factory, pos
 
 @pytest.mark.asyncio
 async def test_race_patch_vs_unpublish_revision_never_regresses(client_factory, postgres_url: str):
-    """T-CAT-005-CAS: PATCH with the pre-unpublish revision must fail whether it runs before (wrong status) or after (stale) unpublish."""
+    """T-CAT-005-CAS: a PATCH with the pre-unpublish revision must fail whether
+    it runs before (wrong status) or after (stale) unpublish.
+    """
     make_client = client_factory
     admin = await make_client()
     token = await _create_admin_token(admin, postgres_url)

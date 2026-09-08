@@ -4,7 +4,13 @@ import re
 
 _PATTERNS = [
     # password / password_hash / token / secret key-value assignments
-    (re.compile(r"(['\"]?(?:password(?:_hash)?|secret|token|credential)['\"]?\s*[:=]\s*['\"]?)(?:[^'\",\s\\]|\\.)+(['\"]?)", re.IGNORECASE), r"\1[REDACTED]\2"),
+    (
+        re.compile(
+            r"(['\"]?(?:password(?:_hash)?|secret|token|credential)['\"]?\s*[:=]\s*['\"]?)(?:[^'\",\s\\]|\\.)+(['\"]?)",
+            re.IGNORECASE,
+        ),
+        r"\1[REDACTED]\2",
+    ),
     # Bearer tokens
     (re.compile(r"(Bearer\s+)[A-Za-z0-9_\-\.]+", re.IGNORECASE), r"\1[REDACTED]"),
     # JWT tokens

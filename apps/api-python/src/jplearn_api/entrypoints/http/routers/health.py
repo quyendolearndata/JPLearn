@@ -6,8 +6,8 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from jplearn_api.entrypoints.http.dependencies import get_session, get_storage
 from jplearn_api.adapters.storage.local import StoragePort
+from jplearn_api.entrypoints.http.dependencies import get_session, get_storage
 
 
 class HealthBody(BaseModel):
@@ -72,7 +72,7 @@ async def ready(
             asyncio.gather(db_task, storage_task, return_exceptions=True),
             timeout=2.0,
         )
-    except (TimeoutError, asyncio.TimeoutError):
+    except TimeoutError:
         pass
     except Exception:
         pass
@@ -81,11 +81,7 @@ async def ready(
             if not t.done():
                 t.cancel()
 
-    db_ok = (
-        db_task.result()
-        if db_task.done() and not db_task.cancelled() and not db_task.exception()
-        else False
-    )
+    db_ok = db_task.result() if db_task.done() and not db_task.cancelled() and not db_task.exception() else False
     storage_ok = (
         storage_task.result()
         if storage_task.done() and not storage_task.cancelled() and not storage_task.exception()
@@ -101,4 +97,3 @@ async def ready(
         database="up" if db_ok else "down",
         storage="up" if storage_ok else "down",
     )
-

@@ -3,6 +3,7 @@
 Revision ID: 0018_hls_bundle_integrity
 Revises: 0017_activity_policy_streak
 """
+
 from alembic import op
 
 revision = "0018_hls_bundle_integrity"

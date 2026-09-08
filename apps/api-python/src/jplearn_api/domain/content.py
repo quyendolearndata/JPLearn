@@ -81,9 +81,12 @@ class ContentVersion:
         duration_seconds: int,
         hls_bundle_sha256: str | None = None,
     ) -> None:
-        if not self.is_frozen or (
-            self.media_asset_id, self.media_storage_key, self.media_hls_url, self.duration_seconds
-        ) != (asset_id, storage_key, hls_url, duration_seconds) or self.hls_bundle_sha256 != hls_bundle_sha256:
+        if (
+            not self.is_frozen
+            or (self.media_asset_id, self.media_storage_key, self.media_hls_url, self.duration_seconds)
+            != (asset_id, storage_key, hls_url, duration_seconds)
+            or self.hls_bundle_sha256 != hls_bundle_sha256
+        ):
             raise ConflictError("Content source changed since QA; return to draft and submit again")
 
     def freeze_for_qa(self) -> None:
@@ -114,15 +117,13 @@ class ContentVersion:
         if self.is_frozen or self.is_published:
             raise InvalidDomainStateError("Cannot modify frozen or published content version")
         if self.revision != expected_revision:
-            raise ConflictError(
-                f"Revision mismatch: expected {expected_revision}, current {self.revision}"
-            )
+            raise ConflictError(f"Revision mismatch: expected {expected_revision}, current {self.revision}")
 
         sorted_scenes = sorted(new_scenes, key=lambda s: s.scene_index)
         for i, sc in enumerate(sorted_scenes):
             if sc.scene_index != i + 1:
                 raise InvalidDomainStateError(
-                    f"Scene indices must be contiguous starting from 1 (got {sc.scene_index} at position {i+1})"
+                    f"Scene indices must be contiguous starting from 1 (got {sc.scene_index} at position {i + 1})"
                 )
             if max_duration is not None and sc.end_time_seconds > max_duration:
                 raise InvalidDomainStateError(

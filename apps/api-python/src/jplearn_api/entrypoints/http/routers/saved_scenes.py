@@ -33,11 +33,7 @@ router = APIRouter(tags=["Library"])
         200: {"description": "Scene was already saved (idempotent)"},
         201: {
             "description": "Scene successfully saved",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/SavedScenePublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/SavedScenePublic"}}},
         },
         400: {"description": "Scene not in published current version"},
         401: {"description": "Authentication required"},

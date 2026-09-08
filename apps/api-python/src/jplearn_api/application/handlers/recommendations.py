@@ -99,7 +99,8 @@ async def handle_get_recommendations(
 
         if max_watched_pos >= 0:
             next_unwatched = [
-                it for it in sorted_items
+                it
+                for it in sorted_items
                 if it.position > max_watched_pos and it.catalog_item_id not in active_watched_ids
             ]
             if next_unwatched:
@@ -132,10 +133,9 @@ async def handle_get_recommendations(
 
     # Priority 2: preferred_topic
     preferred_candidates = [
-        item for item in published_items
-        if item.id not in selected_ids
-        and item.id not in active_watched_ids
-        and item.topic_id in preferred_topic_ids
+        item
+        for item in published_items
+        if item.id not in selected_ids and item.id not in active_watched_ids and item.topic_id in preferred_topic_ids
     ]
     preferred_candidates.sort(key=lambda x: x.id)
 
@@ -161,9 +161,7 @@ async def handle_get_recommendations(
 
     # Priority 3: same_level
     same_level_candidates = [
-        item for item in published_items
-        if item.id not in selected_ids
-        and item.id not in active_watched_ids
+        item for item in published_items if item.id not in selected_ids and item.id not in active_watched_ids
     ]
     same_level_candidates.sort(key=lambda x: x.id)
 
@@ -189,10 +187,7 @@ async def handle_get_recommendations(
 
     # Priority 4: editor_pick (Fallback)
     if len(recommendations) < limit:
-        editor_candidates = [
-            item for item in published_items
-            if item.id not in selected_ids
-        ]
+        editor_candidates = [item for item in published_items if item.id not in selected_ids]
         editor_candidates.sort(key=lambda x: x.id)
         for item in editor_candidates:
             if len(recommendations) >= limit:

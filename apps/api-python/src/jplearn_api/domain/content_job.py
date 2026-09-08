@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 from jplearn_api.domain.errors import (
@@ -13,12 +13,12 @@ from jplearn_api.domain.errors import (
 )
 
 
-class ContentJobTask(str, Enum):
+class ContentJobTask(StrEnum):
     TRANSCRIPT = "transcript"
     SEGMENTATION = "segmentation"
 
 
-class ContentJobStatus(str, Enum):
+class ContentJobStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
     SUCCEEDED = "succeeded"
@@ -50,8 +50,8 @@ class ContentJob:
     error_message: str | None = None
     applied_at: datetime | None = None
     applied_by: str | None = None
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def can_claim(self, now: datetime) -> bool:
         """Check if job is ready to be claimed by a worker."""

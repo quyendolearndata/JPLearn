@@ -10,6 +10,8 @@ from sqlalchemy.orm import selectinload
 
 from jplearn_api.adapters.persistence.models import (
     ContentVersion as OrmContentVersion,
+)
+from jplearn_api.adapters.persistence.models import (
     Scene as OrmScene,
 )
 from jplearn_api.domain.content import ContentVersion, Scene
@@ -111,7 +113,9 @@ class SqlAlchemyContentRepository:
                 revision=content_version.revision,
                 is_frozen=content_version.is_frozen,
                 is_published=content_version.is_published,
-                published_at=content_version.published_at.replace(tzinfo=None) if content_version.published_at else None,
+                published_at=content_version.published_at.replace(tzinfo=None)
+                if content_version.published_at
+                else None,
             )
             self._session.add(orm)
             await self._session.flush()
@@ -130,9 +134,7 @@ class SqlAlchemyContentRepository:
         orm.hls_bundle_sha256 = content_version.hls_bundle_sha256
 
         # Replace scenes
-        await self._session.execute(
-            delete(OrmScene).where(OrmScene.content_version_id == orm.id)
-        )
+        await self._session.execute(delete(OrmScene).where(OrmScene.content_version_id == orm.id))
         for s in content_version.scenes:
             orm_scene = OrmScene(
                 id=s.id or str(uuid4()),
@@ -154,7 +156,9 @@ class SqlAlchemyContentRepository:
             orm.revision = content_version.revision
             orm.is_frozen = content_version.is_frozen
             orm.is_published = content_version.is_published
-            orm.published_at = content_version.published_at.replace(tzinfo=None) if content_version.published_at else None
+            orm.published_at = (
+                content_version.published_at.replace(tzinfo=None) if content_version.published_at else None
+            )
             orm.media_asset_id = content_version.media_asset_id
             orm.media_storage_key = content_version.media_storage_key
             orm.media_hls_url = content_version.media_hls_url
@@ -166,18 +170,19 @@ class SqlAlchemyContentRepository:
             await self._session.flush()
 
     async def get_max_version_number(self, catalog_item_id: str) -> int:
-        stmt = (
-            select(func.coalesce(func.max(OrmContentVersion.version_number), 0))
-            .where(OrmContentVersion.catalog_item_id == catalog_item_id)
+        stmt = select(func.coalesce(func.max(OrmContentVersion.version_number), 0)).where(
+            OrmContentVersion.catalog_item_id == catalog_item_id
         )
         result = await self._session.execute(stmt)
         return int(result.scalar_one())
 
     async def is_media_pinned(self, asset_id: str) -> bool:
         result = await self._session.execute(
-            select(OrmContentVersion.id).where(
+            select(OrmContentVersion.id)
+            .where(
                 OrmContentVersion.media_asset_id == asset_id,
                 (OrmContentVersion.is_frozen.is_(True) | OrmContentVersion.is_published.is_(True)),
-            ).limit(1)
+            )
+            .limit(1)
         )
         return result.scalar_one_or_none() is not None

@@ -11,12 +11,11 @@ import sys
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.adapters.persistence.media_repository import SqlAlchemyMediaRepository
+from jplearn_api.adapters.storage.local import StoragePort
 from jplearn_api.application.handlers.reconciliation import (
     DEFAULT_RETENTION_SECONDS,
-    MIN_RETENTION_SECONDS,
     handle_reconcile_orphans,
 )
-from jplearn_api.adapters.storage.local import StoragePort
 
 logger = logging.getLogger(__name__)
 
@@ -73,14 +72,16 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     args = parser.parse_args(argv)
     if args.retention_hours < 24.0 or math.isnan(args.retention_hours) or math.isinf(args.retention_hours):
-        parser.error(f"--retention-hours must be a finite number >= 24.0 (ADR-005 policy floor); got {args.retention_hours}")
+        parser.error(
+            f"--retention-hours must be a finite number >= 24.0 (ADR-005 policy floor); got {args.retention_hours}"
+        )
     return args
 
 
 async def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    from jplearn_api.bootstrap import create_app_container, create_media_repository
     from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
+    from jplearn_api.bootstrap import create_app_container, create_media_repository
     from jplearn_api.settings import get_settings
 
     settings = get_settings()

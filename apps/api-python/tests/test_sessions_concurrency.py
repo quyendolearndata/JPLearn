@@ -48,6 +48,7 @@ async def client_factory(postgres_url: str):
         )
         app = create_app(settings)
         async with lifespan(app):
+
             async def _make_client(*, raise_app_exceptions: bool = True):
                 transport = ASGITransport(app=app, raise_app_exceptions=raise_app_exceptions)
                 return AsyncClient(transport=transport, base_url="http://test")
@@ -102,9 +103,7 @@ async def test_concurrent_start_session_same_key_same_body(client_factory, postg
     # Verify DB state directly via asyncpg: exactly 1 session, 1 idempotency key, 2 events
     conn = await asyncpg.connect(postgres_url.replace("postgresql+asyncpg://", "postgresql://"))
     try:
-        session_count = await conn.fetchval(
-            "SELECT COUNT(*) FROM learning_sessions WHERE user_id = $1", user_id
-        )
+        session_count = await conn.fetchval("SELECT COUNT(*) FROM learning_sessions WHERE user_id = $1", user_id)
         assert session_count == 1, f"Expected exactly 1 session in DB, got {session_count}"
 
         key_count = await conn.fetchval(
@@ -156,9 +155,7 @@ async def test_concurrent_start_session_same_key_different_body(client_factory, 
     # Verify DB state directly: exactly 1 session created, 0 error rows
     conn = await asyncpg.connect(postgres_url.replace("postgresql+asyncpg://", "postgresql://"))
     try:
-        session_count = await conn.fetchval(
-            "SELECT COUNT(*) FROM learning_sessions WHERE user_id = $1", user_id
-        )
+        session_count = await conn.fetchval("SELECT COUNT(*) FROM learning_sessions WHERE user_id = $1", user_id)
         assert session_count == 1, f"Expected exactly 1 session in DB, got {session_count}"
     finally:
         await conn.close()
@@ -210,7 +207,9 @@ async def test_same_key_two_users_creates_two_isolated_sessions(client_factory, 
 async def test_failure_before_commit_leaves_no_orphan_key_and_retry_creates_one_session(
     client_factory, postgres_url: str, monkeypatch: pytest.MonkeyPatch
 ):
-    """T-SES-003-IDEM-CONCUR: if the transaction fails after session/events were staged, nothing persists; retry with the same key creates exactly one session."""
+    """T-SES-003-IDEM-CONCUR: if the transaction fails after session/events
+    were staged, nothing persists; retry creates exactly one session.
+    """
     from jplearn_api.adapters.persistence.learning_repository import SqlAlchemyLearningRepository
 
     make_client = client_factory

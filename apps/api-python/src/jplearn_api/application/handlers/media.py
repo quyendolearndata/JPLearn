@@ -3,16 +3,16 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator, Callable
-from enum import Enum
 import logging
-from pathlib import Path
 import re
+from collections.abc import AsyncIterator, Callable
+from enum import StrEnum
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
-from jplearn_api.application.ports.repositories import MediaRepository
 from jplearn_api.application.media_integrity import inspect_hls_bundle
+from jplearn_api.application.ports.repositories import MediaRepository
 from jplearn_api.application.ports.security import MediaUrlSigner
 from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork, UnitOfWorkFactory
@@ -23,7 +23,7 @@ from jplearn_api.domain.errors import (
     InvalidDomainStateError,
 )
 from jplearn_api.domain.media import MediaAsset
-from jplearn_api.domain.range_parser import RangeNotSatisfiableError, parse_byte_range
+from jplearn_api.domain.range_parser import parse_byte_range
 
 logger = logging.getLogger("jplearn.media")
 
@@ -60,7 +60,7 @@ def to_staff_dto(
     )
 
 
-class UploadCommitOutcome(str, Enum):
+class UploadCommitOutcome(StrEnum):
     COMMITTED = "committed"
     ROLLBACK_CONFIRMED = "rollback_confirmed"
     OUTCOME_UNKNOWN = "outcome_unknown"
@@ -97,6 +97,7 @@ class UploadTransactionCoordinator:
             return
 
         if self.cleanup_task is None:
+
             async def _run_cleanup() -> None:
                 rb_ok = getattr(self.uow, "rolled_back", False)
                 if not rb_ok and getattr(self.uow, "committed", False):
@@ -164,9 +165,7 @@ class UploadTransactionCoordinator:
 
             remaining = self.grace_seconds - elapsed
             cur_task = asyncio.current_task()
-            cancelling_count = (
-                cur_task.cancelling() if (cur_task and hasattr(cur_task, "cancelling")) else 0
-            )
+            cancelling_count = cur_task.cancelling() if (cur_task and hasattr(cur_task, "cancelling")) else 0
             if cancelling_count > 0:
                 for _ in range(cancelling_count):
                     cur_task.uncancel()
@@ -228,9 +227,7 @@ async def handle_upload_media(
     if signer is None:
         raise ValueError("MediaUrlSigner is required")
 
-    resolved_grace_seconds = (
-        _grace_seconds if _grace_seconds is not None else COMMIT_CANCELLATION_GRACE_SECONDS
-    )
+    resolved_grace_seconds = _grace_seconds if _grace_seconds is not None else COMMIT_CANCELLATION_GRACE_SECONDS
 
     # Scope 1: Preflight read check (short-lived read scope, closed immediately)
     preflight_uow = uow_factory()
@@ -288,6 +285,7 @@ async def handle_upload_media(
     try:
         await storage.promote(temp_key, final_key)
     except BaseException as exc:
+
         async def _clean_promote() -> None:
             try:
                 await storage.delete(temp_key)
@@ -363,9 +361,7 @@ async def handle_upload_media(
             # 4. Record staging and run pre-commit hooks
             try:
                 playback_raw = (
-                    signer.playback_url(asset_id)
-                    if hasattr(signer, "playback_url")
-                    else f"/media/{asset_id}"
+                    signer.playback_url(asset_id) if hasattr(signer, "playback_url") else f"/media/{asset_id}"
                 )
                 asset = MediaAsset(
                     id=asset_id,
@@ -443,7 +439,9 @@ async def handle_upload_media(
                     )
                 raise
             except Exception as exc:
-                is_deterministic_abort = isinstance(exc, DeterministicAbortError) or getattr(exc, "is_deterministic_abort", False)
+                is_deterministic_abort = isinstance(exc, DeterministicAbortError) or getattr(
+                    exc, "is_deterministic_abort", False
+                )
                 if is_deterministic_abort:
                     abort_reason = "deterministic_abort"
                     await coordinator.settle_rollback_and_cleanup(abort_reason)

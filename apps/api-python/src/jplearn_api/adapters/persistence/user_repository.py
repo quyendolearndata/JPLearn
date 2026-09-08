@@ -9,10 +9,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from jplearn_api.adapters.persistence.models import LearnerProgress, User, UserRole
 from jplearn_api.application.ports.repositories import UserRepository
 from jplearn_api.domain.errors import DuplicateEmailError
 from jplearn_api.domain.identity import UserAccount
-from jplearn_api.adapters.persistence.models import LearnerProgress, User, UserRole
 
 
 def _to_domain(user_orm: User) -> UserAccount:

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
 from jplearn_api.application.commands import (
     ReconcileQuotaCommand,
     ReleaseQuotaCommand,

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
 import json
 import logging
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -57,11 +57,13 @@ def enqueue_alert(
         return True
     except asyncio.QueueFull:
         print(
-            json.dumps({
-                "alert_5xx": "queue_overflow",
-                "request_id": request_id,
-                "dropped": True,
-            })
+            json.dumps(
+                {
+                    "alert_5xx": "queue_overflow",
+                    "request_id": request_id,
+                    "dropped": True,
+                }
+            )
         )
         return False
 
@@ -72,20 +74,24 @@ async def _dispatch_one_alert(client: httpx.AsyncClient, url: str, payload: dict
         response = await client.post(url, json=payload)
         if response.status_code >= 400:
             print(
-                json.dumps({
-                    "alert_5xx": "webhook_rejected",
-                    "webhook_status": response.status_code,
-                    "request_id": request_id,
-                })
+                json.dumps(
+                    {
+                        "alert_5xx": "webhook_rejected",
+                        "webhook_status": response.status_code,
+                        "request_id": request_id,
+                    }
+                )
             )
     except Exception as error:
         safe_error = sanitize_message(str(error))[:100]
         print(
-            json.dumps({
-                "alert_5xx": "webhook_failed",
-                "error": safe_error,
-                "request_id": request_id,
-            })
+            json.dumps(
+                {
+                    "alert_5xx": "webhook_failed",
+                    "error": safe_error,
+                    "request_id": request_id,
+                }
+            )
         )
 
 
@@ -127,7 +133,7 @@ async def drain_alert_queue(
 
     try:
         await asyncio.wait_for(queue.join(), timeout=timeout)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         print(json.dumps({"alert_5xx": "drain_timeout", "pending": queue.qsize()}))
     finally:
         worker_task.cancel()

@@ -3,14 +3,12 @@ from time import time
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from jplearn_api.adapters.persistence.models import User
-from jplearn_api.application.read_models import UserDTO
-from jplearn_api.entrypoints.http.dependencies import get_session
 from jplearn_api.adapters.security.signed_url import verify_media_sig
 from jplearn_api.adapters.security.tokens import decode_access_token
+from jplearn_api.application.read_models import UserDTO
 
 _bearer = HTTPBearer(auto_error=False, scheme_name="bearerAuth")
 

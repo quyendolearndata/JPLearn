@@ -9,8 +9,9 @@ from fastapi.openapi.utils import get_openapi
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from jplearn_api.adapters.observability.alerts import alert_worker, drain_alert_queue
-from jplearn_api.bootstrap import create_media_signer, drain_quarantined_scopes
 from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
+from jplearn_api.adapters.storage.local import LocalFilesystemStorage, StoragePort
+from jplearn_api.bootstrap import create_media_signer, drain_quarantined_scopes
 from jplearn_api.entrypoints.http.errors import (
     http_exception_handler,
     unhandled_exception_handler,
@@ -41,7 +42,6 @@ from jplearn_api.entrypoints.http.routers import (
     transcript,
 )
 from jplearn_api.settings import Settings, get_settings
-from jplearn_api.adapters.storage.local import LocalFilesystemStorage, StoragePort
 
 
 @asynccontextmanager
@@ -172,23 +172,17 @@ def create_app(
                             if code == "401":
                                 if "content" not in resp:
                                     resp["content"] = {
-                                        "application/json": {
-                                            "schema": {"$ref": "#/components/schemas/Http401Error"}
-                                        }
+                                        "application/json": {"schema": {"$ref": "#/components/schemas/Http401Error"}}
                                     }
                             elif code in ("400", "403", "404", "409", "429", "500"):
                                 if "content" not in resp:
                                     resp["content"] = {
-                                        "application/json": {
-                                            "schema": {"$ref": "#/components/schemas/HttpError"}
-                                        }
+                                        "application/json": {"schema": {"$ref": "#/components/schemas/HttpError"}}
                                     }
                             elif code == "503" and path_name == "/ready":
                                 if "content" not in resp:
                                     resp["content"] = {
-                                        "application/json": {
-                                            "schema": {"$ref": "#/components/schemas/Ready"}
-                                        }
+                                        "application/json": {"schema": {"$ref": "#/components/schemas/Ready"}}
                                     }
 
         schemas.pop("HTTPValidationError", None)

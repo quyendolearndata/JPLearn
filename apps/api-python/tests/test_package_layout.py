@@ -1,10 +1,10 @@
 """Public launch paths and resource lookup survive package relocation."""
 
 import os
-from pathlib import Path
 import subprocess
 import sys
 import tomllib
+from pathlib import Path
 
 from jplearn_api.entrypoints.cli.migrate import MIGRATIONS_DIR, alembic_config, load_baseline_schema
 from jplearn_api.tooling.openapi_diff import handwritten_spec_path
@@ -29,7 +29,6 @@ def test_resources_and_contract_resolve_outside_working_directory(tmp_path, monk
     assert len(load_baseline_schema("0012_content_jobs")["tables"]) == 34
     assert len(load_baseline_schema("head")["tables"]) == 38
 
-
     assert handwritten_spec_path().is_file()
     config = alembic_config("postgresql://test:test@localhost/jplearn_test")
     assert Path(config.get_main_option("script_location")) == MIGRATIONS_DIR
@@ -48,13 +47,25 @@ def test_console_entrypoints_target_canonical_modules():
 
 
 def test_migration_module_help_without_configuration(tmp_path):
-    env = {k: v for k, v in os.environ.items() if k not in {
-        "DATABASE_URL", "JWT_SECRET", "ENVIRONMENT", "SCHEMA_BASELINE_PATH",
-    }}
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k
+        not in {
+            "DATABASE_URL",
+            "JWT_SECRET",
+            "ENVIRONMENT",
+            "SCHEMA_BASELINE_PATH",
+        }
+    }
     env["PYTHONPATH"] = str(Path(__file__).resolve().parents[1] / "src")
     result = subprocess.run(
         [sys.executable, "-m", "jplearn_api.entrypoints.cli.migrate", "--help"],
-        cwd=tmp_path, env=env, capture_output=True, text=True, timeout=15,
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
     )
     assert result.returncode == 0, result.stderr
     assert "jplearn-migrate" in result.stdout

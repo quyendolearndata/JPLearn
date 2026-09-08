@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import asyncio
-
+from collections.abc import Callable
 from types import TracebackType
-from typing import Callable, Protocol, TypeVar
+from typing import Protocol, TypeVar
 
 from jplearn_api.application.ports.repositories import (
     CatalogRepository,
@@ -47,16 +47,14 @@ class AsyncUnitOfWork(Protocol):
     usage_ledger: UsageLedgerRepository
     content_jobs: ContentJobRepository
 
-    async def __aenter__(self: T) -> T:
-        ...
+    async def __aenter__(self: T) -> T: ...
 
     async def __aexit__(
         self,
         exc_type: type[BaseException] | None,
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     committed: bool
     rolled_back: bool

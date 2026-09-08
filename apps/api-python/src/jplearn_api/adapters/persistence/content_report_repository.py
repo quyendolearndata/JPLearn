@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
+
 from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.adapters.persistence.models import (
     ContentReport as OrmContentReport,
+)
+from jplearn_api.adapters.persistence.models import (
     ContentReportAudit as OrmContentReportAudit,
 )
 from jplearn_api.domain.content_report import (
@@ -88,12 +91,9 @@ class SqlAlchemyContentReportRepository:
         return self._to_domain(orm), orm.request_hash
 
     async def count_today_by_user(self, user_id: str, start_of_day: datetime) -> int:
-        stmt = (
-            select(func.count(OrmContentReport.id))
-            .where(
-                OrmContentReport.user_id == user_id,
-                OrmContentReport.created_at >= start_of_day,
-            )
+        stmt = select(func.count(OrmContentReport.id)).where(
+            OrmContentReport.user_id == user_id,
+            OrmContentReport.created_at >= start_of_day,
         )
         result = await self._session.execute(stmt)
         return result.scalar() or 0
@@ -103,7 +103,7 @@ class SqlAlchemyContentReportRepository:
         report: ContentReport,
         request_hash: str | None = None,
     ) -> ContentReport:
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
         orm = OrmContentReport(
             id=report.id,
             user_id=report.user_id,
@@ -134,10 +134,7 @@ class SqlAlchemyContentReportRepository:
         limit: int = 50,
         offset: int = 0,
     ) -> tuple[list[ContentReport], int]:
-        count_stmt = (
-            select(func.count(OrmContentReport.id))
-            .where(OrmContentReport.user_id == user_id)
-        )
+        count_stmt = select(func.count(OrmContentReport.id)).where(OrmContentReport.user_id == user_id)
         total_res = await self._session.execute(count_stmt)
         total = total_res.scalar() or 0
 
@@ -177,11 +174,7 @@ class SqlAlchemyContentReportRepository:
         stmt = select(OrmContentReport)
         if conditions:
             stmt = stmt.where(*conditions)
-        stmt = (
-            stmt.order_by(desc(OrmContentReport.updated_at), desc(OrmContentReport.id))
-            .limit(limit)
-            .offset(offset)
-        )
+        stmt = stmt.order_by(desc(OrmContentReport.updated_at), desc(OrmContentReport.id)).limit(limit).offset(offset)
         result = await self._session.execute(stmt)
         reports = [self._to_domain(row) for row in result.scalars().all()]
         return reports, total
@@ -219,7 +212,7 @@ class SqlAlchemyContentReportRepository:
             )
 
         from_status = orm.status
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
 
         if status is not None:
             orm.status = status

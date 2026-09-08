@@ -11,8 +11,8 @@ from jplearn_api.bootstrap import (
     create_uow,
     create_user_repository,
 )
-from jplearn_api.entrypoints.http.dependencies import get_session
 from jplearn_api.domain.errors import DomainError
+from jplearn_api.entrypoints.http.dependencies import get_session
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
 from jplearn_api.entrypoints.http.rate_limit import enforce_login_rate_limit
 from jplearn_api.entrypoints.http.schemas import AuthSession, LoginBody, RegisterBody, UserPublic
@@ -102,7 +102,11 @@ async def login(
     operation_id="logout",
     openapi_extra={"x-jplearn-fr": ["FR-ID-003"]},
     responses={
-        204: {"description": "Invalidates every access_token for this user (all devices); tokenVersion increment (FR-ID-003)"},
+        204: {
+            "description": (
+                "Invalidates every access_token for this user (all devices); tokenVersion increment (FR-ID-003)"
+            )
+        },
         401: {"description": "Missing or invalid Bearer"},
     },
 )

@@ -12,8 +12,7 @@ Enforces:
 
 from __future__ import annotations
 
-from dataclasses import replace
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
@@ -94,9 +93,7 @@ async def handle_update_learning_preferences(
         current = await uow.playbacks.get_learning_preferences(cmd.user_id)
 
         if cmd.expected_revision != current.revision:
-            raise RevisionConflictError(
-                f"Revision conflict: expected {cmd.expected_revision}, got {current.revision}"
-            )
+            raise RevisionConflictError(f"Revision conflict: expected {cmd.expected_revision}, got {current.revision}")
 
         if cmd.daily_goal_minutes is not None:
             if cmd.daily_goal_minutes < 0 or cmd.daily_goal_minutes > 120:
@@ -106,9 +103,9 @@ async def handle_update_learning_preferences(
             try:
                 ZoneInfo(cmd.timezone)
             except Exception:
-                raise InvalidDomainStateError(f"Invalid IANA timezone: '{cmd.timezone}'")
+                raise InvalidDomainStateError(f"Invalid IANA timezone: '{cmd.timezone}'") from None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         effective = await uow.playbacks.get_effective_learning_preferences(cmd.user_id, now)
         # Persist the current policy before staging its replacement, including defaults.
         await uow.playbacks.save_preference_version(effective)
@@ -120,11 +117,11 @@ async def handle_update_learning_preferences(
         except Exception:
             current_tz = ZoneInfo(DEFAULT_TIMEZONE)
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         now_local = now.astimezone(current_tz)
         next_day = now_local.date() + timedelta(days=1)
         next_midnight_local = datetime(next_day.year, next_day.month, next_day.day, 0, 0, 0, tzinfo=current_tz)
-        effective_at = next_midnight_local.astimezone(timezone.utc)
+        effective_at = next_midnight_local.astimezone(UTC)
 
         if cmd.daily_goal_minutes is not None:
             current.daily_goal_minutes = cmd.daily_goal_minutes
@@ -153,7 +150,7 @@ async def handle_get_daily_activity(
         d_from = date.fromisoformat(query.from_date)
         d_to = date.fromisoformat(query.to_date)
     except Exception:
-        raise InvalidDomainStateError("Dates must be valid ISO format (YYYY-MM-DD)")
+        raise InvalidDomainStateError("Dates must be valid ISO format (YYYY-MM-DD)") from None
 
     if d_from > d_to:
         raise InvalidDomainStateError("from_date must be less than or equal to to_date")
@@ -188,7 +185,7 @@ async def handle_request_history_deletion(
     uow: AsyncUnitOfWork,
 ) -> HistoryDeletionJob:
     """Request watch history deletion, immediately closing active playback and queueing purge."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     async with uow:
         # Acquire lock on playback state to close active session and invalidate leases
@@ -250,7 +247,7 @@ async def handle_execute_history_deletion_worker(
         if not job:
             return None
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         try:
             deleted_count = await uow.playbacks.purge_watch_history_before_cutoff(
                 user_id=job.user_id,

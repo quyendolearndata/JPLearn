@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class RecommendationReason(str, Enum):
+class RecommendationReason(StrEnum):
     """Reason code explaining why an item was recommended."""
 
     CONTINUE_SERIES = "continue_series"

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Query, status
@@ -12,15 +12,14 @@ from jplearn_api.application.commands import (
     RequestHistoryDeletionCommand,
     UpdateLearningPreferencesCommand,
 )
-from jplearn_api.application.read_models import UserDTO
 from jplearn_api.application.handlers.activity import (
+    calculate_activity_streaks,
     handle_get_daily_activity,
     handle_get_history_deletion,
     handle_get_learning_preferences,
     handle_get_watch_history,
     handle_request_history_deletion,
     handle_update_learning_preferences,
-    calculate_activity_streaks,
 )
 from jplearn_api.application.queries import (
     GetDailyActivityQuery,
@@ -28,6 +27,7 @@ from jplearn_api.application.queries import (
     GetLearningPreferencesQuery,
     GetWatchHistoryQuery,
 )
+from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_uow
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_session
@@ -37,8 +37,8 @@ from jplearn_api.entrypoints.http.schemas import (
     HistoryDeletionCreatedPublic,
     HistoryDeletionStatusPublic,
     LearnerActivityResponsePublic,
-    LearningPreferencesPublic,
     LearningPolicyPublic,
+    LearningPreferencesPublic,
     UpdateLearningPreferencesBody,
     WatchHistoryItemPublic,
     WatchHistoryResponsePublic,
@@ -56,11 +56,7 @@ router = APIRouter(prefix="/me", tags=["Activity & Preferences"])
     responses={
         200: {
             "description": "Learner preferences retrieved successfully",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/LearningPreferencesPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LearningPreferencesPublic"}}},
         },
         401: {"description": "Authentication required"},
     },
@@ -73,11 +69,20 @@ async def get_learning_preferences(
     query = GetLearningPreferencesQuery(user_id=user.id)
     try:
         pref = await handle_get_learning_preferences(query, uow)
-        current = await uow.playbacks.get_effective_learning_preferences(user.id, datetime.now(timezone.utc))
-        pending_at = pref.effective_at.replace(tzinfo=timezone.utc) if pref.effective_at.tzinfo is None else pref.effective_at
+        current = await uow.playbacks.get_effective_learning_preferences(user.id, datetime.now(UTC))
+        pending_at = pref.effective_at.replace(tzinfo=UTC) if pref.effective_at.tzinfo is None else pref.effective_at
         return LearningPreferencesPublic(
-            current_policy=LearningPolicyPublic(daily_goal_minutes=current.daily_goal_minutes, timezone=current.timezone, effective_at=current.effective_at),
-            pending_policy=LearningPolicyPublic(daily_goal_minutes=pref.daily_goal_minutes, timezone=pref.timezone, effective_at=pref.effective_at) if pending_at > datetime.now(timezone.utc) and (pref.daily_goal_minutes, pref.timezone) != (current.daily_goal_minutes, current.timezone) else None,
+            current_policy=LearningPolicyPublic(
+                daily_goal_minutes=current.daily_goal_minutes,
+                timezone=current.timezone,
+                effective_at=current.effective_at,
+            ),
+            pending_policy=LearningPolicyPublic(
+                daily_goal_minutes=pref.daily_goal_minutes, timezone=pref.timezone, effective_at=pref.effective_at
+            )
+            if pending_at > datetime.now(UTC)
+            and (pref.daily_goal_minutes, pref.timezone) != (current.daily_goal_minutes, current.timezone)
+            else None,
             daily_goal_minutes=pref.daily_goal_minutes,
             preferred_topic_ids=pref.preferred_topic_ids,
             timezone=pref.timezone,
@@ -87,7 +92,7 @@ async def get_learning_preferences(
             updated_at=pref.updated_at,
         )
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
 
 @router.put(
@@ -98,11 +103,7 @@ async def get_learning_preferences(
     responses={
         200: {
             "description": "Learner preferences updated successfully",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/LearningPreferencesPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LearningPreferencesPublic"}}},
         },
         400: {"description": "Invalid goal or timezone"},
         401: {"description": "Authentication required"},
@@ -125,11 +126,20 @@ async def update_learning_preferences(
     try:
         pref = await handle_update_learning_preferences(cmd, uow)
         await session.commit()
-        current = await uow.playbacks.get_effective_learning_preferences(user.id, datetime.now(timezone.utc))
-        pending_at = pref.effective_at.replace(tzinfo=timezone.utc) if pref.effective_at.tzinfo is None else pref.effective_at
+        current = await uow.playbacks.get_effective_learning_preferences(user.id, datetime.now(UTC))
+        pending_at = pref.effective_at.replace(tzinfo=UTC) if pref.effective_at.tzinfo is None else pref.effective_at
         return LearningPreferencesPublic(
-            current_policy=LearningPolicyPublic(daily_goal_minutes=current.daily_goal_minutes, timezone=current.timezone, effective_at=current.effective_at),
-            pending_policy=LearningPolicyPublic(daily_goal_minutes=pref.daily_goal_minutes, timezone=pref.timezone, effective_at=pref.effective_at) if pending_at > datetime.now(timezone.utc) and (pref.daily_goal_minutes, pref.timezone) != (current.daily_goal_minutes, current.timezone) else None,
+            current_policy=LearningPolicyPublic(
+                daily_goal_minutes=current.daily_goal_minutes,
+                timezone=current.timezone,
+                effective_at=current.effective_at,
+            ),
+            pending_policy=LearningPolicyPublic(
+                daily_goal_minutes=pref.daily_goal_minutes, timezone=pref.timezone, effective_at=pref.effective_at
+            )
+            if pending_at > datetime.now(UTC)
+            and (pref.daily_goal_minutes, pref.timezone) != (current.daily_goal_minutes, current.timezone)
+            else None,
             daily_goal_minutes=pref.daily_goal_minutes,
             preferred_topic_ids=pref.preferred_topic_ids,
             timezone=pref.timezone,
@@ -140,7 +150,7 @@ async def update_learning_preferences(
         )
     except DomainError as exc:
         await session.rollback()
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
 
 @router.get(
@@ -151,11 +161,7 @@ async def update_learning_preferences(
     responses={
         200: {
             "description": "Daily activity retrieved successfully",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/LearnerActivityResponsePublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/LearnerActivityResponsePublic"}}},
         },
         400: {"description": "Invalid date range or exceeding 90 days limit"},
         401: {"description": "Authentication required"},
@@ -191,10 +197,12 @@ async def get_learner_activity(
         ]
         total_seconds = sum(item.active_watch_seconds for item in items_public)
         days_met = len({item.date for item in items_public if item.goal_met})
-        effective = await uow.playbacks.get_effective_learning_preferences(user.id, datetime.now(timezone.utc))
-        today = datetime.now(timezone.utc).astimezone(ZoneInfo(effective.timezone)).date().isoformat()
+        effective = await uow.playbacks.get_effective_learning_preferences(user.id, datetime.now(UTC))
+        today = datetime.now(UTC).astimezone(ZoneInfo(effective.timezone)).date().isoformat()
         current_streak, longest_streak = calculate_activity_streaks(
-            records, to_date, terminal_is_open_today=(to_date == today),
+            records,
+            to_date,
+            terminal_is_open_today=(to_date == today),
         )
         return LearnerActivityResponsePublic(
             items=items_public,
@@ -204,7 +212,7 @@ async def get_learner_activity(
             longest_streak_days=longest_streak,
         )
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
 
 @router.get(
@@ -215,11 +223,7 @@ async def get_learner_activity(
     responses={
         200: {
             "description": "Watch history list with pagination cursor",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/WatchHistoryResponsePublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/WatchHistoryResponsePublic"}}},
         },
         401: {"description": "Authentication required"},
     },
@@ -260,7 +264,7 @@ async def get_watch_history(
             next_cursor=next_cursor,
         )
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
 
 @router.delete(
@@ -272,11 +276,7 @@ async def get_watch_history(
     responses={
         202: {
             "description": "Watch history deletion accepted and queued",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/HistoryDeletionCreatedPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HistoryDeletionCreatedPublic"}}},
         },
         401: {"description": "Authentication required"},
     },
@@ -298,7 +298,7 @@ async def delete_watch_history(
         )
     except DomainError as exc:
         await session.rollback()
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
 
 @router.get(
@@ -309,11 +309,7 @@ async def delete_watch_history(
     responses={
         200: {
             "description": "History deletion status retrieved successfully",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/HistoryDeletionStatusPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/HistoryDeletionStatusPublic"}}},
         },
         401: {"description": "Authentication required"},
         404: {"description": "History deletion job not found"},
@@ -344,4 +340,4 @@ async def get_history_deletion_status(
             completed_at=job.completed_at,
         )
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None

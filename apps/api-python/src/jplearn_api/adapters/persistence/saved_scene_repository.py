@@ -7,8 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.adapters.persistence.models import (
     CatalogItem as OrmCatalogItem,
+)
+from jplearn_api.adapters.persistence.models import (
     ContentVersion as OrmContentVersion,
+)
+from jplearn_api.adapters.persistence.models import (
     SavedScene as OrmSavedScene,
+)
+from jplearn_api.adapters.persistence.models import (
     Scene as OrmScene,
 )
 from jplearn_api.application.ports.repositories import (
@@ -87,9 +93,7 @@ class SqlAlchemySavedSceneRepository:
         latest_v_res = await self._session.execute(latest_v_stmt)
         latest_published_v_id = latest_v_res.scalar_one_or_none()
 
-        is_current_published = (
-            latest_published_v_id is not None and latest_published_v_id == row.content_version_id
-        )
+        is_current_published = latest_published_v_id is not None and latest_published_v_id == row.content_version_id
 
         return SavedSceneContext(
             scene_id=row.scene_id,

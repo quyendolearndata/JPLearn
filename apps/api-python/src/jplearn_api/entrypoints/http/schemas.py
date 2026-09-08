@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Annotated, Any, Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
 
 class RegisterBody(BaseModel):
     email: str = Field(json_schema_extra={"format": "email"})
@@ -191,7 +192,6 @@ class CatalogStaffList(BaseModel):
 
 class SessionStartBody(BaseModel):
     device_class: Literal["web", "phone", "ipad"]
-
 
 
 class LearningSessionPublic(BaseModel):

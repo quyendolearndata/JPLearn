@@ -47,19 +47,11 @@ router = APIRouter(tags=["Library"], dependencies=[Depends(require_capability("p
     responses={
         200: {
             "description": "Collection was already created (idempotent replay)",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/CollectionPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CollectionPublic"}}},
         },
         201: {
             "description": "Collection successfully created",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/CollectionPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CollectionPublic"}}},
         },
         400: {"description": "Invalid input or collection quota exceeded"},
         401: {"description": "Authentication required"},

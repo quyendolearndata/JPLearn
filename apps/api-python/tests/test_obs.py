@@ -124,9 +124,7 @@ def test_sensitive_credentials_redacted_in_5xx_and_webhook(webhook) -> None:
     app = _app(f"http://127.0.0.1:{webhook.server_address[1]}/hook")
 
     async def leak_route() -> None:
-        raise RuntimeError(
-            f"DB query failed: password='{fake_secret}' hash={fake_hash} token={fake_jwt} uri={fake_db}"
-        )
+        raise RuntimeError(f"DB query failed: password='{fake_secret}' hash={fake_hash} token={fake_jwt} uri={fake_db}")
 
     app.add_api_route("/__test/leak", leak_route, methods=["GET"], include_in_schema=False)
 
@@ -309,6 +307,7 @@ def test_slow_webhook_does_not_block_client_response() -> None:
 
 def test_alert_queue_overflow_drops_safely() -> None:
     import asyncio
+
     from jplearn_api.adapters.observability.alerts import enqueue_alert
 
     small_queue: asyncio.Queue = asyncio.Queue(maxsize=2)
@@ -453,6 +452,3 @@ def test_local_test_cors_expo_and_dynamic_ports() -> None:
             },
         )
         assert resp_dynamic.headers.get("access-control-allow-origin") == "http://localhost:38291"
-
-
-

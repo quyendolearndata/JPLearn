@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from jplearn_api.application.ports.security import TokenService
 from jplearn_api.adapters.security.tokens import decode_access_token, sign_access_token
+from jplearn_api.application.ports.security import TokenService
 
 
 class JwtTokenService(TokenService):

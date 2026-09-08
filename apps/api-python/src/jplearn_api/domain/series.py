@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from jplearn_api.domain.errors import InvalidDomainStateError, RevisionConflictError
 
@@ -34,8 +34,8 @@ class Series:
     status: str = "draft"
     revision: int = 1
     items: list[SeriesItem] = field(default_factory=list)
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def update_metadata(
         self,
@@ -65,7 +65,7 @@ class Series:
             self.topic_id = topic_id
 
         self.revision += 1
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def update_items(self, expected_revision: int, catalog_item_ids: list[str]) -> None:
         if self.revision != expected_revision:
@@ -78,12 +78,9 @@ class Series:
         if len(catalog_item_ids) != len(set(catalog_item_ids)):
             raise InvalidDomainStateError("Duplicate catalog item ids in series")
 
-        self.items = [
-            SeriesItem(catalog_item_id=cid, position=idx + 1)
-            for idx, cid in enumerate(catalog_item_ids)
-        ]
+        self.items = [SeriesItem(catalog_item_id=cid, position=idx + 1) for idx, cid in enumerate(catalog_item_ids)]
         self.revision += 1
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def submit_qa(self, expected_revision: int) -> None:
         if self.revision != expected_revision:
@@ -97,7 +94,7 @@ class Series:
 
         self.status = "level_qa"
         self.revision += 1
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def return_to_draft(self, expected_revision: int, reason: str = "") -> None:
         if self.revision != expected_revision:
@@ -109,7 +106,7 @@ class Series:
 
         self.status = "draft"
         self.revision += 1
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def publish(self, expected_revision: int, published_catalog_ids: set[str]) -> None:
         if self.revision != expected_revision:
@@ -123,13 +120,11 @@ class Series:
 
         unpub = [it.catalog_item_id for it in self.items if it.catalog_item_id not in published_catalog_ids]
         if unpub:
-            raise InvalidDomainStateError(
-                f"Cannot publish series: constituent clips {unpub} are not published"
-            )
+            raise InvalidDomainStateError(f"Cannot publish series: constituent clips {unpub} are not published")
 
         self.status = "published"
         self.revision += 1
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)
 
     def unpublish(self, expected_revision: int) -> None:
         if self.revision != expected_revision:
@@ -141,4 +136,4 @@ class Series:
 
         self.status = "unpublished"
         self.revision += 1
-        self.updated_at = datetime.now(timezone.utc)
+        self.updated_at = datetime.now(UTC)

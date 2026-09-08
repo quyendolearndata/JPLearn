@@ -5,14 +5,13 @@ Provides transactional state isolation, deep-copying, and commit/rollback guaran
 
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
-import contextvars
 import asyncio
+import contextvars
 import copy
-from datetime import datetime, timedelta, timezone
+from collections.abc import AsyncIterator
+from datetime import UTC, datetime, timedelta
 from types import TracebackType
 from typing import Any
-
 from uuid import uuid4
 
 from jplearn_api.application.ports.ai_provider import (
@@ -48,12 +47,16 @@ from jplearn_api.domain.collection import (
     CollectionSceneDetail,
     PersonalCollection,
 )
+from jplearn_api.domain.content_job import (
+    ContentJob,
+    ContentJobTask,
+)
 from jplearn_api.domain.content_report import (
     ContentReport,
     ContentReportAudit,
-    ReportCategory,
     ReportStatus,
 )
+from jplearn_api.domain.errors import ConflictError, EntityNotFoundError, RevisionConflictError
 from jplearn_api.domain.playback import (
     DeletionStatus,
     HistoryDeletionJob,
@@ -63,36 +66,27 @@ from jplearn_api.domain.playback import (
     PlaybackCheckpoint,
     PlaybackReceipt,
     PlaybackSession,
-    PlaybackStatus,
-    PlayerState,
     WatchHistoryItemProjection,
-)
-from jplearn_api.domain.content_job import (
-    ContentJob,
-    ContentJobStatus,
-    ContentJobTask,
-)
-from jplearn_api.domain.transcript import (
-    ApprovedSceneText,
-    LanguageAnalysisJob,
-    TranscriptRevision,
 )
 from jplearn_api.domain.quota import (
     AiUsageLedgerEntry,
     QuotaAccount,
 )
-from jplearn_api.domain.errors import ConflictError, EntityNotFoundError, RevisionConflictError
 from jplearn_api.domain.saved_scene import SavedScene, SceneAvailability
 from jplearn_api.domain.search import (
     calculate_highlights_and_match_kind,
     decode_search_cursor,
     encode_search_cursor,
 )
+from jplearn_api.domain.transcript import (
+    ApprovedSceneText,
+    LanguageAnalysisJob,
+    TranscriptRevision,
+)
 
 _active_fake_uow: contextvars.ContextVar[FakeUnitOfWork | None] = contextvars.ContextVar(
     "_active_fake_uow", default=None
 )
-
 
 
 class FakeFlagsRepository(FlagsRepository):
@@ -259,10 +253,14 @@ class FakeStoragePort(StoragePort):
 
     async def inspect_media(self, key):
         import hashlib
+
         from jplearn_api.application.ports.media_probe import MediaInspection
+
         return MediaInspection(3_600_000, hashlib.sha256(self.files.get(key, b"fixture")).hexdigest())
 
-    async def stage_stream(self, temp_key: str, stream: AsyncIterator[bytes], *, max_bytes: int = 500 * 1024 * 1024) -> int:
+    async def stage_stream(
+        self, temp_key: str, stream: AsyncIterator[bytes], *, max_bytes: int = 500 * 1024 * 1024
+    ) -> int:
         total = 0
         chunks = []
         async for chunk in stream:
@@ -290,22 +288,28 @@ class FakeStoragePort(StoragePort):
 
     async def open_read(self, key: str) -> AsyncIterator[bytes]:
         data = self.files.get(key, b"")
+
         async def _iter():
             yield data
+
         return _iter()
 
     async def open_read_range(self, key: str, start: int, length: int) -> AsyncIterator[bytes]:
         data = self.files.get(key, b"")[start : start + length]
+
         async def _iter():
             yield data
+
         return _iter()
 
     async def get_metadata(self, key: str) -> Any:
         from dataclasses import dataclass
+
         @dataclass(frozen=True)
         class _Meta:
             size: int
             mtime: float
+
         data = self.files.get(key, b"")
         return _Meta(size=len(data), mtime=1700000000.0)
 
@@ -364,6 +368,7 @@ class FakeCatalogRepository(CatalogRepository):
         title_internal: str,
     ) -> Any:
         from jplearn_api.application.ports.repositories import UpdateDraftResult, UpdateDraftResultStatus
+
         self._auto_register()
         item = self.items.get(item_id)
         if item is None:
@@ -519,13 +524,15 @@ class FakeLearningRepository(LearningRepository):
         created_at: Any,
     ) -> None:
         self._auto_register()
-        self.events.append({
-            "user_id": user_id,
-            "session_id": session_id,
-            "event_type": event_type,
-            "payload": dict(payload),
-            "created_at": created_at,
-        })
+        self.events.append(
+            {
+                "user_id": user_id,
+                "session_id": session_id,
+                "event_type": event_type,
+                "payload": dict(payload),
+                "created_at": created_at,
+            }
+        )
         if _active_fake_uow.get() is None:
             self.commit_transaction()
 
@@ -584,11 +591,7 @@ class FakeMediaRepository(MediaRepository):
 
     async def list_all_storage_keys(self) -> set[str]:
         self._auto_register()
-        return {
-            getattr(a, "storage_key", "")
-            for a in self.assets.values()
-            if getattr(a, "storage_key", None)
-        }
+        return {getattr(a, "storage_key", "") for a in self.assets.values() if getattr(a, "storage_key", None)}
 
     async def storage_key_exists(self, storage_key: str) -> bool:
         self._auto_register()
@@ -728,7 +731,9 @@ class FakeSeriesRepository(SeriesRepository):
         offset: int = 0,
         limit: int = 50,
     ) -> list[Any]:
-        return await self.list_staff(status="published", ci_level=ci_level, topic_id=topic_id, offset=offset, limit=limit)
+        return await self.list_staff(
+            status="published", ci_level=ci_level, topic_id=topic_id, offset=offset, limit=limit
+        )
 
     async def get_published_catalog_item_ids(self, item_ids: list[str]) -> set[str]:
         self._auto_register()
@@ -749,9 +754,7 @@ class FakeSavedSceneRepository(SavedSceneRepository):
     """In-memory fake implementation of SavedSceneRepository with transaction isolation."""
 
     def __init__(self, initial_saved_scenes: list[SavedScene] | None = None) -> None:
-        init_dict = {
-            (s.user_id, s.scene_id): copy.deepcopy(s) for s in (initial_saved_scenes or [])
-        }
+        init_dict = {(s.user_id, s.scene_id): copy.deepcopy(s) for s in (initial_saved_scenes or [])}
         self._committed_saved_scenes: dict[tuple[str, str], SavedScene] = dict(init_dict)
         self.saved_scenes: dict[tuple[str, str], SavedScene] = dict(init_dict)
 
@@ -821,15 +824,9 @@ class FakeSavedSceneRepository(SavedSceneRepository):
         if not catalog_item:
             return None
 
-        published_versions = [
-            v
-            for v in all_versions
-            if v.catalog_item_id == catalog_item.id and v.is_published
-        ]
+        published_versions = [v for v in all_versions if v.catalog_item_id == catalog_item.id and v.is_published]
         published_versions.sort(key=lambda v: getattr(v, "version_number", 0), reverse=True)
-        is_current_published = bool(
-            published_versions and published_versions[0].id == target_version.id
-        )
+        is_current_published = bool(published_versions and published_versions[0].id == target_version.id)
 
         return SavedSceneContext(
             scene_id=scene_id,
@@ -921,9 +918,7 @@ class FakeSavedSceneRepository(SavedSceneRepository):
                 )
             else:
                 published_versions = [
-                    v
-                    for v in all_versions
-                    if v.catalog_item_id == catalog_item.id and v.is_published
+                    v for v in all_versions if v.catalog_item_id == catalog_item.id and v.is_published
                 ]
                 published_versions.sort(key=lambda v: getattr(v, "version_number", 0), reverse=True)
                 is_current = bool(published_versions and published_versions[0].id == target_version.id)
@@ -953,7 +948,7 @@ class FakeCollectionRepository(CollectionRepository):
 
     def __init__(self, initial_collections: list[PersonalCollection] | None = None) -> None:
         self._committed_collections: dict[str, dict[str, Any]] = {}
-        for c in (initial_collections or []):
+        for c in initial_collections or []:
             self._committed_collections[c.id] = {
                 "collection": copy.deepcopy(c),
                 "idempotency_key": None,
@@ -1046,9 +1041,7 @@ class FakeCollectionRepository(CollectionRepository):
                 )
             else:
                 published_versions = [
-                    v
-                    for v in all_versions
-                    if v.catalog_item_id == catalog_item.id and v.is_published
+                    v for v in all_versions if v.catalog_item_id == catalog_item.id and v.is_published
                 ]
                 published_versions.sort(key=lambda v: getattr(v, "version_number", 0), reverse=True)
                 is_current = bool(published_versions and published_versions[0].id == target_version.id)
@@ -1083,9 +1076,7 @@ class FakeCollectionRepository(CollectionRepository):
             scenes=scene_details,
         )
 
-    async def find_by_idempotency_key(
-        self, user_id: str, key: str
-    ) -> tuple[PersonalCollection, str | None] | None:
+    async def find_by_idempotency_key(self, user_id: str, key: str) -> tuple[PersonalCollection, str | None] | None:
         self._auto_register()
         for data in self.collections.values():
             if data["collection"].user_id == user_id and data["idempotency_key"] == key:
@@ -1125,9 +1116,7 @@ class FakeCollectionRepository(CollectionRepository):
         limit: int = 50,
     ) -> tuple[list[PersonalCollection], int]:
         self._auto_register()
-        user_colls = [
-            d["collection"] for d in self.collections.values() if d["collection"].user_id == user_id
-        ]
+        user_colls = [d["collection"] for d in self.collections.values() if d["collection"].user_id == user_id]
         user_colls.sort(key=lambda c: (c.created_at, c.id), reverse=True)
         total = len(user_colls)
         sliced = user_colls[offset : offset + limit]
@@ -1152,12 +1141,10 @@ class FakeCollectionRepository(CollectionRepository):
             raise EntityNotFoundError(f"Collection {collection_id} not found")
         c = data["collection"]
         if c.revision != expected_revision:
-            raise ConflictError(
-                f"Collection revision conflict: expected {expected_revision}, current {c.revision}"
-            )
+            raise ConflictError(f"Collection revision conflict: expected {expected_revision}, current {c.revision}")
         c.name = new_name
         c.revision += 1
-        c.updated_at = datetime.now(timezone.utc)
+        c.updated_at = datetime.now(UTC)
         scenes = self.collection_scenes.get(c.id, [])
         cp = copy.deepcopy(c)
         cp.scene_count = len(scenes)
@@ -1178,13 +1165,10 @@ class FakeCollectionRepository(CollectionRepository):
             raise EntityNotFoundError(f"Collection {collection_id} not found")
         c = data["collection"]
         if c.revision != expected_revision:
-            raise ConflictError(
-                f"Collection revision conflict: expected {expected_revision}, current {c.revision}"
-            )
-        now = datetime.now(timezone.utc)
+            raise ConflictError(f"Collection revision conflict: expected {expected_revision}, current {c.revision}")
+        now = datetime.now(UTC)
         self.collection_scenes[collection_id] = [
-            {"scene_id": sid, "position": pos, "added_at": now}
-            for pos, sid in enumerate(scene_ids)
+            {"scene_id": sid, "position": pos, "added_at": now} for pos, sid in enumerate(scene_ids)
         ]
         c.revision += 1
         c.updated_at = now
@@ -1212,16 +1196,14 @@ class FakeCollectionRepository(CollectionRepository):
         self._auto_register()
         affected = []
         target_scenes = set(scene_ids)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for coll_id, sc_list in list(self.collection_scenes.items()):
             data = self.collections.get(coll_id)
             if not data or data["collection"].user_id != user_id:
                 continue
             if any(s["scene_id"] in target_scenes for s in sc_list):
                 affected.append(coll_id)
-                self.collection_scenes[coll_id] = [
-                    s for s in sc_list if s["scene_id"] not in target_scenes
-                ]
+                self.collection_scenes[coll_id] = [s for s in sc_list if s["scene_id"] not in target_scenes]
                 for i, s in enumerate(self.collection_scenes[coll_id]):
                     s["position"] = i
                 data["collection"].revision += 1
@@ -1288,11 +1270,11 @@ class FakeContentReportRepository(ContentReportRepository):
     async def count_today_by_user(self, user_id: str, start_of_day: datetime) -> int:
         self._auto_register()
         count = 0
-        sod = start_of_day.replace(tzinfo=timezone.utc) if start_of_day.tzinfo is None else start_of_day
+        sod = start_of_day.replace(tzinfo=UTC) if start_of_day.tzinfo is None else start_of_day
         for item in self.reports.values():
             r = item["report"]
             if r.user_id == user_id:
-                dt = r.created_at.replace(tzinfo=timezone.utc) if r.created_at.tzinfo is None else r.created_at
+                dt = r.created_at.replace(tzinfo=UTC) if r.created_at.tzinfo is None else r.created_at
                 if dt >= sod:
                     count += 1
         return count
@@ -1322,9 +1304,7 @@ class FakeContentReportRepository(ContentReportRepository):
     ) -> tuple[list[ContentReport], int]:
         self._auto_register()
         user_reports = [
-            copy.deepcopy(item["report"])
-            for item in self.reports.values()
-            if item["report"].user_id == user_id
+            copy.deepcopy(item["report"]) for item in self.reports.values() if item["report"].user_id == user_id
         ]
         user_reports.sort(key=lambda x: (x.created_at, x.id), reverse=True)
         total = len(user_reports)
@@ -1357,10 +1337,7 @@ class FakeContentReportRepository(ContentReportRepository):
 
     async def get_audit_logs(self, report_id: str) -> list[ContentReportAudit]:
         self._auto_register()
-        logs = [
-            copy.deepcopy(a)
-            for a in self.audits.get(report_id, [])
-        ]
+        logs = [copy.deepcopy(a) for a in self.audits.get(report_id, [])]
         logs.sort(key=lambda x: (x.created_at, x.revision))
         return logs
 
@@ -1382,11 +1359,9 @@ class FakeContentReportRepository(ContentReportRepository):
             raise EntityNotFoundError(f"Content report '{report_id}' not found")
         r = item["report"]
         if r.revision != expected_revision:
-            raise RevisionConflictError(
-                f"Expected revision {expected_revision}, but current revision is {r.revision}"
-            )
+            raise RevisionConflictError(f"Expected revision {expected_revision}, but current revision is {r.revision}")
         from_status = r.status
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if status is not None:
             r.status = ReportStatus(status) if isinstance(status, str) else status
         if assignee_id is not None:
@@ -1491,7 +1466,7 @@ class FakePlaybackRepository(PlaybackRepository):
         client_instance_id: str,
     ) -> LearnerPlaybackState:
         self._auto_register()
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         if user_id not in self.playback_states:
             self.playback_states[user_id] = LearnerPlaybackState(
                 user_id=user_id,
@@ -1569,7 +1544,7 @@ class FakePlaybackRepository(PlaybackRepository):
         p = self.preferences.get(user_id)
         if p:
             return copy.deepcopy(p)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return LearningPreferences(
             user_id=user_id,
             daily_goal_minutes=15,
@@ -1583,19 +1558,30 @@ class FakePlaybackRepository(PlaybackRepository):
 
     async def get_start_receipt(self, user_id, key):
         self._auto_register()
-        return copy.deepcopy(self.start_receipts.get((user_id,key)))
+        return copy.deepcopy(self.start_receipts.get((user_id, key)))
 
     async def save_start_receipt(self, user_id, key, request_hash, response):
         self._auto_register()
-        self.start_receipts[(user_id,key)] = copy.deepcopy({"request_hash":request_hash,"response":response})
+        self.start_receipts[(user_id, key)] = copy.deepcopy({"request_hash": request_hash, "response": response})
 
     async def get_effective_learning_preferences(self, user_id, at):
         self._auto_register()
-        versions = [p for (uid, _), p in self.preference_versions.items() if uid == user_id and p.effective_at.replace(tzinfo=timezone.utc) <= at.replace(tzinfo=timezone.utc)]
+        versions = [
+            p
+            for (uid, _), p in self.preference_versions.items()
+            if uid == user_id and p.effective_at.replace(tzinfo=UTC) <= at.replace(tzinfo=UTC)
+        ]
         if versions:
             return copy.deepcopy(max(versions, key=lambda p: (p.effective_at, p.revision)))
-        return LearningPreferences(user_id=user_id, daily_goal_minutes=15, timezone="Asia/Ho_Chi_Minh",
-            revision=1, effective_at=at, created_at=at, updated_at=at)
+        return LearningPreferences(
+            user_id=user_id,
+            daily_goal_minutes=15,
+            timezone="Asia/Ho_Chi_Minh",
+            revision=1,
+            effective_at=at,
+            created_at=at,
+            updated_at=at,
+        )
 
     async def save_preference_version(self, pref):
         self._auto_register()
@@ -1620,7 +1606,7 @@ class FakePlaybackRepository(PlaybackRepository):
     ) -> LearnerDailyActivity:
         self._auto_register()
         key = (user_id, date_str, policy_revision)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         goal_ms = goal_minutes * 60 * 1000
         if key in self.daily_activities:
             act = copy.deepcopy(self.daily_activities[key])
@@ -1682,7 +1668,8 @@ class FakePlaybackRepository(PlaybackRepository):
         if cutoff_time is not None:
             c_unaware = cutoff_time.replace(tzinfo=None) if cutoff_time.tzinfo else cutoff_time
             user_playbacks = [
-                p for p in user_playbacks
+                p
+                for p in user_playbacks
                 if (p.created_at.replace(tzinfo=None) if p.created_at.tzinfo else p.created_at) > c_unaware
             ]
 
@@ -1755,7 +1742,7 @@ class FakePlaybackRepository(PlaybackRepository):
             if status_val == "queued":
                 j.status = DeletionStatus.RUNNING
                 j.attempts += 1
-                j.updated_at = datetime.now(timezone.utc)
+                j.updated_at = datetime.now(UTC)
                 if _active_fake_uow.get() is None:
                     self._committed_history_deletions[j.id] = copy.deepcopy(j)
                 return copy.deepcopy(j)
@@ -1772,7 +1759,8 @@ class FakePlaybackRepository(PlaybackRepository):
         c_unaware = cutoff_time.replace(tzinfo=None) if cutoff_time.tzinfo else cutoff_time
 
         to_delete_playbacks = [
-            pid for pid, p in self.playbacks.items()
+            pid
+            for pid, p in self.playbacks.items()
             if p.user_id == user_id
             and (p.created_at.replace(tzinfo=None) if p.created_at.tzinfo else p.created_at) <= c_unaware
         ]
@@ -1781,16 +1769,14 @@ class FakePlaybackRepository(PlaybackRepository):
             self.playbacks.pop(pid, None)
 
         # Xóa receipts của các playbacks bị xóa
-        to_delete_receipts = [
-            k for k in self.receipts.keys()
-            if k[0] in to_delete_playbacks
-        ]
+        to_delete_receipts = [k for k in self.receipts.keys() if k[0] in to_delete_playbacks]
         for k in to_delete_receipts:
             self.receipts.pop(k, None)
 
         # Xóa checkpoints của user cập nhật trước cutoff
         to_delete_checkpoints = [
-            k for k, cp in self.checkpoints.items()
+            k
+            for k, cp in self.checkpoints.items()
             if cp.user_id == user_id
             and (cp.updated_at.replace(tzinfo=None) if cp.updated_at.tzinfo else cp.updated_at) <= c_unaware
         ]
@@ -1852,9 +1838,7 @@ class FakeTranscriptRepository(TranscriptRepository):
                 return copy.deepcopy(r)
         return None
 
-    async def get_latest_revision(
-        self, catalog_item_id: str, content_version_id: str
-    ) -> TranscriptRevision | None:
+    async def get_latest_revision(self, catalog_item_id: str, content_version_id: str) -> TranscriptRevision | None:
         self._auto_register()
         revs = [
             r
@@ -1885,15 +1869,21 @@ class FakeTranscriptRepository(TranscriptRepository):
                 existing = r
                 break
         if existing is not None:
-            exp_rev = expected_revision if expected_revision is not None else (revision.revision - 1 if revision.revision > existing.revision else existing.revision)
+            exp_rev = (
+                expected_revision
+                if expected_revision is not None
+                else (revision.revision - 1 if revision.revision > existing.revision else existing.revision)
+            )
             if existing.revision != exp_rev:
                 from jplearn_api.domain.errors import RevisionConflictError
+
                 raise RevisionConflictError(
-                    f"Atomic CAS failed for transcript '{revision.id}': expected revision {exp_rev}, found {existing.revision}"
+                    f"Atomic CAS failed for transcript '{revision.id}': "
+                    f"expected revision {exp_rev}, found {existing.revision}"
                 )
             self.revisions.pop((existing.catalog_item_id, existing.content_version_id, existing.revision), None)
-        self.revisions[(revision.catalog_item_id, revision.content_version_id, revision.revision)] = (
-            copy.deepcopy(revision)
+        self.revisions[(revision.catalog_item_id, revision.content_version_id, revision.revision)] = copy.deepcopy(
+            revision
         )
         return copy.deepcopy(revision)
 
@@ -1921,9 +1911,7 @@ class FakeTranscriptRepository(TranscriptRepository):
             if t.catalog_item_id == catalog_item_id and t.content_version_id == content_version_id:
                 t.is_active = False
 
-    async def create_language_analysis_job(
-        self, job: LanguageAnalysisJob
-    ) -> LanguageAnalysisJob:
+    async def create_language_analysis_job(self, job: LanguageAnalysisJob) -> LanguageAnalysisJob:
         self._auto_register()
         self.jobs[job.id] = copy.deepcopy(job)
         return copy.deepcopy(job)
@@ -1955,10 +1943,7 @@ class FakeTranscriptRepository(TranscriptRepository):
         uow = self._uow or _active_fake_uow.get()
 
         # 1. Determine index generation
-        active_approved = [
-            t for t in self.approved_texts.values()
-            if getattr(t, "is_active", True)
-        ]
+        active_approved = [t for t in self.approved_texts.values() if getattr(t, "is_active", True)]
         max_updated = max((t.updated_at for t in active_approved if t.updated_at), default=None)
         current_gen = str(int(max_updated.timestamp() * 1000)) if max_updated else "0"
 
@@ -2187,10 +2172,7 @@ class FakeUsageLedgerRepository(UsageLedgerRepository):
         offset: int = 0,
     ) -> tuple[list[AiUsageLedgerEntry], int]:
         self._auto_register()
-        matched = [
-            e for e in self.entries.values()
-            if e.user_id == user_id and from_date <= e.created_at <= to_date
-        ]
+        matched = [e for e in self.entries.values() if e.user_id == user_id and from_date <= e.created_at <= to_date]
         matched.sort(key=lambda x: x.created_at, reverse=True)
         total = len(matched)
         page = matched[offset : offset + limit]
@@ -2286,11 +2268,7 @@ class FakeContentJobRepository(ContentJobRepository):
         for j in self.jobs.values():
             j_task = j.task.value if hasattr(j.task, "value") else str(j.task)
             j_status = j.status.value if hasattr(j.status, "value") else str(j.status)
-            if (
-                j.content_version_id == content_version_id
-                and j_task == task_str
-                and j_status in ("queued", "running")
-            ):
+            if j.content_version_id == content_version_id and j_task == task_str and j_status in ("queued", "running"):
                 return copy.deepcopy(j)
         return None
 
@@ -2342,9 +2320,11 @@ class FakeAiTranscriptionPort(AiTranscriptionPort):
         usage: AiUsageRecord | None = None,
         exception_to_raise: Exception | None = None,
     ) -> None:
-        self.segments = segments if segments is not None else [
-            {"scene_id": "scene-1", "text_ja": "こんにちは、世界！", "start_ms": 0, "end_ms": 2000}
-        ]
+        self.segments = (
+            segments
+            if segments is not None
+            else [{"scene_id": "scene-1", "text_ja": "こんにちは、世界！", "start_ms": 0, "end_ms": 2000}]
+        )
         self.usage = usage or AiUsageRecord(
             audio_seconds=120,
             input_tokens=1000,
@@ -2375,7 +2355,6 @@ class FakeAiTranscriptionPort(AiTranscriptionPort):
 
 class FakeUnitOfWork(AsyncUnitOfWork):
     """In-memory Unit of Work recording commit/rollback actions with transactional state isolation."""
-
 
     def __init__(
         self,
@@ -2525,9 +2504,7 @@ class FakeUnitOfWork(AsyncUnitOfWork):
         try:
             if self._cleanup is not None:
                 cur_task = asyncio.current_task()
-                cancelling_count = (
-                    cur_task.cancelling() if (cur_task and hasattr(cur_task, "cancelling")) else 0
-                )
+                cancelling_count = cur_task.cancelling() if (cur_task and hasattr(cur_task, "cancelling")) else 0
                 if cancelling_count > 0:
                     for _ in range(cancelling_count):
                         cur_task.uncancel()

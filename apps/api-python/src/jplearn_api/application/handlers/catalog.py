@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC
 from uuid import uuid4
 
 from jplearn_api.application.commands import (
@@ -13,8 +14,12 @@ from jplearn_api.application.commands import (
     UnpublishCatalogItemCommand,
     UpdateDraftCatalogItemCommand,
 )
-from jplearn_api.application.ports.repositories import CatalogQueryPort, CatalogRepository
 from jplearn_api.application.media_integrity import inspect_hls_bundle
+from jplearn_api.application.ports.repositories import (
+    CatalogQueryPort,
+    CatalogRepository,
+    UpdateDraftResultStatus,
+)
 from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
 from jplearn_api.application.queries import (
@@ -47,7 +52,6 @@ def _to_staff_dto(item: CatalogItem) -> CatalogItemStaffDTO:
         revision=item.revision,
         qa_round=item.qa_round,
     )
-
 
 
 async def handle_create_catalog_item(
@@ -83,13 +87,6 @@ async def handle_create_catalog_item(
     return _to_staff_dto(item)
 
 
-from jplearn_api.application.ports.repositories import (
-    CatalogQueryPort,
-    CatalogRepository,
-    UpdateDraftResultStatus,
-)
-
-
 async def handle_submit_qa(
     cmd: SubmitCatalogForQaCommand,
     uow: AsyncUnitOfWork,
@@ -104,7 +101,8 @@ async def handle_submit_qa(
         draft_version = await uow.content.get_current_draft_by_catalog_item_id(cmd.item_id)
         if draft_version is None and item.media:
             draft_version = ContentVersion(
-                id=str(uuid4()), catalog_item_id=item.id,
+                id=str(uuid4()),
+                catalog_item_id=item.id,
                 version_number=await uow.content.get_max_version_number(item.id) + 1,
             )
             await uow.content.save_draft(draft_version)
@@ -201,14 +199,14 @@ async def handle_publish(
                 asset.hls_bundle_sha256,
             )
             if draft_version.source_sha256 and (
-                inspection is None or draft_version.media_storage_key != probe_key
+                inspection is None
+                or draft_version.media_storage_key != probe_key
                 or inspection.sha256 != draft_version.source_sha256
                 or inspection.duration_ms != draft_version.measured_duration_ms
             ):
                 raise ConflictError("Media bytes changed since QA; upload a new source and repeat QA")
             if draft_version.hls_bundle_sha256 and (
-                hls_inspection is None
-                or hls_inspection.sha256 != draft_version.hls_bundle_sha256
+                hls_inspection is None or hls_inspection.sha256 != draft_version.hls_bundle_sha256
             ):
                 raise ConflictError("HLS bundle changed since QA; transcode and repeat QA")
             if draft_version.scenes and draft_version.duration_source != "ffprobe":
@@ -219,8 +217,9 @@ async def handle_publish(
                         raise InvalidDomainStateError(
                             f"Scene end time ({sc.end_time_seconds}s) exceeds clip duration ({item.duration_seconds}s)"
                         )
-            from datetime import datetime, timezone
-            draft_version.publish(datetime.now(timezone.utc))
+            from datetime import datetime
+
+            draft_version.publish(datetime.now(UTC))
             await uow.content.update(draft_version)
         await uow.commit()
 
@@ -325,8 +324,11 @@ async def handle_update_draft_catalog_item(
     return _to_staff_dto(result.item)
 
 
-async def handle_review_catalog(item_id: str, decision: str, notes: str, reviewer_id: str, uow: AsyncUnitOfWork) -> CatalogItemStaffDTO:
-    from datetime import datetime, UTC
+async def handle_review_catalog(
+    item_id: str, decision: str, notes: str, reviewer_id: str, uow: AsyncUnitOfWork
+) -> CatalogItemStaffDTO:
+    from datetime import UTC, datetime
+
     from jplearn_api.domain.catalog import CatalogReview
 
     async with uow:
@@ -339,7 +341,16 @@ async def handle_review_catalog(item_id: str, decision: str, notes: str, reviewe
             raise InvalidDomainStateError("This QA round has already been reviewed")
         if decision not in ("approve", "reject") or (decision == "reject" and not notes.strip()):
             raise InvalidDomainStateError("Rejection requires notes")
-        item.reviews.append(CatalogReview(str(uuid4()), item.qa_round, decision, notes.strip(), reviewer_id, datetime.now(UTC).replace(tzinfo=None)))
+        item.reviews.append(
+            CatalogReview(
+                str(uuid4()),
+                item.qa_round,
+                decision,
+                notes.strip(),
+                reviewer_id,
+                datetime.now(UTC).replace(tzinfo=None),
+            )
+        )
         if decision == "reject":
             item.return_to_draft()
             version = await uow.content.get_current_draft_by_catalog_item_id(item_id)

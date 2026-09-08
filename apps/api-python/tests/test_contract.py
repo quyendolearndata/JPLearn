@@ -19,12 +19,7 @@ SAMPLES = {
 
 def _documented_operations() -> list[tuple[str, str]]:
     spec = load_handwritten_spec()
-    operations = [
-        (method, path)
-        for path, item in spec["paths"].items()
-        for method in item
-        if method in HTTP_METHODS
-    ]
+    operations = [(method, path) for path, item in spec["paths"].items() for method in item if method in HTTP_METHODS]
     assert len(operations) >= 10, f"too few OpenAPI operations parsed: {len(operations)}"
     return operations
 

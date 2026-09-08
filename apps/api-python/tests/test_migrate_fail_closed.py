@@ -11,14 +11,13 @@ Guarantees:
 from __future__ import annotations
 
 import asyncio
-import json
 from pathlib import Path
 
 import asyncpg
 import pytest
 
-from jplearn_api.entrypoints.cli.migrate import downgrade, load_baseline_schema, stamp, upgrade
 from jplearn_api.adapters.persistence.schema_snapshot import diff, snapshot_url
+from jplearn_api.entrypoints.cli.migrate import downgrade, load_baseline_schema, stamp, upgrade
 from pg_harness import start_docker_postgres, stop_docker_postgres
 
 
@@ -219,6 +218,7 @@ def test_destructive_downgrade_unconfigured_env_preserves_data(
 ) -> None:
     """R-08/A: Real database with populated data must not be dropped when
     ENVIRONMENT is unconfigured, even with ALLOW_DESTRUCTIVE_DOWNGRADE=true."""
+
     async def ensure_clean_db() -> None:
         conn = await asyncpg.connect(isolated_postgres)
         try:

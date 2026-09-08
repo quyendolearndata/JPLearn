@@ -1,7 +1,10 @@
 import asyncio
 import shutil
+
 import pytest
+
 from jplearn_api.adapters.storage.local import LocalFilesystemStorage
+
 
 @pytest.mark.real_media_probe
 @pytest.mark.asyncio
@@ -10,8 +13,16 @@ async def test_real_ffprobe_measures_and_detects_source_changes(tmp_path):
         pytest.skip("ffmpeg/ffprobe unavailable")
     path = tmp_path / "source.mp4"
     proc = await asyncio.create_subprocess_exec(
-        "ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=black:s=32x32:d=1",
-        "-c:v", "mpeg4", str(path),
+        "ffmpeg",
+        "-v",
+        "error",
+        "-f",
+        "lavfi",
+        "-i",
+        "color=c=black:s=32x32:d=1",
+        "-c:v",
+        "mpeg4",
+        str(path),
     )
     assert await proc.wait() == 0
     storage = LocalFilesystemStorage(str(tmp_path))

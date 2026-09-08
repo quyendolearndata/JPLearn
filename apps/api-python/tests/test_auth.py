@@ -63,14 +63,20 @@ def test_logout_invalidates_every_token(live_client):
         headers={"Authorization": f"Bearer {first.json()['access_token']}"},
     )
     assert logout.status_code == 204
-    assert live_client.get(
-        "/me",
-        headers={"Authorization": f"Bearer {first.json()['access_token']}"},
-    ).status_code == 401
-    assert live_client.get(
-        "/me",
-        headers={"Authorization": f"Bearer {second.json()['access_token']}"},
-    ).status_code == 401
+    assert (
+        live_client.get(
+            "/me",
+            headers={"Authorization": f"Bearer {first.json()['access_token']}"},
+        ).status_code
+        == 401
+    )
+    assert (
+        live_client.get(
+            "/me",
+            headers={"Authorization": f"Bearer {second.json()['access_token']}"},
+        ).status_code
+        == 401
+    )
 
 
 def test_duplicate_email_is_409(live_client):

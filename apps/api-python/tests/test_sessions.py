@@ -4,6 +4,7 @@ from datetime import UTC, datetime, timedelta
 
 import asyncpg
 import pytest
+
 from helpers import register
 
 
@@ -141,18 +142,27 @@ def test_end_forbidden_other_user_and_double_end(live_client):
     )
     assert started.status_code == 201
     session_id = started.json()["id"]
-    assert live_client.post(
-        f"/sessions/{session_id}/end",
-        headers={"Authorization": f"Bearer {second}"},
-    ).status_code == 403
-    assert live_client.post(
-        f"/sessions/{session_id}/end",
-        headers={"Authorization": f"Bearer {first}"},
-    ).status_code == 200
-    assert live_client.post(
-        f"/sessions/{session_id}/end",
-        headers={"Authorization": f"Bearer {first}"},
-    ).status_code == 400
+    assert (
+        live_client.post(
+            f"/sessions/{session_id}/end",
+            headers={"Authorization": f"Bearer {second}"},
+        ).status_code
+        == 403
+    )
+    assert (
+        live_client.post(
+            f"/sessions/{session_id}/end",
+            headers={"Authorization": f"Bearer {first}"},
+        ).status_code
+        == 200
+    )
+    assert (
+        live_client.post(
+            f"/sessions/{session_id}/end",
+            headers={"Authorization": f"Bearer {first}"},
+        ).status_code
+        == 400
+    )
 
 
 def test_zombie_session_counts_zero_minutes(live_client):
@@ -212,6 +222,7 @@ async def test_concurrent_end_same_session_exactly_once(live_database_url: str):
 
     from jplearn_api.adapters.persistence.connection import async_database_url
     from jplearn_api.domain.learning import SessionAlreadyEnded
+
     end = _end_session
 
     conn = await asyncpg.connect(live_database_url)
@@ -220,9 +231,25 @@ async def test_concurrent_end_same_session_exactly_once(live_database_url: str):
     now = datetime.now(UTC).replace(tzinfo=None)
     started_at = now - timedelta(seconds=120)
     try:
-        await conn.execute("INSERT INTO users (id, email, password_hash, token_version) VALUES ($1, $2, 'hash', 0)", user_id, f"{user_id}@test.com")
-        await conn.execute("INSERT INTO learner_progress (user_id, minutes_comprehensible, current_ci_level, updated_at) VALUES ($1, 0, 0, $2)", user_id, now)
-        await conn.execute("INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'phone', $3)", session_id, user_id, started_at)
+        await conn.execute(
+            "INSERT INTO users (id, email, password_hash, token_version) VALUES ($1, $2, 'hash', 0)",
+            user_id,
+            f"{user_id}@test.com",
+        )
+        await conn.execute(
+            (
+                "INSERT INTO learner_progress (user_id, minutes_comprehensible, "
+                "current_ci_level, updated_at) VALUES ($1, 0, 0, $2)"
+            ),
+            user_id,
+            now,
+        )
+        await conn.execute(
+            "INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'phone', $3)",
+            session_id,
+            user_id,
+            started_at,
+        )
     finally:
         await conn.close()
 
@@ -250,8 +277,12 @@ async def test_concurrent_end_same_session_exactly_once(live_database_url: str):
         mins = await conn.fetchval("SELECT minutes_comprehensible FROM learner_progress WHERE user_id = $1", user_id)
         assert mins == 2, f"Expected 2 minutes, got {mins}"
 
-        end_events = await conn.fetchval("SELECT count(*) FROM learning_events WHERE session_id = $1 AND type = 'session_ended'", session_id)
-        min_events = await conn.fetchval("SELECT count(*) FROM learning_events WHERE session_id = $1 AND type = 'minutes_comprehensible'", session_id)
+        end_events = await conn.fetchval(
+            "SELECT count(*) FROM learning_events WHERE session_id = $1 AND type = 'session_ended'", session_id
+        )
+        min_events = await conn.fetchval(
+            "SELECT count(*) FROM learning_events WHERE session_id = $1 AND type = 'minutes_comprehensible'", session_id
+        )
         assert end_events == 1
         assert min_events == 1
     finally:
@@ -265,6 +296,7 @@ async def test_concurrent_end_different_sessions_no_lost_update(live_database_ur
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
     from jplearn_api.adapters.persistence.connection import async_database_url
+
     end = _end_session
 
     conn = await asyncpg.connect(live_database_url)
@@ -275,10 +307,31 @@ async def test_concurrent_end_different_sessions_no_lost_update(live_database_ur
     started_s1 = now - timedelta(seconds=180)  # 3 minutes
     started_s2 = now - timedelta(seconds=300)  # 5 minutes
     try:
-        await conn.execute("INSERT INTO users (id, email, password_hash, token_version) VALUES ($1, $2, 'hash', 0)", user_id, f"{user_id}@test.com")
-        await conn.execute("INSERT INTO learner_progress (user_id, minutes_comprehensible, current_ci_level, updated_at) VALUES ($1, 10, 0, $2)", user_id, now)
-        await conn.execute("INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'web', $3)", s1, user_id, started_s1)
-        await conn.execute("INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'phone', $3)", s2, user_id, started_s2)
+        await conn.execute(
+            "INSERT INTO users (id, email, password_hash, token_version) VALUES ($1, $2, 'hash', 0)",
+            user_id,
+            f"{user_id}@test.com",
+        )
+        await conn.execute(
+            (
+                "INSERT INTO learner_progress (user_id, minutes_comprehensible, "
+                "current_ci_level, updated_at) VALUES ($1, 10, 0, $2)"
+            ),
+            user_id,
+            now,
+        )
+        await conn.execute(
+            "INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'web', $3)",
+            s1,
+            user_id,
+            started_s1,
+        )
+        await conn.execute(
+            "INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'phone', $3)",
+            s2,
+            user_id,
+            started_s2,
+        )
     finally:
         await conn.close()
 
@@ -294,7 +347,9 @@ async def test_concurrent_end_different_sessions_no_lost_update(live_database_ur
 
     conn = await asyncpg.connect(live_database_url)
     try:
-        final_mins = await conn.fetchval("SELECT minutes_comprehensible FROM learner_progress WHERE user_id = $1", user_id)
+        final_mins = await conn.fetchval(
+            "SELECT minutes_comprehensible FROM learner_progress WHERE user_id = $1", user_id
+        )
         assert final_mins == 18, f"Expected 18 minutes (10 + 3 + 5), got {final_mins}"
     finally:
         await conn.close()
@@ -302,12 +357,12 @@ async def test_concurrent_end_different_sessions_no_lost_update(live_database_ur
 
 @pytest.mark.asyncio
 async def test_end_session_failure_rolls_back_atomically(live_database_url: str):
-    from unittest.mock import patch
     from uuid import uuid4
 
     from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
     from jplearn_api.adapters.persistence.connection import async_database_url
+
     end = _end_session
 
     conn = await asyncpg.connect(live_database_url)
@@ -316,9 +371,25 @@ async def test_end_session_failure_rolls_back_atomically(live_database_url: str)
     now = datetime.now(UTC).replace(tzinfo=None)
     started_at = now - timedelta(seconds=120)
     try:
-        await conn.execute("INSERT INTO users (id, email, password_hash, token_version) VALUES ($1, $2, 'hash', 0)", user_id, f"{user_id}@test.com")
-        await conn.execute("INSERT INTO learner_progress (user_id, minutes_comprehensible, current_ci_level, updated_at) VALUES ($1, 5, 0, $2)", user_id, now)
-        await conn.execute("INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'web', $3)", session_id, user_id, started_at)
+        await conn.execute(
+            "INSERT INTO users (id, email, password_hash, token_version) VALUES ($1, $2, 'hash', 0)",
+            user_id,
+            f"{user_id}@test.com",
+        )
+        await conn.execute(
+            (
+                "INSERT INTO learner_progress (user_id, minutes_comprehensible, "
+                "current_ci_level, updated_at) VALUES ($1, 5, 0, $2)"
+            ),
+            user_id,
+            now,
+        )
+        await conn.execute(
+            "INSERT INTO learning_sessions (id, user_id, device_class, started_at) VALUES ($1, $2, 'web', $3)",
+            session_id,
+            user_id,
+            started_at,
+        )
     finally:
         await conn.close()
 
@@ -344,12 +415,8 @@ async def test_end_session_failure_rolls_back_atomically(live_database_url: str)
         session_row = await conn.fetchrow(
             "SELECT ended_at, duration_seconds FROM learning_sessions WHERE id = $1", session_id
         )
-        mins = await conn.fetchval(
-            "SELECT minutes_comprehensible FROM learner_progress WHERE user_id = $1", user_id
-        )
-        events_count = await conn.fetchval(
-            "SELECT count(*) FROM learning_events WHERE session_id = $1", session_id
-        )
+        mins = await conn.fetchval("SELECT minutes_comprehensible FROM learner_progress WHERE user_id = $1", user_id)
+        events_count = await conn.fetchval("SELECT count(*) FROM learning_events WHERE session_id = $1", session_id)
         assert session_row["ended_at"] is None
         assert session_row["duration_seconds"] is None
         assert mins == 5
@@ -419,5 +486,3 @@ def test_session_idempotency_and_get_session(live_client):
     )
     assert got_ended.status_code == 200
     assert got_ended.json()["ended_at"] is not None
-
-

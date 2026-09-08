@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import hashlib
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from jplearn_api.application.commands import (
@@ -42,11 +42,13 @@ async def handle_create_report(
     try:
         category_enum = ReportCategory(cmd.category)
     except ValueError:
-        raise InvalidDomainStateError(f"Invalid report category '{cmd.category}'")
+        raise InvalidDomainStateError(f"Invalid report category '{cmd.category}'") from None
 
     request_hash = None
     if cmd.idempotency_key:
-        raw_hash = f"{cmd.catalog_item_id}:{cmd.content_version_id}:{cmd.scene_id or ''}:{cmd.position_ms}:{cmd.category}:{desc_clean}"
+        raw_hash = f"{cmd.catalog_item_id}:{cmd.content_version_id}:{cmd.scene_id or ('')}:{cmd.position_ms}:{
+            cmd.category
+        }:{desc_clean}"
         request_hash = hashlib.sha256(raw_hash.encode()).hexdigest()
         existing = await uow.content_reports.find_by_idempotency_key(cmd.user_id, cmd.idempotency_key)
         if existing is not None:
@@ -83,7 +85,7 @@ async def handle_create_report(
             raise InvalidDomainStateError("Scene does not belong to specified content version")
 
     # 5. Check daily quota (max 10 reports per user per UTC day)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     start_of_day = now.replace(hour=0, minute=0, second=0, microsecond=0)
     today_count = await uow.content_reports.count_today_by_user(cmd.user_id, start_of_day)
     if today_count >= 10:
@@ -166,7 +168,7 @@ async def handle_patch_staff_report(
         try:
             ReportStatus(cmd.status)
         except ValueError:
-            raise InvalidDomainStateError(f"Invalid report status '{cmd.status}'")
+            raise InvalidDomainStateError(f"Invalid report status '{cmd.status}'") from None
 
     if cmd.resolution_version_id is not None and cmd.resolution_version_id != "":
         res_ver = await uow.content.get_by_id(cmd.resolution_version_id)

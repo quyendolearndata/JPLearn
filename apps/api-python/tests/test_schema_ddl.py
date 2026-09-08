@@ -19,8 +19,8 @@ from pathlib import Path
 import asyncpg
 import pytest
 
-from jplearn_api.entrypoints.cli.migrate import downgrade, stamp, upgrade
 from jplearn_api.adapters.persistence.schema_snapshot import diff, snapshot_url
+from jplearn_api.entrypoints.cli.migrate import downgrade, stamp, upgrade
 from pg_harness import (
     seed_database,
     start_docker_postgres,
@@ -140,7 +140,6 @@ def test_stamp_adopts_a_database_built_before_alembic(alembic_database: str) -> 
     ver, rev_val = asyncio.run(get_revision_and_data())
     assert ver == "0019_merge_cms_reviews"
     assert rev_val == 1, "Catalog items must have default revision=1 after migration 0002"
-
 
     # 5. Drop bookkeeping again to simulate adoption of a 0002 DB
     asyncio.run(drop_bookkeeping())
@@ -264,10 +263,18 @@ def test_merge_upgrade_preserves_each_branch_data(alembic_database, source_revis
             await conn.execute("UPDATE catalog_items SET title_internal='preserved merge fixture' WHERE id=$1", item_id)
             if source_revision == "0002_cms_reviews":
                 await conn.execute("UPDATE catalog_items SET qa_round=1 WHERE id=$1", item_id)
-                await conn.execute("INSERT INTO catalog_reviews VALUES ('merge-review', $1, 1, 'approve', 'preserve original decision', $2, CURRENT_TIMESTAMP)", item_id, user_id)
+                await conn.execute(
+                    (
+                        "INSERT INTO catalog_reviews VALUES ('merge-review', $1, 1, 'approve', "
+                        "'preserve original decision', $2, CURRENT_TIMESTAMP)"
+                    ),
+                    item_id,
+                    user_id,
+                )
             return item_id
         finally:
             await conn.close()
+
     item_id = asyncio.run(prepare())
     upgrade(alembic_database)
 
@@ -275,12 +282,19 @@ def test_merge_upgrade_preserves_each_branch_data(alembic_database, source_revis
         conn = await asyncpg.connect(alembic_database)
         try:
             assert await conn.fetchval("SELECT version_num FROM alembic_version") == "0019_merge_cms_reviews"
-            assert await conn.fetchval("SELECT title_internal FROM catalog_items WHERE id=$1", item_id) == "preserved merge fixture"
+            assert (
+                await conn.fetchval("SELECT title_internal FROM catalog_items WHERE id=$1", item_id)
+                == "preserved merge fixture"
+            )
             if source_revision == "0002_cms_reviews":
-                assert await conn.fetchval("SELECT notes FROM catalog_reviews WHERE id='merge-review'") == "preserve original decision"
+                assert (
+                    await conn.fetchval("SELECT notes FROM catalog_reviews WHERE id='merge-review'")
+                    == "preserve original decision"
+                )
             else:
                 assert await conn.fetchval("SELECT count(*) FROM catalog_reviews") == 0
         finally:
             await conn.close()
+
     asyncio.run(verify())
     assert not diff(json.loads(BASELINE_HEAD.read_text()), asyncio.run(snapshot_url(alembic_database)))

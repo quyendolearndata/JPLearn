@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 
-class SceneAvailability(str, Enum):
+class SceneAvailability(StrEnum):
     AVAILABLE = "available"
     STALE_VERSION = "stale_version"
     UNAVAILABLE = "unavailable"

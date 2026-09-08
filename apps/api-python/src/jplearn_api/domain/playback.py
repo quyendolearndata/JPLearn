@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 LEASE_DURATION_SECONDS = 45
@@ -16,14 +16,14 @@ DEFAULT_DAILY_GOAL_MINUTES = 15
 DEFAULT_TIMEZONE = "Asia/Ho_Chi_Minh"
 
 
-class PlaybackStatus(str, Enum):
+class PlaybackStatus(StrEnum):
     ACTIVE = "active"
     COMPLETED = "completed"
     SUPERSEDED = "superseded"
     ABANDONED = "abandoned"
 
 
-class PlayerState(str, Enum):
+class PlayerState(StrEnum):
     PLAYING = "playing"
     PAUSED = "paused"
     BUFFERING = "buffering"
@@ -49,7 +49,6 @@ class LearnerPlaybackState:
 
     def bump_epoch(self) -> None:
         self.current_epoch += 1
-
 
 
 @dataclass
@@ -126,7 +125,7 @@ class LearnerDailyActivity:
     policy_revision: int = 1
 
 
-class DeletionStatus(str, Enum):
+class DeletionStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
     COMPLETED = "completed"

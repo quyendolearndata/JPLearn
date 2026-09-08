@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import Any
 import uuid
+from datetime import datetime
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,9 +84,7 @@ class SqlAlchemyQuotaRepository:
         user_id: str,
         name: str = "Staff Default Quota",
     ) -> QuotaAccount:
-        res = await self.session.execute(
-            select(AiQuotaAccountModel).where(AiQuotaAccountModel.user_id == user_id)
-        )
+        res = await self.session.execute(select(AiQuotaAccountModel).where(AiQuotaAccountModel.user_id == user_id))
         model = res.scalar_one_or_none()
         if model is not None:
             return _model_to_quota_domain(model)
@@ -135,9 +133,7 @@ class SqlAlchemyQuotaRepository:
         self,
         account: QuotaAccount,
     ) -> None:
-        res = await self.session.execute(
-            select(AiQuotaAccountModel).where(AiQuotaAccountModel.id == account.id)
-        )
+        res = await self.session.execute(select(AiQuotaAccountModel).where(AiQuotaAccountModel.id == account.id))
         model = res.scalar_one_or_none()
         if model is None:
             model = AiQuotaAccountModel(
@@ -200,11 +196,13 @@ class SqlAlchemyUsageLedgerRepository:
             if entry.kind == "settlement":
                 source_key = source_key.rsplit(":", 1)[0]
             result = await self.session.execute(
-                select(AiUsageLedgerModel).where(
+                select(AiUsageLedgerModel)
+                .where(
                     AiUsageLedgerModel.account_id == entry.account_id,
                     AiUsageLedgerModel.idempotency_key == source_key,
                     AiUsageLedgerModel.kind == "reservation",
-                ).with_for_update()
+                )
+                .with_for_update()
             )
             reservation = result.scalar_one_or_none()
             if reservation is not None:
@@ -238,9 +236,7 @@ class SqlAlchemyUsageLedgerRepository:
         self,
         entry_id: str,
     ) -> AiUsageLedgerEntry | None:
-        res = await self.session.execute(
-            select(AiUsageLedgerModel).where(AiUsageLedgerModel.id == entry_id)
-        )
+        res = await self.session.execute(select(AiUsageLedgerModel).where(AiUsageLedgerModel.id == entry_id))
         model = res.scalar_one_or_none()
         if model is None:
             return None
@@ -269,7 +265,9 @@ class SqlAlchemyUsageLedgerRepository:
         job_id: str,
     ) -> AiUsageLedgerEntry | None:
         res = await self.session.execute(
-            select(AiUsageLedgerModel).execution_options(populate_existing=True).where(
+            select(AiUsageLedgerModel)
+            .execution_options(populate_existing=True)
+            .where(
                 AiUsageLedgerModel.job_id == job_id,
                 AiUsageLedgerModel.kind == "reservation",
             )

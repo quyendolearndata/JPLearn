@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import asyncio
 
-from jplearn_api.application.ports.security import PasswordHasher
 from jplearn_api.adapters.security.password import hash_password, verify_password
+from jplearn_api.application.ports.security import PasswordHasher
 
 
 class Argon2PasswordHasher(PasswordHasher):

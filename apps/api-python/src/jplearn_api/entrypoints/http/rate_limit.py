@@ -30,8 +30,7 @@ class LoginRateLimiter:
             expired_keys = [
                 stored_key
                 for stored_key, stored_timestamps in self._timestamps.items()
-                if stored_key != key
-                and (not stored_timestamps or stored_timestamps[-1] <= cutoff)
+                if stored_key != key and (not stored_timestamps or stored_timestamps[-1] <= cutoff)
             ]
             for expired_key in expired_keys:
                 del self._timestamps[expired_key]

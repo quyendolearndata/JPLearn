@@ -1,5 +1,4 @@
-from helpers import approve_catalog
-from helpers import ensure_topics, grant_role, insert_media, register
+from helpers import approve_catalog, ensure_topics, grant_role, insert_media, register
 
 
 def _admin(live_client):
@@ -98,10 +97,13 @@ def test_publish_without_media_then_after_media(live_client):
         json=_create_body(topic_id="body", duration_seconds=12, title_internal="no-media"),
     )
     item_id = created.json()["id"]
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/submit-qa",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/submit-qa",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 200
+    )
     blocked = live_client.post(
         f"/staff/catalog/{item_id}/publish",
         headers={"Authorization": f"Bearer {admin}"},
@@ -124,28 +126,42 @@ def test_unpublish_hides_from_learners(live_client):
     created = live_client.post(
         "/staff/catalog",
         headers={"Authorization": f"Bearer {admin}"},
-        json=_create_body(topic_id="nature", duration_seconds=15, visual_support="medium", title_internal="unpublish-me"),
+        json=_create_body(
+            topic_id="nature", duration_seconds=15, visual_support="medium", title_internal="unpublish-me"
+        ),
     )
     item_id = created.json()["id"]
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/unpublish",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 400
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/unpublish",
-        headers={"Authorization": f"Bearer {learner}"},
-    ).status_code == 403
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/unpublish",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 400
+    )
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/unpublish",
+            headers={"Authorization": f"Bearer {learner}"},
+        ).status_code
+        == 403
+    )
 
     insert_media(live_client, item_id)
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/submit-qa",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/submit-qa",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 200
+    )
     approve_catalog(live_client, admin, item_id)
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/publish",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/publish",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 200
+    )
     visible = live_client.get("/catalog", headers={"Authorization": f"Bearer {learner}"})
     assert any(item["id"] == item_id for item in visible.json()["items"])
 
@@ -223,4 +239,3 @@ def test_staff_catalog_list_get_and_patch_draft(live_client):
         json={"revision": 1, "title_internal": "stale-update"},
     )
     assert stale_patch.status_code == 409
-

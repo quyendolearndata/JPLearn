@@ -35,7 +35,7 @@ REPORT_DIR = REPO / "docs" / "qa" / "differential"
 sys.path.insert(0, str(API_PY / "tests"))
 sys.path.insert(0, str(API_PY / "src"))
 
-from pg_harness import migrate_database, start_docker_postgres, stop_docker_postgres  # noqa: E402
+from pg_harness import start_docker_postgres, stop_docker_postgres  # noqa: E402
 
 JWT_SECRET = "parity-secret-0123456789abcdef"
 NEST_PORT = 3101
@@ -106,7 +106,11 @@ def compare(step: str, nest: httpx.Response, py: httpx.Response) -> list[str]:
         return problems
     nest_body, py_body = _body_of(nest), _body_of(py)
     if nest_body != py_body:
-        problems.append(f"{step}: body\n  nest={json.dumps(nest_body, ensure_ascii=False)[:400]}\n  py={json.dumps(py_body, ensure_ascii=False)[:400]}")
+        problems.append(
+            f"{step}: body\n"
+            f"  nest={json.dumps(nest_body, ensure_ascii=False)[:400]}\n"
+            f"  py={json.dumps(py_body, ensure_ascii=False)[:400]}"
+        )
     for header in ("content-type", "x-content-type-options"):
         left, right = _headers_of(nest).get(header), _headers_of(py).get(header)
         if left != right:
@@ -176,7 +180,7 @@ async def _grant_admin(server: Server, email: str) -> None:
     await _db(
         server,
         lambda conn: conn.execute(
-            'INSERT INTO user_roles (user_id, role) '
+            "INSERT INTO user_roles (user_id, role) "
             "SELECT id, 'admin'::\"Role\" FROM users WHERE email = $1 ON CONFLICT DO NOTHING",
             email,
         ),
@@ -187,7 +191,7 @@ async def _grant_teacher(server: Server, email: str) -> None:
     await _db(
         server,
         lambda conn: conn.execute(
-            'INSERT INTO user_roles (user_id, role) '
+            "INSERT INTO user_roles (user_id, role) "
             "SELECT id, 'teacher'::\"Role\" FROM users WHERE email = $1 ON CONFLICT DO NOTHING",
             email,
         ),
@@ -253,8 +257,6 @@ def _bearer(token: str) -> dict[str, str]:
 
 
 def run_corpus(nest: Server, py: Server) -> list[dict]:
-    problems: list[str] = []
-    results: list[dict] = []
 
     with (
         httpx.Client(base_url=nest.base, timeout=15) as nest_http,
@@ -280,14 +282,18 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         me_p = py_http.get("/me", headers=_bearer(py_tok))
         diffs = compare("GET /me (own token)", me_n, me_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "GET /me (own token)", "status": me_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "GET /me (own token)", "status": me_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         # --- Sessions / progress (T-SES, T-PRG, T-EVT) ---
         prog_n = nest_http.get("/progress", headers=_bearer(nest_tok))
         prog_p = py_http.get("/progress", headers=_bearer(py_tok))
         diffs = compare("GET /progress initial", prog_n, prog_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "GET /progress initial", "status": prog_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "GET /progress initial", "status": prog_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         pair.call("POST /sessions bad device", "POST", "/sessions", json={"device_class": "tv"})
         # unauthenticated progress → 401 both
@@ -297,7 +303,9 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         sess_p = py_http.post("/sessions", headers=_bearer(py_tok), json={"device_class": "web"})
         diffs = compare("POST /sessions start", sess_n, sess_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "POST /sessions start", "status": sess_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "POST /sessions start", "status": sess_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
         nest_session, py_session = sess_n.json()["id"], sess_p.json()["id"]
 
         asyncio.run(_shift_started_at(nest, nest_session, 120))
@@ -306,20 +314,26 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         end_p = py_http.post(f"/sessions/{py_session}/end", headers=_bearer(py_tok))
         diffs = compare("POST /sessions/:id/end (2 min)", end_n, end_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "POST /sessions/:id/end (2 min)", "status": end_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "POST /sessions/:id/end (2 min)", "status": end_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         double_n = nest_http.post(f"/sessions/{nest_session}/end", headers=_bearer(nest_tok))
         double_p = py_http.post(f"/sessions/{py_session}/end", headers=_bearer(py_tok))
         diffs = compare("POST end twice → 400", double_n, double_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "POST end twice", "status": double_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "POST end twice", "status": double_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         # event types recorded on both runtimes
         ev_n = asyncio.run(_event_types(nest, nest_session))
         ev_p = asyncio.run(_event_types(py, py_session))
         if sorted(ev_n) != sorted(ev_p):
             pair.problems.append(f"events: {sorted(ev_n)} != {sorted(ev_p)}")
-            pair.results.append({"step": "learning_events types", "status": 0, "pass": False, "diffs": [f"{ev_n} != {ev_p}"]})
+            pair.results.append(
+                {"step": "learning_events types", "status": 0, "pass": False, "diffs": [f"{ev_n} != {ev_p}"]}
+            )
         else:
             pair.results.append({"step": "learning_events types", "status": 0, "pass": True, "diffs": []})
 
@@ -329,36 +343,66 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         flags_p = py_http.get("/flags", headers=_bearer(py_tok))
         diffs = compare("GET /flags default false", flags_n, flags_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "GET /flags default false", "status": flags_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "GET /flags default false", "status": flags_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         patch_n = nest_http.patch(
             "/staff/flags",
             headers=_bearer(nest_tok),
-            json={"speaking_enabled": True, "l1_subtitles_enabled": False, "grammar_enabled": False, "flashcards_enabled": False},
+            json={
+                "speaking_enabled": True,
+                "l1_subtitles_enabled": False,
+                "grammar_enabled": False,
+                "flashcards_enabled": False,
+            },
         )
         patch_p = py_http.patch(
             "/staff/flags",
             headers=_bearer(py_tok),
-            json={"speaking_enabled": True, "l1_subtitles_enabled": False, "grammar_enabled": False, "flashcards_enabled": False},
+            json={
+                "speaking_enabled": True,
+                "l1_subtitles_enabled": False,
+                "grammar_enabled": False,
+                "flashcards_enabled": False,
+            },
         )
         diffs = compare("PATCH /staff/flags as learner → 403", patch_n, patch_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "PATCH /staff/flags learner 403", "status": patch_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "PATCH /staff/flags learner 403", "status": patch_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         # --- Catalog authz (T-ID-004) ---
         cat_n = nest_http.post(
             "/staff/catalog",
             headers=_bearer(nest_tok),
-            json={"topic_id": "t1", "ci_level": 0, "duration_seconds": 10, "media_type": "video", "visual_support": "high", "title_internal": "x"},
+            json={
+                "topic_id": "t1",
+                "ci_level": 0,
+                "duration_seconds": 10,
+                "media_type": "video",
+                "visual_support": "high",
+                "title_internal": "x",
+            },
         )
         cat_p = py_http.post(
             "/staff/catalog",
             headers=_bearer(py_tok),
-            json={"topic_id": "t1", "ci_level": 0, "duration_seconds": 10, "media_type": "video", "visual_support": "high", "title_internal": "x"},
+            json={
+                "topic_id": "t1",
+                "ci_level": 0,
+                "duration_seconds": 10,
+                "media_type": "video",
+                "visual_support": "high",
+                "title_internal": "x",
+            },
         )
         diffs = compare("POST /staff/catalog learner → 403", cat_n, cat_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "POST /staff/catalog learner 403", "status": cat_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "POST /staff/catalog learner 403", "status": cat_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         # --- FR-NEG 404s ---
         for path in ("/flashcards", "/grammar", "/grammar/lessons", "/vocabulary", "/translations"):
@@ -366,7 +410,9 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
             neg_p = py_http.get(path, headers=_bearer(py_tok))
             diffs = compare(f"GET {path} → 404", neg_n, neg_p)
             pair.problems.extend(diffs)
-            pair.results.append({"step": f"FR-NEG {path}", "status": neg_n.status_code, "pass": not diffs, "diffs": diffs})
+            pair.results.append(
+                {"step": f"FR-NEG {path}", "status": neg_n.status_code, "pass": not diffs, "diffs": diffs}
+            )
 
         # --- Admin flows: catalog + media + HLS (T-CAT, T-CMS, T-NFR-P2) ---
         admin_email = f"admin-{int(time.time())}@example.com"
@@ -392,7 +438,10 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
                 _db(
                     server,
                     lambda conn: conn.execute(
-                        "INSERT INTO topics (id, label_internal) VALUES ('daily_home','daily_home') ON CONFLICT DO NOTHING",
+                        (
+                            "INSERT INTO topics (id, label_internal) VALUES ('daily_home',"
+                            "'daily_home') ON CONFLICT DO NOTHING"
+                        ),
                     ),
                 ),
             )
@@ -400,16 +449,32 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         create_n = nest_http.post(
             "/staff/catalog",
             headers=_bearer(nest_admin_tok),
-            json={"topic_id": "daily_home", "ci_level": 0, "duration_seconds": 30, "media_type": "video", "visual_support": "high", "title_internal": "diff-item"},
+            json={
+                "topic_id": "daily_home",
+                "ci_level": 0,
+                "duration_seconds": 30,
+                "media_type": "video",
+                "visual_support": "high",
+                "title_internal": "diff-item",
+            },
         )
         create_p = py_http.post(
             "/staff/catalog",
             headers=_bearer(py_admin_tok),
-            json={"topic_id": "daily_home", "ci_level": 0, "duration_seconds": 30, "media_type": "video", "visual_support": "high", "title_internal": "diff-item"},
+            json={
+                "topic_id": "daily_home",
+                "ci_level": 0,
+                "duration_seconds": 30,
+                "media_type": "video",
+                "visual_support": "high",
+                "title_internal": "diff-item",
+            },
         )
         diffs = compare("POST /staff/catalog admin → 201", create_n, create_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "POST /staff/catalog admin 201", "status": create_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "POST /staff/catalog admin 201", "status": create_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
         nest_item, py_item = create_n.json()["id"], create_p.json()["id"]
 
         # publish before media → 400 both
@@ -423,7 +488,9 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         pub_p = py_http.post(f"/staff/catalog/{py_item}/publish", headers=_bearer(py_admin_tok))
         diffs = compare("publish without media → 400", pub_n, pub_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "publish without media 400", "status": pub_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "publish without media 400", "status": pub_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         up_n = nest_http.post(
             f"/staff/catalog/{nest_item}/media",
@@ -437,14 +504,18 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         )
         diffs = compare("POST media upload → 201", up_n, up_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "POST media upload 201", "status": up_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "POST media upload 201", "status": up_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
         nest_asset, py_asset = up_n.json()["id"], up_p.json()["id"]
 
         pub2_n = nest_http.post(f"/staff/catalog/{nest_item}/publish", headers=_bearer(nest_admin_tok))
         pub2_p = py_http.post(f"/staff/catalog/{py_item}/publish", headers=_bearer(py_admin_tok))
         diffs = compare("publish with media → 200", pub2_n, pub2_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "publish with media 200", "status": pub2_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "publish with media 200", "status": pub2_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         # learner catalog list sees the published item with same public key-set
         list_n = nest_http.get("/catalog", headers=_bearer(nest_tok))
@@ -454,16 +525,27 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         if item_n is None or item_p is None:
             diffs = [f"published item missing: nest={item_n is not None} py={item_p is not None}"]
         else:
-            diffs = compare("GET /catalog published item", httpx.Response(200, json=item_n), httpx.Response(200, json=item_p))
+            diffs = compare(
+                "GET /catalog published item", httpx.Response(200, json=item_n), httpx.Response(200, json=item_p)
+            )
         pair.problems.extend(diffs)
-        pair.results.append({"step": "GET /catalog published item shape", "status": list_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {
+                "step": "GET /catalog published item shape",
+                "status": list_n.status_code,
+                "pass": not diffs,
+                "diffs": diffs,
+            }
+        )
 
         # media stream: Bearer + signed URL + expired sig
         stream_n = nest_http.get(f"/media/{nest_asset}", headers=_bearer(nest_tok))
         stream_p = py_http.get(f"/media/{py_asset}", headers=_bearer(py_tok))
         diffs = compare("GET /media Bearer", stream_n, stream_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "GET /media Bearer", "status": stream_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "GET /media Bearer", "status": stream_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         signed_n = urlparse(item_n["playback_url"]) if item_n else None
         signed_p = urlparse(item_p["playback_url"]) if item_p else None
@@ -472,20 +554,31 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
             sig_p = py_http.get(f"{signed_p.path}?{signed_p.query}")
             diffs = compare("GET /media via signed URL", sig_n, sig_p)
             pair.problems.extend(diffs)
-            pair.results.append({"step": "GET /media signed URL", "status": sig_n.status_code, "pass": not diffs, "diffs": diffs})
+            pair.results.append(
+                {"step": "GET /media signed URL", "status": sig_n.status_code, "pass": not diffs, "diffs": diffs}
+            )
 
         bad_n = nest_http.get(f"/media/{nest_asset}?exp=1&sig={'ab' * 32}")
         bad_p = py_http.get(f"/media/{py_asset}?exp=1&sig={'ab' * 32}")
         diffs = compare("GET /media expired sig → 401", bad_n, bad_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "GET /media expired sig 401", "status": bad_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "GET /media expired sig 401", "status": bad_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         # HLS: register before bundle → 400; then write bundle, register → 201, serve + rewrite
         hls_n = nest_http.post(f"/staff/media/{nest_asset}/hls", headers=_bearer(nest_admin_tok))
         hls_p = py_http.post(f"/staff/media/{py_asset}/hls", headers=_bearer(py_admin_tok))
         diffs = compare("register HLS without manifest → 400", hls_n, hls_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "register HLS missing manifest 400", "status": hls_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {
+                "step": "register HLS missing manifest 400",
+                "status": hls_n.status_code,
+                "pass": not diffs,
+                "diffs": diffs,
+            }
+        )
 
         _write_hls_bundle(nest, nest_asset)
         _write_hls_bundle(py, py_asset)
@@ -493,24 +586,41 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         reg2_p = py_http.post(f"/staff/media/{py_asset}/hls", headers=_bearer(py_admin_tok))
         diffs = compare("register HLS → 201", reg2_n, reg2_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "register HLS 201", "status": reg2_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "register HLS 201", "status": reg2_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         man_n = nest_http.get(f"/media/{nest_asset}/hls/index.m3u8", headers=_bearer(nest_tok))
         man_p = py_http.get(f"/media/{py_asset}/hls/index.m3u8", headers=_bearer(py_tok))
         diffs = compare("GET manifest (Bearer, no rewrite)", man_n, man_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "GET manifest Bearer", "status": man_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "GET manifest Bearer", "status": man_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         hls_url_n = urlparse(reg2_n.json()["hls_url"])
         hls_url_p = urlparse(reg2_p.json()["hls_url"])
         sman_n = nest_http.get(f"{hls_url_n.path}?{hls_url_n.query}")
         sman_p = py_http.get(f"{hls_url_p.path}?{hls_url_p.query}")
-        line_n = next((l for l in sman_n.text.split("\n") if l.strip() and not l.strip().startswith("#")), "")
-        line_p = next((l for l in sman_p.text.split("\n") if l.strip() and not l.strip().startswith("#")), "")
+        line_n = next(
+            (line for line in sman_n.text.split("\n") if line.strip() and not line.strip().startswith("#")),
+            "",
+        )
+        line_p = next(
+            (line for line in sman_p.text.split("\n") if line.strip() and not line.strip().startswith("#")),
+            "",
+        )
         rewrite_ok = bool(re.match(r"^segment-000\.ts\?exp=\d+&sig=[a-f0-9]{64}$", line_n)) and bool(
             re.match(r"^segment-000\.ts\?exp=\d+&sig=[a-f0-9]{64}$", line_p),
         )
-        pair.results.append({"step": "manifest rewrite exp+sig", "status": sman_n.status_code, "pass": rewrite_ok, "diffs": [] if rewrite_ok else [f"{line_n!r} vs {line_p!r}"]})
+        pair.results.append(
+            {
+                "step": "manifest rewrite exp+sig",
+                "status": sman_n.status_code,
+                "pass": rewrite_ok,
+                "diffs": [] if rewrite_ok else [f"{line_n!r} vs {line_p!r}"],
+            }
+        )
         if not rewrite_ok:
             pair.problems.append(f"manifest rewrite: {line_n!r} vs {line_p!r}")
 
@@ -518,19 +628,25 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         seg_p = py_http.get(f"/media/{py_asset}/hls/{line_p}")
         diffs = compare("GET segment via rewritten URI", seg_n, seg_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "GET segment via signed URI", "status": seg_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "GET segment via signed URI", "status": seg_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         trav_n = nest_http.get(f"/media/{nest_asset}/hls/..%2Fsecret.m3u8", headers=_bearer(nest_tok))
         trav_p = py_http.get(f"/media/{py_asset}/hls/..%2Fsecret.m3u8", headers=_bearer(py_tok))
         diffs = compare("HLS traversal → 400", trav_n, trav_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "HLS traversal 400", "status": trav_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "HLS traversal 400", "status": trav_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         miss_n = nest_http.get(f"/media/{nest_asset}/hls/segment-999.ts", headers=_bearer(nest_tok))
         miss_p = py_http.get(f"/media/{py_asset}/hls/segment-999.ts", headers=_bearer(py_tok))
         diffs = compare("HLS missing segment → 404", miss_n, miss_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "HLS missing 404", "status": miss_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "HLS missing 404", "status": miss_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
         # --- Logout invalidates old token (T-ID-003) ---
         out_n = nest_http.post("/auth/logout", headers=_bearer(nest_tok))
@@ -543,7 +659,9 @@ def run_corpus(nest: Server, py: Server) -> list[dict]:
         me2_p = py_http.get("/me", headers=_bearer(py_tok))
         diffs = compare("GET /me after logout → 401", me2_n, me2_p)
         pair.problems.extend(diffs)
-        pair.results.append({"step": "me after logout 401", "status": me2_n.status_code, "pass": not diffs, "diffs": diffs})
+        pair.results.append(
+            {"step": "me after logout 401", "status": me2_n.status_code, "pass": not diffs, "diffs": diffs}
+        )
 
     return pair.results
 

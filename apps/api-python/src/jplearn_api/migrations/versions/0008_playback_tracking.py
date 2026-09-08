@@ -28,7 +28,8 @@ def upgrade() -> None:
             "client_instance_id" TEXT NOT NULL,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "learner_playback_state_pkey" PRIMARY KEY ("user_id"),
-            CONSTRAINT "learner_playback_state_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "learner_playback_state_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE
+            CASCADE ON DELETE CASCADE
         )
         """,
     )
@@ -54,15 +55,19 @@ def upgrade() -> None:
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "closed_at" TIMESTAMP(3),
             CONSTRAINT "playbacks_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "playbacks_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "playbacks_catalog_item_id_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "playbacks_content_version_id_fkey" FOREIGN KEY ("content_version_id") REFERENCES "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "playbacks_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON
+            DELETE CASCADE,
+            CONSTRAINT "playbacks_catalog_item_id_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES "catalog_items"("id")
+            ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "playbacks_content_version_id_fkey" FOREIGN KEY ("content_version_id") REFERENCES
+            "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE
         )
         """,
     )
 
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "playbacks_user_created_idx" ON "playbacks"("user_id", "created_at" DESC, "id" DESC)'
+        'CREATE INDEX IF NOT EXISTS "playbacks_user_created_idx" ON '
+        '"playbacks"("user_id", "created_at" DESC, "id" DESC)'
     )
     op.execute(
         'CREATE INDEX IF NOT EXISTS "playbacks_catalog_item_idx" ON "playbacks"("catalog_item_id", "created_at" DESC)'
@@ -80,7 +85,8 @@ def upgrade() -> None:
             "response_payload" JSONB NOT NULL,
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "playback_receipts_pkey" PRIMARY KEY ("playback_id", "seq"),
-            CONSTRAINT "playback_receipts_playback_id_fkey" FOREIGN KEY ("playback_id") REFERENCES "playbacks"("id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "playback_receipts_playback_id_fkey" FOREIGN KEY ("playback_id") REFERENCES "playbacks"("id") ON
+            UPDATE CASCADE ON DELETE CASCADE
         )
         """,
     )
@@ -95,15 +101,19 @@ def upgrade() -> None:
             "position_ms" INTEGER NOT NULL DEFAULT 0,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "playback_checkpoints_pkey" PRIMARY KEY ("user_id", "catalog_item_id"),
-            CONSTRAINT "playback_checkpoints_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "playback_checkpoints_catalog_item_id_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "playback_checkpoints_content_version_id_fkey" FOREIGN KEY ("content_version_id") REFERENCES "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "playback_checkpoints_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE
+            CASCADE ON DELETE CASCADE,
+            CONSTRAINT "playback_checkpoints_catalog_item_id_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES
+            "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "playback_checkpoints_content_version_id_fkey" FOREIGN KEY ("content_version_id") REFERENCES
+            "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE
         )
         """,
     )
 
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "playback_checkpoints_user_updated_idx" ON "playback_checkpoints"("user_id", "updated_at" DESC)'
+        'CREATE INDEX IF NOT EXISTS "playback_checkpoints_user_updated_idx" ON '
+        '"playback_checkpoints"("user_id", "updated_at" DESC)'
     )
 
     # 5. learning_preferences: timezone and daily goal policy
@@ -118,7 +128,8 @@ def upgrade() -> None:
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "learning_preferences_pkey" PRIMARY KEY ("user_id"),
-            CONSTRAINT "learning_preferences_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "learning_preferences_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE
+            CASCADE ON DELETE CASCADE
         )
         """,
     )
@@ -135,13 +146,15 @@ def upgrade() -> None:
             "goal_met" BOOLEAN NOT NULL DEFAULT FALSE,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "learner_daily_activity_pkey" PRIMARY KEY ("user_id", "date"),
-            CONSTRAINT "learner_daily_activity_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "learner_daily_activity_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE
+            CASCADE ON DELETE CASCADE
         )
         """,
     )
 
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "learner_daily_activity_user_date_idx" ON "learner_daily_activity"("user_id", "date" DESC)'
+        'CREATE INDEX IF NOT EXISTS "learner_daily_activity_user_date_idx" ON '
+        '"learner_daily_activity"("user_id", "date" DESC)'
     )
 
 

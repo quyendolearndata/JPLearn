@@ -12,11 +12,11 @@ Tests verify the production supervisor (differential/web_e2e_runner.py) directly
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import signal
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import pytest
 

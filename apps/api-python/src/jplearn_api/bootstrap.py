@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -13,13 +14,18 @@ from jplearn_api.adapters.persistence.catalog_repository import (
 from jplearn_api.adapters.persistence.flags_repository import SqlAlchemyFlagsRepository
 from jplearn_api.adapters.persistence.learning_repository import SqlAlchemyLearningRepository
 from jplearn_api.adapters.persistence.media_repository import SqlAlchemyMediaRepository
-from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork, drain_quarantined_scopes
+from jplearn_api.adapters.persistence.unit_of_work import (
+    SqlAlchemyUnitOfWork,
+)
+from jplearn_api.adapters.persistence.unit_of_work import (
+    drain_quarantined_scopes as drain_quarantined_scopes,
+)
 from jplearn_api.adapters.persistence.user_repository import SqlAlchemyUserRepository
 from jplearn_api.adapters.security.argon2 import Argon2PasswordHasher
 from jplearn_api.adapters.security.jwt import JwtTokenService
 from jplearn_api.adapters.security.media_signer import HmacMediaUrlSigner
-from jplearn_api.application.ports.security import MediaUrlSigner, PasswordHasher, TokenService
 from jplearn_api.adapters.storage.local import LocalFilesystemStorage, StoragePort
+from jplearn_api.application.ports.security import MediaUrlSigner, PasswordHasher, TokenService
 from jplearn_api.settings import Settings, get_settings
 
 
@@ -62,9 +68,7 @@ def create_app_container(
 ) -> AppContainer:
     """Bootstrap application container with explicit dependencies."""
     resolved_settings = settings or get_settings()
-    resolved_storage = storage or LocalFilesystemStorage(
-        resolved_settings.storage_root or (Path.cwd() / "storage")
-    )
+    resolved_storage = storage or LocalFilesystemStorage(resolved_settings.storage_root or (Path.cwd() / "storage"))
     return AppContainer(
         settings=resolved_settings,
         storage=resolved_storage,

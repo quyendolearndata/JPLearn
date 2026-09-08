@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Annotated
+
 from fastapi import APIRouter, Depends, Header, Query, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -86,16 +87,18 @@ def _to_staff_public(report: ContentReport) -> ContentReportStaffPublic:
     )
 
 
-def _to_staff_detail_public(
-    report: ContentReport, audits: list[ContentReportAudit]
-) -> ContentReportStaffDetailPublic:
+def _to_staff_detail_public(report: ContentReport, audits: list[ContentReportAudit]) -> ContentReportStaffDetailPublic:
     base = _to_staff_public(report)
     audit_dtos = [
         ContentReportAuditPublic(
             id=a.id,
             report_id=a.report_id,
             actor_id=a.actor_id,
-            from_status=a.from_status.value if hasattr(a.from_status, "value") else str(a.from_status) if a.from_status else None,
+            from_status=a.from_status.value
+            if hasattr(a.from_status, "value")
+            else str(a.from_status)
+            if a.from_status
+            else None,
             to_status=a.to_status.value if hasattr(a.to_status, "value") else str(a.to_status),
             revision=a.revision,
             reason=a.reason,
@@ -118,19 +121,11 @@ def _to_staff_detail_public(
     responses={
         200: {
             "description": "Report already filed (idempotent replay)",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/ContentReportLearnerPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContentReportLearnerPublic"}}},
         },
         201: {
             "description": "Report successfully filed",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/ContentReportLearnerPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ContentReportLearnerPublic"}}},
         },
         400: {"description": "Invalid parameters, out of bounds position, or unpublished item/version"},
         401: {"description": "Authentication required"},
@@ -163,7 +158,7 @@ async def create_report(
             report = await handle_create_report(cmd, uow)
             await uow.commit()
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
     return _to_learner_public(report)
 
@@ -191,7 +186,7 @@ async def list_my_reports(
         async with create_uow(session) as uow:
             reports, total = await handle_list_my_reports(query, uow)
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
     response.headers["X-Total-Count"] = str(total)
     return [_to_learner_public(r) for r in reports]
@@ -219,7 +214,7 @@ async def get_my_report(
         async with create_uow(session) as uow:
             report = await handle_get_my_report(query, uow)
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
     return _to_learner_public(report)
 
@@ -257,7 +252,7 @@ async def list_staff_reports(
         async with create_uow(session) as uow:
             reports, total = await handle_list_staff_reports(query, uow)
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
     response.headers["X-Total-Count"] = str(total)
     return [_to_staff_public(r) for r in reports]
@@ -286,7 +281,7 @@ async def get_staff_report(
         async with create_uow(session) as uow:
             report, audits = await handle_get_staff_report(query, uow)
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
     return _to_staff_detail_public(report, audits)
 
@@ -328,6 +323,6 @@ async def patch_staff_report(
             updated = await handle_patch_staff_report(cmd, uow)
             await uow.commit()
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None
 
     return _to_staff_public(updated)

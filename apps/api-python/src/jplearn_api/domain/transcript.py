@@ -11,11 +11,11 @@ Enforces:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime
-from enum import Enum
-from typing import Any
 import unicodedata
+from dataclasses import dataclass
+from datetime import datetime
+from enum import StrEnum
+from typing import Any
 
 from jplearn_api.domain.errors import InvalidDomainStateError, ValidationError
 
@@ -24,20 +24,20 @@ MAX_CHARS_PER_SEGMENT = 500
 MAX_TOTAL_CHARS_PER_CLIP = 20_000
 
 
-class TranscriptStatus(str, Enum):
+class TranscriptStatus(StrEnum):
     DRAFT = "draft"
     QA_SUBMITTED = "qa_submitted"
     APPROVED = "approved"
     RETURNED_TO_DRAFT = "returned_to_draft"
 
 
-class TranscriptProvenance(str, Enum):
+class TranscriptProvenance(StrEnum):
     MANUAL_TEACHER = "manual_teacher"
     AI_ASSISTED = "ai_assisted"
     IMPORTED = "imported"
 
 
-class LanguageAnalysisJobStatus(str, Enum):
+class LanguageAnalysisJobStatus(StrEnum):
     QUEUED = "queued"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -110,9 +110,7 @@ class TranscriptRevision:
 
     def return_to_draft(self, reason: str) -> None:
         if self.status not in (TranscriptStatus.QA_SUBMITTED, TranscriptStatus.APPROVED):
-            raise InvalidDomainStateError(
-                f"Cannot return transcript to draft from status '{self.status.value}'"
-            )
+            raise InvalidDomainStateError(f"Cannot return transcript to draft from status '{self.status.value}'")
         if not reason or not reason.strip():
             raise ValidationError("A reason must be provided when returning a transcript to draft")
         self.status = TranscriptStatus.RETURNED_TO_DRAFT

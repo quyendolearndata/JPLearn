@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -31,7 +32,6 @@ class CatalogItemStaffDTO:
     status: str
     revision: int = 1
     qa_round: int = 0
-
 
 
 @dataclass(frozen=True)

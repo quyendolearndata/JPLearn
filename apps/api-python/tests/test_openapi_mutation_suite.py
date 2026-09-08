@@ -23,10 +23,10 @@ from typing import Any
 
 import pytest
 
-from jplearn_api.tooling import openapi_diff
 from jplearn_api.entrypoints.http.app import create_app
-from jplearn_api.tooling.openapi_diff import compare_openapi, load_handwritten_spec
 from jplearn_api.settings import Settings
+from jplearn_api.tooling import openapi_diff
+from jplearn_api.tooling.openapi_diff import compare_openapi, load_handwritten_spec
 
 
 @pytest.fixture
@@ -66,7 +66,9 @@ def test_baseline_cli_exits_zero(monkeypatch: pytest.MonkeyPatch, capsys: pytest
     assert captured.out == ""
 
 
-def test_mutation_1_ci_level_integer_to_string(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_1_ci_level_integer_to_string(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -81,7 +83,9 @@ def test_mutation_1_ci_level_integer_to_string(baseline_specs, monkeypatch: pyte
     assert "type mismatch" in out
 
 
-def test_mutation_2_drop_minimum_or_maximum(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_2_drop_minimum_or_maximum(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     handwritten, generated = baseline_specs
 
     # Drop minimum from current_ci_level in LearnerProgressPublic
@@ -105,7 +109,9 @@ def test_mutation_2_drop_minimum_or_maximum(baseline_specs, monkeypatch: pytest.
     assert "missing maximum" in out2
 
 
-def test_mutation_3_add_nullable(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_3_add_nullable(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -120,7 +126,9 @@ def test_mutation_3_add_nullable(baseline_specs, monkeypatch: pytest.MonkeyPatch
     assert "nullable mismatch" in out
 
 
-def test_mutation_4_drop_required_field(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_4_drop_required_field(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -135,7 +143,9 @@ def test_mutation_4_drop_required_field(baseline_specs, monkeypatch: pytest.Monk
     assert "missing required fields" in out
 
 
-def test_mutation_5_expand_device_class_enum_and_case(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_5_expand_device_class_enum_and_case(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -151,12 +161,18 @@ def test_mutation_5_expand_device_class_enum_and_case(baseline_specs, monkeypatc
 
     # Test case sensitivity: "WEB" instead of "web"
     mutated_case = copy.deepcopy(generated)
-    mutated_case["components"]["schemas"]["SessionStartBody"]["properties"]["device_class"]["enum"] = ["WEB", "phone", "ipad"]
+    mutated_case["components"]["schemas"]["SessionStartBody"]["properties"]["device_class"]["enum"] = [
+        "WEB",
+        "phone",
+        "ipad",
+    ]
     problems_case = compare_openapi(handwritten, mutated_case)
     assert any("enum mismatch" in p for p in problems_case)
 
 
-def test_mutation_6_change_400_body_to_detail(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_6_change_400_body_to_detail(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """R-01: Change 400 error body to {detail} while keeping status 400."""
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
@@ -183,7 +199,9 @@ def test_mutation_6_change_400_body_to_detail(baseline_specs, monkeypatch: pytes
     assert "missing required fields" in out
 
 
-def test_mutation_7_drop_security_alternative_on_media(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_7_drop_security_alternative_on_media(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """R-01: Drop individual security alternatives directly on media/HLS endpoints."""
     handwritten, generated = baseline_specs
 
@@ -215,7 +233,9 @@ def test_mutation_7_drop_security_alternative_on_media(baseline_specs, monkeypat
     assert "security mismatch" in out3
 
 
-def test_mutation_8_add_forbidden_response_field(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_8_add_forbidden_response_field(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -230,7 +250,9 @@ def test_mutation_8_add_forbidden_response_field(baseline_specs, monkeypatch: py
     assert "extra property" in out
 
 
-def test_mutation_9_delete_ready_operation(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_9_delete_ready_operation(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
@@ -245,18 +267,22 @@ def test_mutation_9_delete_ready_operation(baseline_specs, monkeypatch: pytest.M
     assert "missing required GET /ready" in out
 
 
-def test_mutation_10_extra_required_query_parameter(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_10_extra_required_query_parameter(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """R-01: Extra required query parameter must fail."""
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
 
     # Inject extra required query parameter into GET /catalog
-    mutated["paths"]["/catalog"]["get"]["parameters"].append({
-        "name": "unexpected_filter",
-        "in": "query",
-        "required": True,
-        "schema": {"type": "string"},
-    })
+    mutated["paths"]["/catalog"]["get"]["parameters"].append(
+        {
+            "name": "unexpected_filter",
+            "in": "query",
+            "required": True,
+            "schema": {"type": "string"},
+        }
+    )
 
     problems = compare_openapi(handwritten, mutated)
     assert any("extra required query parameter 'unexpected_filter' not in contract" in p for p in problems)
@@ -266,7 +292,9 @@ def test_mutation_10_extra_required_query_parameter(baseline_specs, monkeypatch:
     assert "extra required query parameter" in out
 
 
-def test_mutation_11_missing_type_in_schema(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_11_missing_type_in_schema(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """R-01: Missing type in schema must fail."""
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
@@ -282,7 +310,9 @@ def test_mutation_11_missing_type_in_schema(baseline_specs, monkeypatch: pytest.
     assert "missing 'type'" in out
 
 
-def test_mutation_12_undefined_ref_fails(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_12_undefined_ref_fails(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """R-01: Undefined $ref must report error."""
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
@@ -300,7 +330,9 @@ def test_mutation_12_undefined_ref_fails(baseline_specs, monkeypatch: pytest.Mon
     assert "undefined $ref" in out
 
 
-def test_mutation_13_password_min_length_100_fails(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_13_password_min_length_100_fails(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """R-01: Increasing password minLength from 10 to 100 must fail."""
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
@@ -315,7 +347,9 @@ def test_mutation_13_password_min_length_100_fails(baseline_specs, monkeypatch: 
     assert "minLength mismatch" in out
 
 
-def test_mutation_14_password_min_length_1_fails(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_14_password_min_length_1_fails(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """R-01: Decreasing password minLength from 10 to 1 must fail."""
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
@@ -330,7 +364,9 @@ def test_mutation_14_password_min_length_1_fails(baseline_specs, monkeypatch: py
     assert "minLength mismatch" in out
 
 
-def test_mutation_15_password_min_length_dropped_fails(baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_mutation_15_password_min_length_dropped_fails(
+    baseline_specs, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """R-01: Dropping password minLength must fail."""
     handwritten, generated = baseline_specs
     mutated = copy.deepcopy(generated)
@@ -398,4 +434,3 @@ def test_mutation_18_enum_type_bool_vs_int_fails(baseline_specs) -> None:
 
     problems = compare_schemas(h_spec, g_spec, h_schema, g_schema, "ctx")
     assert any("enum mismatch" in p for p in problems)
-

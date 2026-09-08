@@ -3,13 +3,20 @@
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import pytest
 from fastapi.testclient import TestClient
 
+from fakes import (
+    FakeCatalogRepository,
+    FakeCollectionRepository,
+    FakeContentRepository,
+    FakeSavedSceneRepository,
+    FakeUnitOfWork,
+)
 from jplearn_api.application.commands import (
     CreateCollectionCommand,
-    DeleteCollectionCommand,
     DeleteSavedSceneCommand,
     PatchCollectionCommand,
     SaveSceneCommand,
@@ -17,11 +24,8 @@ from jplearn_api.application.commands import (
 )
 from jplearn_api.application.handlers.collections import (
     MAX_COLLECTIONS_PER_USER,
-    MAX_SCENES_PER_COLLECTION,
     handle_create_collection,
-    handle_delete_collection,
     handle_get_collection,
-    handle_list_collections,
     handle_patch_collection,
     handle_update_collection_scenes,
 )
@@ -29,7 +33,7 @@ from jplearn_api.application.handlers.saved_scenes import (
     handle_delete_saved_scene,
     handle_save_scene,
 )
-from jplearn_api.application.queries import GetCollectionQuery, ListCollectionsQuery
+from jplearn_api.application.queries import GetCollectionQuery
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.domain.catalog import CatalogItem
 from jplearn_api.domain.collection import (
@@ -40,18 +44,10 @@ from jplearn_api.domain.collection import (
 from jplearn_api.domain.content import ContentVersion, Scene
 from jplearn_api.domain.errors import (
     ConflictError,
-    EntityNotFoundError,
     InvalidDomainStateError,
 )
-from jplearn_api.domain.saved_scene import SavedScene, SceneAvailability
+from jplearn_api.domain.saved_scene import SceneAvailability
 from jplearn_api.entrypoints.http.security import require_user
-from fakes import (
-    FakeCatalogRepository,
-    FakeCollectionRepository,
-    FakeContentRepository,
-    FakeSavedSceneRepository,
-    FakeUnitOfWork,
-)
 
 
 def _add_version(content_repo: FakeContentRepository, version: ContentVersion) -> None:
@@ -77,8 +73,9 @@ def _enable_capabilities(client: TestClient):
 # 1. Domain Tests
 # ------------------------------------------------------------------------------
 
+
 def test_personal_collection_domain_creation():
-    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=UTC)
     coll = PersonalCollection(
         id="col-01",
         user_id="user-01",
@@ -96,7 +93,7 @@ def test_personal_collection_domain_creation():
 
 
 def test_collection_detail_domain_creation():
-    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=UTC)
     sc_detail = CollectionSceneDetail(
         position=0,
         scene_id="sc-01",
@@ -123,6 +120,7 @@ def test_collection_detail_domain_creation():
 # ------------------------------------------------------------------------------
 # 2. Application Handler Tests
 # ------------------------------------------------------------------------------
+
 
 @pytest.fixture
 def test_env():
@@ -220,7 +218,7 @@ async def test_collection_quota_handler(test_env):
     # Create 50 collections
     for i in range(MAX_COLLECTIONS_PER_USER):
         await handle_create_collection(
-            CreateCollectionCommand(user_id="user-01", name=f"Collection {i+1}"),
+            CreateCollectionCommand(user_id="user-01", name=f"Collection {i + 1}"),
             uow,
         )
 
@@ -373,6 +371,7 @@ async def test_saved_scene_deletion_cascades_and_bumps_collection_revision(test_
 # 3. HTTP API Contract & Integration Tests
 # ------------------------------------------------------------------------------
 
+
 def test_api_collections_full_lifecycle(client: TestClient, monkeypatch: pytest.MonkeyPatch, test_env):
     uow = test_env["uow"]
     monkeypatch.setattr("jplearn_api.entrypoints.http.routers.collections.create_uow", lambda session: uow)
@@ -479,7 +478,10 @@ def test_api_collections_user_isolation(client: TestClient, monkeypatch: pytest.
     # User B cannot access User A's collection
     assert client.get(f"/me/collections/{coll_id}").status_code == 404
     assert client.patch(f"/me/collections/{coll_id}", json={"expected_revision": 1, "name": "Hack"}).status_code == 404
-    assert client.put(f"/me/collections/{coll_id}/scenes", json={"expected_revision": 1, "scene_ids": []}).status_code == 404
+    assert (
+        client.put(f"/me/collections/{coll_id}/scenes", json={"expected_revision": 1, "scene_ids": []}).status_code
+        == 404
+    )
     # DELETE is idempotent: deleting nonexistent returns 204
     assert client.delete(f"/me/collections/{coll_id}").status_code == 204
 
@@ -496,5 +498,7 @@ def test_api_collections_unauthenticated(client: TestClient):
     assert client.get("/me/collections").status_code == 401
     assert client.get("/me/collections/col-01").status_code == 401
     assert client.patch("/me/collections/col-01", json={"expected_revision": 1, "name": "Test"}).status_code == 401
-    assert client.put("/me/collections/col-01/scenes", json={"expected_revision": 1, "scene_ids": []}).status_code == 401
+    assert (
+        client.put("/me/collections/col-01/scenes", json={"expected_revision": 1, "scene_ids": []}).status_code == 401
+    )
     assert client.delete("/me/collections/col-01").status_code == 401

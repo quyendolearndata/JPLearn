@@ -1,9 +1,12 @@
 """Durable preference policies and idempotent playback starts."""
+
 from alembic import op
+
 revision = "0013_playback_recovery"
 down_revision = "0012_content_jobs"
 branch_labels = None
 depends_on = None
+
 
 def upgrade():
     op.execute("""CREATE TABLE learning_preference_versions (
@@ -26,6 +29,7 @@ def upgrade():
         created_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY(user_id, idempotency_key)
     )""")
+
 
 def downgrade():
     op.execute("DROP TABLE playback_start_receipts")

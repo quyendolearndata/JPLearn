@@ -8,11 +8,9 @@ from typing import Any, Protocol
 class PasswordHasher(Protocol):
     """Port for Argon2 or other password hashing algorithms."""
 
-    async def hash_password(self, password: str) -> str:
-        ...
+    async def hash_password(self, password: str) -> str: ...
 
-    async def verify_password(self, password_hash: str, candidate: str) -> bool:
-        ...
+    async def verify_password(self, password_hash: str, candidate: str) -> bool: ...
 
 
 class TokenService(Protocol):
@@ -24,11 +22,9 @@ class TokenService(Protocol):
         email: str,
         token_version: int,
         secret: str,
-    ) -> str:
-        ...
+    ) -> str: ...
 
-    def decode_access_token(self, token: str, secret: str) -> dict[str, Any]:
-        ...
+    def decode_access_token(self, token: str, secret: str) -> dict[str, Any]: ...
 
 
 class MediaUrlSigner(Protocol):

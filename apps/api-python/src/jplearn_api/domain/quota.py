@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
 import uuid
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 
 from jplearn_api.domain.errors import (
     InvalidReservationStateError,
@@ -54,8 +54,8 @@ class QuotaAccount:
     used_cost_micros: int = 0
     policy_version: str = "v1"
     is_active: bool = True
-    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     @property
     def available_audio_seconds(self) -> int:
@@ -82,11 +82,20 @@ class QuotaAccount:
     ) -> bool:
         if not self.is_active:
             return False
-        if audio_seconds > 0 and (self.reserved_audio_seconds + self.used_audio_seconds + audio_seconds) > self.max_audio_seconds:
+        if (
+            audio_seconds > 0
+            and (self.reserved_audio_seconds + self.used_audio_seconds + audio_seconds) > self.max_audio_seconds
+        ):
             return False
-        if input_tokens > 0 and (self.reserved_input_tokens + self.used_input_tokens + input_tokens) > self.max_input_tokens:
+        if (
+            input_tokens > 0
+            and (self.reserved_input_tokens + self.used_input_tokens + input_tokens) > self.max_input_tokens
+        ):
             return False
-        if output_tokens > 0 and (self.reserved_output_tokens + self.used_output_tokens + output_tokens) > self.max_output_tokens:
+        if (
+            output_tokens > 0
+            and (self.reserved_output_tokens + self.used_output_tokens + output_tokens) > self.max_output_tokens
+        ):
             return False
         if cost_micros > 0 and (self.reserved_cost_micros + self.used_cost_micros + cost_micros) > self.max_cost_micros:
             return False
@@ -112,7 +121,7 @@ class QuotaAccount:
         if not self.can_reserve(audio_seconds, input_tokens, output_tokens, cost_micros):
             raise QuotaExceededError("Insufficient AI quota for reservation")
 
-        ts = now or datetime.now(timezone.utc)
+        ts = now or datetime.now(UTC)
         self.reserved_audio_seconds += audio_seconds
         self.reserved_input_tokens += input_tokens
         self.reserved_output_tokens += output_tokens
@@ -159,7 +168,7 @@ class QuotaAccount:
         if min(actual_audio_seconds, actual_input_tokens, actual_output_tokens, actual_cost_micros) < 0:
             raise InvalidReservationStateError("Actual provider usage must be non-negative")
 
-        ts = now or datetime.now(timezone.utc)
+        ts = now or datetime.now(UTC)
 
         # Deduct reserved amounts from account reserved pool
         self.reserved_audio_seconds = max(0, self.reserved_audio_seconds - reservation_entry.audio_seconds)
@@ -210,7 +219,7 @@ class QuotaAccount:
         if reservation_entry.status != "reserved":
             raise InvalidReservationStateError(f"Cannot release reservation in '{reservation_entry.status}' state")
 
-        ts = now or datetime.now(timezone.utc)
+        ts = now or datetime.now(UTC)
         self.reserved_audio_seconds = max(0, self.reserved_audio_seconds - reservation_entry.audio_seconds)
         self.reserved_input_tokens = max(0, self.reserved_input_tokens - reservation_entry.input_tokens)
         self.reserved_output_tokens = max(0, self.reserved_output_tokens - reservation_entry.output_tokens)
@@ -250,7 +259,7 @@ class QuotaAccount:
         now: datetime | None = None,
         reason: str | None = None,
     ) -> AiUsageLedgerEntry:
-        ts = now or datetime.now(timezone.utc)
+        ts = now or datetime.now(UTC)
         reservation_entry.status = status
         reservation_entry.settled_at = ts
 

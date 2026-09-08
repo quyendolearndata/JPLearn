@@ -96,9 +96,10 @@ async def inventory_media_integrity(limit: int = 100) -> dict:
                 )
             )
             media_rows = (
-                await conn.execute(
-                    text(
-                        """
+                (
+                    await conn.execute(
+                        text(
+                            """
                         SELECT a.id, a.catalog_item_id, c.status AS catalog_status,
                                a.storage_key, a.hls_url,
                                a.measured_duration_ms IS NULL AS missing_measured_duration,
@@ -113,10 +114,13 @@ async def inventory_media_integrity(limit: int = 100) -> dict:
                         ORDER BY a.catalog_item_id, a.id
                         LIMIT :limit
                         """
-                    ),
-                    {"limit": limit},
+                        ),
+                        {"limit": limit},
+                    )
                 )
-            ).mappings().all()
+                .mappings()
+                .all()
+            )
 
             version_total = await conn.scalar(
                 text(
@@ -136,9 +140,10 @@ async def inventory_media_integrity(limit: int = 100) -> dict:
                 )
             )
             version_rows = (
-                await conn.execute(
-                    text(
-                        """
+                (
+                    await conn.execute(
+                        text(
+                            """
                         SELECT v.id, v.catalog_item_id, v.version_number,
                                v.is_frozen, v.is_published,
                                v.media_asset_id IS NULL AS missing_media_asset_id,
@@ -161,10 +166,13 @@ async def inventory_media_integrity(limit: int = 100) -> dict:
                         ORDER BY v.catalog_item_id, v.version_number, v.id
                         LIMIT :limit
                         """
-                    ),
-                    {"limit": limit},
+                        ),
+                        {"limit": limit},
+                    )
                 )
-            ).mappings().all()
+                .mappings()
+                .all()
+            )
     finally:
         await engine.dispose()
 

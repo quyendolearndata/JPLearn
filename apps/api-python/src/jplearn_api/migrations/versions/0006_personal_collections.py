@@ -23,7 +23,8 @@ def upgrade() -> None:
             "collection_count" INTEGER NOT NULL DEFAULT 0,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "learner_library_state_pkey" PRIMARY KEY ("user_id"),
-            CONSTRAINT "learner_library_state_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "learner_library_state_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE
+            CASCADE ON DELETE CASCADE
         )
         """,
     )
@@ -40,7 +41,8 @@ def upgrade() -> None:
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "personal_collections_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "personal_collections_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "personal_collections_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE
+            CASCADE ON DELETE CASCADE,
             CONSTRAINT "personal_collections_id_user_unique" UNIQUE ("id", "user_id"),
             CONSTRAINT "personal_collections_user_idempotency_unique" UNIQUE ("user_id", "idempotency_key")
         )
@@ -48,7 +50,8 @@ def upgrade() -> None:
     )
 
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "personal_collections_user_created_idx" ON "personal_collections"("user_id", "created_at" DESC, "id" DESC)'
+        'CREATE INDEX IF NOT EXISTS "personal_collections_user_created_idx" ON '
+        '"personal_collections"("user_id", "created_at" DESC, "id" DESC)'
     )
 
     op.execute(
@@ -61,8 +64,10 @@ def upgrade() -> None:
             "added_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "collection_scenes_pkey" PRIMARY KEY ("collection_id", "position"),
             CONSTRAINT "collection_scenes_unique_scene" UNIQUE ("collection_id", "scene_id"),
-            CONSTRAINT "collection_scenes_collection_user_fkey" FOREIGN KEY ("collection_id", "user_id") REFERENCES "personal_collections"("id", "user_id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "collection_scenes_saved_scene_fkey" FOREIGN KEY ("user_id", "scene_id") REFERENCES "saved_scenes"("user_id", "scene_id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "collection_scenes_collection_user_fkey" FOREIGN KEY ("collection_id", "user_id") REFERENCES
+            "personal_collections"("id", "user_id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "collection_scenes_saved_scene_fkey" FOREIGN KEY ("user_id", "scene_id") REFERENCES
+            "saved_scenes"("user_id", "scene_id") ON UPDATE CASCADE ON DELETE CASCADE
         )
         """,
     )

@@ -64,9 +64,7 @@ async def test_media_integrity_inventory_lists_legacy_asset_and_pinned_version(
         assert asset["missing_source_sha256"]
         assert asset["missing_hls_bundle_sha256"]
 
-        version = next(
-            row for row in report["pinned_versions"]["candidates"] if row["id"] == version_id
-        )
+        version = next(row for row in report["pinned_versions"]["candidates"] if row["id"] == version_id)
         assert version["legacy_duration"]
         assert version["missing_source_sha256"]
         assert version["missing_hls_bundle_sha256"]

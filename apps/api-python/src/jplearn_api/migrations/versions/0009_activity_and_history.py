@@ -39,13 +39,15 @@ def upgrade() -> None:
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "completed_at" TIMESTAMP(3),
             CONSTRAINT "history_deletions_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "history_deletions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "history_deletions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE
+            CASCADE ON DELETE CASCADE
         );
         """
     )
 
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "history_deletions_user_created_idx" ON "history_deletions"("user_id", "created_at" DESC);'
+        'CREATE INDEX IF NOT EXISTS "history_deletions_user_created_idx" ON '
+        '"history_deletions"("user_id", "created_at" DESC);'
     )
     op.execute(
         'CREATE INDEX IF NOT EXISTS "history_deletions_status_idx" ON "history_deletions"("status", "created_at");'

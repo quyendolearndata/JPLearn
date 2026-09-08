@@ -43,10 +43,14 @@ def upgrade() -> None:
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "content_jobs_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "content_jobs_catalog_item_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "content_jobs_content_version_fkey" FOREIGN KEY ("content_version_id") REFERENCES "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "content_jobs_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "content_jobs_applied_by_fkey" FOREIGN KEY ("applied_by") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE SET NULL,
+            CONSTRAINT "content_jobs_catalog_item_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES "catalog_items"("id")
+            ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "content_jobs_content_version_fkey" FOREIGN KEY ("content_version_id") REFERENCES
+            "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "content_jobs_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON UPDATE
+            CASCADE ON DELETE CASCADE,
+            CONSTRAINT "content_jobs_applied_by_fkey" FOREIGN KEY ("applied_by") REFERENCES "users"("id") ON UPDATE
+            CASCADE ON DELETE SET NULL,
             CONSTRAINT "content_jobs_user_idem_uniq" UNIQUE ("created_by", "idempotency_key"),
             CONSTRAINT "content_jobs_status_check" CHECK (
                 "status" IN ('queued', 'running', 'succeeded', 'failed', 'cancelled')
@@ -61,7 +65,8 @@ def upgrade() -> None:
         'CREATE INDEX IF NOT EXISTS "content_jobs_status_lease_idx" ON "content_jobs"("status", "lease_expires_at");'
     )
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "content_jobs_item_version_idx" ON "content_jobs"("catalog_item_id", "content_version_id");'
+        'CREATE INDEX IF NOT EXISTS "content_jobs_item_version_idx" ON '
+        '"content_jobs"("catalog_item_id", "content_version_id");'
     )
 
 

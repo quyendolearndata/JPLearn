@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import timedelta, timezone
-from jplearn_api.settings import Settings
-from jplearn_api.entrypoints.http.dependencies import get_app_settings
+from datetime import UTC, timedelta
+
 from fastapi import APIRouter, Depends, Header, Path, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,7 +29,7 @@ from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_uow
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.domain.playback import PlaybackStatus
-from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_session, require_capability
+from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_app_settings, get_session, require_capability
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
 from jplearn_api.entrypoints.http.schemas import (
     CheckpointAckPublic,
@@ -43,6 +42,7 @@ from jplearn_api.entrypoints.http.schemas import (
     StartPlaybackBody,
 )
 from jplearn_api.entrypoints.http.security import require_user
+from jplearn_api.settings import Settings
 
 router = APIRouter(tags=["Playback"])
 
@@ -56,11 +56,7 @@ router = APIRouter(tags=["Playback"])
     responses={
         201: {
             "description": "Playback session successfully started or taken over",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/PlaybackCreatedPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PlaybackCreatedPublic"}}},
         },
         400: {"description": "Invalid input"},
         401: {"description": "Authentication required"},
@@ -101,7 +97,11 @@ async def start_playback(
             updated_at=resume_cp.updated_at,
         )
 
-    last_time = playback_session.last_server_time if playback_session.last_server_time.tzinfo else playback_session.last_server_time.replace(tzinfo=timezone.utc)
+    last_time = (
+        playback_session.last_server_time
+        if playback_session.last_server_time.tzinfo
+        else playback_session.last_server_time.replace(tzinfo=UTC)
+    )
     lease_expires = last_time + timedelta(seconds=45)
 
     return PlaybackCreatedPublic(
@@ -122,11 +122,7 @@ async def start_playback(
     responses={
         200: {
             "description": "Playback session details and lease status",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/PlaybackStatusPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PlaybackStatusPublic"}}},
         },
         401: {"description": "Authentication required"},
         404: {"description": "Playback session not found"},
@@ -144,7 +140,11 @@ async def get_playback(
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
 
-    last_time = playback_session.last_server_time if playback_session.last_server_time.tzinfo else playback_session.last_server_time.replace(tzinfo=timezone.utc)
+    last_time = (
+        playback_session.last_server_time
+        if playback_session.last_server_time.tzinfo
+        else playback_session.last_server_time.replace(tzinfo=UTC)
+    )
     lease_expires = last_time + timedelta(seconds=45)
 
     return PlaybackStatusPublic(
@@ -165,7 +165,6 @@ async def get_playback(
     )
 
 
-
 @router.put(
     "/playbacks/{id}/checkpoints/{seq}",
     response_model=CheckpointAckPublic,
@@ -174,11 +173,7 @@ async def get_playback(
     responses={
         200: {
             "description": "Checkpoint recorded and active watch time credited",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/CheckpointAckPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/CheckpointAckPublic"}}},
         },
         400: {"description": "Invalid checkpoint values"},
         401: {"description": "Authentication required"},
@@ -208,11 +203,17 @@ async def send_playback_checkpoint(
         scene_id=payload.scene_id,
     )
     try:
-        receipt, playback_session = await handle_send_checkpoint(cmd, uow, credit_enabled=settings.playback_tracking_enabled)
+        receipt, playback_session = await handle_send_checkpoint(
+            cmd, uow, credit_enabled=settings.playback_tracking_enabled
+        )
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
 
-    last_time = playback_session.last_server_time if playback_session.last_server_time.tzinfo else playback_session.last_server_time.replace(tzinfo=timezone.utc)
+    last_time = (
+        playback_session.last_server_time
+        if playback_session.last_server_time.tzinfo
+        else playback_session.last_server_time.replace(tzinfo=UTC)
+    )
     lease_expires = last_time + timedelta(seconds=45)
 
     return CheckpointAckPublic(
@@ -232,11 +233,7 @@ async def send_playback_checkpoint(
     responses={
         200: {
             "description": "Playback session successfully ended and lease released",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/PlaybackStatusPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/PlaybackStatusPublic"}}},
         },
         401: {"description": "Authentication required"},
         404: {"description": "Playback session not found"},
@@ -292,11 +289,7 @@ async def end_playback(
     responses={
         200: {
             "description": "List of resume checkpoints sorted by recent activity",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/ResumeListPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ResumeListPublic"}}},
         },
         401: {"description": "Authentication required"},
     },
@@ -340,11 +333,7 @@ async def list_resume(
     responses={
         200: {
             "description": "Resume checkpoint for the specified catalog item",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/ResumeItemPublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/ResumeItemPublic"}}},
         },
         401: {"description": "Authentication required"},
         404: {"description": "No resume checkpoint found for this item"},

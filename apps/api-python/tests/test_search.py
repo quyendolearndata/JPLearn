@@ -22,22 +22,22 @@ Validates:
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import pytest
 from fastapi.testclient import TestClient
 
-from jplearn_api.application.commands import (
-    ApproveTranscriptCommand,
-    SaveTranscriptDraftCommand,
+from fakes import (
+    FakeCatalogRepository,
+    FakeContentRepository,
+    FakeLearningRepository,
+    FakeTranscriptRepository,
+    FakeUnitOfWork,
 )
 from jplearn_api.application.handlers.search import handle_search_scenes
-from jplearn_api.application.handlers.transcript import (
-    handle_approve_transcript,
-    handle_save_transcript_draft,
-)
 from jplearn_api.application.queries import SearchScenesQuery
 from jplearn_api.application.read_models import UserDTO
-from jplearn_api.domain.catalog import CatalogItem, MediaRef
+from jplearn_api.domain.catalog import CatalogItem
 from jplearn_api.domain.content import ContentVersion, Scene
 from jplearn_api.domain.errors import (
     ForbiddenError,
@@ -52,21 +52,13 @@ from jplearn_api.domain.search import (
     normalize_search_query,
     search_candidate_terms,
 )
-from jplearn_api.domain.transcript import ApprovedSceneText, TranscriptSegment
+from jplearn_api.domain.transcript import ApprovedSceneText
 from jplearn_api.entrypoints.http.security import require_user
-from jplearn_api.settings import Settings
-from fakes import (
-    FakeCatalogRepository,
-    FakeContentRepository,
-    FakeLearningRepository,
-    FakeTranscriptRepository,
-    FakeUnitOfWork,
-)
-
 
 # ==============================================================================
 # 1. Pure Python Domain Search Logic Tests
 # ==============================================================================
+
 
 def test_normalize_search_query_valid():
     # Half-width katakana converted to full-width katakana
@@ -99,8 +91,8 @@ def test_calculate_highlights_and_match_kind_exact():
     assert spans[0] == {"start_offset": 6, "end_offset": 8}
     assert spans[1] == {"start_offset": 15, "end_offset": 17}
     # Verify slices in original text
-    assert text[spans[0]["start_offset"]:spans[0]["end_offset"]] == "元気"
-    assert text[spans[1]["start_offset"]:spans[1]["end_offset"]] == "元気"
+    assert text[spans[0]["start_offset"] : spans[0]["end_offset"]] == "元気"
+    assert text[spans[1]["start_offset"] : spans[1]["end_offset"]] == "元気"
 
 
 def test_calculate_highlights_and_match_kind_token():
@@ -110,7 +102,7 @@ def test_calculate_highlights_and_match_kind_token():
     assert match_kind == "token_match"
     assert len(spans) == 2  # '今日' and '良い天気'
     for sp in spans:
-        matched_str = text[sp["start_offset"]:sp["end_offset"]]
+        matched_str = text[sp["start_offset"] : sp["end_offset"]]
         assert len(matched_str) > 0
 
 
@@ -134,6 +126,7 @@ def test_search_cursor_roundtrip():
 # ==============================================================================
 # 2. Application Handler & Security Invariants Tests (FR-NEG)
 # ==============================================================================
+
 
 @pytest.fixture
 def search_test_env():
@@ -168,7 +161,6 @@ def commit_fixture_data(uow: FakeUnitOfWork) -> None:
             p.commit_transaction()
 
 
-
 @pytest.mark.asyncio
 async def test_search_disabled_returns_forbidden(search_test_env):
     uow = search_test_env["uow"]
@@ -180,7 +172,7 @@ async def test_search_disabled_returns_forbidden(search_test_env):
 @pytest.mark.asyncio
 async def test_search_exact_match_success(search_test_env):
     uow = search_test_env["uow"]
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # 1. Setup Published Catalog Item (CI Level 1)
     item = CatalogItem(
@@ -265,7 +257,7 @@ async def test_search_exact_match_success(search_test_env):
 @pytest.mark.asyncio
 async def test_search_ci_level_enforcement(search_test_env):
     uow = search_test_env["uow"]
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # Cat 1 (CI 1 - published)
     item1 = CatalogItem(
@@ -365,7 +357,7 @@ async def test_search_ci_level_enforcement(search_test_env):
 async def test_search_security_invariants_fr_neg(search_test_env):
     """Verify that draft/unpublished items, deactivated approved texts are excluded, and no internal data leaked."""
     uow = search_test_env["uow"]
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # 1. Draft catalog item
     item_draft = CatalogItem(
@@ -380,10 +372,38 @@ async def test_search_security_invariants_fr_neg(search_test_env):
         created_by="staff-01",
     )
     search_test_env["catalog"].items[item_draft.id] = item_draft
-    sc_draft = Scene(id="scn-d", scene_index=1, start_time_seconds=0, end_time_seconds=10, title_jp="下書き", transcript_jp="リンゴを食べる。")
-    ver_draft = ContentVersion(id="ver-d", catalog_item_id="cat-draft", version_number=1, revision=1, is_frozen=False, is_published=False, scenes=[sc_draft])
+    sc_draft = Scene(
+        id="scn-d",
+        scene_index=1,
+        start_time_seconds=0,
+        end_time_seconds=10,
+        title_jp="下書き",
+        transcript_jp="リンゴを食べる。",
+    )
+    ver_draft = ContentVersion(
+        id="ver-d",
+        catalog_item_id="cat-draft",
+        version_number=1,
+        revision=1,
+        is_frozen=False,
+        is_published=False,
+        scenes=[sc_draft],
+    )
     search_test_env["content"].versions.setdefault(ver_draft.catalog_item_id, []).append(ver_draft)
-    ast_draft = ApprovedSceneText(id="ast-d", catalog_item_id="cat-draft", content_version_id="ver-d", scene_id="scn-d", transcript_revision_id="rev-d", text_ja="リンゴを食べる。", scene_index=1, start_time_seconds=0, end_time_seconds=10, is_active=True, created_at=now, updated_at=now)
+    ast_draft = ApprovedSceneText(
+        id="ast-d",
+        catalog_item_id="cat-draft",
+        content_version_id="ver-d",
+        scene_id="scn-d",
+        transcript_revision_id="rev-d",
+        text_ja="リンゴを食べる。",
+        scene_index=1,
+        start_time_seconds=0,
+        end_time_seconds=10,
+        is_active=True,
+        created_at=now,
+        updated_at=now,
+    )
     search_test_env["transcripts"].approved_texts[ast_draft.id] = ast_draft
 
     # 2. Deactivated text (returned to draft)
@@ -399,10 +419,38 @@ async def test_search_security_invariants_fr_neg(search_test_env):
         created_by="staff-01",
     )
     search_test_env["catalog"].items[item_pub.id] = item_pub
-    sc_rev = Scene(id="scn-r", scene_index=1, start_time_seconds=0, end_time_seconds=10, title_jp="取下げ", transcript_jp="リンゴを食べる。")
-    ver_rev = ContentVersion(id="ver-r", catalog_item_id="cat-revoked", version_number=1, revision=1, is_frozen=True, is_published=True, scenes=[sc_rev])
+    sc_rev = Scene(
+        id="scn-r",
+        scene_index=1,
+        start_time_seconds=0,
+        end_time_seconds=10,
+        title_jp="取下げ",
+        transcript_jp="リンゴを食べる。",
+    )
+    ver_rev = ContentVersion(
+        id="ver-r",
+        catalog_item_id="cat-revoked",
+        version_number=1,
+        revision=1,
+        is_frozen=True,
+        is_published=True,
+        scenes=[sc_rev],
+    )
     search_test_env["content"].versions.setdefault(ver_rev.catalog_item_id, []).append(ver_rev)
-    ast_rev = ApprovedSceneText(id="ast-r", catalog_item_id="cat-revoked", content_version_id="ver-r", scene_id="scn-r", transcript_revision_id="rev-r", text_ja="リンゴを食べる。", scene_index=1, start_time_seconds=0, end_time_seconds=10, is_active=False, created_at=now, updated_at=now)  # is_active = False!
+    ast_rev = ApprovedSceneText(
+        id="ast-r",
+        catalog_item_id="cat-revoked",
+        content_version_id="ver-r",
+        scene_id="scn-r",
+        transcript_revision_id="rev-r",
+        text_ja="リンゴを食べる。",
+        scene_index=1,
+        start_time_seconds=0,
+        end_time_seconds=10,
+        is_active=False,
+        created_at=now,
+        updated_at=now,
+    )  # is_active = False!
     search_test_env["transcripts"].approved_texts[ast_rev.id] = ast_rev
 
     # Learner progress CI 1
@@ -438,7 +486,14 @@ async def test_search_cursor_pagination_and_generation_pin(search_test_env):
     search_test_env["catalog"].items[item.id] = item
 
     scenes = [
-        Scene(id=f"scn-{i}", scene_index=i, start_time_seconds=i * 10, end_time_seconds=(i + 1) * 10, title_jp=f"場面{i}", transcript_jp=f"富士山が見える{i}")
+        Scene(
+            id=f"scn-{i}",
+            scene_index=i,
+            start_time_seconds=i * 10,
+            end_time_seconds=(i + 1) * 10,
+            title_jp=f"場面{i}",
+            transcript_jp=f"富士山が見える{i}",
+        )
         for i in range(1, 4)
     ]
     ver = ContentVersion(
@@ -504,6 +559,7 @@ async def test_search_cursor_pagination_and_generation_pin(search_test_env):
 # 3. HTTP API Contract & Route Precedence Tests
 # ==============================================================================
 
+
 def test_api_search_unauthorized(client: TestClient):
     res = client.get("/catalog/search?q=こんにちは")
     assert res.status_code == 401
@@ -545,9 +601,7 @@ def test_api_search_query_validation(client: TestClient):
     assert res_empty.status_code == 400
 
 
-def test_api_search_end_to_end_success(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch, search_test_env
-):
+def test_api_search_end_to_end_success(client: TestClient, monkeypatch: pytest.MonkeyPatch, search_test_env):
     uow = search_test_env["uow"]
     monkeypatch.setattr("jplearn_api.entrypoints.http.routers.catalog.create_uow", lambda session: uow)
     client.app.state.settings.scene_search_enabled = True
@@ -555,7 +609,7 @@ def test_api_search_end_to_end_success(
     learner = UserDTO(id="user-learner-e2e", email="learner@test.com", roles=["learner"])
     client.app.dependency_overrides[require_user] = lambda: learner
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     item = CatalogItem(
         id="c0000000-0000-0000-0000-000000000099",
         topic_id="nature_tokyo",
