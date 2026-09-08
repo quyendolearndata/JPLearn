@@ -10,7 +10,7 @@ many device classes appear.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import asyncpg
@@ -69,7 +69,7 @@ def _shift_started_at(client, session_id: str, seconds: int) -> None:
         client,
         lambda conn: conn.execute(
             "UPDATE learning_sessions SET started_at = $1 WHERE id = $2",
-            (datetime.now(timezone.utc) - timedelta(seconds=seconds + 2)).replace(tzinfo=None),
+            (datetime.now(UTC) - timedelta(seconds=seconds + 2)).replace(tzinfo=None),
             session_id,
         ),
     )
@@ -107,6 +107,7 @@ def test_same_identity_same_catalog_same_progress_across_devices(live_client):
     # UC-L06 main: identical published catalog on all three clients.
     def _strip_sig(cat: dict) -> dict:
         import copy
+
         res = copy.deepcopy(cat)
         for it in res.get("items", []):
             if it.get("playback_url"):
@@ -156,21 +157,27 @@ def test_same_identity_same_catalog_same_progress_across_devices(live_client):
     assert ipad_session.status_code == 201
     assert ipad_session.json()["device_class"] == "ipad"
     _shift_started_at(live_client, ipad_session.json()["id"], 60)
-    assert live_client.post(
-        f"/sessions/{ipad_session.json()['id']}/end",
-        headers=_bearer(tokens["ipad"]),
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/sessions/{ipad_session.json()['id']}/end",
+            headers=_bearer(tokens["ipad"]),
+        ).status_code
+        == 200
+    )
 
     four = {"minutes_comprehensible": 4, "current_ci_level": 0}
     assert _progress(live_client, tokens["web"]) == four
     assert _progress(live_client, tokens["phone"]) == four
 
     # web opens a session too → all three device classes recorded once each.
-    assert live_client.post(
-        "/sessions",
-        headers=_bearer(tokens["web"]),
-        json={"device_class": "web"},
-    ).status_code == 201
+    assert (
+        live_client.post(
+            "/sessions",
+            headers=_bearer(tokens["web"]),
+            json={"device_class": "web"},
+        ).status_code
+        == 201
+    )
 
     device_classes = _run(
         live_client,

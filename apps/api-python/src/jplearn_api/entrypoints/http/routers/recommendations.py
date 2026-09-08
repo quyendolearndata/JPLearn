@@ -29,11 +29,7 @@ router = APIRouter(prefix="/me", tags=["Recommendations"])
     responses={
         200: {
             "description": "Recommended items retrieved successfully",
-            "content": {
-                "application/json": {
-                    "schema": {"$ref": "#/components/schemas/RecommendationsResponsePublic"}
-                }
-            },
+            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/RecommendationsResponsePublic"}}},
         },
         401: {"description": "Authentication required"},
     },
@@ -66,4 +62,4 @@ async def get_recommendations(
             strategy_version=strategy_version,
         )
     except DomainError as exc:
-        raise map_domain_error_to_http(exc)
+        raise map_domain_error_to_http(exc) from None

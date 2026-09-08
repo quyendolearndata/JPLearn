@@ -5,18 +5,15 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from fakes import FakeCatalogRepository, FakeSeriesRepository, FakeUnitOfWork
 from jplearn_api.application.handlers.series import (
     handle_create_series,
     handle_get_learner_series,
-    handle_get_staff_series,
     handle_list_learner_series,
-    handle_list_staff_series,
     handle_publish_series,
     handle_return_series_to_draft,
     handle_submit_series_qa,
-    handle_unpublish_series,
     handle_update_series_items,
-    handle_update_series_metadata,
 )
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.domain.catalog import CatalogItem
@@ -26,14 +23,12 @@ from jplearn_api.domain.errors import (
     RevisionConflictError,
 )
 from jplearn_api.domain.series import Series, SeriesItem
-from jplearn_api.entrypoints.http.roles import require_roles
 from jplearn_api.entrypoints.http.security import require_user
-from fakes import FakeCatalogRepository, FakeSeriesRepository, FakeUnitOfWork
-
 
 # ------------------------------------------------------------------------------
 # Domain Tests
 # ------------------------------------------------------------------------------
+
 
 def test_series_domain_creation_and_defaults():
     series = Series(
@@ -112,6 +107,7 @@ def test_series_domain_qa_and_publish_invariants():
 # ------------------------------------------------------------------------------
 # Application Handler Tests
 # ------------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_handler_series_lifecycle():
@@ -240,6 +236,7 @@ async def test_handler_learner_series_when_clips_unpublished():
 # ------------------------------------------------------------------------------
 # API Integration & Contract Tests
 # ------------------------------------------------------------------------------
+
 
 def test_api_staff_series_crud_and_permissions(client: TestClient, monkeypatch: pytest.MonkeyPatch):
     clip_1 = CatalogItem("clip-01", "topic-1", 1, 30, "video", "high", "Clip 1", "staff", status="published")

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
 import hashlib
 import logging
 import math
+from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from typing import Any
 from uuid import uuid4
 
@@ -17,16 +17,16 @@ from jplearn_api.application.commands import (
     ReserveQuotaCommand,
     SaveTranscriptDraftCommand,
 )
+from jplearn_api.application.handlers.ai_attempts import mark_attempt_unknown
 from jplearn_api.application.handlers.ai_usage import (
     handle_reserve_quota,
 )
 from jplearn_api.application.handlers.transcript import handle_save_transcript_draft
-from jplearn_api.application.handlers.ai_attempts import mark_attempt_unknown
-from jplearn_api.domain.ai_attempt import AiAttempt
 from jplearn_api.application.ports.ai_provider import AiTranscriptionPort
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
 from jplearn_api.application.queries import GetContentJobQuery
 from jplearn_api.application.read_models import ContentJobDTO
+from jplearn_api.domain.ai_attempt import AiAttempt
 from jplearn_api.domain.content_job import (
     ContentJob,
     ContentJobStatus,
@@ -102,13 +102,11 @@ async def handle_create_content_job(
     try:
         task_enum = ContentJobTask(cmd.task)
     except ValueError:
-        raise InvalidDomainStateError(f"Unsupported task '{cmd.task}'")
+        raise InvalidDomainStateError(f"Unsupported task '{cmd.task}'") from None
 
     async with uow:
         # 1. Idempotency check per user + key
-        existing_idem = await uow.content_jobs.get_by_idempotency_key(
-            cmd.user_id, cmd.idempotency_key
-        )
+        existing_idem = await uow.content_jobs.get_by_idempotency_key(cmd.user_id, cmd.idempotency_key)
         if existing_idem is not None:
             return to_content_job_dto(existing_idem)
 
@@ -126,15 +124,14 @@ async def handle_create_content_job(
         # 3. Media asset verification via catalog item aggregate
         media_ref = item.media[0] if item.media else None
         if media_ref is None:
-            raise InvalidDomainStateError(
-                f"No media asset found for catalog item '{cmd.catalog_item_id}'"
-            )
+            raise InvalidDomainStateError(f"No media asset found for catalog item '{cmd.catalog_item_id}'")
 
         # 4. Check for active job on this version and task
         active_job = await uow.content_jobs.find_active_job(cmd.content_version_id, task_enum)
         if active_job is not None:
             raise ConflictError(
-                f"An active job '{active_job.id}' is already running for task '{cmd.task}' on version '{cmd.content_version_id}'"
+                f"An active job '{active_job.id}' is already running for task "
+                f"'{cmd.task}' on version '{cmd.content_version_id}'"
             )
 
         # 5. Server-side quota estimation & verification (P1.11, P1.12)
@@ -184,11 +181,9 @@ async def handle_create_content_job(
         )
 
         source_storage_key, source_checksum, source_hash = _job_source_identity(version, media_ref)
-        config_hash = hashlib.sha256(
-            f"{cmd.task}:{cmd.language}:{policy.version}:{rate_micros}".encode()
-        ).hexdigest()
+        config_hash = hashlib.sha256(f"{cmd.task}:{cmd.language}:{policy.version}:{rate_micros}".encode()).hexdigest()
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         job = ContentJob(
             id=job_id,
             catalog_item_id=cmd.catalog_item_id,
@@ -266,7 +261,7 @@ async def handle_cancel_content_job(
         if not is_admin and job.created_by != cmd.user_id:
             raise ForbiddenError("Only creator or admin can cancel this job")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         was_queued = job.status == ContentJobStatus.QUEUED
 
         job.cancel(now)
@@ -305,9 +300,7 @@ async def handle_apply_content_job(
             raise EntityNotFoundError(f"Content job '{cmd.job_id}' not found")
 
         if job.status != ContentJobStatus.SUCCEEDED:
-            raise InvalidDomainStateError(
-                f"Cannot apply results: job is in status '{job.status.value}'"
-            )
+            raise InvalidDomainStateError(f"Cannot apply results: job is in status '{job.status.value}'")
 
         if job.applied_at is not None:
             raise ConflictError("Job results have already been applied")
@@ -352,7 +345,7 @@ async def handle_apply_content_job(
             auto_commit=False,
         )
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         job.apply(cmd.user_id, now)
         await uow.content_jobs.update(job)
         await uow.commit()
@@ -371,7 +364,7 @@ async def handle_execute_ai_worker_step(
     """Claim and execute one queued job through the AI provider adapter outside DB transaction."""
     if not capability_enabled:
         return None
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     token = attempt_token or str(uuid4())
 
     claimed_job: ContentJob | None = None
@@ -380,13 +373,11 @@ async def handle_execute_ai_worker_step(
 
     # 1. Claim job with row-level lock in a short transaction
     async with uow:
-        claimed_job = await uow.content_jobs.claim_next_queued_job(
-            now, lease_duration_seconds, token
-        )
+        claimed_job = await uow.content_jobs.claim_next_queued_job(now, lease_duration_seconds, token)
         if claimed_job is None:
             return None
 
-        catalog_item = await uow.catalog.get_by_id(claimed_job.catalog_item_id)
+        await uow.catalog.get_by_id(claimed_job.catalog_item_id)
         media_key = claimed_job.provenance.get("source_storage_key", "")
         duration_seconds = claimed_job.provenance.get("source_duration_seconds", 0)
         if not media_key or not duration_seconds:
@@ -395,12 +386,19 @@ async def handle_execute_ai_worker_step(
             await uow.commit()
             return to_content_job_dto(claimed_job)
         reservation = await uow.usage_ledger.get_reservation_by_job_id(claimed_job.id)
-        await uow.content_jobs.save_attempt(AiAttempt(
-            id=token, job_id=claimed_job.id, attempt_number=claimed_job.attempt,
-            provider=reservation.provider if reservation else "unknown",
-            idempotency_key=f"ai-attempt:{token}", state="running",
-            lease_expires_at=claimed_job.lease_expires_at, created_at=now, updated_at=now,
-        ))
+        await uow.content_jobs.save_attempt(
+            AiAttempt(
+                id=token,
+                job_id=claimed_job.id,
+                attempt_number=claimed_job.attempt,
+                provider=reservation.provider if reservation else "unknown",
+                idempotency_key=f"ai-attempt:{token}",
+                state="running",
+                lease_expires_at=claimed_job.lease_expires_at,
+                created_at=now,
+                updated_at=now,
+            )
+        )
         await uow.commit()
 
     claimed_attempt = claimed_job.attempt
@@ -436,7 +434,7 @@ async def handle_execute_ai_worker_step(
         if current_job is None:
             return None
 
-        res_now = datetime.now(timezone.utc)
+        res_now = datetime.now(UTC)
         reservation = await uow.usage_ledger.get_reservation_by_job_id(current_job.id)
 
         # Serialize accounting by quota account, then re-read the detached
@@ -447,10 +445,15 @@ async def handle_execute_ai_worker_step(
             if account is not None and reservation is not None:
                 settlement_key = f"settle:{reservation.idempotency_key}:{claimed_attempt}"
                 settled = await uow.usage_ledger.get_by_idempotency_key(
-                    account_id=account.id, idempotency_key=settlement_key, kind="settlement",
+                    account_id=account.id,
+                    idempotency_key=settlement_key,
+                    kind="settlement",
                 )
-                if (transcription_result is not None and settled is None
-                        and reservation.status in ("reserved", "outcome_unknown")):
+                if (
+                    transcription_result is not None
+                    and settled is None
+                    and reservation.status in ("reserved", "outcome_unknown")
+                ):
                     usage = transcription_result.usage
                     settlement_entry = account.settle(
                         reservation_entry=reservation,
@@ -476,8 +479,10 @@ async def handle_execute_ai_worker_step(
                     )
                     if existing is None:
                         entry = account.reconcile(
-                            reservation_entry=reservation, status="outcome_unknown",
-                            reason="provider_outcome_unknown", now=res_now,
+                            reservation_entry=reservation,
+                            status="outcome_unknown",
+                            reason="provider_outcome_unknown",
+                            now=res_now,
                         )
                         await uow.quota.save_account(account)
                         await uow.usage_ledger.add_entry(entry)
@@ -501,7 +506,12 @@ async def handle_execute_ai_worker_step(
         if current_job.attempt_token != token or current_job.status != ContentJobStatus.RUNNING:
             logger.warning(
                 "ai_job_lease_lost_or_cancelled",
-                extra={"job_id": claimed_job.id, "expected_token": token, "actual_token": current_job.attempt_token, "status": current_job.status},
+                extra={
+                    "job_id": claimed_job.id,
+                    "expected_token": token,
+                    "actual_token": current_job.attempt_token,
+                    "status": current_job.status,
+                },
             )
             # Commit ledger settlement if any occurred, but do not update job draft or status
             await uow.commit()
@@ -511,7 +521,8 @@ async def handle_execute_ai_worker_step(
             reason = "Provider timeout" if isinstance(provider_error, TimeoutError) else "Provider failure"
             current_job.record_failure(
                 f"{reason} (outcome unknown; manual reconciliation required)",
-                retryable=False, now=res_now,
+                retryable=False,
+                now=res_now,
             )
             await uow.content_jobs.update(current_job)
             await uow.commit()

@@ -1,7 +1,8 @@
 """Grant a role to an E2E user inside the isolated Compose database only.
 
-    .venv/bin/python differential/grant_role.py <database_url> <email> <role>
+.venv/bin/python differential/grant_role.py <database_url> <email> <role>
 """
+
 from __future__ import annotations
 
 import asyncio

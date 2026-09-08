@@ -8,7 +8,11 @@ from sqlalchemy.orm import selectinload
 
 from jplearn_api.adapters.persistence.models import (
     CatalogItem as OrmCatalogItem,
+)
+from jplearn_api.adapters.persistence.models import (
     Series as OrmSeries,
+)
+from jplearn_api.adapters.persistence.models import (
     SeriesItem as OrmSeriesItem,
 )
 from jplearn_api.domain.series import Series, SeriesItem
@@ -43,21 +47,14 @@ class SqlAlchemySeriesRepository:
         self._session = session
 
     async def get_by_id(self, series_id: str) -> Series | None:
-        stmt = (
-            select(OrmSeries)
-            .options(selectinload(OrmSeries.items))
-            .where(OrmSeries.id == series_id)
-        )
+        stmt = select(OrmSeries).options(selectinload(OrmSeries.items)).where(OrmSeries.id == series_id)
         result = await self._session.execute(stmt)
         orm = result.scalar_one_or_none()
         return _to_domain(orm) if orm else None
 
     async def get_by_id_for_update(self, series_id: str) -> Series | None:
         stmt = (
-            select(OrmSeries)
-            .options(selectinload(OrmSeries.items))
-            .where(OrmSeries.id == series_id)
-            .with_for_update()
+            select(OrmSeries).options(selectinload(OrmSeries.items)).where(OrmSeries.id == series_id).with_for_update()
         )
         result = await self._session.execute(stmt)
         orm = result.scalar_one_or_none()
@@ -85,11 +82,7 @@ class SqlAlchemySeriesRepository:
             self._session.add(orm_item)
 
     async def update(self, series: Series) -> None:
-        stmt = (
-            select(OrmSeries)
-            .options(selectinload(OrmSeries.items))
-            .where(OrmSeries.id == series.id)
-        )
+        stmt = select(OrmSeries).options(selectinload(OrmSeries.items)).where(OrmSeries.id == series.id)
         result = await self._session.execute(stmt)
         orm = result.scalar_one()
 
@@ -102,9 +95,7 @@ class SqlAlchemySeriesRepository:
         orm.updated_at = series.updated_at
 
         # Replace items
-        await self._session.execute(
-            delete(OrmSeriesItem).where(OrmSeriesItem.series_id == series.id)
-        )
+        await self._session.execute(delete(OrmSeriesItem).where(OrmSeriesItem.series_id == series.id))
         for item in series.items:
             orm_item = OrmSeriesItem(
                 series_id=series.id,
@@ -139,11 +130,7 @@ class SqlAlchemySeriesRepository:
         offset: int = 0,
         limit: int = 50,
     ) -> list[Series]:
-        stmt = (
-            select(OrmSeries)
-            .options(selectinload(OrmSeries.items))
-            .where(OrmSeries.status == "published")
-        )
+        stmt = select(OrmSeries).options(selectinload(OrmSeries.items)).where(OrmSeries.status == "published")
         if ci_level:
             stmt = stmt.where(OrmSeries.ci_level == ci_level)
         if topic_id:

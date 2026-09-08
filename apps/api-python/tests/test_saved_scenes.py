@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import pytest
 from fastapi.testclient import TestClient
 
+from fakes import (
+    FakeCatalogRepository,
+    FakeContentRepository,
+    FakeSavedSceneRepository,
+    FakeUnitOfWork,
+)
 from jplearn_api.application.commands import (
     DeleteSavedSceneCommand,
     SaveSceneCommand,
@@ -26,12 +33,6 @@ from jplearn_api.domain.errors import (
 )
 from jplearn_api.domain.saved_scene import SavedScene, SceneAvailability
 from jplearn_api.entrypoints.http.security import require_user
-from fakes import (
-    FakeCatalogRepository,
-    FakeContentRepository,
-    FakeSavedSceneRepository,
-    FakeUnitOfWork,
-)
 
 
 def _add_version(content_repo: FakeContentRepository, version: ContentVersion) -> None:
@@ -55,12 +56,13 @@ def _enable_capabilities(client: TestClient):
 # 1. Domain Tests
 # ------------------------------------------------------------------------------
 
+
 def test_saved_scene_domain_creation_and_enum():
     saved = SavedScene(
         id="saved-01",
         user_id="user-01",
         scene_id="scene-01",
-        saved_at=datetime(2026, 9, 7, 12, 0, 0, tzinfo=timezone.utc),
+        saved_at=datetime(2026, 9, 7, 12, 0, 0, tzinfo=UTC),
     )
     assert saved.id == "saved-01"
     assert saved.user_id == "user-01"
@@ -75,6 +77,7 @@ def test_saved_scene_domain_creation_and_enum():
 # ------------------------------------------------------------------------------
 # 2. Application Handler Tests
 # ------------------------------------------------------------------------------
+
 
 @pytest.fixture
 def test_data():
@@ -295,6 +298,7 @@ async def test_handle_list_saved_scenes_availability_and_stale_handling(test_dat
 # ------------------------------------------------------------------------------
 # 3. HTTP API Contract & Integration Tests
 # ------------------------------------------------------------------------------
+
 
 def test_api_saved_scenes_put_get_delete_lifecycle(client: TestClient, monkeypatch: pytest.MonkeyPatch, test_data):
     uow = test_data["uow"]

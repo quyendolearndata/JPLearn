@@ -5,8 +5,8 @@ from __future__ import annotations
 import base64
 import json
 import re
-from typing import Literal
 import unicodedata
+from typing import Literal
 
 from jplearn_api.domain.errors import ValidationError
 from jplearn_api.domain.transcript import analyze_japanese_text
@@ -22,19 +22,13 @@ def normalize_search_query(q: str) -> str:
 
     normalized = unicodedata.normalize("NFKC", q).strip()
     if len(normalized) < 1 or len(normalized) > 100:
-        raise ValidationError(
-            f"Search query length must be between 1 and 100 characters (got {len(normalized)})"
-        )
+        raise ValidationError(f"Search query length must be between 1 and 100 characters (got {len(normalized)})")
     return normalized
 
 
 def search_candidate_terms(query: str) -> list[str]:
     """Return literal terms suitable for narrowing candidates in persistence."""
-    words = [
-        word
-        for word in re.split(r"[\s\u3000、。！？「」『』（）()【】…,\.!?]+", query)
-        if word
-    ]
+    words = [word for word in re.split(r"[\s\u3000、。！？「」『』（）()【】…,\.!?]+", query) if word]
     if len(words) > 1:
         return list(dict.fromkeys(words))
     tokens = [

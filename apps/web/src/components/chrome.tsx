@@ -3,12 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useFlags } from "../lib/flags";
 import { getUser, refreshUser, subscribeAuth, type StoredUser } from "../lib/auth-storage";
 
 export function Chrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const flags = useFlags();
   const [user, setUser] = useState<StoredUser | null>(null);
 
   useEffect(() => {
@@ -51,10 +49,6 @@ export function Chrome({ children }: { children: React.ReactNode }) {
                 "Tài khoản"
               )}
             </Link>
-            {flags.grammar_enabled ? <Link href="/grammar">Ngữ pháp</Link> : null}
-            {flags.flashcards_enabled ? <Link href="/flashcards">Flashcard</Link> : null}
-            {flags.l1_subtitles_enabled ? <span>Bản dịch</span> : null}
-            {flags.speaking_enabled ? <Link href="/speak">Nói</Link> : null}
           </nav>
           <div className="sidebar-note"><span aria-hidden="true">❧</span><p>Mỗi ngày một chút.<br/>Tiếng Nhật gần hơn.</p></div>
         </div>

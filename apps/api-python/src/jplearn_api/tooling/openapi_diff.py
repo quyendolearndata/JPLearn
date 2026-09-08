@@ -4,8 +4,8 @@ import argparse
 import copy
 import json
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -235,9 +235,9 @@ def compare_schemas(
             h_enum = set((type(x).__name__, x) for x in h["enum"])
             g_enum = set((type(x).__name__, x) for x in g.get("enum", []))
             if h_enum != g_enum:
-                problems.append(
-                    f"{ctx}: enum mismatch: generated {sorted(f'{t}:{v}' for t, v in g_enum)} != handwritten {sorted(f'{t}:{v}' for t, v in h_enum)}"
-                )
+                generated_enum = sorted(f"{enum_type}:{value}" for enum_type, value in g_enum)
+                handwritten_enum = sorted(f"{enum_type}:{value}" for enum_type, value in h_enum)
+                problems.append(f"{ctx}: enum mismatch: generated {generated_enum} != handwritten {handwritten_enum}")
     elif "enum" in g:
         problems.append(f"{ctx}: unexpected enum in generated schema: {g.get('enum')}")
 
@@ -330,9 +330,7 @@ def compare_schemas(
             problems.append(f"{ctx}: missing property {prop_name!r}")
             continue
         g_prop = g_props[prop_name]
-        problems.extend(
-            compare_schemas(h_spec, g_spec, h_prop, g_prop, f"{ctx}.{prop_name}")
-        )
+        problems.extend(compare_schemas(h_spec, g_spec, h_prop, g_prop, f"{ctx}.{prop_name}"))
     extra_props = sorted(set(g_props) - set(h_props))
     for prop_name in extra_props:
         problems.append(f"{ctx}: extra property {prop_name!r} not in contract")
@@ -342,9 +340,7 @@ def compare_schemas(
         if "items" not in g:
             problems.append(f"{ctx}: array missing items schema")
         else:
-            problems.extend(
-                compare_schemas(h_spec, g_spec, h["items"], g["items"], f"{ctx}[]")
-            )
+            problems.extend(compare_schemas(h_spec, g_spec, h["items"], g["items"], f"{ctx}[]"))
 
     return problems
 
@@ -375,8 +371,7 @@ def compare_openapi(handwritten: dict[str, Any], generated: dict[str, Any]) -> l
         h_op, g_op = hand[key], gen[key]
         if h_op.get("operationId") and h_op.get("operationId") != g_op.get("operationId"):
             problems.append(
-                f"{method.upper()} {path} operationId {g_op.get('operationId')!r} "
-                f"!= {h_op.get('operationId')!r}",
+                f"{method.upper()} {path} operationId {g_op.get('operationId')!r} != {h_op.get('operationId')!r}",
             )
 
         # Security structure comparison
@@ -437,8 +432,12 @@ def compare_openapi(handwritten: dict[str, Any], generated: dict[str, Any]) -> l
             g_req = g_p.get("required", False)
             if h_req != g_req:
                 problems.append(f"{method.upper()} {path} parameter {p_name!r} required {g_req} != {h_req}")
-            h_schema = resolve_schema(handwritten, h_p.get("schema"), problems=problems, ctx=f"{method.upper()} {path} param({p_name})")
-            g_schema = resolve_schema(generated, g_p.get("schema"), problems=problems, ctx=f"{method.upper()} {path} param({p_name})")
+            h_schema = resolve_schema(
+                handwritten, h_p.get("schema"), problems=problems, ctx=f"{method.upper()} {path} param({p_name})"
+            )
+            g_schema = resolve_schema(
+                generated, g_p.get("schema"), problems=problems, ctx=f"{method.upper()} {path} param({p_name})"
+            )
             if p_in == "query" and not h_req:
                 # Query parameters are absent rather than null in URL query strings
                 h_schema.pop("nullable", None)
@@ -479,7 +478,9 @@ def compare_openapi(handwritten: dict[str, Any], generated: dict[str, Any]) -> l
                         )
                     )
                 for c_type in sorted(set(g_content) - set(h_content)):
-                    problems.append(f"{method.upper()} {path} requestBody extra content-type {c_type!r} not in contract")
+                    problems.append(
+                        f"{method.upper()} {path} requestBody extra content-type {c_type!r} not in contract"
+                    )
         elif g_rb:
             problems.append(f"{method.upper()} {path} extra requestBody in generated spec")
 
@@ -496,18 +497,22 @@ def compare_openapi(handwritten: dict[str, Any], generated: dict[str, Any]) -> l
                 problems.append(f"{method.upper()} {path} response({status_code}) missing content-type {missing_ct}")
             extra_ct = sorted(set(g_content) - set(h_content))
             if extra_ct:
-                problems.append(f"{method.upper()} {path} response({status_code}) extra content-type {extra_ct} not in contract")
+                problems.append(
+                    f"{method.upper()} {path} response({status_code}) extra content-type {extra_ct} not in contract"
+                )
 
             for content_type in sorted(set(h_content) & set(g_content)):
                 h_schema = h_content[content_type].get("schema")
                 g_schema = g_content[content_type].get("schema")
                 if h_schema is not None and g_schema is None:
                     problems.append(
-                        f"{method.upper()} {path} response({status_code})[{content_type}]: missing schema in generated spec"
+                        f"{method.upper()} {path} response({status_code})"
+                        f"[{content_type}]: missing schema in generated spec"
                     )
                 elif g_schema is not None and h_schema is None:
                     problems.append(
-                        f"{method.upper()} {path} response({status_code})[{content_type}]: extra schema in generated spec not in contract"
+                        f"{method.upper()} {path} response({status_code})"
+                        f"[{content_type}]: extra schema in generated spec not in contract"
                     )
                 elif h_schema is not None and g_schema is not None:
                     problems.extend(

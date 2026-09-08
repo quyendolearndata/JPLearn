@@ -1,15 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
-import path from "node:path";
-import fs from "node:fs";
+import { stockMp4Path } from "./stock-mp4";
 
 function stockMp4(): string {
-  const candidates = [
-    path.resolve(__dirname, "../../../media/stock/mp4/level-0-wash-hands.mp4"),
-    path.resolve(process.cwd(), "../../media/stock/mp4/level-0-wash-hands.mp4"),
-  ];
-  const hit = candidates.find((c) => fs.existsSync(c));
-  if (!hit) throw new Error("stock mp4 missing");
-  return hit;
+  return stockMp4Path();
 }
 
 async function login(page: Page, email: string) {

@@ -28,7 +28,8 @@ def upgrade() -> None:
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "published_at" TIMESTAMP(3) NULL,
             CONSTRAINT "content_versions_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "content_versions_catalog_item_id_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "content_versions_catalog_item_id_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES
+            "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
             CONSTRAINT "content_versions_item_version_key" UNIQUE ("catalog_item_id", "version_number")
         )
         """,
@@ -46,9 +47,11 @@ def upgrade() -> None:
             "transcript_jp" TEXT NOT NULL,
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "scenes_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "scenes_content_version_id_fkey" FOREIGN KEY ("content_version_id") REFERENCES "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "scenes_content_version_id_fkey" FOREIGN KEY ("content_version_id") REFERENCES
+            "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE,
             CONSTRAINT "scenes_version_index_key" UNIQUE ("content_version_id", "scene_index"),
-            CONSTRAINT "scenes_timing_check" CHECK ("start_time_seconds" >= 0 AND "end_time_seconds" > "start_time_seconds")
+            CONSTRAINT "scenes_timing_check" CHECK ("start_time_seconds" >= 0 AND "end_time_seconds" >
+            "start_time_seconds")
         )
         """,
     )

@@ -1,4 +1,5 @@
 """Staff attempt inspection and admin billing reconciliation, available with AI off."""
+
 from dataclasses import asdict
 from datetime import datetime
 from typing import Literal
@@ -54,19 +55,24 @@ class AiAttemptPublic(BaseModel):
 
 
 @router.get(
-    "/staff/content-jobs/{id}/attempts", response_model=list[AiAttemptPublic],
-    operation_id="listStaffAiAttempts", openapi_extra={"x-jplearn-fr": ["FR-AI-001"]},
+    "/staff/content-jobs/{id}/attempts",
+    response_model=list[AiAttemptPublic],
+    operation_id="listStaffAiAttempts",
+    openapi_extra={"x-jplearn-fr": ["FR-AI-001"]},
     responses={401: {"description": "Authentication required"}, 403: {"description": "Admin only"}},
 )
-async def list_attempts(id: UUIDPath, user: UserDTO = Depends(require_roles("admin")),
-                        session: AsyncSession = Depends(get_session)) -> list[AiAttemptPublic]:
+async def list_attempts(
+    id: UUIDPath, user: UserDTO = Depends(require_roles("admin")), session: AsyncSession = Depends(get_session)
+) -> list[AiAttemptPublic]:
     async with create_uow(session) as uow:
         return [asdict(a) for a in await uow.content_jobs.list_job_attempts(id)]
 
 
 @router.post(
-    "/staff/content-jobs/{id}/attempts/{attempt_id}/reconcile", response_model=AiAttemptPublic,
-    operation_id="reconcileStaffAiAttempt", openapi_extra={"x-jplearn-fr": ["FR-AI-001"]},
+    "/staff/content-jobs/{id}/attempts/{attempt_id}/reconcile",
+    response_model=AiAttemptPublic,
+    operation_id="reconcileStaffAiAttempt",
+    openapi_extra={"x-jplearn-fr": ["FR-AI-001"]},
     responses={
         400: {"description": "Invalid reconciliation evidence or usage"},
         401: {"description": "Authentication required"},
@@ -75,13 +81,22 @@ async def list_attempts(id: UUIDPath, user: UserDTO = Depends(require_roles("adm
         409: {"description": "Attempt state or evidence conflict"},
     },
 )
-async def reconcile_attempt(id: UUIDPath, attempt_id: str, body: ReconcileAttemptRequest,
-                            user: UserDTO = Depends(require_roles("admin")),
-                            session: AsyncSession = Depends(get_session)) -> AiAttemptPublic:
+async def reconcile_attempt(
+    id: UUIDPath,
+    attempt_id: str,
+    body: ReconcileAttemptRequest,
+    user: UserDTO = Depends(require_roles("admin")),
+    session: AsyncSession = Depends(get_session),
+) -> AiAttemptPublic:
     try:
         attempt = await reconcile_ai_attempt(
-            create_uow(session), job_id=id, attempt_id=attempt_id, user_id=user.id,
-            user_roles=tuple(user.roles), decision=body.decision, evidence=body.evidence,
+            create_uow(session),
+            job_id=id,
+            attempt_id=attempt_id,
+            user_id=user.id,
+            user_roles=tuple(user.roles),
+            decision=body.decision,
+            evidence=body.evidence,
             provider_request_id=body.provider_request_id,
             usage=body.usage.model_dump() if body.usage else None,
         )

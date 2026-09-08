@@ -40,7 +40,8 @@ def upgrade() -> None:
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "ai_quota_accounts_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "ai_quota_accounts_user_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "ai_quota_accounts_user_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE
+            ON DELETE CASCADE,
             CONSTRAINT "ai_quota_accounts_reserved_bounds" CHECK (
                 "reserved_audio_seconds" >= 0 AND
                 "reserved_input_tokens" >= 0 AND
@@ -56,9 +57,7 @@ def upgrade() -> None:
         );
         """
     )
-    op.execute(
-        'CREATE INDEX IF NOT EXISTS "ai_quota_accounts_user_idx" ON "ai_quota_accounts"("user_id");'
-    )
+    op.execute('CREATE INDEX IF NOT EXISTS "ai_quota_accounts_user_idx" ON "ai_quota_accounts"("user_id");')
 
     # 2. ai_usage_ledger: immutable usage events (reservation, settlement, release, reconciliation)
     op.execute(
@@ -84,24 +83,28 @@ def upgrade() -> None:
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "settled_at" TIMESTAMP(3),
             CONSTRAINT "ai_usage_ledger_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "ai_usage_ledger_account_fkey" FOREIGN KEY ("account_id") REFERENCES "ai_quota_accounts"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "ai_usage_ledger_user_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE RESTRICT,
+            CONSTRAINT "ai_usage_ledger_account_fkey" FOREIGN KEY ("account_id") REFERENCES "ai_quota_accounts"("id") ON
+            UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "ai_usage_ledger_user_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON
+            DELETE RESTRICT,
             CONSTRAINT "ai_usage_ledger_account_idem_kind_key" UNIQUE ("account_id", "idempotency_key", "kind")
         );
         """
     )
     op.execute(
-        'CREATE UNIQUE INDEX IF NOT EXISTS "ai_usage_ledger_provider_req_att_kind_key" ON "ai_usage_ledger"("provider", "provider_request_id", "attempt", "kind") WHERE "provider_request_id" IS NOT NULL;'
+        "CREATE UNIQUE INDEX IF NOT EXISTS "
+        '"ai_usage_ledger_provider_req_att_kind_key" ON '
+        '"ai_usage_ledger"("provider", "provider_request_id", "attempt", "kind") '
+        'WHERE "provider_request_id" IS NOT NULL;'
     )
     op.execute(
         'CREATE INDEX IF NOT EXISTS "ai_usage_ledger_user_created_idx" ON "ai_usage_ledger"("user_id", "created_at");'
     )
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "ai_usage_ledger_account_created_idx" ON "ai_usage_ledger"("account_id", "created_at");'
+        'CREATE INDEX IF NOT EXISTS "ai_usage_ledger_account_created_idx" ON '
+        '"ai_usage_ledger"("account_id", "created_at");'
     )
-    op.execute(
-        'CREATE INDEX IF NOT EXISTS "ai_usage_ledger_job_status_idx" ON "ai_usage_ledger"("job_id", "status");'
-    )
+    op.execute('CREATE INDEX IF NOT EXISTS "ai_usage_ledger_job_status_idx" ON "ai_usage_ledger"("job_id", "status");')
 
 
 def downgrade() -> None:

@@ -1,13 +1,14 @@
+import functools
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import Depends, Path, Request
+from fastapi import Path, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from jplearn_api.adapters.storage.local import StoragePort
 from jplearn_api.application.ports.security import MediaUrlSigner
 from jplearn_api.application.ports.unit_of_work import UnitOfWorkFactory
 from jplearn_api.bootstrap import create_media_signer, create_uow_factory
-from jplearn_api.adapters.storage.local import StoragePort
 
 UUIDPath = Annotated[str, Path(json_schema_extra={"format": "uuid"})]
 
@@ -38,10 +39,7 @@ def get_app_settings(request: Request):
     return request.app.state.settings
 
 
-import functools
-
-
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def require_capability(flag_name: str):
     """Dependency that ensures the runtime capability switch is enabled, else 403 Forbidden."""
     from fastapi import HTTPException

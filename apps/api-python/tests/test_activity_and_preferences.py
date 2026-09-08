@@ -12,56 +12,51 @@ Validates:
 
 from __future__ import annotations
 
-import copy
-from datetime import date, datetime, timedelta, timezone
-import pytest
-from fastapi.testclient import TestClient
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
-from jplearn_api.application.commands import (
-    RequestHistoryDeletionCommand,
-    UpdateLearningPreferencesCommand,
-)
-from jplearn_api.application.handlers.activity import (
-    handle_execute_history_deletion_worker,
-    handle_get_daily_activity,
-    handle_get_history_deletion,
-    handle_get_learning_preferences,
-    handle_get_watch_history,
-    handle_request_history_deletion,
-    handle_update_learning_preferences,
-    calculate_activity_streaks,
-)
-from jplearn_api.application.queries import (
-    GetDailyActivityQuery,
-    GetHistoryDeletionQuery,
-    GetLearningPreferencesQuery,
-    GetWatchHistoryQuery,
-)
-from jplearn_api.application.read_models import UserDTO
-from jplearn_api.domain.collection import PersonalCollection
-from jplearn_api.domain.errors import (
-    EntityNotFoundError,
-    InvalidDomainStateError,
-    RevisionConflictError,
-)
-from jplearn_api.domain.playback import (
-    DeletionStatus,
-    LearnerDailyActivity,
-    LearnerPlaybackState,
-    LearningPreferences,
-    PlaybackCheckpoint,
-    PlaybackSession,
-    PlaybackStatus,
-)
-from jplearn_api.domain.saved_scene import SavedScene
-from jplearn_api.entrypoints.http.security import require_user
+import pytest
+from fastapi.testclient import TestClient
+
 from fakes import (
     FakeCollectionRepository,
     FakePlaybackRepository,
     FakeSavedSceneRepository,
     FakeUnitOfWork,
 )
+from jplearn_api.application.commands import (
+    RequestHistoryDeletionCommand,
+    UpdateLearningPreferencesCommand,
+)
+from jplearn_api.application.handlers.activity import (
+    calculate_activity_streaks,
+    handle_execute_history_deletion_worker,
+    handle_get_daily_activity,
+    handle_get_learning_preferences,
+    handle_get_watch_history,
+    handle_request_history_deletion,
+    handle_update_learning_preferences,
+)
+from jplearn_api.application.queries import (
+    GetDailyActivityQuery,
+    GetLearningPreferencesQuery,
+    GetWatchHistoryQuery,
+)
+from jplearn_api.application.read_models import UserDTO
+from jplearn_api.domain.collection import PersonalCollection
+from jplearn_api.domain.errors import (
+    InvalidDomainStateError,
+    RevisionConflictError,
+)
+from jplearn_api.domain.playback import (
+    DeletionStatus,
+    LearnerDailyActivity,
+    PlaybackCheckpoint,
+    PlaybackSession,
+    PlaybackStatus,
+)
+from jplearn_api.domain.saved_scene import SavedScene
+from jplearn_api.entrypoints.http.security import require_user
 
 
 @pytest.fixture
@@ -86,6 +81,7 @@ def activity_env():
 # ------------------------------------------------------------------------------
 # 1. Learning Preferences Handlers & OCC Tests
 # ------------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_get_default_preferences(activity_env):
@@ -119,10 +115,10 @@ async def test_update_learning_preferences_success_and_effective_at_boundary(act
 
     # effective_at must be midnight of next day in previous learner timezone ("Asia/Ho_Chi_Minh")
     hcm_tz = ZoneInfo("Asia/Ho_Chi_Minh")
-    now_hcm = datetime.now(timezone.utc).astimezone(hcm_tz)
+    now_hcm = datetime.now(UTC).astimezone(hcm_tz)
     next_day_hcm = now_hcm.date() + timedelta(days=1)
     expected_midnight = datetime(next_day_hcm.year, next_day_hcm.month, next_day_hcm.day, 0, 0, 0, tzinfo=hcm_tz)
-    assert pref.effective_at == expected_midnight.astimezone(timezone.utc)
+    assert pref.effective_at == expected_midnight.astimezone(UTC)
 
 
 @pytest.mark.asyncio
@@ -178,10 +174,11 @@ async def test_update_learning_preferences_invalid_timezone(activity_env):
 # 2. Daily Activity Handlers & FR-NEG Tests
 # ------------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_get_daily_activity_records(activity_env):
     uow = activity_env["uow"]
-    now = datetime.now(timezone.utc)
+    datetime.now(UTC)
     # Seed activities
     await uow.playbacks.record_daily_active_ms("user-01", "2026-09-01", "Asia/Ho_Chi_Minh", 600000, 15)
     await uow.playbacks.record_daily_active_ms("user-01", "2026-09-02", "Asia/Ho_Chi_Minh", 1200000, 15)
@@ -202,10 +199,20 @@ async def test_get_daily_activity_records(activity_env):
 async def test_activity_keeps_same_local_date_separate_across_policy_revisions(activity_env):
     repo = activity_env["uow"].playbacks
     await repo.record_daily_active_ms(
-        "user-01", "2026-09-02", "Asia/Ho_Chi_Minh", 600000, 15, policy_revision=1,
+        "user-01",
+        "2026-09-02",
+        "Asia/Ho_Chi_Minh",
+        600000,
+        15,
+        policy_revision=1,
     )
     await repo.record_daily_active_ms(
-        "user-01", "2026-09-02", "Asia/Tokyo", 300000, 5, policy_revision=2,
+        "user-01",
+        "2026-09-02",
+        "Asia/Tokyo",
+        300000,
+        5,
+        policy_revision=2,
     )
     rows = await repo.get_daily_activity_range("user-01", "2026-09-02", "2026-09-02")
     assert [(row.policy_revision, row.timezone, row.goal_minutes, row.active_ms, row.goal_met) for row in rows] == [
@@ -215,7 +222,7 @@ async def test_activity_keeps_same_local_date_separate_across_policy_revisions(a
 
 
 def test_streaks_count_calendar_date_once_and_keep_yesterday_during_open_today():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     records = [
         LearnerDailyActivity("user-01", "2026-09-01", "Asia/Tokyo", 60000, 1, True, now, 1),
         LearnerDailyActivity("user-01", "2026-09-02", "Asia/Tokyo", 60000, 1, True, now, 1),
@@ -254,7 +261,7 @@ def make_session(
     created_at: datetime | None = None,
     updated_at: datetime | None = None,
 ) -> PlaybackSession:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     c_at = created_at or now
     u_at = updated_at or c_at
     return PlaybackSession(
@@ -281,10 +288,11 @@ def make_session(
 # 3. Watch History & History Deletions
 # ------------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_watch_history_and_deletion_cutoff_isolation(activity_env):
     uow = activity_env["uow"]
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # Add playbacks
     p1 = make_session(
@@ -341,7 +349,7 @@ async def test_watch_history_and_deletion_cutoff_isolation(activity_env):
 @pytest.mark.asyncio
 async def test_request_history_deletion_closes_active_playback(activity_env):
     uow = activity_env["uow"]
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # Set up active playback state
     await uow.playbacks.acquire_learner_playback_lock("user-01", "browser", "client-1")
@@ -360,7 +368,7 @@ async def test_request_history_deletion_closes_active_playback(activity_env):
     await uow.playbacks.update_learner_playback_state(state)
 
     # Request history deletion
-    job = await handle_request_history_deletion(RequestHistoryDeletionCommand(user_id="user-01"), uow)
+    await handle_request_history_deletion(RequestHistoryDeletionCommand(user_id="user-01"), uow)
 
     # Active playback must be closed and lease revoked
     p_check = await uow.playbacks.get_playback("active-p1")
@@ -374,7 +382,7 @@ async def test_request_history_deletion_closes_active_playback(activity_env):
 @pytest.mark.asyncio
 async def test_worker_purges_playbacks_and_preserves_daily_activity_and_saved_scenes(activity_env):
     uow = activity_env["uow"]
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # 1. Seed playbacks & checkpoints
     p = make_session(
@@ -448,6 +456,7 @@ async def test_worker_purges_playbacks_and_preserves_daily_activity_and_saved_sc
 # ------------------------------------------------------------------------------
 # 4. HTTP API Contract & Integration Tests
 # ------------------------------------------------------------------------------
+
 
 def test_api_preferences_and_activity_lifecycle(client: TestClient, monkeypatch: pytest.MonkeyPatch, activity_env):
     uow = activity_env["uow"]

@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 import asyncio
+import logging
+import os
+import threading
+import uuid
+from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
-import logging
-import os
 from pathlib import Path
-import threading
 from typing import Any
-import uuid
 
 logger = logging.getLogger("jplearn.storage")
 
@@ -64,9 +64,7 @@ class StoragePort(ABC):
         ...
 
     @abstractmethod
-    async def open_read_range(
-        self, key: str, start: int, length: int
-    ) -> AsyncIterator[bytes]:
+    async def open_read_range(self, key: str, start: int, length: int) -> AsyncIterator[bytes]:
         """Stream length bytes starting at offset start without buffering entire file.
         Raises FileNotFoundError if missing.
         """
@@ -89,7 +87,7 @@ class StoragePort(ABC):
 
     async def close(self) -> None:
         """Release underlying executor resources upon shutdown."""
-        pass
+        return None
 
 
 class _StagingSession:
@@ -249,13 +247,24 @@ class LocalFilesystemStorage(StoragePort):
         import hashlib
         import json
         import math
+
         from jplearn_api.application.ports.media_probe import MediaInspection
+
         path = self._resolve(key)
         before = path.stat()
         process = await asyncio.create_subprocess_exec(
-            "ffprobe", "-v", "error", "-protocol_whitelist", "file,pipe",
-            "-show_entries", "format=duration", "-of", "json", str(path),
-            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+            "ffprobe",
+            "-v",
+            "error",
+            "-protocol_whitelist",
+            "file,pipe",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "json",
+            str(path),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
         try:
             stdout, _ = await asyncio.wait_for(process.communicate(), timeout=30)
@@ -268,9 +277,11 @@ class LocalFilesystemStorage(StoragePort):
         duration = float(json.loads(stdout)["format"]["duration"])
         if not math.isfinite(duration) or duration <= 0:
             raise ValueError("Media duration must be positive and finite")
+
         def digest():
             with path.open("rb") as source:
                 return hashlib.file_digest(source, "sha256").hexdigest()
+
         sha256 = await asyncio.to_thread(digest)
         after = path.stat()
         if (before.st_ino, before.st_size, before.st_mtime_ns) != (after.st_ino, after.st_size, after.st_mtime_ns):
@@ -312,6 +323,7 @@ class LocalFilesystemStorage(StoragePort):
             success = True
             return total_bytes
         finally:
+
             async def _cleanup():
                 await loop.run_in_executor(None, session.sync_cleanup, not success)
 
@@ -361,9 +373,7 @@ class LocalFilesystemStorage(StoragePort):
 
         return _generator()
 
-    async def open_read_range(
-        self, key: str, start: int, length: int
-    ) -> AsyncIterator[bytes]:
+    async def open_read_range(self, key: str, start: int, length: int) -> AsyncIterator[bytes]:
         path = self._resolve(key)
         if not path.is_file():
             raise FileNotFoundError(f"File not found: {key}")
@@ -403,11 +413,7 @@ class LocalFilesystemStorage(StoragePort):
         for p in self.root.rglob("*"):
             if p.is_file():
                 rel = p.relative_to(self.root).as_posix()
-                if (
-                    rel.startswith(prefix)
-                    and not rel.endswith(".part")
-                    and not rel.startswith("__probe__/")
-                ):
+                if rel.startswith(prefix) and not rel.endswith(".part") and not rel.startswith("__probe__/"):
                     keys.append(rel)
         return keys
 
@@ -450,7 +456,8 @@ class LocalFilesystemStorage(StoragePort):
 
                     if probe_err and cleanup_err:
                         raise RuntimeError(
-                            f"Storage probe failed ({type(probe_err).__name__}) and cleanup failed ({type(cleanup_err).__name__})"
+                            f"Storage probe failed ({type(probe_err).__name__}) "
+                            f"and cleanup failed ({type(cleanup_err).__name__})"
                         )
                     elif probe_err:
                         raise probe_err
@@ -520,9 +527,7 @@ class InMemoryStorage(StoragePort):
 
         return _generator()
 
-    async def open_read_range(
-        self, key: str, start: int, length: int
-    ) -> AsyncIterator[bytes]:
+    async def open_read_range(self, key: str, start: int, length: int) -> AsyncIterator[bytes]:
         if key not in self.objects:
             raise FileNotFoundError(f"File not found: {key}")
         data = self.objects[key]

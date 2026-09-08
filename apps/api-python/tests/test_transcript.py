@@ -28,6 +28,12 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
+from fakes import (
+    FakeCatalogRepository,
+    FakeContentRepository,
+    FakeTranscriptRepository,
+    FakeUnitOfWork,
+)
 from jplearn_api.application.commands import (
     ApproveTranscriptCommand,
     CreateLanguageAnalysisJobCommand,
@@ -39,44 +45,33 @@ from jplearn_api.application.handlers.transcript import (
     handle_approve_transcript,
     handle_create_language_analysis_job,
     handle_get_language_analysis_job,
-    handle_get_transcript,
     handle_return_transcript_to_draft,
     handle_save_transcript_draft,
     handle_submit_transcript_qa,
 )
 from jplearn_api.application.queries import (
     GetLanguageAnalysisJobQuery,
-    GetTranscriptQuery,
 )
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.domain.catalog import CatalogItem, MediaRef
 from jplearn_api.domain.content import ContentVersion, Scene
 from jplearn_api.domain.errors import (
-    EntityNotFoundError,
     InvalidDomainStateError,
     RevisionConflictError,
     ValidationError,
 )
 from jplearn_api.domain.transcript import (
     LanguageAnalysisJobStatus,
-    TranscriptProvenance,
-    TranscriptSegment,
     TranscriptStatus,
     analyze_japanese_text,
     get_char_type,
 )
 from jplearn_api.entrypoints.http.security import require_user
-from fakes import (
-    FakeCatalogRepository,
-    FakeContentRepository,
-    FakeTranscriptRepository,
-    FakeUnitOfWork,
-)
-
 
 # ------------------------------------------------------------------------------
 # Fixtures & Helpers
 # ------------------------------------------------------------------------------
+
 
 @pytest.fixture
 def transcript_env():
@@ -152,6 +147,7 @@ def seed_catalog(uow, item: CatalogItem, cv: ContentVersion) -> None:
 # 1. Pure Python Unicode Japanese Analyzer Tests
 # ------------------------------------------------------------------------------
 
+
 def test_get_char_type_classification():
     assert get_char_type("漢") == "kanji"
     assert get_char_type("あ") == "hiragana"
@@ -170,7 +166,7 @@ def test_analyze_japanese_text_token_spans_and_offsets():
     assert len(spans) > 0
     # Verify each token span matches substring exactly
     for token in spans:
-        extracted = text[token.start_offset:token.end_offset]
+        extracted = text[token.start_offset : token.end_offset]
         assert extracted == token.surface
 
 
@@ -197,6 +193,7 @@ def test_analyze_japanese_text_empty_and_spaces():
 # 2. Domain Validation Bounds & State Machine Transition Tests
 # ------------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_save_draft_bounds_validation(transcript_env):
     uow = transcript_env["uow"]
@@ -205,10 +202,7 @@ async def test_save_draft_bounds_validation(transcript_env):
     seed_catalog(uow, item, cv)
 
     # > 100 segments limit
-    too_many_segments = [
-        {"scene_id": "scene-01", "text_ja": f"セグメント {i}"}
-        for i in range(101)
-    ]
+    too_many_segments = [{"scene_id": "scene-01", "text_ja": f"セグメント {i}"} for i in range(101)]
     cmd_too_many = SaveTranscriptDraftCommand(
         user_id="staff-01",
         catalog_item_id="item-bound",
@@ -285,6 +279,7 @@ async def test_save_draft_bounds_validation(transcript_env):
 # 3. Application Workflow & Concurrency (CAS) Tests
 # ------------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_transcript_full_lifecycle_and_cas_concurrency(transcript_env):
     uow = transcript_env["uow"]
@@ -349,8 +344,7 @@ async def test_transcript_full_lifecycle_and_cas_concurrency(transcript_env):
 
     # Verify approved_scene_texts projection activated
     active_texts = [
-        t for t in uow.transcripts.approved_texts.values()
-        if t.content_version_id == "ver-lifecycle" and t.is_active
+        t for t in uow.transcripts.approved_texts.values() if t.content_version_id == "ver-lifecycle" and t.is_active
     ]
     assert len(active_texts) == 2
     assert all(t.is_active for t in active_texts)
@@ -381,8 +375,7 @@ async def test_transcript_full_lifecycle_and_cas_concurrency(transcript_env):
 
     # Verify approved_scene_texts projection deactivated
     active_after_return = [
-        t for t in uow.transcripts.approved_texts.values()
-        if t.content_version_id == "ver-lifecycle" and t.is_active
+        t for t in uow.transcripts.approved_texts.values() if t.content_version_id == "ver-lifecycle" and t.is_active
     ]
     assert len(active_after_return) == 0
 
@@ -448,6 +441,7 @@ async def test_language_analysis_job_execution_and_idempotency(transcript_env):
 # 4. HTTP API Contract & RBAC Security Tests
 # ------------------------------------------------------------------------------
 
+
 def test_api_transcript_unauthorized(client: TestClient):
     # Without Authorization header -> 401
     res = client.get("/staff/catalog/c0000000-0000-0000-0000-000000000001/transcript")
@@ -485,9 +479,7 @@ def test_api_transcript_approve_requires_admin_role(
     assert res_return.status_code == 403
 
 
-def test_api_transcript_full_http_lifecycle(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch, transcript_env
-):
+def test_api_transcript_full_http_lifecycle(client: TestClient, monkeypatch: pytest.MonkeyPatch, transcript_env):
     uow = transcript_env["uow"]
     monkeypatch.setattr("jplearn_api.entrypoints.http.routers.transcript.create_uow", lambda session: uow)
 

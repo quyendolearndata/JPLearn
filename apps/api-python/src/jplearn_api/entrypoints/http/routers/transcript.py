@@ -40,10 +40,6 @@ from jplearn_api.application.queries import (
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_uow
 from jplearn_api.domain.errors import DomainError
-from jplearn_api.domain.transcript import (
-    LanguageAnalysisJob,
-    TranscriptRevision,
-)
 from jplearn_api.entrypoints.http.dependencies import (
     UUIDPath,
     get_session,
@@ -71,10 +67,7 @@ def _to_public_rev(rev) -> TranscriptRevisionPublic:
         content_version_id=rev.content_version_id,
         revision=rev.revision,
         status=rev.status.value if hasattr(rev.status, "value") else str(rev.status),
-        segments=[
-            TranscriptSegmentPublic(scene_id=s.scene_id, text_ja=s.text_ja)
-            for s in rev.segments
-        ],
+        segments=[TranscriptSegmentPublic(scene_id=s.scene_id, text_ja=s.text_ja) for s in rev.segments],
         provenance=rev.provenance.value if hasattr(rev.provenance, "value") else str(rev.provenance),
         created_by=rev.created_by,
         approved_by=rev.approved_by,

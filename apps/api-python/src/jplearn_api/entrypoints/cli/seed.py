@@ -19,8 +19,8 @@ from uuid import uuid4
 
 import asyncpg
 
-from jplearn_api.config.env_resolver import resolve_database_url, resolve_environment
 from jplearn_api.adapters.security.password import hash_password
+from jplearn_api.config.env_resolver import resolve_database_url, resolve_environment
 
 FLAG_KEYS = (
     "speaking_enabled",
@@ -132,8 +132,8 @@ async def bootstrap_admin(
         email,
         hash_password(password),
     )
-    admin_id = str(inserted_id) if inserted_id else str(
-        await conn.fetchval("SELECT id FROM users WHERE email = $1", email)
+    admin_id = (
+        str(inserted_id) if inserted_id else str(await conn.fetchval("SELECT id FROM users WHERE email = $1", email))
     )
 
     await conn.executemany(
@@ -188,4 +188,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

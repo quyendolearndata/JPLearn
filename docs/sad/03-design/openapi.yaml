@@ -108,6 +108,7 @@ paths:
       x-jplearn-fr:
       - FR-ID-001
       - FR-ID-002
+      - NFR-SEC-003
       requestBody:
         required: true
         content:
@@ -134,6 +135,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Http401Error'
+        '429':
+          description: Too many login attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /auth/logout:
     post:
       operationId: logout

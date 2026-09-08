@@ -9,11 +9,10 @@ from uuid import uuid4
 from jplearn_api.application.commands import EndLearningSessionCommand, StartLearningSessionCommand
 from jplearn_api.application.ports.repositories import LearningRepository
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
-from jplearn_api.application.queries import GetLearnerProgressQuery
+from jplearn_api.application.queries import GetLearnerProgressQuery, GetSessionQuery
 from jplearn_api.application.read_models import LearnerProgressDTO, LearningSessionDTO
 from jplearn_api.domain.errors import ConflictError, EntityNotFoundError, ForbiddenError
 from jplearn_api.domain.learning import LearningSession, minutes_from_duration
-from jplearn_api.application.queries import GetLearnerProgressQuery, GetSessionQuery
 
 
 def _now_naive() -> datetime:
@@ -100,7 +99,6 @@ async def handle_get_session(
         ended_at=session.ended_at,
         duration_seconds=session.duration_seconds,
     )
-
 
 
 async def handle_end_session(

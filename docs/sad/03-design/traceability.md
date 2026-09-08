@@ -51,6 +51,7 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | NFR-PERF-002 | — | ADR media | T-NFR-P2 |
 | NFR-SEC-001 | — | HTTPS, hash | T-NFR-S1 |
 | NFR-SEC-002 | UC-T01 | 403 learner staff | T-NFR-S2 |
+| NFR-SEC-003 | UC-L01 | login rate limit | T-SEC-001 |
 | NFR-PRIV-001 | — | PII tối thiểu | T-NFR-PR1 |
 | NFR-A11Y-001 | S-LOGIN, S-SESSION | keyboard pause (P5 play) / chrome AA | T-NFR-A1 axe 8 routes + error/active/summary/staff-detail; keyboard form/player; scenario F-04 keyboard thực tế (engineering PASS `41a4009`/`d1715d2`; Design PARTIAL — chưa Safari/device) |
 | NFR-OBS-001 | — | request id + alert webhook 5xx (stub, `ALERT_WEBHOOK_URL`) | T-NFR-O1 echo `x-request-id`; T-NFR-O2 alert 5xx env bật/tắt, 4xx im |

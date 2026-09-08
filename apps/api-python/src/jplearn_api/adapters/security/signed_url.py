@@ -15,7 +15,7 @@ def signing_secret(explicit: str | None, media_signing_secret: str | None, jwt_s
 
 
 def hmac_hex(secret: str, asset_id: str, exp: int) -> str:
-    return hmac.new(secret.encode("utf-8"), f"{asset_id}:{exp}".encode("utf-8"), hashlib.sha256).hexdigest()
+    return hmac.new(secret.encode("utf-8"), f"{asset_id}:{exp}".encode(), hashlib.sha256).hexdigest()
 
 
 def sign_media_url(

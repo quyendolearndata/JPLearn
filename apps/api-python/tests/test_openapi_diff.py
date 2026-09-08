@@ -1,8 +1,8 @@
 import copy
 
 from jplearn_api.entrypoints.http.app import create_app
-from jplearn_api.tooling.openapi_diff import compare_openapi, load_handwritten_spec, main
 from jplearn_api.settings import Settings
+from jplearn_api.tooling.openapi_diff import compare_openapi, load_handwritten_spec
 
 
 def _valid_spec():
@@ -79,4 +79,3 @@ def test_main_cli_returns_non_zero_on_mismatch(monkeypatch):
     monkeypatch.setattr(diff_mod, "compare_openapi", lambda _h, _g: ["synthetic error"])
     exit_code = diff_mod.main([])
     assert exit_code == 1
-

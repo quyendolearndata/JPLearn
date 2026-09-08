@@ -5,7 +5,8 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "test": "tsc --noEmit && pnpm test:unit",
+    "lint": "eslint src e2e",
+    "test": "tsc --noEmit && pnpm lint && pnpm test:unit",
     "test:unit": "node --import tsx --test \"src/lib/**/*.test.ts\"",
     "test:e2e": "playwright test"
   },
@@ -19,13 +20,16 @@
     "react-dom": "19.0.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
-    "tsx": "^4.19.2",
+    "@eslint/eslintrc": "^3.3.7",
     "@playwright/test": "^1.49.0",
+    "@types/node": "^22.10.0",
     "@types/react": "~19.0.10",
     "@types/react-dom": "~19.0.0",
     "axe-core": "^4.13.0",
     "axe-playwright": "^2.2.2",
+    "eslint": "^9",
+    "eslint-config-next": "^15",
+    "tsx": "^4.19.2",
     "typescript": "~5.7.2"
   }
 }

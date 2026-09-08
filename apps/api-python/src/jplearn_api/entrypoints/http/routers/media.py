@@ -1,12 +1,13 @@
 from collections.abc import AsyncIterator
 from dataclasses import asdict
-from pathlib import Path
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, HTTPException, Path as FastPath, Query, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, UploadFile
+from fastapi import Path as FastPath
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from jplearn_api.adapters.storage.local import StoragePort
 from jplearn_api.application.handlers.media import (
     COMMIT_CANCELLATION_GRACE_SECONDS,
     handle_get_media,
@@ -18,14 +19,19 @@ from jplearn_api.application.handlers.media import (
 from jplearn_api.application.ports.unit_of_work import UnitOfWorkFactory
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_media_repository, create_uow
-from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_media_signer, get_session, get_storage, get_uow_factory
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.domain.range_parser import RangeNotSatisfiableError
+from jplearn_api.entrypoints.http.dependencies import (
+    UUIDPath,
+    get_media_signer,
+    get_session,
+    get_storage,
+    get_uow_factory,
+)
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
 from jplearn_api.entrypoints.http.roles import require_roles
 from jplearn_api.entrypoints.http.schemas import MediaAssetStaff
 from jplearn_api.entrypoints.http.security import require_media_access
-from jplearn_api.adapters.storage.local import StoragePort
 
 router = APIRouter()
 
@@ -159,7 +165,7 @@ async def stream_media(
                 "Accept-Ranges": "bytes",
                 "X-Content-Type-Options": "nosniff",
             },
-        )
+        ) from None
     except DomainError as exc:
         raise map_domain_error_to_http(exc) from exc
 
@@ -247,7 +253,7 @@ async def stream_hls(
                 "Accept-Ranges": "bytes",
                 "X-Content-Type-Options": "nosniff",
             },
-        )
+        ) from None
     except DomainError as exc:
         http_exc = map_domain_error_to_http(exc)
         raise HTTPException(

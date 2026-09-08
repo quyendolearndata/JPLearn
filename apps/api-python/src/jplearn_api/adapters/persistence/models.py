@@ -13,7 +13,6 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Integer,
     PrimaryKeyConstraint,
-    String,
     Text,
     UniqueConstraint,
     text,
@@ -148,7 +147,6 @@ class SessionIdempotencyKey(Base):
     )
 
 
-
 class LearnerProgress(Base):
     __tablename__ = "learner_progress"
 
@@ -187,9 +185,7 @@ class LearningEvent(Base):
 
 class ContentVersion(Base):
     __tablename__ = "content_versions"
-    __table_args__ = (
-        UniqueConstraint("catalog_item_id", "version_number", name="content_versions_item_version_key"),
-    )
+    __table_args__ = (UniqueConstraint("catalog_item_id", "version_number", name="content_versions_item_version_key"),)
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
     catalog_item_id: Mapped[str] = mapped_column(Text, ForeignKey("catalog_items.id"))
@@ -284,9 +280,7 @@ class SeriesItem(Base):
 
 class SavedScene(Base):
     __tablename__ = "saved_scenes"
-    __table_args__ = (
-        UniqueConstraint("user_id", "scene_id", name="saved_scenes_user_scene_unique"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "scene_id", name="saved_scenes_user_scene_unique"),)
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
     user_id: Mapped[str] = mapped_column(Text, ForeignKey("users.id"))
@@ -375,9 +369,7 @@ class CollectionScene(Base):
 
 class ContentReport(Base):
     __tablename__ = "content_reports"
-    __table_args__ = (
-        UniqueConstraint("user_id", "idempotency_key", name="content_reports_user_idempotency_unique"),
-    )
+    __table_args__ = (UniqueConstraint("user_id", "idempotency_key", name="content_reports_user_idempotency_unique"),)
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
     user_id: Mapped[str] = mapped_column(Text, ForeignKey("users.id", ondelete="CASCADE"))
@@ -392,7 +384,9 @@ class ContentReport(Base):
     assignee_id: Mapped[str | None] = mapped_column(Text, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     public_reply: Mapped[str | None] = mapped_column(Text, nullable=True)
     internal_note: Mapped[str | None] = mapped_column(Text, nullable=True)
-    resolution_version_id: Mapped[str | None] = mapped_column(Text, ForeignKey("content_versions.id", ondelete="SET NULL"), nullable=True)
+    resolution_version_id: Mapped[str | None] = mapped_column(
+        Text, ForeignKey("content_versions.id", ondelete="SET NULL"), nullable=True
+    )
     idempotency_key: Mapped[str | None] = mapped_column(Text, nullable=True)
     request_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
@@ -476,9 +470,7 @@ class Playback(Base):
 
 class PlaybackReceipt(Base):
     __tablename__ = "playback_receipts"
-    __table_args__ = (
-        PrimaryKeyConstraint("playback_id", "seq", name="playback_receipts_pkey"),
-    )
+    __table_args__ = (PrimaryKeyConstraint("playback_id", "seq", name="playback_receipts_pkey"),)
 
     playback_id: Mapped[str] = mapped_column(Text, ForeignKey("playbacks.id", ondelete="CASCADE"))
     seq: Mapped[int] = mapped_column(Integer)
@@ -494,9 +486,7 @@ class PlaybackReceipt(Base):
 
 class PlaybackCheckpoint(Base):
     __tablename__ = "playback_checkpoints"
-    __table_args__ = (
-        PrimaryKeyConstraint("user_id", "catalog_item_id", name="playback_checkpoints_pkey"),
-    )
+    __table_args__ = (PrimaryKeyConstraint("user_id", "catalog_item_id", name="playback_checkpoints_pkey"),)
 
     user_id: Mapped[str] = mapped_column(Text, ForeignKey("users.id", ondelete="CASCADE"))
     catalog_item_id: Mapped[str] = mapped_column(Text, ForeignKey("catalog_items.id", ondelete="CASCADE"))
@@ -536,9 +526,7 @@ class LearningPreferences(Base):
 
 class LearnerDailyActivity(Base):
     __tablename__ = "learner_daily_activity"
-    __table_args__ = (
-        PrimaryKeyConstraint("user_id", "date", "policy_revision", name="learner_daily_activity_pkey"),
-    )
+    __table_args__ = (PrimaryKeyConstraint("user_id", "date", "policy_revision", name="learner_daily_activity_pkey"),)
 
     user_id: Mapped[str] = mapped_column(Text, ForeignKey("users.id", ondelete="CASCADE"))
     date: Mapped[str] = mapped_column(Text)
@@ -577,7 +565,9 @@ class HistoryDeletion(Base):
 class TranscriptRevision(Base):
     __tablename__ = "transcript_revisions"
     __table_args__ = (
-        UniqueConstraint("catalog_item_id", "content_version_id", "revision", name="transcript_revisions_item_version_rev_key"),
+        UniqueConstraint(
+            "catalog_item_id", "content_version_id", "revision", name="transcript_revisions_item_version_rev_key"
+        ),
     )
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
@@ -603,7 +593,12 @@ class TranscriptRevision(Base):
 class ApprovedSceneText(Base):
     __tablename__ = "approved_scene_texts"
     __table_args__ = (
-        UniqueConstraint("content_version_id", "scene_id", "transcript_revision_id", name="approved_scene_texts_version_scene_rev_key"),
+        UniqueConstraint(
+            "content_version_id",
+            "scene_id",
+            "transcript_revision_id",
+            name="approved_scene_texts_version_scene_rev_key",
+        ),
     )
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
@@ -706,9 +701,7 @@ class AiUsageLedgerModel(Base):
 
 class ContentJobModel(Base):
     __tablename__ = "content_jobs"
-    __table_args__ = (
-        UniqueConstraint("created_by", "idempotency_key", name="content_jobs_user_idem_uniq"),
-    )
+    __table_args__ = (UniqueConstraint("created_by", "idempotency_key", name="content_jobs_user_idem_uniq"),)
 
     id: Mapped[str] = mapped_column(Text, primary_key=True)
     catalog_item_id: Mapped[str] = mapped_column(Text, ForeignKey("catalog_items.id", ondelete="CASCADE"))

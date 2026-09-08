@@ -1,6 +1,6 @@
 import copy
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -10,8 +10,7 @@ from compare_benchmarks import compare
 
 
 def run(samples):
-    return {"metadata": {"tested_sha": "abc", "runner_sha256": "runner"},
-            "metrics": {"upload": compute_stats(samples)}}
+    return {"metadata": {"tested_sha": "abc", "runner_sha256": "runner"}, "metrics": {"upload": compute_stats(samples)}}
 
 
 def test_recomputes_raw_samples_instead_of_trusting_percentiles():

@@ -32,11 +32,23 @@ Validates:
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import uuid4
+
 import pytest
 from fastapi.testclient import TestClient
 
+from fakes import (
+    FakeAiTranscriptionPort,
+    FakeCatalogRepository,
+    FakeContentJobRepository,
+    FakeContentRepository,
+    FakeMediaRepository,
+    FakeQuotaRepository,
+    FakeTranscriptRepository,
+    FakeUsageLedgerRepository,
+    create_fake_uow_factory,
+)
 from jplearn_api.application.commands import (
     ApplyContentJobCommand,
     CancelContentJobCommand,
@@ -47,13 +59,10 @@ from jplearn_api.application.handlers.content_jobs import (
     handle_cancel_content_job,
     handle_create_content_job,
     handle_execute_ai_worker_step,
-    handle_get_content_job,
 )
 from jplearn_api.application.ports.ai_provider import (
-    AiTranscriptionResult,
     AiUsageRecord,
 )
-from jplearn_api.application.queries import GetContentJobQuery
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.domain.catalog import CatalogItem, MediaRef
 from jplearn_api.domain.content import ContentVersion, Scene
@@ -64,8 +73,6 @@ from jplearn_api.domain.content_job import (
 )
 from jplearn_api.domain.errors import (
     ConflictError,
-    DomainError,
-    EntityNotFoundError,
     ForbiddenError,
     QuotaExceededError,
     RevisionConflictError,
@@ -79,28 +86,16 @@ from jplearn_api.domain.transcript import (
     TranscriptStatus,
 )
 from jplearn_api.entrypoints.http.security import require_user
-from fakes import (
-    FakeAiTranscriptionPort,
-    FakeCatalogRepository,
-    FakeContentJobRepository,
-    FakeContentRepository,
-    FakeMediaRepository,
-    FakeQuotaRepository,
-    FakeTranscriptRepository,
-    FakeUnitOfWork,
-    FakeUsageLedgerRepository,
-    create_fake_uow_factory,
-)
-
 
 # ==============================================================================
 # Fixtures
 # ==============================================================================
 
+
 @pytest.fixture
 def base_test_environment():
     """Setup a standard in-memory test environment with quota, catalog, content, and jobs."""
-    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=UTC)
     user_id = "teacher-01"
     catalog_id = str(uuid4())
     version_id = str(uuid4())
@@ -222,6 +217,7 @@ def base_test_environment():
 # 1. Pure Python Domain Logic Tests
 # ==============================================================================
 
+
 def test_content_job_initial_state():
     job = ContentJob(
         id="job-01",
@@ -243,7 +239,7 @@ def test_content_job_initial_state():
 
 
 def test_content_job_can_claim():
-    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=UTC)
     job = ContentJob(
         id="job-01",
         catalog_item_id="cat-01",
@@ -272,7 +268,7 @@ def test_content_job_can_claim():
 
 
 def test_content_job_record_failure_retryable():
-    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=UTC)
     job = ContentJob(
         id="job-01",
         catalog_item_id="cat-01",
@@ -305,7 +301,7 @@ def test_content_job_record_failure_retryable():
 
 
 def test_content_job_cancel():
-    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=UTC)
     job = ContentJob(
         id="job-01",
         catalog_item_id="cat-01",
@@ -332,6 +328,7 @@ def test_content_job_cancel():
 # ==============================================================================
 # 2. Application Handlers & Invariants Tests
 # ==============================================================================
+
 
 @pytest.mark.asyncio
 async def test_create_content_job_success_and_reserves_quota(base_test_environment):
@@ -532,6 +529,7 @@ async def test_cancel_content_job_terminal_raises_conflict(base_test_environment
 @pytest.mark.asyncio
 async def test_apply_content_job_success(base_test_environment):
     import hashlib
+
     env = base_test_environment
     uow = env["uow_factory"]()
 
@@ -550,9 +548,7 @@ async def test_apply_content_job_success(base_test_environment):
         created_by=env["user_id"],
         status=ContentJobStatus.SUCCEEDED,
         result_draft={
-            "segments": [
-                {"scene_id": "scene-01", "text_ja": "AI生成された字幕", "start_ms": 0, "end_ms": 1500}
-            ],
+            "segments": [{"scene_id": "scene-01", "text_ja": "AI生成された字幕", "start_ms": 0, "end_ms": 1500}],
             "source_hash": source_hash,
         },
     )
@@ -612,6 +608,7 @@ async def test_apply_content_job_stale_source_hash_raises_conflict(base_test_env
 @pytest.mark.asyncio
 async def test_apply_content_job_revision_conflict(base_test_environment):
     import hashlib
+
     env = base_test_environment
     uow = env["uow_factory"]()
 
@@ -649,6 +646,7 @@ async def test_apply_content_job_revision_conflict(base_test_environment):
 # ==============================================================================
 # 3. Worker Execution Step Tests
 # ==============================================================================
+
 
 @pytest.mark.asyncio
 async def test_worker_step_no_jobs_available(base_test_environment):
@@ -699,9 +697,9 @@ async def test_worker_step_transcribe_success_and_settles_quota(base_test_enviro
     # Verify actual usage settled and unused reservation released
     acc = await uow.quota.get_or_create_account_for_user(env["user_id"])
     assert acc.reserved_audio_seconds == 0  # Released
-    assert acc.used_audio_seconds == 120     # Actual
-    assert acc.reserved_cost_micros == 0    # Released
-    assert acc.used_cost_micros == 200000   # Actual
+    assert acc.used_audio_seconds == 120  # Actual
+    assert acc.reserved_cost_micros == 0  # Released
+    assert acc.used_cost_micros == 200000  # Actual
 
 
 @pytest.mark.asyncio
@@ -776,6 +774,7 @@ async def test_worker_step_timeout_reconciles_quota_unknown(base_test_environmen
 # ==============================================================================
 # 4. HTTP API Contract & Role Security Tests
 # ==============================================================================
+
 
 def test_api_content_jobs_unauthorized(client: TestClient):
     job_id = str(uuid4())

@@ -45,3 +45,58 @@ test("catalog shows published seed item, hides draft T-CAT-002 T-FLG-002", async
   await expect(seed).toBeVisible();
   await expectNoBannedChrome(page);
 });
+
+test("banned chrome stays absent even when server flags are on T-FLG-002 T-NEG-002", async ({ page, request }) => {
+  const registerResponse = page.waitForResponse(
+    (response) => response.request().method() === "POST" && /\/auth\/register$/.test(response.url()),
+  );
+  await register(page);
+  const apiRoot = new URL((await registerResponse).url()).origin;
+
+  const adminLogin = await request.post(`${apiRoot}/auth/login`, {
+    data: { email: "admin@jplearn.local", password: "password10" },
+  });
+  expect(adminLogin.ok()).toBeTruthy();
+  const adminToken = (await adminLogin.json()).access_token as string;
+  const headers = { Authorization: `Bearer ${adminToken}` };
+
+  try {
+    const enabled = await request.patch(`${apiRoot}/staff/flags`, {
+      headers,
+      data: {
+        grammar_enabled: true,
+        flashcards_enabled: true,
+        l1_subtitles_enabled: true,
+        speaking_enabled: true,
+      },
+    });
+    expect(enabled.ok()).toBeTruthy();
+
+    const flagsResponse = page.waitForResponse(
+      (response) => response.request().method() === "GET" && /\/flags$/.test(response.url()),
+    );
+    await page.reload();
+    const flags = await flagsResponse;
+    expect(flags.ok()).toBeTruthy();
+    expect(await flags.json()).toMatchObject({
+      grammar_enabled: true,
+      flashcards_enabled: true,
+      l1_subtitles_enabled: true,
+      speaking_enabled: true,
+    });
+    await page.goto("/catalog");
+    await expectNoBannedChrome(page);
+    await expect(page.getByRole("link", { name: "Nói", exact: true })).toHaveCount(0);
+  } finally {
+    const restored = await request.patch(`${apiRoot}/staff/flags`, {
+      headers,
+      data: {
+        grammar_enabled: false,
+        flashcards_enabled: false,
+        l1_subtitles_enabled: false,
+        speaking_enabled: false,
+      },
+    });
+    expect(restored.ok()).toBeTruthy();
+  }
+});

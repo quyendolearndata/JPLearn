@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-
+from collections.abc import Callable
 from types import TracebackType
-from typing import Any, Callable
+from typing import Any
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -126,6 +126,7 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
                 await self.rollback()
             return
         if self._cleanup is not None:
+
             async def finish() -> None:
                 try:
                     await self._cleanup
@@ -138,10 +139,12 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
             # This task alone owns close. Request cancellation cannot race it.
             task = asyncio.create_task(finish())
             _quarantined.add(task)
+
             def observed(done: asyncio.Task[None]) -> None:
                 _quarantined.discard(done)
                 if not done.cancelled() and done.exception() is not None:
                     logger.error("uow_deferred_close_failed", extra={"reason": type(done.exception()).__name__})
+
             task.add_done_callback(observed)
             if self._cleanup.done():
                 deadline = asyncio.get_running_loop().time() + 5.0

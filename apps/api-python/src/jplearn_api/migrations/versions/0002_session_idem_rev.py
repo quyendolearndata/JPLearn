@@ -25,8 +25,10 @@ def upgrade() -> None:
             "request_hash" TEXT NOT NULL,
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "session_idempotency_keys_pkey" PRIMARY KEY ("user_id", "key"),
-            CONSTRAINT "session_idempotency_keys_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "session_idempotency_keys_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES "learning_sessions"("id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "session_idempotency_keys_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON
+            UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "session_idempotency_keys_session_id_fkey" FOREIGN KEY ("session_id") REFERENCES
+            "learning_sessions"("id") ON UPDATE CASCADE ON DELETE CASCADE
         )
         """,
     )

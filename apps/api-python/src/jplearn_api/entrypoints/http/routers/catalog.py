@@ -1,9 +1,7 @@
 from dataclasses import asdict
 from typing import Literal
-from jplearn_api.application.handlers.catalog import handle_review_catalog
-from jplearn_api.entrypoints.http.schemas import CatalogReviewBody, CatalogItemDetail
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.application.commands import (
@@ -15,10 +13,10 @@ from jplearn_api.application.commands import (
 )
 from jplearn_api.application.handlers.catalog import (
     handle_create_catalog_item,
-    handle_get_staff_catalog_item,
     handle_list_published,
     handle_list_staff_catalog,
     handle_publish,
+    handle_review_catalog,
     handle_submit_qa,
     handle_unpublish,
     handle_update_draft_catalog_item,
@@ -26,23 +24,24 @@ from jplearn_api.application.handlers.catalog import (
 from jplearn_api.application.handlers.search import handle_search_scenes
 from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.queries import (
-    GetStaffCatalogItemQuery,
     ListPublishedCatalogQuery,
     ListStaffCatalogQuery,
     SearchScenesQuery,
 )
 from jplearn_api.application.read_models import UserDTO
-from jplearn_api.bootstrap import create_catalog_query, create_catalog_repository, create_uow, create_media_signer
+from jplearn_api.bootstrap import create_catalog_query, create_catalog_repository, create_media_signer, create_uow
+from jplearn_api.domain.errors import DomainError
 from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_app_settings, get_session, get_storage
-from jplearn_api.domain.errors import DomainError, EntityNotFoundError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
 from jplearn_api.entrypoints.http.roles import require_roles
 from jplearn_api.entrypoints.http.schemas import (
+    CatalogItemDetail,
     CatalogItemPatch,
     CatalogItemPublic,
     CatalogItemStaff,
     CatalogItemWrite,
     CatalogList,
+    CatalogReviewBody,
     CatalogStaffList,
     HighlightSpan,
     SearchResponsePublic,
@@ -50,7 +49,6 @@ from jplearn_api.entrypoints.http.schemas import (
 )
 from jplearn_api.entrypoints.http.security import require_user
 from jplearn_api.settings import Settings
-from fastapi import HTTPException
 
 router = APIRouter()
 
@@ -202,6 +200,7 @@ async def get_staff_catalog_item(
 ) -> CatalogItemStaff:
     from jplearn_api.application.handlers.catalog import _to_staff_dto
     from jplearn_api.entrypoints.http.datetime_adapt import to_json_z
+
     signer = create_media_signer(request.app.state.settings)
     async with create_uow(session) as uow:
         item = await uow.catalog.get_by_id_for_update(id)
@@ -210,11 +209,20 @@ async def get_staff_catalog_item(
         return CatalogItemDetail(
             **asdict(_to_staff_dto(item)),
             reviews=[dict(asdict(r), reviewed_at=to_json_z(r.reviewed_at)) for r in item.reviews],
-            media=[dict(id=m.id, catalog_item_id=id, storage_key=m.storage_key,
-                        playback_url=signer.sign_playback_url(m.id),
-                        hls_url=signer.sign_hls_url(m.id) if m.hls_url else None, mime=m.mime,
-                        measured_duration_ms=m.measured_duration_ms, source_sha256=m.source_sha256,
-                        hls_bundle_sha256=m.hls_bundle_sha256) for m in item.media],
+            media=[
+                dict(
+                    id=m.id,
+                    catalog_item_id=id,
+                    storage_key=m.storage_key,
+                    playback_url=signer.sign_playback_url(m.id),
+                    hls_url=signer.sign_hls_url(m.id) if m.hls_url else None,
+                    mime=m.mime,
+                    measured_duration_ms=m.measured_duration_ms,
+                    source_sha256=m.source_sha256,
+                    hls_bundle_sha256=m.hls_bundle_sha256,
+                )
+                for m in item.media
+            ],
         )
 
 
@@ -255,7 +263,6 @@ async def update_staff_catalog_item(
         raise map_domain_error_to_http(exc) from exc
 
     return CatalogItemStaff(**asdict(dto))
-
 
 
 @router.post(
@@ -370,13 +377,24 @@ async def unpublish_catalog_item(
     return CatalogItemStaff(**asdict(dto))
 
 
-@router.post("/staff/catalog/{id}/review", response_model=CatalogItemStaff,
-    operation_id="reviewCatalogItem", tags=["CMS"],
+@router.post(
+    "/staff/catalog/{id}/review",
+    response_model=CatalogItemStaff,
+    operation_id="reviewCatalogItem",
+    tags=["CMS"],
     openapi_extra={"x-jplearn-fr": ["FR-CMS-002", "NFR-SEC-002"]},
-    responses={400: {"description": "Invalid review or workflow state"}, 403: {"description": "Not teacher or admin"}, 404: {"description": "Catalog item not found"}})
-async def review_catalog_item(id: UUIDPath, body: CatalogReviewBody,
+    responses={
+        400: {"description": "Invalid review or workflow state"},
+        403: {"description": "Not teacher or admin"},
+        404: {"description": "Catalog item not found"},
+    },
+)
+async def review_catalog_item(
+    id: UUIDPath,
+    body: CatalogReviewBody,
     session: AsyncSession = Depends(get_session),
-    user: UserDTO = Depends(require_roles("teacher", "admin"))) -> CatalogItemStaff:
+    user: UserDTO = Depends(require_roles("teacher", "admin")),
+) -> CatalogItemStaff:
     try:
         dto = await handle_review_catalog(id, body.decision, body.notes, user.id, create_uow(session))
     except DomainError as exc:

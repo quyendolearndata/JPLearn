@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from jplearn_api.application.commands import DeleteSavedSceneCommand, SaveSceneCommand
@@ -41,7 +41,7 @@ async def handle_save_scene(
             id=str(uuid4()),
             user_id=command.user_id,
             scene_id=command.scene_id,
-            saved_at=datetime.now(timezone.utc),
+            saved_at=datetime.now(UTC),
         )
         await uow.saved_scenes.add(saved_scene)
         await uow.commit()

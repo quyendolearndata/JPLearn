@@ -1,7 +1,7 @@
 """Start / migrate jplearn_test. Alembic owns DDL (ADR-004) — never create_all."""
 
-import atexit
 import asyncio
+import atexit
 import os
 import signal
 import socket
@@ -129,7 +129,18 @@ def start_docker_postgres(project_name: str, *, seed: bool = False, migrate: boo
             container_id = _compose(project_name, ["ps", "--quiet", "db-test"]).stdout.strip()
             if container_id:
                 ready = subprocess.run(
-                    ["docker", "exec", container_id, "pg_isready", "-h", "127.0.0.1", "-U", "jplearn_test", "-d", "jplearn_test"],
+                    [
+                        "docker",
+                        "exec",
+                        container_id,
+                        "pg_isready",
+                        "-h",
+                        "127.0.0.1",
+                        "-U",
+                        "jplearn_test",
+                        "-d",
+                        "jplearn_test",
+                    ],
                     capture_output=True,
                 )
                 if ready.returncode == 0:

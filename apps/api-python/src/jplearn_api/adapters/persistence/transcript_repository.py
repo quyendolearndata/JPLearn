@@ -2,16 +2,27 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.adapters.persistence.models import (
     ApprovedSceneText as OrmApprovedSceneText,
+)
+from jplearn_api.adapters.persistence.models import (
     CatalogItem as OrmCatalogItem,
+)
+from jplearn_api.adapters.persistence.models import (
     ContentVersion as OrmContentVersion,
+)
+from jplearn_api.adapters.persistence.models import (
     LanguageAnalysisJob as OrmLanguageAnalysisJob,
+)
+from jplearn_api.adapters.persistence.models import (
     Scene as OrmScene,
+)
+from jplearn_api.adapters.persistence.models import (
     TranscriptRevision as OrmTranscriptRevision,
 )
 from jplearn_api.application.ports.repositories import ApprovedSceneSearchResult
@@ -124,12 +135,17 @@ class SqlAlchemyTranscriptRepository:
         stmt = select(OrmTranscriptRevision).where(OrmTranscriptRevision.id == rev.id)
         res = await self._session.execute(stmt)
         orm = res.scalar_one_or_none()
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
         seg_dicts = [{"scene_id": s.scene_id, "text_ja": s.text_ja} for s in rev.segments]
 
         if orm:
-            exp_rev = expected_revision if expected_revision is not None else (rev.revision - 1 if rev.revision > orm.revision else orm.revision)
+            exp_rev = (
+                expected_revision
+                if expected_revision is not None
+                else (rev.revision - 1 if rev.revision > orm.revision else orm.revision)
+            )
             from sqlalchemy import update
+
             stmt_update = (
                 update(OrmTranscriptRevision)
                 .where(
@@ -148,9 +164,7 @@ class SqlAlchemyTranscriptRepository:
             )
             upd_res = await self._session.execute(stmt_update)
             if upd_res.rowcount == 0:
-                raise RevisionConflictError(
-                    f"Atomic CAS failed for transcript '{rev.id}': expected revision {exp_rev}"
-                )
+                raise RevisionConflictError(f"Atomic CAS failed for transcript '{rev.id}': expected revision {exp_rev}")
             # Re-read or refresh updated values
             stmt_reload = select(OrmTranscriptRevision).where(OrmTranscriptRevision.id == rev.id)
             reload_res = await self._session.execute(stmt_reload)
@@ -183,7 +197,7 @@ class SqlAlchemyTranscriptRepository:
         texts: list[ApprovedSceneText],
     ) -> None:
         await self.deactivate_approved_scene_texts(catalog_item_id, content_version_id)
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
         for t in texts:
             orm = OrmApprovedSceneText(
                 id=t.id,
@@ -213,7 +227,7 @@ class SqlAlchemyTranscriptRepository:
             OrmApprovedSceneText.is_active.is_(True),
         )
         res = await self._session.execute(stmt)
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
         for row in res.scalars().all():
             row.is_active = False
             row.updated_at = now
@@ -223,7 +237,7 @@ class SqlAlchemyTranscriptRepository:
         self,
         job: LanguageAnalysisJob,
     ) -> LanguageAnalysisJob:
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
         orm = OrmLanguageAnalysisJob(
             id=job.id,
             catalog_item_id=job.catalog_item_id,
@@ -293,9 +307,7 @@ class SqlAlchemyTranscriptRepository:
         limit: int = 20,
     ) -> tuple[list[ApprovedSceneSearchResult], str | None, int]:
         # 1. Determine index generation
-        gen_stmt = select(func.max(OrmApprovedSceneText.updated_at)).where(
-            OrmApprovedSceneText.is_active.is_(True)
-        )
+        gen_stmt = select(func.max(OrmApprovedSceneText.updated_at)).where(OrmApprovedSceneText.is_active.is_(True))
         gen_res = await self._session.execute(gen_stmt)
         max_updated = gen_res.scalar_one_or_none()
         current_gen = str(int(max_updated.timestamp() * 1000)) if max_updated else "0"

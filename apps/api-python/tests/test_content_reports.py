@@ -1,53 +1,47 @@
-"""Unit, handler, and contract tests for Content Reports and Moderation (PR3b / ADR-007 / UC-L24 / UC-T09 / FR-RPT-001)."""
+"Unit, handler, and contract tests for Content Reports and Moderation (PR3b / ADR-007 / UC-L24 / UC-T09 / FR-RPT-001)."
 
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 import pytest
 from fastapi.testclient import TestClient
 
-from jplearn_api.application.commands import (
-    CreateContentReportCommand,
-    PatchStaffContentReportCommand,
-)
-from jplearn_api.application.handlers.content_reports import (
-    handle_create_report,
-    handle_get_my_report,
-    handle_get_staff_report,
-    handle_list_my_reports,
-    handle_list_staff_reports,
-    handle_patch_staff_report,
-)
-from jplearn_api.application.queries import (
-    GetMyContentReportQuery,
-    GetStaffContentReportQuery,
-    ListMyContentReportsQuery,
-    ListStaffContentReportsQuery,
-)
-from jplearn_api.application.read_models import UserDTO
-from jplearn_api.domain.catalog import CatalogItem
-from jplearn_api.domain.content import ContentVersion, Scene
-from jplearn_api.domain.content_report import (
-    ContentReport,
-    ReportCategory,
-    ReportStatus,
-)
-from jplearn_api.domain.errors import (
-    ConflictError,
-    EntityNotFoundError,
-    InvalidDomainStateError,
-    QuotaExceededError,
-    RevisionConflictError,
-)
-from jplearn_api.entrypoints.http.roles import require_roles
-from jplearn_api.entrypoints.http.security import require_user
 from fakes import (
     FakeCatalogRepository,
     FakeContentReportRepository,
     FakeContentRepository,
     FakeUnitOfWork,
 )
+from jplearn_api.application.commands import (
+    CreateContentReportCommand,
+    PatchStaffContentReportCommand,
+)
+from jplearn_api.application.handlers.content_reports import (
+    handle_create_report,
+    handle_get_staff_report,
+    handle_list_staff_reports,
+    handle_patch_staff_report,
+)
+from jplearn_api.application.queries import (
+    GetStaffContentReportQuery,
+    ListStaffContentReportsQuery,
+)
+from jplearn_api.application.read_models import UserDTO
+from jplearn_api.domain.catalog import CatalogItem
+from jplearn_api.domain.content import ContentVersion, Scene
+from jplearn_api.domain.content_report import (
+    ReportCategory,
+    ReportStatus,
+)
+from jplearn_api.domain.errors import (
+    ConflictError,
+    InvalidDomainStateError,
+    QuotaExceededError,
+    RevisionConflictError,
+)
+from jplearn_api.entrypoints.http.security import require_user
 
 
 def _add_version(content_repo: FakeContentRepository, version: ContentVersion) -> None:
@@ -69,7 +63,7 @@ def _enable_capabilities(client: TestClient):
 
 @pytest.fixture
 def report_test_env():
-    now = datetime.now(timezone.utc)
+    datetime.now(UTC)
     item_pub = CatalogItem(
         id="item-01",
         topic_id="topic-01",
@@ -186,6 +180,7 @@ def report_test_env():
 # ------------------------------------------------------------------------------
 # 1. Domain / Handler Tests
 # ------------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_create_report_success(report_test_env):
@@ -491,9 +486,8 @@ async def test_staff_moderation_workflow_and_occ(report_test_env):
 # 2. HTTP API Contract & Privacy Tests
 # ------------------------------------------------------------------------------
 
-def test_api_learner_report_lifecycle_and_privacy(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch, report_test_env
-):
+
+def test_api_learner_report_lifecycle_and_privacy(client: TestClient, monkeypatch: pytest.MonkeyPatch, report_test_env):
     uow = report_test_env["uow"]
     monkeypatch.setattr("jplearn_api.entrypoints.http.routers.content_reports.create_uow", lambda session: uow)
 
@@ -551,9 +545,7 @@ def test_api_learner_report_lifecycle_and_privacy(
     assert len(res_list_b.json()) == 0
 
 
-def test_api_staff_moderation_full_flow(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch, report_test_env
-):
+def test_api_staff_moderation_full_flow(client: TestClient, monkeypatch: pytest.MonkeyPatch, report_test_env):
     uow = report_test_env["uow"]
     monkeypatch.setattr("jplearn_api.entrypoints.http.routers.content_reports.create_uow", lambda session: uow)
 
@@ -659,9 +651,7 @@ def test_api_staff_moderation_full_flow(
     assert "assignee_id" not in learner_data
 
 
-def test_api_daily_quota_429(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch, report_test_env
-):
+def test_api_daily_quota_429(client: TestClient, monkeypatch: pytest.MonkeyPatch, report_test_env):
     uow = report_test_env["uow"]
     monkeypatch.setattr("jplearn_api.entrypoints.http.routers.content_reports.create_uow", lambda session: uow)
 

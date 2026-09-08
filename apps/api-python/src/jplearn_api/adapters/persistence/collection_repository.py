@@ -2,15 +2,24 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from sqlalchemy import delete, desc, func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.adapters.persistence.models import (
     CatalogItem as OrmCatalogItem,
+)
+from jplearn_api.adapters.persistence.models import (
     CollectionScene as OrmCollectionScene,
+)
+from jplearn_api.adapters.persistence.models import (
     ContentVersion as OrmContentVersion,
+)
+from jplearn_api.adapters.persistence.models import (
     PersonalCollection as OrmPersonalCollection,
+)
+from jplearn_api.adapters.persistence.models import (
     Scene as OrmScene,
 )
 from jplearn_api.domain.collection import (
@@ -204,9 +213,7 @@ class SqlAlchemyCollectionRepository:
             scenes=scene_details,
         )
 
-    async def find_by_idempotency_key(
-        self, user_id: str, key: str
-    ) -> tuple[PersonalCollection, str | None] | None:
+    async def find_by_idempotency_key(self, user_id: str, key: str) -> tuple[PersonalCollection, str | None] | None:
         stmt = (
             select(
                 OrmPersonalCollection,
@@ -239,9 +246,7 @@ class SqlAlchemyCollectionRepository:
         return coll, orm_coll.request_hash
 
     async def count_by_user(self, user_id: str) -> int:
-        stmt = select(func.count(OrmPersonalCollection.id)).where(
-            OrmPersonalCollection.user_id == user_id
-        )
+        stmt = select(func.count(OrmPersonalCollection.id)).where(OrmPersonalCollection.user_id == user_id)
         res = await self._session.execute(stmt)
         return res.scalar() or 0
 
@@ -283,9 +288,7 @@ class SqlAlchemyCollectionRepository:
         offset: int = 0,
         limit: int = 50,
     ) -> tuple[list[PersonalCollection], int]:
-        count_stmt = select(func.count(OrmPersonalCollection.id)).where(
-            OrmPersonalCollection.user_id == user_id
-        )
+        count_stmt = select(func.count(OrmPersonalCollection.id)).where(OrmPersonalCollection.user_id == user_id)
         total = (await self._session.execute(count_stmt)).scalar() or 0
 
         stmt = (
@@ -353,9 +356,7 @@ class SqlAlchemyCollectionRepository:
             )
             actual_rev = (await self._session.execute(check_stmt)).scalar_one_or_none()
             if actual_rev is not None:
-                raise ConflictError(
-                    f"Collection revision conflict: expected {expected_revision}, current {actual_rev}"
-                )
+                raise ConflictError(f"Collection revision conflict: expected {expected_revision}, current {actual_rev}")
             raise EntityNotFoundError(f"Collection {collection_id} not found")
 
         # Get scene count
@@ -403,7 +404,7 @@ class SqlAlchemyCollectionRepository:
         await self._session.execute(del_stmt)
 
         # Insert new scenes
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for pos, scene_id in enumerate(scene_ids):
             self._session.add(
                 OrmCollectionScene(

@@ -9,6 +9,7 @@ project so the dev database `jplearn` is never touched.
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 import tempfile
@@ -19,8 +20,6 @@ sys.path.insert(0, str(REPO / "apps" / "api-python" / "tests"))
 sys.path.insert(0, str(REPO / "apps" / "api-python" / "src"))
 
 from pg_harness import start_docker_postgres, stop_docker_postgres  # noqa: E402
-
-import argparse
 
 PROJECT = "jplearn-web-e2e"
 

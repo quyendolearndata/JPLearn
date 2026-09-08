@@ -1,8 +1,7 @@
-from helpers import approve_catalog
 from pathlib import Path
 from urllib.parse import urlparse
 
-from helpers import ensure_topics, grant_role, register
+from helpers import approve_catalog, ensure_topics, grant_role, register
 
 MANIFEST = "\n".join(
     [
@@ -93,15 +92,21 @@ def test_register_serves_manifest_and_segments(live_client):
     assert "sig=" in parsed.query
     assert len(registered.json()["hls_bundle_sha256"]) == 64
 
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/submit-qa",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/submit-qa",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 200
+    )
     approve_catalog(live_client, admin, item_id)
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/publish",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/publish",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 200
+    )
 
     listed = live_client.get("/catalog", headers={"Authorization": f"Bearer {learner}"})
     item = next(row for row in listed.json()["items"] if row["id"] == item_id)
@@ -135,10 +140,13 @@ def test_publish_rejects_hls_segment_changed_after_qa(live_client):
         headers={"Authorization": f"Bearer {admin}"},
     )
     assert registered.status_code == 201
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/submit-qa",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/submit-qa",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 200
+    )
 
     root = Path(live_client.app.state.settings.storage_root)
     approve_catalog(live_client, admin, item_id)
@@ -156,19 +164,28 @@ def test_signed_manifest_rewrites_segment_uris(live_client):
     learner = register(live_client).json()["access_token"]
     item_id, asset_id = _upload(live_client, admin)
     _write_hls_bundle(live_client, asset_id)
-    assert live_client.post(
-        f"/staff/media/{asset_id}/hls",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 201
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/submit-qa",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/staff/media/{asset_id}/hls",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 201
+    )
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/submit-qa",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 200
+    )
     approve_catalog(live_client, admin, item_id)
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/publish",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/publish",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 200
+    )
 
     listed = live_client.get("/catalog", headers={"Authorization": f"Bearer {learner}"})
     item = next(row for row in listed.json()["items"] if row["id"] == item_id)
@@ -176,9 +193,7 @@ def test_signed_manifest_rewrites_segment_uris(live_client):
 
     manifest = live_client.get(f"{signed.path}?{signed.query}")
     assert manifest.status_code == 200
-    segment_line = next(
-        line for line in manifest.text.split("\n") if line.strip() and not line.strip().startswith("#")
-    )
+    segment_line = next(line for line in manifest.text.split("\n") if line.strip() and not line.strip().startswith("#"))
     assert segment_line.startswith("segment-000.ts?exp=")
     assert "&sig=" in segment_line
 
@@ -191,19 +206,28 @@ def test_rejects_traversal_and_unsupported_types(live_client):
     learner = register(live_client).json()["access_token"]
     _, asset_id = _upload(live_client, admin)
     _write_hls_bundle(live_client, asset_id)
-    assert live_client.post(
-        f"/staff/media/{asset_id}/hls",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 201
+    assert (
+        live_client.post(
+            f"/staff/media/{asset_id}/hls",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 201
+    )
 
-    assert live_client.get(
-        f"/media/{asset_id}/hls/evil.exe",
-        headers={"Authorization": f"Bearer {learner}"},
-    ).status_code == 400
-    assert live_client.get(
-        f"/media/{asset_id}/hls/..%2Fsecret.m3u8",
-        headers={"Authorization": f"Bearer {learner}"},
-    ).status_code == 400
+    assert (
+        live_client.get(
+            f"/media/{asset_id}/hls/evil.exe",
+            headers={"Authorization": f"Bearer {learner}"},
+        ).status_code
+        == 400
+    )
+    assert (
+        live_client.get(
+            f"/media/{asset_id}/hls/..%2Fsecret.m3u8",
+            headers={"Authorization": f"Bearer {learner}"},
+        ).status_code
+        == 400
+    )
 
 
 def test_requires_auth_and_404_missing(live_client):
@@ -211,13 +235,19 @@ def test_requires_auth_and_404_missing(live_client):
     learner = register(live_client).json()["access_token"]
     _, asset_id = _upload(live_client, admin)
     _write_hls_bundle(live_client, asset_id)
-    assert live_client.post(
-        f"/staff/media/{asset_id}/hls",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 201
+    assert (
+        live_client.post(
+            f"/staff/media/{asset_id}/hls",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 201
+    )
 
     assert live_client.get(f"/media/{asset_id}/hls/index.m3u8").status_code == 401
-    assert live_client.get(
-        f"/media/{asset_id}/hls/segment-999.ts",
-        headers={"Authorization": f"Bearer {learner}"},
-    ).status_code == 404
+    assert (
+        live_client.get(
+            f"/media/{asset_id}/hls/segment-999.ts",
+            headers={"Authorization": f"Bearer {learner}"},
+        ).status_code
+        == 404
+    )

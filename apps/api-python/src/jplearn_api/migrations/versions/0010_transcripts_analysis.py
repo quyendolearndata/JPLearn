@@ -33,16 +33,22 @@ def upgrade() -> None:
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "transcript_revisions_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "transcript_revisions_item_version_rev_key" UNIQUE ("catalog_item_id", "content_version_id", "revision"),
-            CONSTRAINT "transcript_revisions_catalog_item_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "transcript_revisions_content_version_fkey" FOREIGN KEY ("content_version_id") REFERENCES "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "transcript_revisions_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE RESTRICT,
-            CONSTRAINT "transcript_revisions_approved_by_fkey" FOREIGN KEY ("approved_by") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE SET NULL
+            CONSTRAINT "transcript_revisions_item_version_rev_key" UNIQUE ("catalog_item_id", "content_version_id",
+            "revision"),
+            CONSTRAINT "transcript_revisions_catalog_item_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES
+            "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "transcript_revisions_content_version_fkey" FOREIGN KEY ("content_version_id") REFERENCES
+            "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "transcript_revisions_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON
+            UPDATE CASCADE ON DELETE RESTRICT,
+            CONSTRAINT "transcript_revisions_approved_by_fkey" FOREIGN KEY ("approved_by") REFERENCES "users"("id") ON
+            UPDATE CASCADE ON DELETE SET NULL
         );
         """
     )
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "transcript_revisions_item_status_idx" ON "transcript_revisions"("catalog_item_id", "status");'
+        'CREATE INDEX IF NOT EXISTS "transcript_revisions_item_status_idx" ON '
+        '"transcript_revisions"("catalog_item_id", "status");'
     )
 
     # 2. approved_scene_texts: search projection & approved Japanese snippets
@@ -62,20 +68,24 @@ def upgrade() -> None:
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "approved_scene_texts_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "approved_scene_texts_version_scene_rev_key" UNIQUE ("content_version_id", "scene_id", "transcript_revision_id"),
-            CONSTRAINT "approved_scene_texts_catalog_item_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "approved_scene_texts_content_version_fkey" FOREIGN KEY ("content_version_id") REFERENCES "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "approved_scene_texts_scene_fkey" FOREIGN KEY ("scene_id") REFERENCES "scenes"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "approved_scene_texts_transcript_rev_fkey" FOREIGN KEY ("transcript_revision_id") REFERENCES "transcript_revisions"("id") ON UPDATE CASCADE ON DELETE CASCADE
+            CONSTRAINT "approved_scene_texts_version_scene_rev_key" UNIQUE ("content_version_id", "scene_id",
+            "transcript_revision_id"),
+            CONSTRAINT "approved_scene_texts_catalog_item_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES
+            "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "approved_scene_texts_content_version_fkey" FOREIGN KEY ("content_version_id") REFERENCES
+            "content_versions"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "approved_scene_texts_scene_fkey" FOREIGN KEY ("scene_id") REFERENCES "scenes"("id") ON UPDATE
+            CASCADE ON DELETE CASCADE,
+            CONSTRAINT "approved_scene_texts_transcript_rev_fkey" FOREIGN KEY ("transcript_revision_id") REFERENCES
+            "transcript_revisions"("id") ON UPDATE CASCADE ON DELETE CASCADE
         );
         """
     )
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "approved_scene_texts_active_item_idx" ON "approved_scene_texts"("is_active", "catalog_item_id");'
+        'CREATE INDEX IF NOT EXISTS "approved_scene_texts_active_item_idx" ON '
+        '"approved_scene_texts"("is_active", "catalog_item_id");'
     )
-    op.execute(
-        'CREATE INDEX IF NOT EXISTS "approved_scene_texts_scene_idx" ON "approved_scene_texts"("scene_id");'
-    )
+    op.execute('CREATE INDEX IF NOT EXISTS "approved_scene_texts_scene_idx" ON "approved_scene_texts"("scene_id");')
 
     # 3. language_analysis_jobs: durable tokenization and reading analysis
     op.execute(
@@ -92,17 +102,23 @@ def upgrade() -> None:
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "completed_at" TIMESTAMP(3),
             CONSTRAINT "language_analysis_jobs_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "language_analysis_jobs_catalog_item_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "language_analysis_jobs_transcript_rev_fkey" FOREIGN KEY ("transcript_revision_id") REFERENCES "transcript_revisions"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "language_analysis_jobs_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE RESTRICT
+            CONSTRAINT "language_analysis_jobs_catalog_item_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES
+            "catalog_items"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "language_analysis_jobs_transcript_rev_fkey" FOREIGN KEY ("transcript_revision_id") REFERENCES
+            "transcript_revisions"("id") ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT "language_analysis_jobs_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "users"("id") ON
+            UPDATE CASCADE ON DELETE RESTRICT
         );
         """
     )
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "language_analysis_jobs_item_rev_idx" ON "language_analysis_jobs"("catalog_item_id", "transcript_revision_id");'
+        'CREATE INDEX IF NOT EXISTS "language_analysis_jobs_item_rev_idx" ON '
+        '"language_analysis_jobs"("catalog_item_id", "transcript_revision_id");'
     )
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "language_analysis_jobs_idempotency_idx" ON "language_analysis_jobs"("idempotency_key") WHERE "idempotency_key" IS NOT NULL;'
+        'CREATE INDEX IF NOT EXISTS "language_analysis_jobs_idempotency_idx" ON '
+        '"language_analysis_jobs"("idempotency_key") WHERE "idempotency_key" IS '
+        "NOT NULL;"
     )
 
 

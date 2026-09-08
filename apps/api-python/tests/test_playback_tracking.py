@@ -1,13 +1,22 @@
-"""Unit, handler, and contract tests for Playback Tracking, Leases, and Checkpoints (PR4 / UC-L16 / UC-L17 / FR-WAT-001 / FR-RSM-001)."""
+"""Unit, handler, and contract tests for Playback Tracking, Leases, and
+Checkpoints (PR4 / UC-L16 / UC-L17 / FR-WAT-001 / FR-RSM-001).
+"""
 
 from __future__ import annotations
 
 import copy
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
+
 import pytest
 from fastapi.testclient import TestClient
 
+from fakes import (
+    FakeCatalogRepository,
+    FakeContentRepository,
+    FakePlaybackRepository,
+    FakeUnitOfWork,
+)
 from jplearn_api.application.commands import (
     EndPlaybackCommand,
     SendCheckpointCommand,
@@ -15,17 +24,9 @@ from jplearn_api.application.commands import (
 )
 from jplearn_api.application.handlers.playback import (
     handle_end_playback,
-    handle_get_item_resume,
-    handle_get_playback,
-    handle_list_resume,
     handle_send_checkpoint,
     handle_start_playback,
     split_delta_by_timezone,
-)
-from jplearn_api.application.queries import (
-    GetItemResumeQuery,
-    GetPlaybackQuery,
-    ListResumeQuery,
 )
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.domain.catalog import CatalogItem
@@ -36,19 +37,10 @@ from jplearn_api.domain.errors import (
     InvalidDomainStateError,
 )
 from jplearn_api.domain.playback import (
-    PlaybackCheckpoint,
-    PlaybackReceipt,
-    PlaybackSession,
     PlaybackStatus,
     PlayerState,
 )
 from jplearn_api.entrypoints.http.security import require_user
-from fakes import (
-    FakeCatalogRepository,
-    FakeContentRepository,
-    FakePlaybackRepository,
-    FakeUnitOfWork,
-)
 
 
 @pytest.fixture
@@ -111,10 +103,10 @@ def test_env():
     }
 
 
-
 # ------------------------------------------------------------------------------
 # 1. Midnight Split & Timezone Calculation Tests
 # ------------------------------------------------------------------------------
+
 
 def test_split_delta_same_day():
     tz = ZoneInfo("Asia/Ho_Chi_Minh")
@@ -142,7 +134,7 @@ def test_split_delta_midnight_transition():
 
 
 def test_split_delta_zero_or_negative():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     alloc = split_delta_by_timezone(now, now, 0, "Asia/Ho_Chi_Minh")
     assert len(alloc) == 1
     assert alloc[0][1] == 0
@@ -151,6 +143,7 @@ def test_split_delta_zero_or_negative():
 # ------------------------------------------------------------------------------
 # 2. Application Handlers: Start Playback & Lease Management
 # ------------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_start_playback_success(test_env):
@@ -243,6 +236,7 @@ async def test_single_active_lease_conflict_and_takeover(test_env):
 # 3. Application Handlers: Checkpoint Accounting & Anti-Cheat
 # ------------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_heartbeat_accounting_and_rate_limit(test_env):
     uow = test_env["uow"]
@@ -312,8 +306,8 @@ async def test_heartbeat_gap_threshold_resets_credit(test_env):
     initial_acknowledged = s1.total_active_ms
 
     # 2. Fast forward session's last_server_time to simulate 60s gap (> 30s threshold)
-    test_env["playbacks"]._committed_playbacks[session.id].last_server_time = datetime.now(timezone.utc) - timedelta(seconds=60)
-    test_env["playbacks"].playbacks[session.id].last_server_time = datetime.now(timezone.utc) - timedelta(seconds=60)
+    test_env["playbacks"]._committed_playbacks[session.id].last_server_time = datetime.now(UTC) - timedelta(seconds=60)
+    test_env["playbacks"].playbacks[session.id].last_server_time = datetime.now(UTC) - timedelta(seconds=60)
 
     # 3. Next checkpoint seq=2 arrives after 60s
     cmd_gap = SendCheckpointCommand(
@@ -330,7 +324,6 @@ async def test_heartbeat_gap_threshold_resets_credit(test_env):
     receipt_gap, updated_session = await handle_send_checkpoint(cmd_gap, uow)
     assert receipt_gap.accepted_delta_ms == 0  # Zero credit due to >30s gap!
     assert updated_session.total_active_ms == initial_acknowledged  # Total active did not increase
-
 
 
 @pytest.mark.asyncio
@@ -395,6 +388,7 @@ async def test_checkpoint_sequence_and_idempotency_replay(test_env):
 # ------------------------------------------------------------------------------
 # 4. HTTP API Contract & Integration Tests
 # ------------------------------------------------------------------------------
+
 
 def test_api_playback_full_lifecycle(client: TestClient, monkeypatch: pytest.MonkeyPatch, test_env):
     uow = test_env["uow"]
@@ -493,6 +487,7 @@ def test_api_playback_full_lifecycle(client: TestClient, monkeypatch: pytest.Mon
 # R3 & R4 Remediation Tests (P1.3, P1.4, P1.6, P1.7)
 # ------------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_expired_lease_epoch_bump_and_fencing(test_env):
     """R3 (P1.3): When lease expires and a new writer starts, epoch is bumped and old writer is fenced."""
@@ -508,7 +503,7 @@ async def test_expired_lease_epoch_bump_and_fencing(test_env):
     # 2. Simulate lease expiration: expire lease timestamp in learner_playback_state
     async with uow:
         state = await uow.playbacks.acquire_learner_playback_lock("user-01", "web", "device-A")
-        state.lease_expires_at = datetime.now(timezone.utc) - timedelta(seconds=60)
+        state.lease_expires_at = datetime.now(UTC) - timedelta(seconds=60)
         await uow.playbacks.update_learner_playback_state(state)
         await uow.commit()
 
@@ -594,7 +589,7 @@ async def test_wall_clock_active_time_no_multiplier(test_env):
     # Set last_server_time to exactly 15 seconds ago and commit
     async with uow:
         s_db = await uow.playbacks.get_playback(s.id)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         s_db.last_server_time = now - timedelta(seconds=15)
         s_db.created_at = s_db.last_server_time
         await uow.playbacks.update_playback(s_db)

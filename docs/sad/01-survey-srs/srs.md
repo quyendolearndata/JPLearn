@@ -98,6 +98,7 @@ Phạm vi: **nền tảng**. Yêu cầu học đầy đủ đánh dấu `Deferre
 | NFR-PERF-002 | Trước cổng nền tảng: playback video thích ứng (HLS) trên web và iPad; Q1 thí điểm được MP4 nếu ADR cho phép, phải nâng HLS trước P5 |
 | NFR-SEC-001 | Mật khẩu không lưu plaintext; token không log; HTTPS |
 | NFR-SEC-002 | Phân quyền: `learner` không gọi API CMS mutate |
+| NFR-SEC-003 | Đăng nhập bị giới hạn 10 lần / 60 giây theo IP+email, trả 429 | P0 |
 | NFR-PRIV-001 | PII tối thiểu: email, id; không bán dữ liệu Q1 |
 | NFR-A11Y-001 | Shell web: contrast đạt WCAG AA cho text chrome; media có control pause/play bằng bàn phím |
 | NFR-OBS-001 | API có request id; lỗi 5xx alertable trên staging |

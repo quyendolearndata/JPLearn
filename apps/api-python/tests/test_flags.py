@@ -1,6 +1,5 @@
 from helpers import grant_role, register
 
-
 FLAG_DEFAULTS = {
     "speaking_enabled": False,
     "l1_subtitles_enabled": False,

@@ -9,16 +9,24 @@ from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from jplearn_api.adapters.persistence.models import (
+    Device,
+)
+from jplearn_api.adapters.persistence.models import (
+    LearnerProgress as OrmLearnerProgress,
+)
+from jplearn_api.adapters.persistence.models import (
+    LearningEvent as OrmLearningEvent,
+)
+from jplearn_api.adapters.persistence.models import (
+    LearningSession as OrmLearningSession,
+)
 from jplearn_api.application.ports.repositories import LearningRepository
 from jplearn_api.domain.learning import (
     LearnerProgress as DomainLearnerProgress,
-    LearningSession as DomainLearningSession,
 )
-from jplearn_api.adapters.persistence.models import (
-    Device,
-    LearnerProgress as OrmLearnerProgress,
-    LearningEvent as OrmLearningEvent,
-    LearningSession as OrmLearningSession,
+from jplearn_api.domain.learning import (
+    LearningSession as DomainLearningSession,
 )
 
 
@@ -57,11 +65,7 @@ class SqlAlchemyLearningRepository(LearningRepository):
         )
 
     async def lock_and_get_session(self, session_id: str) -> DomainLearningSession | None:
-        stmt = (
-            select(OrmLearningSession)
-            .where(OrmLearningSession.id == session_id)
-            .with_for_update()
-        )
+        stmt = select(OrmLearningSession).where(OrmLearningSession.id == session_id).with_for_update()
         result = await self._session.execute(stmt)
         orm_session = result.scalar_one_or_none()
         if orm_session is None:
@@ -84,6 +88,7 @@ class SqlAlchemyLearningRepository(LearningRepository):
 
     async def get_idempotency_session(self, user_id: str, key: str) -> tuple[str, str] | None:
         from jplearn_api.adapters.persistence.models import SessionIdempotencyKey
+
         stmt = select(SessionIdempotencyKey).where(
             SessionIdempotencyKey.user_id == user_id,
             SessionIdempotencyKey.key == key,
@@ -96,6 +101,7 @@ class SqlAlchemyLearningRepository(LearningRepository):
 
     async def save_idempotency(self, user_id: str, key: str, session_id: str, request_hash: str) -> None:
         from jplearn_api.adapters.persistence.models import SessionIdempotencyKey
+
         record = SessionIdempotencyKey(
             user_id=user_id,
             key=key,
@@ -142,11 +148,7 @@ class SqlAlchemyLearningRepository(LearningRepository):
         )
 
     async def lock_and_get_progress(self, user_id: str) -> DomainLearnerProgress | None:
-        stmt = (
-            select(OrmLearnerProgress)
-            .where(OrmLearnerProgress.user_id == user_id)
-            .with_for_update()
-        )
+        stmt = select(OrmLearnerProgress).where(OrmLearnerProgress.user_id == user_id).with_for_update()
         result = await self._session.execute(stmt)
         orm_prog = result.scalar_one_or_none()
         if orm_prog is None:

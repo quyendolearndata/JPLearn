@@ -6,10 +6,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem
+from jplearn_api.adapters.persistence.models import MediaAsset as OrmMediaAsset
 from jplearn_api.application.ports.repositories import MediaRepository
 from jplearn_api.domain.errors import DeterministicAbortError
 from jplearn_api.domain.media import MediaAsset as DomainMediaAsset
-from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem, MediaAsset as OrmMediaAsset
 
 
 def _to_domain(orm_asset: OrmMediaAsset) -> DomainMediaAsset:
@@ -69,7 +70,9 @@ class SqlAlchemyMediaRepository(MediaRepository):
         return item is not None
 
     async def get_catalog_item_status(self, catalog_item_id: str, *, for_update: bool = False) -> str | None:
-        item = await self._session.get(OrmCatalogItem, catalog_item_id, with_for_update=for_update, populate_existing=for_update)
+        item = await self._session.get(
+            OrmCatalogItem, catalog_item_id, with_for_update=for_update, populate_existing=for_update
+        )
         if item is None:
             return None
         return getattr(item, "status", "draft")
@@ -79,7 +82,5 @@ class SqlAlchemyMediaRepository(MediaRepository):
         return set(result.scalars().all())
 
     async def storage_key_exists(self, storage_key: str) -> bool:
-        result = await self._session.execute(
-            select(OrmMediaAsset.id).where(OrmMediaAsset.storage_key == storage_key)
-        )
+        result = await self._session.execute(select(OrmMediaAsset.id).where(OrmMediaAsset.storage_key == storage_key))
         return result.scalar_one_or_none() is not None

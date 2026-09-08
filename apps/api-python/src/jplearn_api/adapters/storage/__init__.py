@@ -2,10 +2,10 @@
 
 from jplearn_api.adapters.storage.local import (
     CHUNK_SIZE,
-    LocalFilesystemStorage,
     MAX_MEDIA_BYTES,
     MAX_PROBE_WORKERS,
     STAGING_DRAIN_TIMEOUT_SECONDS,
+    LocalFilesystemStorage,
     StorageMetadata,
     StoragePort,
 )

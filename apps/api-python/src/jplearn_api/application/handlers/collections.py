@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import hashlib
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from jplearn_api.application.commands import (
@@ -41,9 +41,7 @@ async def handle_create_collection(
 
         # Idempotency replay check
         if command.idempotency_key:
-            existing = await uow.collections.find_by_idempotency_key(
-                command.user_id, command.idempotency_key
-            )
+            existing = await uow.collections.find_by_idempotency_key(command.user_id, command.idempotency_key)
             if existing:
                 coll, stored_hash = existing
                 if stored_hash == req_hash:
@@ -53,11 +51,9 @@ async def handle_create_collection(
         # Quota check
         count = await uow.collections.count_by_user(command.user_id)
         if count >= MAX_COLLECTIONS_PER_USER:
-            raise InvalidDomainStateError(
-                f"Maximum limit of {MAX_COLLECTIONS_PER_USER} collections reached."
-            )
+            raise InvalidDomainStateError(f"Maximum limit of {MAX_COLLECTIONS_PER_USER} collections reached.")
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         new_coll = PersonalCollection(
             id=str(uuid4()),
             user_id=command.user_id,
@@ -131,9 +127,7 @@ async def handle_update_collection_scenes(
 ) -> PersonalCollection:
     """Replace all scenes in the collection with order and OCC check."""
     if len(command.scene_ids) > MAX_SCENES_PER_COLLECTION:
-        raise InvalidDomainStateError(
-            f"Maximum of {MAX_SCENES_PER_COLLECTION} scenes allowed per collection."
-        )
+        raise InvalidDomainStateError(f"Maximum of {MAX_SCENES_PER_COLLECTION} scenes allowed per collection.")
     if len(command.scene_ids) != len(set(command.scene_ids)):
         raise InvalidDomainStateError("Duplicate scenes are not allowed in a collection.")
 
@@ -169,9 +163,7 @@ async def handle_update_collection_scenes(
                     or ctx.catalog_status != "published"
                     or not ctx.is_current_published_version
                 ):
-                    raise InvalidDomainStateError(
-                        f"Cannot add stale or unavailable scene {sid} to a collection."
-                    )
+                    raise InvalidDomainStateError(f"Cannot add stale or unavailable scene {sid} to a collection.")
 
         updated = await uow.collections.replace_scenes(
             user_id=command.user_id,

@@ -13,7 +13,7 @@ Enforces:
 from __future__ import annotations
 
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from jplearn_api.application.commands import (
@@ -109,7 +109,7 @@ async def handle_save_transcript_draft(
         )
 
         existing = await uow.transcripts.get_latest_revision(cmd.catalog_item_id, cmd.content_version_id)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         if existing is None:
             if cmd.expected_revision not in (0, 1):
@@ -195,7 +195,7 @@ async def handle_submit_transcript_qa(
             )
 
         existing.submit_qa()
-        existing.updated_at = datetime.now(timezone.utc)
+        existing.updated_at = datetime.now(UTC)
         saved = await uow.transcripts.save_revision(existing, expected_revision=cmd.expected_revision)
         await uow.commit()
         return saved
@@ -216,7 +216,7 @@ async def handle_approve_transcript(
             )
 
         existing.approve(cmd.user_id)
-        existing.updated_at = datetime.now(timezone.utc)
+        existing.updated_at = datetime.now(UTC)
         saved = await uow.transcripts.save_revision(existing, expected_revision=cmd.expected_revision)
 
         # Generate and activate search projection texts
@@ -224,7 +224,7 @@ async def handle_approve_transcript(
         scene_map = {s.id: s for s in (version.scenes if version else [])}
 
         approved_texts: list[ApprovedSceneText] = []
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for seg in existing.segments:
             sc = scene_map.get(seg.scene_id)
             if sc:
@@ -270,7 +270,7 @@ async def handle_return_transcript_to_draft(
             )
 
         existing.return_to_draft(cmd.reason)
-        existing.updated_at = datetime.now(timezone.utc)
+        existing.updated_at = datetime.now(UTC)
         saved = await uow.transcripts.save_revision(existing, expected_revision=cmd.expected_revision)
 
         # Deactivate approved search texts
@@ -327,7 +327,7 @@ async def handle_create_language_analysis_job(
                 }
             )
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         total_tokens = sum(len(s["tokens"]) for s in analysis_segments)
         job = LanguageAnalysisJob(
             id=f"laj_{uuid4().hex[:16]}",

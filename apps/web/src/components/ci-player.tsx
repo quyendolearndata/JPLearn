@@ -140,7 +140,7 @@ export function CiPlayer({
       callbacksRef.current.onSourceFailure?.();
     };
 
-    const useMp4OrReport = (shouldResume?: boolean) => {
+    const switchToMp4OrReport = (shouldResume?: boolean) => {
       removeSourceError();
       if (!playbackUrl) {
         reportFailure();
@@ -153,14 +153,14 @@ export function CiPlayer({
     };
 
     if (!hlsUrl) {
-      useMp4OrReport();
+      switchToMp4OrReport();
     } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
       let usingMp4 = false;
       const onNativeError = () => {
         rememberPlayback();
         if (!usingMp4 && playbackUrl) {
           usingMp4 = true;
-          useMp4OrReport(shouldResumeRef.current);
+          switchToMp4OrReport(shouldResumeRef.current);
           return;
         }
         reportFailure();
@@ -172,7 +172,7 @@ export function CiPlayer({
       void import("hls.js").then(({ default: HlsCtor }) => {
         if (disposed) return;
         if (!HlsCtor.isSupported()) {
-          useMp4OrReport();
+          switchToMp4OrReport();
           return;
         }
         let fallbackStarted = false;
@@ -184,7 +184,7 @@ export function CiPlayer({
           trackingSuspended = true;
           hls?.destroy();
           hls = null;
-          useMp4OrReport(shouldResume);
+          switchToMp4OrReport(shouldResume);
         };
         const onHlsMediaError = () => fallbackFromHls();
         video.addEventListener("error", onHlsMediaError);
@@ -200,7 +200,7 @@ export function CiPlayer({
         hls.loadSource(hlsUrl);
         hls.attachMedia(video);
       }).catch(() => {
-        if (!disposed) useMp4OrReport();
+        if (!disposed) switchToMp4OrReport();
       });
     }
 

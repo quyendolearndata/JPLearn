@@ -6,7 +6,7 @@ Backend là **FastAPI / Python 3.12** (`apps/api-python`), tuân thủ Clean Arc
 
 > [!IMPORTANT]
 > **Triết lý Sư phạm cốt lõi & Guard Anti-Textbook:**
-> JPLearn theo đuổi phương pháp thụ đắc ngôn ngữ tự nhiên thông qua ngữ cảnh và hình ảnh trực quan (Krashen CI). Toàn bộ mã nguồn, schema DDL, hợp đồng API và giao diện được bảo vệ nghiêm ngặt bằng script tự động `pnpm test:guard` (`scripts/assert-no-textbook.ts`): cấm tuyệt đối các tính năng sách giáo khoa truyền thống (dịch ngữ pháp, danh sách flashcard, điểm từ vựng riêng lẻ, cột dịch tiếng Việt trực diện).
+> JPLearn theo đuổi phương pháp thụ đắc ngôn ngữ tự nhiên thông qua ngữ cảnh và hình ảnh trực quan (Krashen CI). Guard Anti-Textbook có ba lớp: (1) `pnpm test:guard`; (2) `tests/test_schema_ddl.py`; (3) `tests/test_architecture_guard.py` và E2E `shell.spec.ts`.
 
 ---
 
@@ -23,7 +23,7 @@ Hệ thống quản lý theo mô hình monorepo bằng `pnpm` workspace kết h�
 ├── packages/
 │   ├── domain/               # Logic nghiệp vụ, entity & bất biến dùng chung (TypeScript)
 │   ├── cms-schema/           # Schema dữ liệu phục vụ Staff CMS
-│   └── design-tokens/        # Hệ thống màu sắc (kem/xanh sage), typography và token giao diện
+│   └── design-tokens/        # Token giao diện dùng bởi mobile; web dùng CSS custom properties trong globals.css
 ├── docs/                     # Toàn bộ tài liệu kiến trúc (SAD), nghiệp vụ, vận hành (Ops) & QA
 └── scripts/                  # Scripts CI/CD và kiểm tra chống ô nhiễm sư phạm (Guard)
 ```
@@ -37,7 +37,7 @@ Hệ thống quản lý theo mô hình monorepo bằng `pnpm` workspace kết h�
   - **Báo cáo chất lượng (`content_reports`):** Thu thập phản hồi từ người học về video, âm thanh hoặc chất lượng sư phạm.
   - **Theo dõi phát trực tuyến chuẩn xác (`/playbacks`):** Heartbeat chu kỳ 15 giây, kiểm soát lease 45 giây, số thứ tự `seq` tăng đơn điệu, cơ chế chiếm quyền phát giữa các thiết bị (`epoch` takeover), lưu biên nhận xử lý chống lặp (`Idempotency-Key` / receipts), giới hạn trôi đồng hồ (drift limit) và bảo vệ mốc cắt xóa lịch sử (`deletion_cutoff`).
   - **Thời gian tích lũy thực tế (`active_watch_seconds`):** Đo đếm thời gian xem video thực trạng thái `playing` (loại bỏ tua, tạm dừng, buffer) theo từng ngày và so khớp với mục tiêu học tập hàng ngày (`daily_goal_minutes`).
-  - **Tác vụ AI bất đồng bộ & Phân tích Transcript:** Sổ cái kiểm soát hạn mức token AI (`quota ledger`), background worker (`ai_worker.py`) chạy xử lý bóc tách âm thanh, nhận diện phụ đề và phân tích từ vựng tiếng Nhật theo ngữ cảnh.
+  - **Tác vụ AI bất đồng bộ (trial):** Khung job/quota/lease đã có; provider hiện tại là **synthetic trial** — chưa phải dịch vụ transcription thật. Background worker (`ai_worker.py`) chạy luồng thử nghiệm.
   - **Trình phát & Phục hồi phiên học Web (`apps/web`):** Trình phát `<CiPlayer>` hỗ trợ luồng thích ứng HLS (`.m3u8`) với fallback MP4; state machine khôi phục phiên học gián đoạn qua `sessionStorage` tách bạch theo từng người dùng và tab trình duyệt.
   - **Staff CMS (`/staff`):** Cổng quản trị dành cho giáo viên và admin với cơ chế khóa lạc quan (`revision` CAS), tải lên media, nộp kiểm duyệt chất lượng (Level QA) và quy trình xuất bản.
 
@@ -48,7 +48,7 @@ Hệ thống quản lý theo mô hình monorepo bằng `pnpm` workspace kết h�
 - **Python:** 3.12 trở lên và công cụ [`uv`](https://docs.astral.sh/uv/)
 - **Node.js:** 22.x LTS trở lên và **pnpm 9** (kích hoạt bằng `corepack enable`)
 - **Docker:** Docker Desktop hoặc Docker Engine hỗ trợ Docker Compose v2
-- **FFmpeg & ffprobe:** Bắt buộc có trên hệ thống để trích xuất thông số media (`ffprobe`) trong quy trình kiểm định tải lên tệp media CMS và tạo luồng HLS.
+- **FFmpeg & ffprobe:** Bắt buộc có trên hệ thống để trích xuất thông số media (`ffprobe`) trong quy trình kiểm định tải lên tệp media CMS, tạo luồng HLS, và kiểm thử E2E Playwright (luồng media thật).
 
 ---
 
@@ -117,7 +117,7 @@ pnpm dev:mobile
 
 ### Các dịch vụ nền & CLI bổ trợ
 
-- **AI Background Worker (Xử lý tác vụ phiên âm/cảnh ngầm):**
+- **AI Background Worker (synthetic trial — khung job/quota/lease):**
   ```bash
   cd apps/api-python && PYTHONPATH=src uv run python -m jplearn_api.entrypoints.cli.ai_worker
   ```

@@ -29,7 +29,8 @@ def upgrade() -> None:
             "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "series_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "series_topic_id_fkey" FOREIGN KEY ("topic_id") REFERENCES "topics"("id") ON UPDATE CASCADE ON DELETE RESTRICT
+            CONSTRAINT "series_topic_id_fkey" FOREIGN KEY ("topic_id") REFERENCES "topics"("id") ON UPDATE CASCADE ON
+            DELETE RESTRICT
         )
         """,
     )
@@ -41,8 +42,10 @@ def upgrade() -> None:
             "catalog_item_id" TEXT NOT NULL,
             "position" INTEGER NOT NULL,
             CONSTRAINT "series_items_pkey" PRIMARY KEY ("series_id", "position"),
-            CONSTRAINT "series_items_series_id_fkey" FOREIGN KEY ("series_id") REFERENCES "series"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "series_items_catalog_item_id_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES "catalog_items"("id") ON UPDATE CASCADE ON DELETE RESTRICT,
+            CONSTRAINT "series_items_series_id_fkey" FOREIGN KEY ("series_id") REFERENCES "series"("id") ON UPDATE
+            CASCADE ON DELETE CASCADE,
+            CONSTRAINT "series_items_catalog_item_id_fkey" FOREIGN KEY ("catalog_item_id") REFERENCES
+            "catalog_items"("id") ON UPDATE CASCADE ON DELETE RESTRICT,
             CONSTRAINT "series_items_unique_item_key" UNIQUE ("series_id", "catalog_item_id")
         )
         """,

@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 import logging
 import math
 import time
+from collections.abc import Callable
 
 from jplearn_api.application.ports.repositories import MediaRepository
 from jplearn_api.application.ports.storage import StoragePort
@@ -53,10 +53,7 @@ async def handle_reconcile_orphans(
     orphans = [
         k
         for k in storage_keys
-        if k not in db_keys
-        and not k.startswith("__probe__/")
-        and not k.endswith(".part")
-        and not k.startswith("hls/")
+        if k not in db_keys and not k.startswith("__probe__/") and not k.endswith(".part") and not k.startswith("hls/")
     ]
     missing = [k for k in db_keys if not await storage.exists(k)]
 
@@ -72,12 +69,7 @@ async def handle_reconcile_orphans(
             logger.warning("Failed to get metadata for orphan %s: %s", orphan, exc)
             mtime = None
 
-        if (
-            mtime is None
-            or not isinstance(mtime, (int, float))
-            or math.isnan(mtime)
-            or math.isinf(mtime)
-        ):
+        if mtime is None or not isinstance(mtime, (int, float)) or math.isnan(mtime) or math.isinf(mtime):
             logger.warning("Orphan %s has missing or invalid mtime (%r); marking protected/unknown", orphan, mtime)
             unknown_metadata_keys.append(orphan)
             protected_orphans.append(orphan)

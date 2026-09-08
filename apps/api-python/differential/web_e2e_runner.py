@@ -10,11 +10,11 @@ from __future__ import annotations
 import errno
 import fcntl
 import os
-from pathlib import Path
 import signal
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 LOCK_PATH = Path(os.environ.get("JPLEARN_E2E_LOCK_PATH", "/tmp/jplearn-web-e2e.lock"))
 TERM_GRACE_SECONDS = float(os.environ.get("JPLEARN_E2E_TERM_GRACE_SECONDS", "5.0"))

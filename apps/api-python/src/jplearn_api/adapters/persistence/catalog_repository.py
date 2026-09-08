@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 from time import time
-
 from typing import Any
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem
+from jplearn_api.adapters.persistence.models import CatalogReview as OrmCatalogReview
+from jplearn_api.adapters.persistence.models import ContentVersion as OrmContentVersion
+from jplearn_api.adapters.persistence.models import Topic
+from jplearn_api.adapters.security.signed_url import sign_hls_url, sign_media_url
 from jplearn_api.application.ports.repositories import (
     CatalogQueryPort,
     CatalogRepository,
@@ -17,10 +21,9 @@ from jplearn_api.application.ports.repositories import (
     UpdateDraftResultStatus,
 )
 from jplearn_api.application.read_models import CatalogItemPublicDTO
-from jplearn_api.domain.catalog import CatalogItem as DomainCatalogItem, MediaRef, CatalogReview
-from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem, ContentVersion as OrmContentVersion, Topic, CatalogReview as OrmCatalogReview
+from jplearn_api.domain.catalog import CatalogItem as DomainCatalogItem
+from jplearn_api.domain.catalog import CatalogReview, MediaRef
 from jplearn_api.settings import Settings
-from jplearn_api.adapters.security.signed_url import sign_hls_url, sign_media_url
 
 
 def _to_domain(orm_item: OrmCatalogItem) -> DomainCatalogItem:
@@ -52,7 +55,9 @@ def _to_domain(orm_item: OrmCatalogItem) -> DomainCatalogItem:
         status=orm_item.status,
         media=media_refs,
         qa_round=orm_item.qa_round,
-        reviews=[CatalogReview(r.id, r.qa_round, r.decision, r.notes, r.reviewed_by, r.reviewed_at) for r in orm_item.reviews],
+        reviews=[
+            CatalogReview(r.id, r.qa_round, r.decision, r.notes, r.reviewed_by, r.reviewed_at) for r in orm_item.reviews
+        ],
     )
 
 
@@ -175,11 +180,17 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
             existing_ids = {r.id for r in orm_item.reviews}
             for review in item.reviews:
                 if review.id not in existing_ids:
-                    self._session.add(OrmCatalogReview(
-                        id=review.id, catalog_item_id=item.id, qa_round=review.qa_round,
-                        decision=review.decision, notes=review.notes,
-                        reviewed_by=review.reviewed_by, reviewed_at=review.reviewed_at,
-                    ))
+                    self._session.add(
+                        OrmCatalogReview(
+                            id=review.id,
+                            catalog_item_id=item.id,
+                            qa_round=review.qa_round,
+                            decision=review.decision,
+                            notes=review.notes,
+                            reviewed_by=review.reviewed_by,
+                            reviewed_at=review.reviewed_at,
+                        )
+                    )
             await self._session.flush()
 
     async def list_staff(
@@ -228,7 +239,6 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
         return [_to_domain(row) for row in result.scalars().all()]
 
 
-
 class SqlAlchemyCatalogQueryAdapter(CatalogQueryPort):
     """Query adapter for reading published catalog items."""
 
@@ -258,12 +268,17 @@ class SqlAlchemyCatalogQueryAdapter(CatalogQueryPort):
         now_sec = int(time())
         items = []
         for item in result.scalars():
-            version = (await self._session.execute(
-                select(OrmContentVersion).where(
-                    OrmContentVersion.catalog_item_id == item.id,
-                    OrmContentVersion.is_published.is_(True),
-                ).order_by(OrmContentVersion.version_number.desc()).limit(1)
-            )).scalar_one_or_none()
+            version = (
+                await self._session.execute(
+                    select(OrmContentVersion)
+                    .where(
+                        OrmContentVersion.catalog_item_id == item.id,
+                        OrmContentVersion.is_published.is_(True),
+                    )
+                    .order_by(OrmContentVersion.version_number.desc())
+                    .limit(1)
+                )
+            ).scalar_one_or_none()
             asset = (
                 next((a for a in item.media if a.id == version.media_asset_id), None)
                 if version and version.media_asset_id

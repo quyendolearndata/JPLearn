@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
-from typing import Any
+from datetime import datetime, timedelta
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -171,7 +170,9 @@ class SqlAlchemyContentJobRepository(ContentJobRepository):
 
     async def save_attempt(self, attempt) -> None:
         from dataclasses import asdict
+
         from jplearn_api.adapters.persistence.models import AiAttemptModel
+
         values = asdict(attempt)
         for key in ("lease_expires_at", "created_at", "updated_at"):
             values[key] = _to_naive(values[key])
@@ -181,6 +182,7 @@ class SqlAlchemyContentJobRepository(ContentJobRepository):
     async def get_attempt(self, attempt_id: str, for_update: bool = False):
         from jplearn_api.adapters.persistence.models import AiAttemptModel
         from jplearn_api.domain.ai_attempt import AiAttempt
+
         stmt = select(AiAttemptModel).where(AiAttemptModel.id == attempt_id).execution_options(populate_existing=True)
         if for_update:
             stmt = stmt.with_for_update()
@@ -191,13 +193,21 @@ class SqlAlchemyContentJobRepository(ContentJobRepository):
 
     async def list_expired_attempts(self, now: datetime, limit: int = 100):
         from jplearn_api.adapters.persistence.models import AiAttemptModel
-        stmt = (select(AiAttemptModel.id).where(
-            AiAttemptModel.state == "running", AiAttemptModel.lease_expires_at <= _to_naive(now),
-        ).order_by(AiAttemptModel.lease_expires_at, AiAttemptModel.id).limit(limit))
+
+        stmt = (
+            select(AiAttemptModel.id)
+            .where(
+                AiAttemptModel.state == "running",
+                AiAttemptModel.lease_expires_at <= _to_naive(now),
+            )
+            .order_by(AiAttemptModel.lease_expires_at, AiAttemptModel.id)
+            .limit(limit)
+        )
         return list((await self.session.execute(stmt)).scalars().all())
 
     async def list_job_attempts(self, job_id: str):
         from jplearn_api.adapters.persistence.models import AiAttemptModel
+
         stmt = select(AiAttemptModel.id).where(AiAttemptModel.job_id == job_id).order_by(AiAttemptModel.attempt_number)
         ids = list((await self.session.execute(stmt)).scalars().all())
         return [await self.get_attempt(attempt_id) for attempt_id in ids]

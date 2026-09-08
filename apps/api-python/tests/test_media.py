@@ -1,15 +1,13 @@
 import asyncio
-import concurrent.futures
 from pathlib import Path
-import threading
 from urllib.parse import urlparse
 
 import asyncpg
 import pytest
-from helpers import ensure_topics, grant_role, insert_media, register
 
-from jplearn_api.entrypoints.cli.reconciliation import reconcile_orphans
+from helpers import ensure_topics, grant_role, insert_media, register
 from jplearn_api.adapters.storage.local import LocalFilesystemStorage
+from jplearn_api.entrypoints.cli.reconciliation import reconcile_orphans
 
 TINY_MP4 = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom" + b"tiny media"
 
@@ -43,15 +41,22 @@ def _create_item(live_client, token: str, **overrides):
 
 def _publish(live_client, token: str, item_id: str):
     from helpers import approve_catalog
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/submit-qa",
-        headers={"Authorization": f"Bearer {token}"},
-    ).status_code == 200
+
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/submit-qa",
+            headers={"Authorization": f"Bearer {token}"},
+        ).status_code
+        == 200
+    )
     approve_catalog(live_client, token, item_id)
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/publish",
-        headers={"Authorization": f"Bearer {token}"},
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/publish",
+            headers={"Authorization": f"Bearer {token}"},
+        ).status_code
+        == 200
+    )
 
 
 def test_upload_and_playback_dual_mode(live_client):
@@ -180,10 +185,13 @@ async def test_storage_port_unit(tmp_path):
 def test_publish_rejected_if_media_missing_from_storage(live_client):
     admin = _admin(live_client)
     item_id = _create_item(live_client, admin, title_internal="missing-media-file")
-    assert live_client.post(
-        f"/staff/catalog/{item_id}/submit-qa",
-        headers={"Authorization": f"Bearer {admin}"},
-    ).status_code == 200
+    assert (
+        live_client.post(
+            f"/staff/catalog/{item_id}/submit-qa",
+            headers={"Authorization": f"Bearer {admin}"},
+        ).status_code
+        == 200
+    )
 
     # Insert media record in DB but delete the file from storage
     insert_media(live_client, item_id)
@@ -285,6 +293,7 @@ def test_orphan_reconciliation(live_client):
                 assert orphan_path.exists()
                 import os
                 import time
+
                 now = time.time()
                 old_mtime = now - (25 * 3600)
                 os.utime(orphan_path, (old_mtime, old_mtime))
@@ -365,7 +374,6 @@ def test_parse_byte_range_matrix():
 
 @pytest.mark.asyncio
 async def test_storage_adapters_open_read_range(tmp_path):
-    from pathlib import Path
     from jplearn_api.adapters.storage.local import InMemoryStorage, LocalFilesystemStorage
 
     data = b"0123456789abcdefghijklmnopqrstuvwxyz" * 10
@@ -558,13 +566,13 @@ async def _upload_media(
     _pre_commit_hook=None,
     _grace_seconds=None,
 ):
-    from jplearn_api.adapters.persistence.media_repository import SqlAlchemyMediaRepository
     from jplearn_api.adapters.persistence.unit_of_work import SqlAlchemyUnitOfWork
     from jplearn_api.application.handlers.media import handle_upload_media
-
     from jplearn_api.bootstrap import create_media_signer
 
-    uow_factory = lambda: SqlAlchemyUnitOfWork(session)
+    def uow_factory():
+        return SqlAlchemyUnitOfWork(session)
+
     signer = create_media_signer(settings)
     first_chunk = await file.read(64 * 1024)
 
@@ -596,8 +604,10 @@ async def _upload_media(
 def test_upload_cancellation_before_commit_rolls_back_and_compensates(live_client):
     """R-07: Cancellation after promote but before DB commit must delete final object
     and rollback DB transaction."""
-    from fastapi import UploadFile
     from io import BytesIO
+
+    from fastapi import UploadFile
+
     from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
@@ -658,8 +668,10 @@ def test_upload_cancellation_before_commit_rolls_back_and_compensates(live_clien
 def test_upload_cancellation_during_commit_preserves_object_if_committed(live_client):
     """R-07: If transaction actually committed despite cancellation during wait,
     do NOT delete final object so DB row never points to missing file."""
-    from fastapi import UploadFile
     from io import BytesIO
+
+    from fastapi import UploadFile
+
     from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
@@ -704,10 +716,13 @@ def test_upload_cancellation_during_commit_preserves_object_if_committed(live_cl
 
     asyncio.run(_run())
 
+
 def test_upload_db_error_at_commit_compensates(live_client):
     """R-07: If DB pre-commit fails with an error, compensate by rolling back and deleting final object."""
-    from fastapi import UploadFile
     from io import BytesIO
+
+    from fastapi import UploadFile
+
     from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
@@ -765,8 +780,10 @@ def test_upload_db_error_at_commit_compensates(live_client):
 
 def test_upload_outcome_1_pre_commit_cancellation_compensates(live_client):
     """Scenario 1: Cancellation before commit -> rollback confirmed -> compensate object."""
-    from fastapi import UploadFile
     from io import BytesIO
+
+    from fastapi import UploadFile
+
     from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
@@ -823,8 +840,10 @@ def test_upload_outcome_1_pre_commit_cancellation_compensates(live_client):
 
 def test_upload_outcome_2_commit_in_flight_cancelled_preserves_object_and_logs(live_client, monkeypatch):
     """Scenario 2: Cancellation while COMMIT in-flight -> outcome unknown -> preserve object, log recovery."""
-    from fastapi import UploadFile
     from io import BytesIO
+
+    from fastapi import UploadFile
+
     import jplearn_api.application.handlers.media as media_handlers
     from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
@@ -948,6 +967,7 @@ async def test_upload_does_not_rollback_while_cancelled_commit_is_still_running(
     class MemoryStorage:
         async def inspect_media(self, key):
             from jplearn_api.application.ports.media_probe import MediaInspection
+
             return MediaInspection(3_600_000, "fixture-checksum")
 
         async def stage_stream(self, key, stream) -> int:
@@ -998,8 +1018,10 @@ async def test_upload_does_not_rollback_while_cancelled_commit_is_still_running(
 
 def test_upload_outcome_3_server_commit_response_lost_preserves_object(live_client, monkeypatch):
     """Scenario 3: Server committed, but client received network/unknown error -> preserve object."""
-    from fastapi import UploadFile
     from io import BytesIO
+
+    from fastapi import UploadFile
+
     import jplearn_api.application.handlers.media as media_handlers
     from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
@@ -1071,8 +1093,10 @@ def test_upload_outcome_3_server_commit_response_lost_preserves_object(live_clie
 
 def test_upload_outcome_4_rollback_failure_preserves_object_and_logs(live_client, monkeypatch):
     """Scenario 4: Rollback fails with an exception -> outcome unknown -> preserve object, log recovery."""
-    from fastapi import UploadFile
     from io import BytesIO
+
+    from fastapi import UploadFile
+
     import jplearn_api.application.handlers.media as media_handlers
     from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
@@ -1155,8 +1179,10 @@ def test_upload_outcome_4_rollback_failure_preserves_object_and_logs(live_client
 
 def test_upload_outcome_5_post_commit_cancellation_preserves_object(live_client):
     """Scenario 5: Post-commit cancellation -> transaction committed -> preserve object."""
-    from fastapi import UploadFile
     from io import BytesIO
+
+    from fastapi import UploadFile
+
     from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
     from jplearn_api.adapters.persistence.models import MediaAsset
 
@@ -1206,7 +1232,7 @@ async def test_upload_repo_add_failure_after_promote_rolls_back_and_compensates(
     from fakes import FakeMediaRepository, FakeStoragePort, FakeUnitOfWork
     from jplearn_api.application.handlers.media import handle_upload_media
 
-    uow = FakeUnitOfWork()
+    FakeUnitOfWork()
     media_repo = FakeMediaRepository()
     media_repo.catalog_items.add("cat-item-1")
     storage = FakeStoragePort()
@@ -1222,6 +1248,7 @@ async def test_upload_repo_add_failure_after_promote_rolls_back_and_compensates(
     media_repo.add = fail_add
 
     from fakes import FakeMediaUrlSigner, create_fake_uow_factory
+
     signer = FakeMediaUrlSigner()
 
     with pytest.raises(RuntimeError, match="Database connection dropped during repo.add"):
@@ -1294,7 +1321,7 @@ async def test_upload_repeated_cancellation_preserves_cleanup_and_deletes_object
     is cancelled again (2nd cancel).
     Invariant: Rollback is confirmed -> final object MUST be deleted from storage!
     """
-    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from fakes import FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
     from jplearn_api.application.handlers.media import handle_upload_media
 
     storage = FakeStoragePort()
@@ -1311,6 +1338,7 @@ async def test_upload_repeated_cancellation_preserves_cleanup_and_deletes_object
     rollback_proceed = asyncio.Event()
 
     real_catalog_exists = uow2.media.catalog_item_exists
+
     async def cancelling_catalog_exists(item_id: str) -> bool:
         recheck_barrier.set()
         # Wait until cancelled
@@ -1320,6 +1348,7 @@ async def test_upload_repeated_cancellation_preserves_cleanup_and_deletes_object
     uow2.media.catalog_item_exists = cancelling_catalog_exists
 
     real_rollback = uow2.rollback
+
     async def barrier_rollback() -> None:
         rollback_barrier.set()
         await rollback_proceed.wait()
@@ -1328,10 +1357,12 @@ async def test_upload_repeated_cancellation_preserves_cleanup_and_deletes_object
     uow2.rollback = barrier_rollback
 
     scopes = [uow1, uow2]
+
     def uow_factory():
         return scopes.pop(0)
 
     valid_first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
     async def fake_stream():
         yield b"chunk-data"
 
@@ -1628,7 +1659,6 @@ async def test_upload_rollback_drain_timeout_sets_outcome_unknown_and_retains_ob
     assert "drain_timeout" in unknown_warnings[0][1].get("task_state", "")
 
 
-
 @pytest.mark.asyncio
 async def test_upload_write_uow_enter_failure_compensates_storage():
     """R1 regression test: When write UoW __aenter__ raises after promote,
@@ -1679,7 +1709,7 @@ async def test_upload_rollback_failure_retains_storage_object_and_logs_unknown_o
     """R1 fault matrix: When rollback fails after error, outcome is unknown,
     final object is retained for safety, and warning is logged.
     """
-    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
+    from fakes import FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
     from jplearn_api.application.handlers.media import handle_upload_media, logger
 
     storage = FakeStoragePort()
@@ -1741,7 +1771,7 @@ async def test_upload_rollback_failure_retains_storage_object_and_logs_unknown_o
 @pytest.mark.asyncio
 async def test_upload_pre_commit_storage_delete_failure_preserves_original_exception_and_logs_warning(monkeypatch):
     """G1: If storage.delete fails during pre-commit compensation, original error is preserved and warning is logged."""
-    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork, create_fake_uow_factory
+    from fakes import FakeMediaRepository, FakeMediaUrlSigner, FakeStoragePort, FakeUnitOfWork
     from jplearn_api.application.handlers.media import handle_upload_media, logger
 
     media_repo = FakeMediaRepository()
@@ -1806,9 +1836,9 @@ def test_upload_byte_stream_barrier_releases_db_connection(live_client, live_dat
 
     async def _run():
         nonlocal inspected_tx_count
-        from jplearn_api.bootstrap import create_uow_factory
         from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
         from jplearn_api.application.handlers.media import handle_upload_media
+        from jplearn_api.bootstrap import create_uow_factory
 
         engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
         uow_factory = create_uow_factory(sessionmaker)
@@ -1838,6 +1868,7 @@ def test_upload_byte_stream_barrier_releases_db_connection(live_client, live_dat
                 await conn.close()
 
         from jplearn_api.bootstrap import create_media_signer
+
         signer = create_media_signer(live_client.app.state.settings)
         first_chunk = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
         dto = await handle_upload_media(
@@ -1876,9 +1907,9 @@ def test_upload_catalog_deleted_between_preflight_and_write_compensates(live_cli
     storage = live_client.app.state.storage
 
     async def _run():
-        from jplearn_api.bootstrap import create_media_signer, create_uow_factory
         from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
         from jplearn_api.application.handlers.media import handle_upload_media
+        from jplearn_api.bootstrap import create_media_signer, create_uow_factory
         from jplearn_api.domain.errors import EntityNotFoundError
 
         engine, sessionmaker = create_engine_and_sessions(live_client.app.state.settings)
@@ -1989,7 +2020,9 @@ async def test_upload_http_barrier_releases_connection_and_pool_checkout(live_da
     """
     import tempfile
     import uuid
+
     import httpx
+
     from conftest import _settings
     from jplearn_api.entrypoints.http.app import create_app
 
@@ -2100,7 +2133,3 @@ async def test_upload_http_barrier_releases_connection_and_pool_checkout(live_da
                 assert res.status_code == 201, f"Expected 201 Created, got {res.status_code}: {res.text}"
                 data = res.json()
                 assert (storage.root / f"{data['id']}.bin").exists()
-
-
-
-

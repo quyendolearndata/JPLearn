@@ -29,6 +29,7 @@ jplearn-ai-worker = "jplearn_api.entrypoints.cli.ai_worker:main"
 dev = [
   "pytest>=8.3",
   "pytest-asyncio>=0.24",
+  "ruff>=0.6",
 ]
 
 [build-system]
@@ -45,6 +46,17 @@ testpaths = ["tests"]
 markers = [
   "real_media_probe: requires local ffmpeg and ffprobe executables",
 ]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# FastAPI dependency injection intentionally evaluates Depends() in parameter defaults.
+# UP042 is ignored because StrEnum changes str(enum_member) from Class.MEMBER to its value.
+ignore = ["B008", "UP042"]
 
 [tool.uv]
 package = true

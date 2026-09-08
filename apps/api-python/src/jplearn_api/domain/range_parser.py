@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from jplearn_api.domain.media import RangeNotSatisfiableError
 
-
 RangeNotSatisfiable = RangeNotSatisfiableError
 
 

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
 import asyncio
-from pathlib import Path
 import time
 import uuid
+from pathlib import Path
 
-from fastapi.testclient import TestClient
 import pytest
+from fastapi.testclient import TestClient
 
 from helpers import ensure_topics, grant_role, register
 from jplearn_api.adapters.persistence.models import MediaAsset
-from jplearn_api.entrypoints.cli.reconciliation import reconcile_orphans
 from jplearn_api.adapters.storage.local import InMemoryStorage, LocalFilesystemStorage
+from jplearn_api.entrypoints.cli.reconciliation import reconcile_orphans
 
 VALID_MP4 = b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom" + b"payload_bytes"
 
@@ -303,14 +303,19 @@ async def test_storage_probe_cleanup_on_failure(tmp_path: Path, monkeypatch):
             class CorruptReader:
                 def __init__(self, inner):
                     self.inner = inner
+
                 def read(self, *a, **kw):
                     return b"corrupted_probe_content"
+
                 def close(self):
                     self.inner.close()
+
                 def __enter__(self):
                     return self
+
                 def __exit__(self, *a):
                     self.close()
+
             return CorruptReader(handle)
         return handle
 
@@ -379,7 +384,7 @@ async def test_readiness_bounded_workers_under_timeout_cancel(tmp_path: Path, mo
         async def run_with_timeout():
             try:
                 await asyncio.wait_for(storage.check_ready(), timeout=0.05)
-            except (TimeoutError, asyncio.TimeoutError):
+            except TimeoutError:
                 pass
 
         for _ in range(3):
@@ -464,6 +469,7 @@ async def test_reconciliation_retention_policy_validation(live_client: TestClien
 
 def test_reconciliation_metadata_protection_and_race_prevention(live_client: TestClient):
     import os
+
     from jplearn_api.adapters.persistence.connection import create_engine_and_sessions
 
     admin = _admin(live_client)
@@ -654,6 +660,7 @@ async def test_stage_stream_cancellation_during_in_flight_write(tmp_path: Path):
     _StagingSession.sync_write = delayed_sync_write  # type: ignore[assignment]
 
     try:
+
         async def slow_stream():
             yield b"payload_chunk_data"
 
@@ -764,4 +771,3 @@ async def test_stage_stream_cleanup_failure_logging(tmp_path: Path, monkeypatch:
     cleanup_logs = [e for e in logged_errors if e[0] == "storage_staging_cleanup_failed"]
     assert len(cleanup_logs) == 1
     assert cleanup_logs[0][1].get("unlink_error") == "PermissionError"
-

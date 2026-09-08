@@ -15,12 +15,18 @@ from __future__ import annotations
 import importlib.resources
 import json
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
 
 from alembic import command
 from alembic.config import Config
+
+from jplearn_api.config.env_resolver import (
+    is_destructive_downgrade_allowed,
+    resolve_database_url,
+    resolve_environment,
+)
 
 MIGRATIONS_DIR = Path(importlib.resources.files("jplearn_api").joinpath("migrations"))
 
@@ -35,8 +41,7 @@ def load_baseline_schema(
     target_path = explicit_path
     target_revision = revision if isinstance(revision, str) else "0001_prisma_baseline"
     if isinstance(revision, Path) or (
-        isinstance(revision, str)
-        and (revision.endswith(".json") or "/" in revision or "\\" in revision)
+        isinstance(revision, str) and (revision.endswith(".json") or "/" in revision or "\\" in revision)
     ):
         target_path = revision
         target_revision = "0001_prisma_baseline"
@@ -64,14 +69,13 @@ def load_baseline_schema(
     filename = (
         "adr-004-schema-head-0019.json"
         if target_revision in ("head", "0019_merge_cms_reviews")
-        else "adr-006-schema-baseline.json" if target_revision == "0002_cms_reviews"
+        else "adr-006-schema-baseline.json"
+        if target_revision == "0002_cms_reviews"
         else "adr-004-schema-head-0018.json"
         if target_revision == "0018_hls_bundle_integrity"
-        else
-        "adr-004-schema-head-0017.json"
+        else "adr-004-schema-head-0017.json"
         if target_revision == "0017_activity_policy_streak"
-        else
-        "adr-004-schema-head-0016.json"
+        else "adr-004-schema-head-0016.json"
         if target_revision == "0016_media_probe"
         else "adr-004-schema-head-0015.json"
         if target_revision == "0015_ai_attempts"
@@ -104,7 +108,6 @@ def load_baseline_schema(
         else "adr-004-schema-baseline.json"
     )
 
-
     # 2. Packaged resource
     try:
         resource = importlib.resources.files("jplearn_api.resources").joinpath(filename)
@@ -128,12 +131,6 @@ def load_baseline_schema(
 
     raise RuntimeError(f"Baseline schema resource '{filename}' could not be found")
 
-
-from jplearn_api.config.env_resolver import (
-    is_destructive_downgrade_allowed,
-    resolve_database_url,
-    resolve_environment,
-)
 
 # Re-export for backward compatibility
 __all__ = [
@@ -183,6 +180,7 @@ def stamp(
 
     if verify_baseline and revision in ("0001_prisma_baseline", "head", "0002_session_idem_rev"):
         import asyncio
+
         from jplearn_api.adapters.persistence.schema_snapshot import diff, snapshot_url
 
         expected = load_baseline_schema(revision=revision, explicit_path=baseline_path)
@@ -197,9 +195,7 @@ def stamp(
         problems = diff(expected, actual)
         if problems:
             diff_msg = "\n".join(problems)
-            raise RuntimeError(
-                f"Refusing to stamp {revision}: live schema diverges from baseline:\n{diff_msg}"
-            )
+            raise RuntimeError(f"Refusing to stamp {revision}: live schema diverges from baseline:\n{diff_msg}")
 
     command.stamp(alembic_config(url), revision)
 

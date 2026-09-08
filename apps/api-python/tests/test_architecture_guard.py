@@ -13,11 +13,13 @@ Includes:
 from __future__ import annotations
 
 import ast
+import subprocess
+import sys
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-import subprocess
-import sys
+from typing import Any
+
 import pytest
 
 from fakes import (
@@ -144,10 +146,14 @@ def check_env_access(file_path: Path) -> list[str]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Attribute):
             if node.attr in ("environ", "getenv"):
-                violations.append(f"{file_path.name}: forbidden environment access attribute '{node.attr}' at line {node.lineno}")
+                violations.append(
+                    f"{file_path.name}: forbidden environment access attribute '{node.attr}' at line {node.lineno}"
+                )
         elif isinstance(node, ast.Name):
             if node.id in ("environ", "getenv"):
-                violations.append(f"{file_path.name}: forbidden environment access name '{node.id}' at line {node.lineno}")
+                violations.append(
+                    f"{file_path.name}: forbidden environment access name '{node.id}' at line {node.lineno}"
+                )
     return violations
 
 
@@ -160,7 +166,9 @@ def check_dynamic_imports(file_path: Path) -> list[str]:
     for node in ast.walk(tree):
         if isinstance(node, ast.Call):
             if isinstance(node.func, ast.Name) and node.func.id in ("__import__", "eval", "exec"):
-                violations.append(f"{file_path.name}: forbidden dynamic execution '{node.func.id}' at line {node.lineno}")
+                violations.append(
+                    f"{file_path.name}: forbidden dynamic execution '{node.func.id}' at line {node.lineno}"
+                )
             elif isinstance(node.func, ast.Attribute) and node.func.attr == "import_module":
                 violations.append(f"{file_path.name}: forbidden importlib.import_module call at line {node.lineno}")
     return violations
@@ -344,7 +352,8 @@ def check_composition_rules(file_path: Path) -> list[str]:
 
             if resolved:
                 violations.append(
-                    f"{file_path.name}: directly constructs concrete adapter '{resolved}' at line {node.lineno}. Use bootstrap factory."
+                    f"{file_path.name}: directly constructs concrete adapter "
+                    f"'{resolved}' at line {node.lineno}. Use bootstrap factory."
                 )
     return violations
 
@@ -360,7 +369,8 @@ def check_ports_file(file_path: Path, package_root: Path = ROOT_SRC) -> list[str
             for alias in node.names:
                 if alias.name in FORBIDDEN_ADAPTER_CONSTRUCTORS:
                     violations.append(
-                        f"{file_path.name}: ports module imports/re-exports forbidden adapter '{alias.name}' at line {node.lineno}"
+                        f"{file_path.name}: ports module imports/re-exports forbidden "
+                        f"adapter '{alias.name}' at line {node.lineno}"
                     )
     return violations
 
@@ -548,7 +558,9 @@ def test_routers_composition_rules():
 def test_package_root_contains_only_composition_and_settings():
     """Transport, infrastructure and CLI implementations belong in named packages."""
     assert {p.name for p in ROOT_SRC.glob("*.py")} == {
-        "__init__.py", "bootstrap.py", "settings.py",
+        "__init__.py",
+        "bootstrap.py",
+        "settings.py",
     }
     assert not (ROOT_SRC / "routers").exists()
 
@@ -749,7 +761,7 @@ async def test_fake_uow_isolation_and_rollback():
     assert "user_temp" not in user_repo.progress
 
     # Case 2: Failure between registration steps discards user and role
-    uow2 = FakeUnitOfWork(user_repo)
+    FakeUnitOfWork(user_repo)
     reg_cmd = RegisterUserCommand(email="isolated@example.com", password="password123", secret="sec")
 
     class FaultyUserRepo(FakeUserRepository):
@@ -815,7 +827,9 @@ async def test_identity_use_cases_in_memory():
 
     # 5. Login wrong password fails with UnauthorizedError
     with pytest.raises(UnauthorizedError):
-        await handle_login(AuthenticateUserQuery(email="test@example.com", password="wrong", secret="sec"), user_repo, hasher, tokens)
+        await handle_login(
+            AuthenticateUserQuery(email="test@example.com", password="wrong", secret="sec"), user_repo, hasher, tokens
+        )
 
     # 6. Get current user
     me_dto = await handle_get_current_user(GetCurrentUserQuery(user_id=auth_dto.user.id), user_repo)
@@ -877,6 +891,7 @@ async def test_catalog_use_cases_in_memory():
     storage.keys.add("m1.bin")
 
     from jplearn_api.application.handlers.catalog import handle_review_catalog
+
     await handle_review_catalog(item_dto.id, "approve", "Reviewed fixture", "teacher", uow)
 
     # 6. Publish succeeds
@@ -924,7 +939,9 @@ async def test_learning_use_cases_in_memory():
         await handle_end_session(EndLearningSessionCommand(user_id="other_user", session_id=session_dto.id), uow)
 
     # 4. End session by owner succeeds exactly-once
-    end_dto = await handle_end_session(EndLearningSessionCommand(user_id="user_learner", session_id=session_dto.id), uow)
+    end_dto = await handle_end_session(
+        EndLearningSessionCommand(user_id="user_learner", session_id=session_dto.id), uow
+    )
     assert end_dto.minutes_comprehensible == 13  # 10 + 3 minutes
     assert len(repo._committed_events) == 4  # + session_ended and minutes_comprehensible
 
@@ -950,7 +967,9 @@ async def test_media_use_cases_in_memory():
     storage = FakeStoragePort()
     signer = FakeMediaUrlSigner("http://localhost:3001")
     uow = FakeUnitOfWork(media_repo)
-    uow_factory = lambda: uow
+
+    def uow_factory():
+        return uow
 
     async def fake_stream() -> AsyncIterator[bytes]:
         yield b"additional video payload"
@@ -1050,6 +1069,7 @@ async def test_media_use_cases_in_memory():
 @pytest.mark.asyncio
 async def test_failure_boundaries_across_use_cases():
     """Verify failure between individual steps across use cases triggers clean rollback."""
+
     # 1. Registration failure at add_initial_progress
     class FailProgressUserRepo(FakeUserRepository):
         async def add_initial_progress(self, user_id: str, now: datetime) -> None:
@@ -1070,6 +1090,7 @@ async def test_failure_boundaries_across_use_cases():
 
     # 2. End session failure at update_progress
     initial_prog = LearnerProgress(user_id="learner_fail", minutes_comprehensible=10, current_ci_level=1)
+
     class FailProgressLearningRepo(FakeLearningRepository):
         async def update_progress(self, progress: LearnerProgress) -> None:
             raise RuntimeError("Deadlock on user progress update")

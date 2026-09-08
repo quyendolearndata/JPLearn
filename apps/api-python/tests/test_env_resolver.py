@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
+
 import pytest
 
 from jplearn_api.config.env_resolver import (
     is_destructive_downgrade_allowed,
-    read_env_file,
     resolve_database_url,
     resolve_environment,
 )
@@ -136,5 +135,3 @@ def test_destructive_downgrade_blocked_when_environment_completely_unconfigured(
         )
         assert allowed is False, f"Expected {rev} to be blocked when environment is unconfigured!"
         assert "unconfigured" in reason or "missing" in reason
-
-

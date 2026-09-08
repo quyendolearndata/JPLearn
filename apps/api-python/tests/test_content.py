@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -11,31 +13,25 @@ from jplearn_api.application.commands import (
     UpdateContentDraftCommand,
 )
 from jplearn_api.application.handlers.content import (
-    handle_get_published_content,
     handle_get_staff_content,
     handle_return_to_draft,
     handle_update_content_draft,
 )
-from jplearn_api.application.ports.repositories import ContentRepository
-from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
-from jplearn_api.application.queries import GetPublishedContentQuery, GetStaffContentQuery
+from jplearn_api.application.queries import GetStaffContentQuery
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.domain.catalog import CatalogItem
 from jplearn_api.domain.content import ContentVersion, Scene
 from jplearn_api.domain.errors import (
     ConflictError,
-    EntityNotFoundError,
     InvalidDomainStateError,
 )
-from jplearn_api.entrypoints.http.app import create_app
 from jplearn_api.entrypoints.http.roles import require_roles
 from jplearn_api.entrypoints.http.security import require_user
-from jplearn_api.settings import Settings
-
 
 # ------------------------------------------------------------------------------
 # In-Memory Test Doubles for Handlers
 # ------------------------------------------------------------------------------
+
 
 class InMemoryCatalogRepo:
     def __init__(self, items: dict[str, CatalogItem] | None = None) -> None:
@@ -113,6 +109,7 @@ class FakeUnitOfWork:
 # Domain Tests
 # ------------------------------------------------------------------------------
 
+
 def test_scene_validation_timing():
     # Negative start time
     with pytest.raises(InvalidDomainStateError, match="start_time_seconds must be >= 0"):
@@ -170,6 +167,7 @@ def test_content_version_non_contiguous_scene_index():
 # ------------------------------------------------------------------------------
 # Application Handler Tests
 # ------------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_handle_update_content_and_return_to_draft_flow():
@@ -234,8 +232,6 @@ async def test_handle_update_content_and_return_to_draft_flow():
 # HTTP API Integration / Security Tests
 # ------------------------------------------------------------------------------
 
-from jplearn_api.entrypoints.http.dependencies import get_session
-
 
 def test_http_get_content_unauthenticated_returns_401(client: TestClient):
     res = client.get("/catalog/00000000-0000-4000-8000-0000000000aa/content")
@@ -285,6 +281,7 @@ def test_http_put_content_validation_errors(client: TestClient):
 # R2 Remediation Tests (P1.2, P1.8, P2)
 # ------------------------------------------------------------------------------
 
+
 def test_scene_overlap_prevention():
     """R2: Overlapping scenes must be rejected by domain validation."""
     version = ContentVersion("v1", "item-1", revision=1)
@@ -326,8 +323,9 @@ async def test_incremental_version_numbering_lifecycle():
 
     # 2. Publish version 1
     v1 = await uow.content.get_current_draft_by_catalog_item_id("item-02")
-    from datetime import datetime, timezone
-    v1.publish(datetime.now(timezone.utc))
+    from datetime import datetime
+
+    v1.publish(datetime.now(UTC))
     await uow.content.update(v1)
 
     # 3. GET staff content does NOT create a draft row, but projects next version number

@@ -10,9 +10,7 @@ Validates:
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
 import tempfile
-from typing import Any
 from uuid import uuid4
 
 import asyncpg
@@ -37,9 +35,9 @@ from jplearn_api.application.ports.ai_provider import (
     AiUsageRecord,
 )
 from jplearn_api.bootstrap import create_uow
-from jplearn_api.domain.errors import RevisionConflictError
 from jplearn_api.domain.catalog import CatalogItem, MediaRef
 from jplearn_api.domain.content import ContentVersion, Scene
+from jplearn_api.domain.errors import RevisionConflictError
 from jplearn_api.domain.quota import QuotaAccount
 from jplearn_api.entrypoints.cli.seed import seed_url
 from jplearn_api.entrypoints.http.app import create_app, lifespan
@@ -50,6 +48,7 @@ from pg_harness import start_docker_postgres, stop_docker_postgres
 @pytest.fixture(scope="module")
 def postgres_url() -> str:
     import os
+
     project = f"jplearn-pytest-{os.getpid()}-remediation"
     stop_docker_postgres(project)
     url = start_docker_postgres(project)
@@ -83,6 +82,7 @@ async def client_factory(postgres_url: str):
         )
         app = create_app(settings)
         async with lifespan(app):
+
             async def _make_client():
                 transport = ASGITransport(app=app)
                 return AsyncClient(transport=transport, base_url="http://test")
@@ -114,6 +114,7 @@ async def _create_user_with_roles(client: AsyncClient, postgres_url: str, roles:
 # ==============================================================================
 # 1. Content Version Incremental Numbering & CAS Concurrency (P1.2, P2)
 # ==============================================================================
+
 
 @pytest.mark.asyncio
 async def test_concurrent_content_draft_update_cas_contention(client_factory, postgres_url: str):
@@ -187,6 +188,7 @@ async def test_concurrent_content_draft_update_cas_contention(client_factory, po
 # ==============================================================================
 # 2. Playback Epoch Fencing & Idempotent Receipt Replay (P1.3, P1.7)
 # ==============================================================================
+
 
 @pytest.mark.asyncio
 async def test_concurrent_playback_epoch_fencing_and_idempotent_replay(client_factory, postgres_url: str):
@@ -313,6 +315,7 @@ async def test_concurrent_playback_epoch_fencing_and_idempotent_replay(client_fa
 # 3. AI Worker Settle vs Cancellation Contention (P1.13)
 # ==============================================================================
 
+
 class DelayedAiPort(AiTranscriptionPort):
     """Fake AI provider simulating a network delay while calling external API."""
 
@@ -344,7 +347,9 @@ class DelayedAiPort(AiTranscriptionPort):
 
 @pytest.mark.asyncio
 async def test_ai_worker_settle_under_concurrent_cancellation(client_factory, postgres_url: str):
-    """P1.13: When a running job is cancelled during an AI provider call, the worker settles provider spend without corrupting draft."""
+    """P1.13: When a running job is cancelled during an AI provider call,
+    the worker settles provider spend without corrupting the draft.
+    """
     settings = Settings(
         database_url=postgres_url,
         jwt_secret="test-secret-at-least-32-bytes-long-for-pyjwt-security",
@@ -401,6 +406,7 @@ async def test_ai_worker_settle_under_concurrent_cancellation(client_factory, po
             await uow.catalog.add(cat_item)
 
             from jplearn_api.domain.media import MediaAsset
+
             await uow.media.add(
                 MediaAsset(
                     id=f"med_{catalog_id}",
@@ -457,7 +463,9 @@ async def test_ai_worker_settle_under_concurrent_cancellation(client_factory, po
                 )
 
         async def _cancel_job():
-            await asyncio.wait_for(provider_started.wait(), timeout=5.0)  # Wait for worker to claim and enter provider call
+            await asyncio.wait_for(
+                provider_started.wait(), timeout=5.0
+            )  # Wait for worker to claim and enter provider call
             async with session_maker() as session:
                 uow = create_uow(session)
                 cmd_cancel = CancelContentJobCommand(
@@ -477,8 +485,8 @@ async def test_ai_worker_settle_under_concurrent_cancellation(client_factory, po
             uow = create_uow(session)
             acc = await uow.quota.get_or_create_account_for_user(user_id)
             assert acc.reserved_audio_seconds == 0  # Reservation cleared
-            assert acc.used_audio_seconds == 120    # Settled actual usage
-            assert acc.used_cost_micros == 150000   # Settled actual cost
+            assert acc.used_audio_seconds == 120  # Settled actual usage
+            assert acc.used_cost_micros == 150000  # Settled actual cost
 
             # Job status remains cancelled and was not overwritten to succeeded
             job = await uow.content_jobs.get_by_id(job_dto.id)
@@ -492,9 +500,10 @@ async def test_ai_worker_settle_under_concurrent_cancellation(client_factory, po
 # 4. Transcript CAS Update Contention (P1.10)
 # ==============================================================================
 
+
 @pytest.mark.asyncio
 async def test_concurrent_transcript_draft_atomic_cas_contention(client_factory, postgres_url: str):
-    """P1.10: Under concurrent transcript updates on PostgreSQL, atomic CAS ensures exactly one update wins per revision."""
+    "P1.10: Under concurrent transcript updates on PostgreSQL, atomic CAS ensures exactly one update wins per revision."
     settings = Settings(
         database_url=postgres_url,
         jwt_secret="test-secret-at-least-32-bytes-long-for-pyjwt-security",

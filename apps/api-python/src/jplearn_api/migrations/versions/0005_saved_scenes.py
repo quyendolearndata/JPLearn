@@ -24,15 +24,18 @@ def upgrade() -> None:
             "scene_id" TEXT NOT NULL,
             "saved_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             CONSTRAINT "saved_scenes_pkey" PRIMARY KEY ("id"),
-            CONSTRAINT "saved_scenes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON DELETE CASCADE,
-            CONSTRAINT "saved_scenes_scene_id_fkey" FOREIGN KEY ("scene_id") REFERENCES "scenes"("id") ON UPDATE CASCADE ON DELETE RESTRICT,
+            CONSTRAINT "saved_scenes_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON UPDATE CASCADE ON
+            DELETE CASCADE,
+            CONSTRAINT "saved_scenes_scene_id_fkey" FOREIGN KEY ("scene_id") REFERENCES "scenes"("id") ON UPDATE CASCADE
+            ON DELETE RESTRICT,
             CONSTRAINT "saved_scenes_user_scene_unique" UNIQUE ("user_id", "scene_id")
         )
         """,
     )
 
     op.execute(
-        'CREATE INDEX IF NOT EXISTS "saved_scenes_user_saved_at_idx" ON "saved_scenes"("user_id", "saved_at" DESC, "id" DESC)'
+        'CREATE INDEX IF NOT EXISTS "saved_scenes_user_saved_at_idx" ON '
+        '"saved_scenes"("user_id", "saved_at" DESC, "id" DESC)'
     )
 
 

@@ -61,9 +61,7 @@ def resolve_configured_environment(
         return None, "none"
 
     if raw_env not in VALID_ENVIRONMENTS:
-        raise ValueError(
-            f"Invalid environment '{raw_env}': must be one of {list(VALID_ENVIRONMENTS)}"
-        )
+        raise ValueError(f"Invalid environment '{raw_env}': must be one of {list(VALID_ENVIRONMENTS)}")
     return raw_env, source  # type: ignore[return-value]
 
 
@@ -131,9 +129,7 @@ def is_destructive_downgrade_allowed(
         return True, "Non-destructive downgrade"
 
     allow = (
-        allow_env_var
-        if allow_env_var is not None
-        else os.environ.get("ALLOW_DESTRUCTIVE_DOWNGRADE", "")
+        allow_env_var if allow_env_var is not None else os.environ.get("ALLOW_DESTRUCTIVE_DOWNGRADE", "")
     ).lower() in ("true", "1", "yes")
 
     # Resolve configured environment and source

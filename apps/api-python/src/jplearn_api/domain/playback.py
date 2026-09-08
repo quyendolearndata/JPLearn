@@ -51,7 +51,6 @@ class LearnerPlaybackState:
         self.current_epoch += 1
 
 
-
 @dataclass
 class PlaybackSession:
     """An individual playback session for an item version on a specific device."""

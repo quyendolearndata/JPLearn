@@ -26,21 +26,23 @@ Validates:
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
 import pytest
 from fastapi.testclient import TestClient
 
+from fakes import (
+    FakeQuotaRepository,
+    FakeUnitOfWork,
+    FakeUsageLedgerRepository,
+)
 from jplearn_api.application.commands import (
-    ReconcileQuotaCommand,
-    ReleaseQuotaCommand,
     ReserveQuotaCommand,
     SettleUsageCommand,
 )
 from jplearn_api.application.handlers.ai_usage import (
     handle_get_ai_usage_summary,
     handle_get_my_ai_usage,
-    handle_reconcile_quota,
-    handle_release_quota,
     handle_reserve_quota,
     handle_settle_usage,
 )
@@ -59,18 +61,12 @@ from jplearn_api.domain.quota import (
     AiUsageLedgerEntry,
     QuotaAccount,
 )
-from jplearn_api.entrypoints.http.roles import require_roles
 from jplearn_api.entrypoints.http.security import require_user
-from fakes import (
-    FakeQuotaRepository,
-    FakeUnitOfWork,
-    FakeUsageLedgerRepository,
-)
-
 
 # ==============================================================================
 # 1. Pure Python Domain Quota & Ledger Logic Tests
 # ==============================================================================
+
 
 def test_quota_account_initial_available():
     acc = QuotaAccount(
@@ -99,7 +95,7 @@ def test_quota_account_reserve_success():
         max_output_tokens=500000,
         max_cost_micros=10000000,
     )
-    now = datetime(2026, 9, 7, 10, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 7, 10, 0, 0, tzinfo=UTC)
     entry = acc.reserve(
         job_id="job-01",
         user_id="user-01",
@@ -254,6 +250,7 @@ def test_quota_account_invalid_state_transitions():
 # 2. Application Handler Logic Tests
 # ==============================================================================
 
+
 @pytest.fixture
 def ai_usage_env():
     quota_repo = FakeQuotaRepository()
@@ -336,7 +333,7 @@ async def test_handler_settle_idempotency(ai_usage_env):
 @pytest.mark.asyncio
 async def test_handler_get_my_ai_usage_validation_and_pagination(ai_usage_env):
     uow = ai_usage_env["uow"]
-    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 9, 7, 12, 0, 0, tzinfo=UTC)
     t0 = now - timedelta(days=10)
 
     # Create account and entries
@@ -410,24 +407,50 @@ async def test_handler_get_my_ai_usage_validation_and_pagination(ai_usage_env):
 @pytest.mark.asyncio
 async def test_handler_get_ai_usage_summary(ai_usage_env):
     uow = ai_usage_env["uow"]
-    t0 = datetime(2026, 9, 1, 10, 0, 0, tzinfo=timezone.utc)
-    t1 = datetime(2026, 9, 2, 10, 0, 0, tzinfo=timezone.utc)
+    t0 = datetime(2026, 9, 1, 10, 0, 0, tzinfo=UTC)
+    t1 = datetime(2026, 9, 2, 10, 0, 0, tzinfo=UTC)
 
     # Populate settlements across two dates and two providers
     await uow.usage_ledger.add_entry(
         AiUsageLedgerEntry(
-            id="e1", account_id="a1", job_id="j1", user_id="u1", idempotency_key="k1",
-            kind="settlement", status="settled", provider="whisper", provider_request_id="r1",
-            attempt=1, audio_seconds=120, input_tokens=0, output_tokens=0, cost_micros=200000,
-            currency="USD", policy_version="v1", created_at=t0,
+            id="e1",
+            account_id="a1",
+            job_id="j1",
+            user_id="u1",
+            idempotency_key="k1",
+            kind="settlement",
+            status="settled",
+            provider="whisper",
+            provider_request_id="r1",
+            attempt=1,
+            audio_seconds=120,
+            input_tokens=0,
+            output_tokens=0,
+            cost_micros=200000,
+            currency="USD",
+            policy_version="v1",
+            created_at=t0,
         )
     )
     await uow.usage_ledger.add_entry(
         AiUsageLedgerEntry(
-            id="e2", account_id="a1", job_id="j2", user_id="u2", idempotency_key="k2",
-            kind="settlement", status="settled", provider="gemini", provider_request_id="r2",
-            attempt=1, audio_seconds=0, input_tokens=5000, output_tokens=2000, cost_micros=150000,
-            currency="USD", policy_version="v1", created_at=t0,
+            id="e2",
+            account_id="a1",
+            job_id="j2",
+            user_id="u2",
+            idempotency_key="k2",
+            kind="settlement",
+            status="settled",
+            provider="gemini",
+            provider_request_id="r2",
+            attempt=1,
+            audio_seconds=0,
+            input_tokens=5000,
+            output_tokens=2000,
+            cost_micros=150000,
+            currency="USD",
+            policy_version="v1",
+            created_at=t0,
         )
     )
     commit_fixture_data(uow)
@@ -447,6 +470,7 @@ async def test_handler_get_ai_usage_summary(ai_usage_env):
 # ==============================================================================
 # 3. HTTP API Endpoints & Role Security Tests (FR-NEG)
 # ==============================================================================
+
 
 def test_api_ai_usage_unauthorized(client: TestClient):
     res = client.get("/staff/ai-usage?from_date=2026-09-01T00:00:00Z&to_date=2026-09-07T00:00:00Z")
@@ -469,7 +493,9 @@ def test_api_ai_usage_summary_forbidden_for_teacher(client: TestClient):
     assert res.status_code == 403
 
 
-def test_api_ai_usage_capability_disabled_returns_403(client: TestClient, monkeypatch: pytest.MonkeyPatch, ai_usage_env):
+def test_api_ai_usage_capability_disabled_returns_403(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, ai_usage_env
+):
     uow = ai_usage_env["uow"]
     monkeypatch.setattr("jplearn_api.entrypoints.http.routers.ai_usage.create_uow", lambda session: uow)
     client.app.state.settings.staff_ai_enabled = False
@@ -506,7 +532,7 @@ def test_api_ai_usage_end_to_end_privacy_and_data(client: TestClient, monkeypatc
     client.app.dependency_overrides[require_user] = lambda: admin
 
     # Setup ledger entries
-    t0 = datetime(2026, 9, 5, 12, 0, 0, tzinfo=timezone.utc)
+    t0 = datetime(2026, 9, 5, 12, 0, 0, tzinfo=UTC)
     entry = AiUsageLedgerEntry(
         id="ledger-01",
         account_id="acc-admin-01",

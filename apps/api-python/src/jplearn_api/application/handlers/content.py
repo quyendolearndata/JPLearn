@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from uuid import uuid4
 
 from jplearn_api.application.commands import ReturnToDraftCommand, UpdateContentDraftCommand
@@ -157,4 +156,5 @@ async def handle_return_to_draft(
         await uow.commit()
 
     from jplearn_api.application.handlers.catalog import _to_staff_dto
+
     return _to_staff_dto(item)

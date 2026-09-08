@@ -12,11 +12,11 @@ Tests verify the production supervisor (differential/web_e2e_runner.py) directly
 from __future__ import annotations
 
 import os
-from pathlib import Path
 import signal
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import pytest
 
@@ -379,3 +379,21 @@ def test_user_config_files_preserved_in_isolated_fixture_repo(tmp_path: Path) ->
     # Assert that user's fixture workspace remains 100% untouched!
     assert fixture_next_env.read_text(encoding="utf-8") == sentinel_next + "/// <reference types='next' />\n"
     assert fixture_tsconfig.read_text(encoding="utf-8") == sentinel_ts + '{"compilerOptions": {}}\n'
+
+
+def test_e2e_shell_accepts_mp4_override_and_fails_closed_when_missing() -> None:
+    """CI may override the untracked stock MP4, but a missing source must exit 2."""
+    script_text = SCRIPT_PATH.read_text(encoding="utf-8")
+    source_assignment = 'SOURCE_MP4="${JPLEARN_E2E_SOURCE_MP4:-$REPO/media/stock/mp4/level-0-wash-hands.mp4}"'
+    missing_guard = 'if [[ ! -f "$SOURCE_MP4" ]]; then'
+
+    assert source_assignment in script_text
+    assert missing_guard in script_text
+    guard_start = script_text.index(missing_guard)
+    docker_start = script_text.index('docker ps --filter "name=jplearn-web-e2e-"')
+    assert guard_start < docker_start
+    assert 'echo "Source MP4 not found: $SOURCE_MP4" >&2' in script_text[guard_start:docker_start]
+    assert "exit 2" in script_text[guard_start:docker_start]
+    assert "JPLEARN_E2E_SOURCE_MP4=\"$SOURCE_MP4\"" in script_text
+    spec_helper = (REPO_ROOT / "apps/web/e2e/stock-mp4.ts").read_text(encoding="utf-8")
+    assert "process.env.JPLEARN_E2E_SOURCE_MP4" in spec_helper

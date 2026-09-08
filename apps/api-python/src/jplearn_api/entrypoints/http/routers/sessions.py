@@ -1,4 +1,5 @@
 import hashlib
+
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,14 +13,14 @@ from jplearn_api.application.handlers.learning import (
 from jplearn_api.application.queries import GetLearnerProgressQuery, GetSessionQuery
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_learning_repository, create_uow
-from jplearn_api.entrypoints.http.datetime_adapt import to_json_z
-from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_session
 from jplearn_api.domain.errors import (
     ConflictError,
     EntityNotFoundError,
     ForbiddenError,
     SessionAlreadyEndedError,
 )
+from jplearn_api.entrypoints.http.datetime_adapt import to_json_z
+from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_session
 from jplearn_api.entrypoints.http.schemas import LearnerProgressPublic, LearningSessionPublic, SessionStartBody
 from jplearn_api.entrypoints.http.security import require_user
 
@@ -64,11 +65,7 @@ async def start_session(
             detail=f"Idempotency-Key must be at most {IDEMPOTENCY_KEY_MAX_LENGTH} characters",
         )
     uow = create_uow(session)
-    request_hash = (
-        hashlib.sha256(body.device_class.encode()).hexdigest()
-        if idempotency_key
-        else None
-    )
+    request_hash = hashlib.sha256(body.device_class.encode()).hexdigest() if idempotency_key else None
     cmd = StartLearningSessionCommand(
         user_id=user.id,
         device_class=body.device_class,
@@ -78,9 +75,9 @@ async def start_session(
     try:
         dto = await handle_start_session(cmd, uow)
     except ConflictError:
-        raise HTTPException(status_code=409, detail="Idempotency key conflict")
+        raise HTTPException(status_code=409, detail="Idempotency key conflict") from None
     except EntityNotFoundError:
-        raise HTTPException(status_code=500, detail="Missing learner progress")
+        raise HTTPException(status_code=500, detail="Missing learner progress") from None
 
     return LearningSessionPublic(
         id=dto.id,
@@ -112,9 +109,9 @@ async def get_session_by_id(
     try:
         dto = await handle_get_session(query, repo)
     except ForbiddenError:
-        raise HTTPException(status_code=403, detail="Forbidden")
+        raise HTTPException(status_code=403, detail="Forbidden") from None
     except EntityNotFoundError:
-        raise HTTPException(status_code=404, detail="Session not found")
+        raise HTTPException(status_code=404, detail="Session not found") from None
 
     return LearningSessionPublic(
         id=dto.id,
@@ -123,7 +120,6 @@ async def get_session_by_id(
         ended_at=to_json_z(dto.ended_at) if dto.ended_at else None,
         duration_seconds=dto.duration_seconds,
     )
-
 
 
 @router.post(
@@ -146,13 +142,13 @@ async def end_session(
     try:
         dto = await handle_end_session(cmd, uow)
     except SessionAlreadyEndedError:
-        raise HTTPException(status_code=400, detail="Session already ended")
+        raise HTTPException(status_code=400, detail="Session already ended") from None
     except ForbiddenError:
-        raise HTTPException(status_code=403, detail="Forbidden")
+        raise HTTPException(status_code=403, detail="Forbidden") from None
     except EntityNotFoundError as exc:
         if exc.message == "Missing learner progress":
-            raise HTTPException(status_code=500, detail="Missing learner progress")
-        raise HTTPException(status_code=404, detail="Session not found")
+            raise HTTPException(status_code=500, detail="Missing learner progress") from None
+        raise HTTPException(status_code=404, detail="Session not found") from None
 
     return LearnerProgressPublic(
         minutes_comprehensible=dto.minutes_comprehensible,
@@ -176,7 +172,7 @@ async def get_progress(
     try:
         dto = await handle_get_progress(query, repo)
     except EntityNotFoundError:
-        raise HTTPException(status_code=404, detail="Progress not found")
+        raise HTTPException(status_code=404, detail="Progress not found") from None
 
     return LearnerProgressPublic(
         minutes_comprehensible=dto.minutes_comprehensible,

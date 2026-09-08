@@ -55,10 +55,57 @@ jobs:
       - run: PYTHONPATH=src uv run python -m jplearn_api.entrypoints.cli.migrate upgrade
         working-directory: apps/api-python
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: uv run ruff check .
+        working-directory: apps/api-python
       - run: uv run pytest
         working-directory: apps/api-python
       - run: PYTHONPATH=src uv run python -m jplearn_api.tooling.openapi_diff
         working-directory: apps/api-python
+
+  web-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      JWT_SECRET: ci-secret-at-least-32-bytes-long-for-pyjwt-security
+      JPLEARN_E2E_SOURCE_MP4: /tmp/e2e-synthetic.mp4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: astral-sh/setup-uv@v4
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: pnpm install
+      - run: uv sync --frozen
+        working-directory: apps/api-python
+      - run: pnpm --filter @jplearn/web exec playwright install --with-deps chromium
+      - name: Generate synthetic MP4 source
+        run: >-
+          ffmpeg -hide_banner -loglevel error -y
+          -f lavfi -i testsrc=size=640x360:rate=24
+          -f lavfi -i sine=frequency=1000:sample_rate=48000
+          -t 20 -c:v libx264 -pix_fmt yuv420p -c:a aac
+          "$JPLEARN_E2E_SOURCE_MP4"
+      - name: Run Chromium web E2E
+        run: apps/api-python/differential/web-e2e-python.sh --project=chromium
+      - name: Collect Playwright test results
+        if: failure()
+        run: |
+          mkdir -p apps/web/test-results
+          for result_dir in /tmp/jplearn-e2e-*/test-results; do
+            if [[ -d "$result_dir" ]]; then
+              cp -R "$result_dir"/. apps/web/test-results/
+            fi
+          done
+      - name: Upload Playwright test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: web-e2e-playwright-results
+          path: apps/web/test-results
+          if-no-files-found: warn
 
   container-verification:
     runs-on: ubuntu-latest

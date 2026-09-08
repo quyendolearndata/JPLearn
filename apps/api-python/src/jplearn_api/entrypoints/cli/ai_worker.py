@@ -35,10 +35,7 @@ class DefaultTrialTranscriber(AiTranscriptionPort):
             self.allow_synthetic = allow_synthetic
         else:
             settings = get_settings()
-            self.allow_synthetic = (
-                settings.environment in ("local", "test")
-                and settings.enable_trial_transcriber
-            )
+            self.allow_synthetic = settings.environment in ("local", "test") and settings.enable_trial_transcriber
 
     async def transcribe_and_segment(
         self,
@@ -49,7 +46,8 @@ class DefaultTrialTranscriber(AiTranscriptionPort):
         if not self.allow_synthetic:
             raise RuntimeError(
                 "External AI transcription provider not configured. "
-                "Synthetic trial mode is only permitted when environment is local/test and enable_trial_transcriber=True."
+                "Synthetic trial mode is only permitted when environment is local/test "
+                "and enable_trial_transcriber=True."
             )
         logger.info(
             "Transcribing media %s (%ds, lang=%s)",
@@ -114,7 +112,9 @@ async def run_ai_worker(
             async with session_maker() as session:
                 uow = create_uow(session)
                 job = await handle_execute_ai_worker_step(
-                    uow, provider, capability_enabled=settings.staff_ai_enabled,
+                    uow,
+                    provider,
+                    capability_enabled=settings.staff_ai_enabled,
                 )
                 if job:
                     await session.commit()

@@ -3,18 +3,33 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+
 from sqlalchemy import desc, func, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from jplearn_api.adapters.persistence.models import (
     CatalogItem as OrmCatalogItem,
+)
+from jplearn_api.adapters.persistence.models import (
     HistoryDeletion as OrmHistoryDeletion,
+)
+from jplearn_api.adapters.persistence.models import (
     LearnerDailyActivity as OrmLearnerDailyActivity,
+)
+from jplearn_api.adapters.persistence.models import (
     LearnerPlaybackState as OrmLearnerPlaybackState,
+)
+from jplearn_api.adapters.persistence.models import (
     LearningPreferences as OrmLearningPreferences,
+)
+from jplearn_api.adapters.persistence.models import (
     Playback as OrmPlayback,
+)
+from jplearn_api.adapters.persistence.models import (
     PlaybackCheckpoint as OrmPlaybackCheckpoint,
+)
+from jplearn_api.adapters.persistence.models import (
     PlaybackReceipt as OrmPlaybackReceipt,
 )
 from jplearn_api.domain.playback import (
@@ -49,12 +64,8 @@ class SqlAlchemyPlaybackRepository:
         device_class: str,
         client_instance_id: str,
     ) -> LearnerPlaybackState:
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
-        stmt = (
-            select(OrmLearnerPlaybackState)
-            .where(OrmLearnerPlaybackState.user_id == user_id)
-            .with_for_update()
-        )
+        now = datetime.now(UTC).replace(tzinfo=None)
+        stmt = select(OrmLearnerPlaybackState).where(OrmLearnerPlaybackState.user_id == user_id).with_for_update()
         res = await self._session.execute(stmt)
         orm = res.scalar_one_or_none()
         if orm is None:
@@ -64,7 +75,8 @@ class SqlAlchemyPlaybackRepository:
                 text(
                     """
                     INSERT INTO learner_playback_state (
-                        user_id, active_playback_id, current_epoch, lease_expires_at, device_class, client_instance_id, updated_at
+                        user_id, active_playback_id, current_epoch, lease_expires_at, device_class, client_instance_id,
+                        updated_at
                     )
                     VALUES (
                         :user_id, NULL, 1, :lease_expires_at, :device_class, :client_instance_id, :updated_at
@@ -92,11 +104,18 @@ class SqlAlchemyPlaybackRepository:
         )
 
     async def update_learner_playback_state(self, state: LearnerPlaybackState) -> None:
-        await self._session.execute(update(OrmLearnerPlaybackState).where(
-            OrmLearnerPlaybackState.user_id == state.user_id).values(
-            active_playback_id=state.active_playback_id, current_epoch=state.current_epoch,
-            lease_expires_at=_strip_tz(state.lease_expires_at), device_class=state.device_class,
-            client_instance_id=state.client_instance_id, updated_at=_strip_tz(state.updated_at)))
+        await self._session.execute(
+            update(OrmLearnerPlaybackState)
+            .where(OrmLearnerPlaybackState.user_id == state.user_id)
+            .values(
+                active_playback_id=state.active_playback_id,
+                current_epoch=state.current_epoch,
+                lease_expires_at=_strip_tz(state.lease_expires_at),
+                device_class=state.device_class,
+                client_instance_id=state.client_instance_id,
+                updated_at=_strip_tz(state.updated_at),
+            )
+        )
 
     async def get_playback(self, playback_id: str) -> PlaybackSession | None:
         stmt = select(OrmPlayback).where(OrmPlayback.id == playback_id).execution_options(populate_existing=True)
@@ -147,11 +166,20 @@ class SqlAlchemyPlaybackRepository:
         return session
 
     async def update_playback(self, session: PlaybackSession) -> None:
-        await self._session.execute(update(OrmPlayback).where(OrmPlayback.id == session.id).values(
-            status=session.status.value, last_seq=session.last_seq, total_active_ms=session.total_active_ms,
-            last_position_ms=session.last_position_ms, last_server_time=_strip_tz(session.last_server_time),
-            last_client_cumulative_ms=session.last_client_cumulative_ms,
-            updated_at=_strip_tz(session.updated_at), closed_at=_strip_tz(session.closed_at)))
+        await self._session.execute(
+            update(OrmPlayback)
+            .where(OrmPlayback.id == session.id)
+            .values(
+                status=session.status.value,
+                last_seq=session.last_seq,
+                total_active_ms=session.total_active_ms,
+                last_position_ms=session.last_position_ms,
+                last_server_time=_strip_tz(session.last_server_time),
+                last_client_cumulative_ms=session.last_client_cumulative_ms,
+                updated_at=_strip_tz(session.updated_at),
+                closed_at=_strip_tz(session.closed_at),
+            )
+        )
 
     async def get_receipt(self, playback_id: str, seq: int) -> PlaybackReceipt | None:
         stmt = select(OrmPlaybackReceipt).where(
@@ -229,9 +257,8 @@ class SqlAlchemyPlaybackRepository:
         offset: int = 0,
         limit: int = 50,
     ) -> tuple[list[PlaybackCheckpoint], int]:
-        count_stmt = (
-            select(func.count(OrmPlaybackCheckpoint.catalog_item_id))
-            .where(OrmPlaybackCheckpoint.user_id == user_id)
+        count_stmt = select(func.count(OrmPlaybackCheckpoint.catalog_item_id)).where(
+            OrmPlaybackCheckpoint.user_id == user_id
         )
         total_res = await self._session.execute(count_stmt)
         total = total_res.scalar() or 0
@@ -257,20 +284,33 @@ class SqlAlchemyPlaybackRepository:
         return checkpoints, total
 
     async def get_start_receipt(self, user_id, key):
-        result = await self._session.execute(text("SELECT request_hash, response FROM playback_start_receipts WHERE user_id=:uid AND idempotency_key=:key"), {"uid":user_id, "key":key})
+        result = await self._session.execute(
+            text(
+                "SELECT request_hash, response FROM playback_start_receipts WHERE user_id=:uid AND idempotency_key=:key"
+            ),
+            {"uid": user_id, "key": key},
+        )
         row = result.mappings().first()
         return dict(row) if row else None
 
     async def save_start_receipt(self, user_id, key, request_hash, response):
-        await self._session.execute(text("""INSERT INTO playback_start_receipts(user_id,idempotency_key,request_hash,playback_id,response)
+        await self._session.execute(
+            text("""INSERT INTO playback_start_receipts(user_id,idempotency_key,request_hash,playback_id,response)
             VALUES (:uid,:key,:hash,:pid,CAST(:response AS jsonb))"""),
-            {"uid":user_id,"key":key,"hash":request_hash,"pid":response["session"]["id"],"response":json.dumps(response, default=str)})
+            {
+                "uid": user_id,
+                "key": key,
+                "hash": request_hash,
+                "pid": response["session"]["id"],
+                "response": json.dumps(response, default=str),
+            },
+        )
 
     async def get_learning_preferences(self, user_id: str) -> LearningPreferences:
         stmt = select(OrmLearningPreferences).where(OrmLearningPreferences.user_id == user_id)
         res = await self._session.execute(stmt)
         orm = res.scalar_one_or_none()
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
         if not orm:
             return LearningPreferences(
                 user_id=user_id,
@@ -294,36 +334,61 @@ class SqlAlchemyPlaybackRepository:
         )
 
     async def get_effective_learning_preferences(self, user_id: str, at: datetime) -> LearningPreferences:
-        result = await self._session.execute(text("""
+        result = await self._session.execute(
+            text("""
             SELECT * FROM learning_preference_versions
             WHERE user_id=:uid AND effective_at<=:at
             ORDER BY effective_at DESC, revision DESC LIMIT 1
-        """), {"uid": user_id, "at": _strip_tz(at)})
+        """),
+            {"uid": user_id, "at": _strip_tz(at)},
+        )
         row = result.mappings().first()
         if row is None:
-            return LearningPreferences(user_id=user_id, daily_goal_minutes=15,
-                timezone="Asia/Ho_Chi_Minh", revision=1, effective_at=at,
-                created_at=at, updated_at=at)
-        return LearningPreferences(user_id=user_id, daily_goal_minutes=row["daily_goal_minutes"],
-            timezone=row["timezone"], revision=row["revision"], effective_at=row["effective_at"],
-            created_at=row["effective_at"], updated_at=row["effective_at"])
+            return LearningPreferences(
+                user_id=user_id,
+                daily_goal_minutes=15,
+                timezone="Asia/Ho_Chi_Minh",
+                revision=1,
+                effective_at=at,
+                created_at=at,
+                updated_at=at,
+            )
+        return LearningPreferences(
+            user_id=user_id,
+            daily_goal_minutes=row["daily_goal_minutes"],
+            timezone=row["timezone"],
+            revision=row["revision"],
+            effective_at=row["effective_at"],
+            created_at=row["effective_at"],
+            updated_at=row["effective_at"],
+        )
 
     async def save_preference_version(self, pref: LearningPreferences) -> None:
-        await self._session.execute(text("""
+        await self._session.execute(
+            text("""
             INSERT INTO learning_preference_versions(user_id, revision, effective_at, daily_goal_minutes, timezone)
             VALUES (:uid, :rev, :at, :goal, :tz)
             ON CONFLICT(user_id, effective_at) DO UPDATE SET
                 revision=EXCLUDED.revision, daily_goal_minutes=EXCLUDED.daily_goal_minutes,
                 timezone=EXCLUDED.timezone
-        """), {"uid":pref.user_id, "rev":pref.revision, "at":_strip_tz(pref.effective_at),
-               "goal":pref.daily_goal_minutes, "tz":pref.timezone})
+        """),
+            {
+                "uid": pref.user_id,
+                "rev": pref.revision,
+                "at": _strip_tz(pref.effective_at),
+                "goal": pref.daily_goal_minutes,
+                "tz": pref.timezone,
+            },
+        )
 
     async def save_learning_preferences(self, pref: LearningPreferences) -> None:
         await self._session.execute(
             text(
                 """
-                INSERT INTO learning_preferences (user_id, daily_goal_minutes, timezone, revision, effective_at, preferred_topic_ids, created_at, updated_at)
-                VALUES (:user_id, :daily_goal_minutes, :timezone, :revision, :effective_at, :preferred_topic_ids, :created_at, :updated_at)
+                INSERT INTO learning_preferences (user_id, daily_goal_minutes, timezone, revision, effective_at,
+                preferred_topic_ids, created_at, updated_at)
+                VALUES (:user_id, :daily_goal_minutes, :timezone, :revision, :effective_at, :preferred_topic_ids,
+                :created_at, :updated_at)
                 ON CONFLICT (user_id) DO UPDATE SET
                     daily_goal_minutes = EXCLUDED.daily_goal_minutes,
                     timezone = EXCLUDED.timezone,
@@ -354,16 +419,20 @@ class SqlAlchemyPlaybackRepository:
         goal_minutes: int,
         policy_revision: int = 1,
     ) -> LearnerDailyActivity:
-        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(UTC).replace(tzinfo=None)
         goal_ms = goal_minutes * 60 * 1000
         result = await self._session.execute(
             text(
                 """
-                INSERT INTO learner_daily_activity (user_id, date, policy_revision, timezone, active_ms, goal_minutes, goal_met, updated_at)
-                VALUES (:user_id, :date, :policy_revision, :timezone, CAST(:delta_ms AS integer), CAST(:goal_minutes AS integer), (CAST(:goal_ms AS integer) > 0 AND CAST(:delta_ms AS integer) >= CAST(:goal_ms AS integer)), :updated_at)
+                INSERT INTO learner_daily_activity (user_id, date, policy_revision, timezone, active_ms, goal_minutes,
+                goal_met, updated_at)
+                VALUES (:user_id, :date, :policy_revision, :timezone, CAST(:delta_ms AS integer), CAST(:goal_minutes AS
+                integer), (CAST(:goal_ms AS integer) > 0 AND CAST(:delta_ms AS integer) >= CAST(:goal_ms AS integer)),
+                :updated_at)
                 ON CONFLICT (user_id, date, policy_revision) DO UPDATE SET
                     active_ms = learner_daily_activity.active_ms + CAST(:delta_ms AS integer),
-                    goal_met = ((learner_daily_activity.active_ms + CAST(:delta_ms AS integer)) >= learner_daily_activity.goal_minutes * 60000 AND learner_daily_activity.goal_minutes > 0),
+                    goal_met = ((learner_daily_activity.active_ms + CAST(:delta_ms AS integer)) >=
+                    learner_daily_activity.goal_minutes * 60000 AND learner_daily_activity.goal_minutes > 0),
                     updated_at = :updated_at
                 RETURNING *
                 """
@@ -413,12 +482,9 @@ class SqlAlchemyPlaybackRepository:
         ]
 
     async def get_latest_history_deletion_cutoff(self, user_id: str) -> datetime | None:
-        stmt = (
-            select(func.max(OrmHistoryDeletion.cutoff_time))
-            .where(
-                OrmHistoryDeletion.user_id == user_id,
-                OrmHistoryDeletion.status.in_(["queued", "running", "completed"]),
-            )
+        stmt = select(func.max(OrmHistoryDeletion.cutoff_time)).where(
+            OrmHistoryDeletion.user_id == user_id,
+            OrmHistoryDeletion.status.in_(["queued", "running", "completed"]),
         )
         res = await self._session.execute(stmt)
         return res.scalar_one_or_none()
@@ -502,7 +568,9 @@ class SqlAlchemyPlaybackRepository:
             error_message=job.error_message,
             created_at=job.created_at.replace(tzinfo=None) if job.created_at.tzinfo else job.created_at,
             updated_at=job.updated_at.replace(tzinfo=None) if job.updated_at.tzinfo else job.updated_at,
-            completed_at=job.completed_at.replace(tzinfo=None) if (job.completed_at and job.completed_at.tzinfo) else job.completed_at,
+            completed_at=job.completed_at.replace(tzinfo=None)
+            if (job.completed_at and job.completed_at.tzinfo)
+            else job.completed_at,
         )
         self._session.add(orm)
         await self._session.flush()
@@ -544,7 +612,7 @@ class SqlAlchemyPlaybackRepository:
             return None
         orm.status = "running"
         orm.attempts += 1
-        orm.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        orm.updated_at = datetime.now(UTC).replace(tzinfo=None)
         await self._session.flush()
         return HistoryDeletionJob(
             id=orm.id,
@@ -569,7 +637,11 @@ class SqlAlchemyPlaybackRepository:
             orm.attempts = job.attempts
             orm.error_message = job.error_message
             orm.updated_at = job.updated_at.replace(tzinfo=None) if job.updated_at.tzinfo else job.updated_at
-            orm.completed_at = job.completed_at.replace(tzinfo=None) if (job.completed_at and job.completed_at.tzinfo) else job.completed_at
+            orm.completed_at = (
+                job.completed_at.replace(tzinfo=None)
+                if (job.completed_at and job.completed_at.tzinfo)
+                else job.completed_at
+            )
             await self._session.flush()
 
     async def purge_watch_history_before_cutoff(self, user_id: str, cutoff_time: datetime) -> int:
