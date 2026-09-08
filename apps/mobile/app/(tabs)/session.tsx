@@ -6,6 +6,7 @@ import { tokens } from "@jplearn/design-tokens";
 import type { CatalogItemPublic } from "@jplearn/domain";
 import { api } from "../../src/api";
 import { deviceClassFrom } from "../../src/deviceClass";
+import { pickClipSource } from "../../src/pickClipSource";
 import { MobilePlaybackTracker } from "../../src/playbackTracker";
 
 const uniqueId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
@@ -53,7 +54,7 @@ export default function SessionScreen() {
         const catalogRes = await api("/catalog", { token });
         if (!catalogRes.ok) throw new Error("Không tải được danh mục.");
         const catalog = await catalogRes.json() as { items: CatalogItemPublic[] };
-        const item = catalog.items.find((entry) => entry.hls_url || entry.playback_url);
+        const item = catalog.items.find((entry) => pickClipSource([entry]) !== null);
         if (!item) throw new Error("Chưa có video để phát.");
         const capsRes = await api("/capabilities", { token });
         if (!capsRes.ok) throw new Error("Không kiểm tra được tính năng. Hãy thử lại.");
@@ -78,7 +79,7 @@ export default function SessionScreen() {
         if (!res.ok) throw new Error("Chưa xác nhận bắt đầu. Hãy thử lại.");
         const body = await res.json(); setSessionId(body.id);
       }
-      setClipSource(selected.item.hls_url ?? selected.item.playback_url ?? null);
+      setClipSource(pickClipSource([selected.item]));
       setStarted(true); setStatus("Phiên đã sẵn sàng. Bấm phát video.");
     } catch (error) { setStatus(error instanceof Error ? error.message : "Kết nối gián đoạn. Hãy thử lại."); }
     finally { setBusy(false); }
