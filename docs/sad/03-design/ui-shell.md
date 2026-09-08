@@ -21,20 +21,21 @@ Onboarding/cài đặt: tiếng Việt. Chrome học: tối giản, không giả
 ## Web (lean-forward)
 
 - Bố cục responsive 3 tầng: Public (Landing), Learner (Catalog, Session, Progress), Staff (/staff/*).
-- Cột catalog rộng, tiến độ luôn nhìn thấy.
+- Mẫu A+B (2026-09-07, tham chiếu: [design-ab.html](../../design/reference/design-ab.html)): nền kem, xanh sage, sidebar cố định; hero minh họa và lưới catalog 3 cột. Tiến độ xem tại route riêng.
+- Tìm chủ đề lọc metadata đang tải ở client; lọc cấp CI gọi API. Minh họa SVG là hình chủ đề, có nhãn, không phải thumbnail video.
 - Breakpoint ≥ 1024px cho staff bảng thao tác.
 
 
 ## Phone (on-the-go)
 
 - Tab: Catalog | Phiên | Tiến độ.
-- Catalog một cột, tap item (nếu có) không mở dịch.
+- Web ≤650px: điều hướng trên cùng, catalog 2 cột; tap ảnh hoặc CTA mở phiên của đúng item.
 - Không giả định iPad layout.
 
 ## iPad (lean-back)
 
 - Catalog dạng lưới lớn; chrome mỏng.
-- Vùng phiên chiếm phần lớn màn (chỗ dành Phase 5 video).
+- Vùng phiên rộng với player HLS/MP4 đang hoạt động; giữ nguyên cơ chế khôi phục phiên.
 - Split view: không nhồi 2 cột quiz.
 
 ## Tokens (v1 design-system tối thiểu)

@@ -1,0 +1,86 @@
+[
+  {
+    "device": "desktop",
+    "route": "/",
+    "width": 1440,
+    "height": 1050,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "desktop",
+    "route": "/catalog",
+    "width": 1440,
+    "height": 1050,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "desktop",
+    "route": "/session?item_id=00000000-0000-4000-8000-0000000000c1",
+    "width": 1440,
+    "height": 1050,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "desktop",
+    "route": "/progress",
+    "width": 1440,
+    "height": 1050,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "ipad",
+    "route": "/",
+    "width": 820,
+    "height": 1180,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "ipad",
+    "route": "/catalog",
+    "width": 820,
+    "height": 1180,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "ipad",
+    "route": "/session?item_id=00000000-0000-4000-8000-0000000000c1",
+    "width": 820,
+    "height": 1180,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "ipad",
+    "route": "/progress",
+    "width": 820,
+    "height": 1180,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "phone",
+    "route": "/",
+    "width": 390,
+    "height": 844,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "phone",
+    "route": "/catalog",
+    "width": 390,
+    "height": 844,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "phone",
+    "route": "/session?item_id=00000000-0000-4000-8000-0000000000c1",
+    "width": 390,
+    "height": 844,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "phone",
+    "route": "/progress",
+    "width": 390,
+    "height": 844,
+    "horizontalOverflow": false
+  }
+]
