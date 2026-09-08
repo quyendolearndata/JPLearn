@@ -30,6 +30,8 @@ class Settings(BaseSettings):
     database_max_overflow: int = Field(default=10, ge=0, le=100)
     database_pool_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
     database_pool_pre_ping: bool = False
+    login_rate_limit_attempts: int = Field(default=10, ge=1)
+    login_rate_limit_window_seconds: int = Field(default=60, ge=1)
 
     # Capability switches (Phase 5 / ADR-007)
     video_scene_breakdown_enabled: bool = False

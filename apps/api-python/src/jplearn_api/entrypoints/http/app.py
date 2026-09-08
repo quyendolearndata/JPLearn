@@ -18,6 +18,7 @@ from jplearn_api.entrypoints.http.errors import (
 )
 from jplearn_api.entrypoints.http.middleware import RequestIdMiddleware
 from jplearn_api.entrypoints.http.openapi import normalize_security_scheme_names
+from jplearn_api.entrypoints.http.rate_limit import LoginRateLimiter
 from jplearn_api.entrypoints.http.routers import (
     activity,
     ai_attempts,
@@ -82,6 +83,10 @@ def create_app(
     app.state.storage = storage
     app.state.media_signer = create_media_signer(settings)
     app.state.alert_queue = asyncio.Queue(maxsize=1000)
+    app.state.login_rate_limiter = LoginRateLimiter(
+        attempts=settings.login_rate_limit_attempts,
+        window_seconds=settings.login_rate_limit_window_seconds,
+    )
     app.add_middleware(RequestIdMiddleware, settings=settings)
     app.add_middleware(
         CORSMiddleware,

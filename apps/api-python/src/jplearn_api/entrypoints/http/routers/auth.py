@@ -14,6 +14,7 @@ from jplearn_api.bootstrap import (
 from jplearn_api.entrypoints.http.dependencies import get_session
 from jplearn_api.domain.errors import DomainError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
+from jplearn_api.entrypoints.http.rate_limit import enforce_login_rate_limit
 from jplearn_api.entrypoints.http.schemas import AuthSession, LoginBody, RegisterBody, UserPublic
 from jplearn_api.entrypoints.http.security import require_user
 
@@ -60,8 +61,12 @@ async def register(
     status_code=200,
     response_model=AuthSession,
     operation_id="login",
-    openapi_extra={"x-jplearn-fr": ["FR-ID-001", "FR-ID-002"]},
-    responses={401: {"description": "Invalid credentials"}},
+    dependencies=[Depends(enforce_login_rate_limit)],
+    openapi_extra={"x-jplearn-fr": ["FR-ID-001", "FR-ID-002", "NFR-SEC-003"]},
+    responses={
+        401: {"description": "Invalid credentials"},
+        429: {"description": "Too many login attempts"},
+    },
 )
 async def login(
     body: LoginBody,
