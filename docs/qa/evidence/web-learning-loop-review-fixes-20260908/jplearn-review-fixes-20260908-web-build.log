@@ -1,0 +1,46 @@
+
+> @jplearn/web@ build <candidate-worktree>/apps/web
+> next build
+
+ ⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of <repository>/pnpm-lock.yaml as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles:
+   * <candidate-worktree>/pnpm-lock.yaml
+
+   ▲ Next.js 15.5.23
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 887ms
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/10) ...
+   Generating static pages (2/10)
+
+   Generating static pages (4/10)
+
+   Generating static pages (7/10)
+
+ ✓ Generating static pages (10/10)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ○ /                                      161 B         106 kB
+├ ○ /_not-found                             1 kB         103 kB
+├ ○ /catalog                             6.48 kB         112 kB
+├ ○ /login                               4.03 kB         110 kB
+├ ○ /progress                            6.83 kB         113 kB
+├ ○ /session                             12.9 kB         119 kB
+├ ○ /staff                               5.09 kB         111 kB
+├ ƒ /staff/[id]                          7.26 kB         113 kB
+└ ○ /staff/new                           5.41 kB         111 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/342-880c2c49accee4f1.js       46.2 kB
+  ├ chunks/8a37e849-16026bbfaefd2521.js  54.2 kB
+  └ other shared chunks (total)          1.98 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

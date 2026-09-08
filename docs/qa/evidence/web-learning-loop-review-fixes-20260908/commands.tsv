@@ -1,0 +1,9 @@
+command	engines_or_scope	flags	exit	result
+pnpm test:guard	repository	default	0	PASS
+pnpm --filter @jplearn/domain test -- --runInBand	domain	default	0	3/3 PASS
+pnpm --filter @jplearn/web test	web TypeScript and unit	default	0	50/50 PASS
+pnpm --filter @jplearn/web build	Next.js production	default	0	PASS; 10 routes
+cd apps/api-python && .venv/bin/pytest tests/test_architecture_guard.py -q	FastAPI architecture	default	0	20/20 PASS
+apps/api-python/differential/web-e2e-python.sh	Chromium and WebKit	PLAYBACK_TRACKING_ENABLED=true; SMART_STREAM_ENABLED=true	0	96/96 PASS; 48 per engine
+apps/api-python/differential/web-e2e-python.sh e2e/shell.spec.ts e2e/hls.spec.ts	Chromium and WebKit	PLAYBACK_TRACKING_ENABLED=false; SMART_STREAM_ENABLED=false	0	16/16 PASS; 8 per engine
+EVIDENCE_SCREENSHOT_DIR=<temporary> apps/api-python/differential/web-e2e-python.sh e2e/evidence-capture.spec.ts --project=chromium	Chromium	default	0	1/1 PASS; temporary capture spec removed

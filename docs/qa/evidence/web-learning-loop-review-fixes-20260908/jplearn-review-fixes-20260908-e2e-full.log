@@ -1,0 +1,155 @@
+== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260908171838_19795] ==
+== 2/5 FastAPI :50776 ==
+== 3/5 seed nội dung published + HLS thật ==
+   published item 00000000-0000-4000-8000-0000000000c1, asset 048a994f-dca4-482a-91a2-14ab2e56b5a8 (+hls)
+== 3b/5 teacher E2E account (isolated DB only) ==
+granted teacher to teacher@e2e.local
+== 4/5 web :50777 → API :50776 [workspace=/tmp/jplearn-e2e-20260908171838_19795/web] ==
+== 5/5 playwright  ==
+
+Running 96 tests using 6 workers
+
+(node:88968) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:88969) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:88966) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:88971) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:88970) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:88967) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+No accessibility violations detected!
+No accessibility violations detected!
+No accessibility violations detected!
+No accessibility violations detected!
+  ✓   3 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/auth.spec.ts:3:5 › T-AUTH-SEC-001: open-redirect targets fall back to /, internal path is honoured (1.4s)
+  ✓   7 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/auth.spec.ts:20:5 › T-AUTH-ERR-001: a 400 validation error from the API is shown verbatim in the alert (195ms)
+  ✓   4 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.7s)
+No accessibility violations detected!
+  ✓   6 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/a11y.spec.ts:62:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (1.7s)
+  ✓   1 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (2.0s)
+  ✓   5 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:130:7 › Session recovery T-SES-REC-001 › F-01 pending active GET disables Start and cannot POST a new session T-SES-REC-001 (2.0s)
+No accessibility violations detected!
+No accessibility violations detected!
+  ✓  10 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/a11y.spec.ts:79:5 › chrome staff CMS đạt contrast AA + mọi route có document title T-NFR-A1 (877ms)
+  ✓  11 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (775ms)
+No accessibility violations detected!
+  ✓  12 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:174:9 › Session recovery T-SES-REC-001 › F-01 network during active recovery keeps the record and retries the same GET T-SES-REC-001 (902ms)
+  ✓   9 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (1.5s)
+No accessibility violations detected!
+No accessibility violations detected!
+  ✓  15 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:174:9 › Session recovery T-SES-REC-001 › F-01 HTTP 500 during outcome_unknown recovery keeps the record and retries the same GET T-SES-REC-001 (777ms)
+  ✓  16 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:177:5 › F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001 (917ms)
+No accessibility violations detected!
+  ✓  13 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/a11y.spec.ts:94:5 › axe: error state on login, active session state, staff detail route T-NFR-A1 (1.8s)
+  ✓  18 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí paused T-LRN-001 (979ms)
+  ✓  17 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:220:7 › Session recovery T-SES-REC-001 › F-01 starting replay keeps one key through HTTP 500 and malformed success T-SES-REC-001 (1.5s)
+[F-04] chromium [{"type":"f04-native-media-keys","description":"chromium: tab-to-video=false; spaceChangedPaused=false"},{"type":"f04-play-focus-path","description":"chromium: tab-from-catalog"},{"type":"f04-pause-focus-path","description":"chromium: stayed-on-control"}]
+  ✓  19 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/a11y.spec.ts:192:5 › keyboard: login form tab order and Enter-to-submit; player controls reachable T-NFR-A1 (901ms)
+  ✓   8 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/staff.spec.ts:39:7 › Staff CMS T-CMS-E2E-001 › teacher drafts+uploads+submits (no publish button); admin publishes; learner sees; admin unpublishes — each step survives reload (3.8s)
+  ✓  21 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:269:7 › Session recovery T-SES-REC-001 › F-01 starting replay 409 is terminal and allows a new start T-SES-REC-001 (489ms)
+  ✓  20 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí playing T-LRN-001 (945ms)
+  ✓  23 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/staff.spec.ts:98:7 › Staff CMS T-CMS-E2E-001 › publish without media is refused and status stays level_qa (662ms)
+  ✓  24 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:299:7 › Session recovery T-SES-REC-001 › F-01 starting replay returned ended does not restore End or send it twice T-SES-REC-001 (563ms)
+  ✓  26 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/staff.spec.ts:110:7 › Staff CMS T-CMS-E2E-001 › upload failure keeps the draft and shows an error (448ms)
+  ✓  25 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:187:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (566ms)
+  ✓  27 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:331:7 › Session recovery T-SES-REC-001 › F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001 (371ms)
+  ✓  22 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/a11y.spec.ts:294:5 › F-04 recovery and summary errors expose role=alert T-NFR-A1 (1.4s)
+(node:89044) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:89045) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  29 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:363:9 › Session recovery T-SES-REC-001 › F-01 GET 403 clears only the unusable record with an explicit terminal status T-SES-REC-001 (463ms)
+  ✓  28 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/staff.spec.ts:122:7 › Staff CMS T-CMS-E2E-001 › stale revision → 409 → reload button loads the winner (738ms)
+  ✓  32 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:363:9 › Session recovery T-SES-REC-001 › F-01 GET 404 clears only the unusable record with an explicit terminal status T-SES-REC-001 (508ms)
+  ✓  33 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/staff.spec.ts:141:7 › Staff CMS T-CMS-E2E-001 › client-side validation rejects non-mp4 in both staff forms (351ms)
+(node:89072) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+No accessibility violations detected!
+No accessibility violations detected!
+  ✓  31 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/auth.spec.ts:3:5 › T-AUTH-SEC-001: open-redirect targets fall back to /, internal path is honoured (1.1s)
+  ✓  34 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:393:7 › Session recovery T-SES-REC-001 › F-01 late recovery response cannot overwrite state after the user changes T-SES-REC-001 (884ms)
+No accessibility violations detected!
+No accessibility violations detected!
+  ✓  36 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/auth.spec.ts:20:5 › T-AUTH-ERR-001: a 400 validation error from the API is shown verbatim in the alert (432ms)
+No accessibility violations detected!
+  ✓  30 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/a11y.spec.ts:62:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (1.7s)
+  ✓  37 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:450:7 › Session recovery T-SES-REC-001 › start response lost after commit → reload replays same key → one session (587ms)
+  ✓  35 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (968ms)
+No accessibility violations detected!
+  ✓  40 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:477:7 › Session recovery T-SES-REC-001 › started → reload → route away and back → session still active, end works once (839ms)
+No accessibility violations detected!
+  ✓  39 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/a11y.spec.ts:79:5 › chrome staff CMS đạt contrast AA + mọi route có document title T-NFR-A1 (971ms)
+No accessibility violations detected!
+  ✓  42 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:497:7 › Session recovery T-SES-REC-001 › F-02 end response lost after commit → GET confirms ended → real summary shown, no second end T-SES-REC-001 (545ms)
+No accessibility violations detected!
+  ✓  41 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (1.5s)
+No accessibility violations detected!
+  ✓  44 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:526:7 › Session recovery T-SES-REC-001 › F-02 progress HTTP 500 after ended confirmation keeps recovery and retry loads summary without second end T-SES-REC-001 (739ms)
+No accessibility violations detected!
+  ✓  43 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/a11y.spec.ts:94:5 › axe: error state on login, active session state, staff detail route T-NFR-A1 (1.5s)
+  ✓  45 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:177:5 › F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001 (990ms)
+  ✓  46 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:570:7 › Session recovery T-SES-REC-001 › F-02 reload with progress offline keeps ended reference and next reload loads summary without POST end T-SES-REC-001 (663ms)
+[F-04] webkit [{"type":"f04-native-media-keys","description":"webkit: tab-to-video=false; spaceChangedPaused=false"},{"type":"f04-play-focus-path","description":"webkit: tab-from-catalog"},{"type":"f04-pause-focus-path","description":"webkit: stayed-on-control"}]
+  ✓  47 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/a11y.spec.ts:192:5 › keyboard: login form tab order and Enter-to-submit; player controls reachable T-NFR-A1 (810ms)
+  ✓  49 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:620:7 › Session recovery T-SES-REC-001 › end and status check both offline → not reported ended, record kept for retry (764ms)
+  ✓  51 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:652:7 › Session recovery T-SES-REC-001 › two tabs same user keep independent records; switching user hides previous record (842ms)
+  ✓  50 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/a11y.spec.ts:294:5 › F-04 recovery and summary errors expose role=alert T-NFR-A1 (1.6s)
+  ✓  52 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:683:7 › Session recovery T-SES-REC-001 › F-03 recovery persists the chosen default item but never media URLs T-SES-REC-001 T-LRN-001 (424ms)
+  ✓  54 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:700:7 › Session recovery T-SES-REC-001 › F-03 legacy session without item persists the first default once T-SES-REC-001 T-LRN-001 (516ms)
+  ✓  53 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:130:7 › Session recovery T-SES-REC-001 › F-01 pending active GET disables Start and cannot POST a new session T-SES-REC-001 (757ms)
+  ✓  48 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí paused T-LRN-001 (2.8s)
+  ✓  55 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:717:7 › Session recovery T-SES-REC-001 › F-03 MP4 failure refetches a changed real URL and restores paused position T-LRN-001 (575ms)
+  ✓  56 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:174:9 › Session recovery T-SES-REC-001 › F-01 network during active recovery keeps the record and retries the same GET T-SES-REC-001 (742ms)
+  ✓  58 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:771:7 › Session recovery T-SES-REC-001 › F-03 manual retry remains usable after choosing a default and another source failure T-LRN-001 (525ms)
+  ✓  60 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:817:7 › Session recovery T-SES-REC-001 › F-03 dual-source faults use one auto refetch and manual retry starts a new cycle T-LRN-001 (559ms)
+  ✓  59 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:174:9 › Session recovery T-SES-REC-001 › F-01 HTTP 500 during outcome_unknown recovery keeps the record and retries the same GET T-SES-REC-001 (740ms)
+  ✓  62 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:220:7 › Session recovery T-SES-REC-001 › F-01 starting replay keeps one key through HTTP 500 and malformed success T-SES-REC-001 (740ms)
+  ✓  57 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí playing T-LRN-001 (2.3s)
+  ✓  61 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:863:7 › Session recovery T-SES-REC-001 › F-03 real unpublish keeps target unavailable instead of playing another item T-SES-REC-001 T-LRN-001 (1.3s)
+  ✓  63 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:269:7 › Session recovery T-SES-REC-001 › F-01 starting replay 409 is terminal and allows a new start T-SES-REC-001 (546ms)
+  ✓  64 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:187:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (842ms)
+(node:89157) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  65 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:299:7 › Session recovery T-SES-REC-001 › F-01 starting replay returned ended does not restore End or send it twice T-SES-REC-001 (693ms)
+  ✓  68 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:331:7 › Session recovery T-SES-REC-001 › F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001 (564ms)
+  ✓  67 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (934ms)
+  ✓  69 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:363:9 › Session recovery T-SES-REC-001 › F-01 GET 403 clears only the unusable record with an explicit terminal status T-SES-REC-001 (670ms)
+  ✓  70 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (680ms)
+  ✓  71 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:363:9 › Session recovery T-SES-REC-001 › F-01 GET 404 clears only the unusable record with an explicit terminal status T-SES-REC-001 (668ms)
+  ✓  66 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/staff.spec.ts:39:7 › Staff CMS T-CMS-E2E-001 › teacher drafts+uploads+submits (no publish button); admin publishes; learner sees; admin unpublishes — each step survives reload (2.6s)
+  ✓  73 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:393:7 › Session recovery T-SES-REC-001 › F-01 late recovery response cannot overwrite state after the user changes T-SES-REC-001 (1.2s)
+  ✓  74 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/staff.spec.ts:98:7 › Staff CMS T-CMS-E2E-001 › publish without media is refused and status stays level_qa (1.0s)
+  ✓  75 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:450:7 › Session recovery T-SES-REC-001 › start response lost after commit → reload replays same key → one session (690ms)
+  ✓  76 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/staff.spec.ts:110:7 › Staff CMS T-CMS-E2E-001 › upload failure keeps the draft and shows an error (575ms)
+  ✓  77 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:477:7 › Session recovery T-SES-REC-001 › started → reload → route away and back → session still active, end works once (787ms)
+  ✓  78 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/staff.spec.ts:122:7 › Staff CMS T-CMS-E2E-001 › stale revision → 409 → reload button loads the winner (1.0s)
+  ✓  79 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:497:7 › Session recovery T-SES-REC-001 › F-02 end response lost after commit → GET confirms ended → real summary shown, no second end T-SES-REC-001 (708ms)
+  ✓  80 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/staff.spec.ts:141:7 › Staff CMS T-CMS-E2E-001 › client-side validation rejects non-mp4 in both staff forms (431ms)
+  ✓  81 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:526:7 › Session recovery T-SES-REC-001 › F-02 progress HTTP 500 after ended confirmation keeps recovery and retry loads summary without second end T-SES-REC-001 (1.9s)
+  ✓  82 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:570:7 › Session recovery T-SES-REC-001 › F-02 reload with progress offline keeps ended reference and next reload loads summary without POST end T-SES-REC-001 (694ms)
+  ✓  83 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:620:7 › Session recovery T-SES-REC-001 › end and status check both offline → not reported ended, record kept for retry (1.3s)
+  ✓  84 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:652:7 › Session recovery T-SES-REC-001 › two tabs same user keep independent records; switching user hides previous record (1.1s)
+  ✓  85 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:683:7 › Session recovery T-SES-REC-001 › F-03 recovery persists the chosen default item but never media URLs T-SES-REC-001 T-LRN-001 (587ms)
+  ✓  86 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:700:7 › Session recovery T-SES-REC-001 › F-03 legacy session without item persists the first default once T-SES-REC-001 T-LRN-001 (774ms)
+  ✓  87 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:717:7 › Session recovery T-SES-REC-001 › F-03 MP4 failure refetches a changed real URL and restores paused position T-LRN-001 (1.2s)
+  ✓  88 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:771:7 › Session recovery T-SES-REC-001 › F-03 manual retry remains usable after choosing a default and another source failure T-LRN-001 (961ms)
+  ✓  89 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:817:7 › Session recovery T-SES-REC-001 › F-03 dual-source faults use one auto refetch and manual retry starts a new cycle T-LRN-001 (1.3s)
+  ✓  90 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/recovery.spec.ts:863:7 › Session recovery T-SES-REC-001 › F-03 real unpublish keeps target unavailable instead of playing another item T-SES-REC-001 T-LRN-001 (1.3s)
+  ✓   2 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/learning-loop.spec.ts:69:7 › Learning Loop Integration (PR7, Waves A-C) › real playback credits active time while history deletion preserves numeric progress and activity (1.1m)
+  ✓  91 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/learning-loop.spec.ts:261:7 › Learning Loop Integration (PR7, Waves A-C) › catalog keeps the final CI filter when controlled responses arrive in reverse order (461ms)
+  ✓  92 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/learning-loop.spec.ts:298:7 › Learning Loop Integration (PR7, Waves A-C) › disabled playback and smart stream capabilities preserve the legacy learning path (2.4s)
+  ✓  93 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/learning-loop.spec.ts:352:7 › Learning Loop Integration (PR7, Waves A-C) › 409, HTTP 500 and offline failures render actionable feedback (542ms)
+  ✓  38 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/learning-loop.spec.ts:69:7 › Learning Loop Integration (PR7, Waves A-C) › real playback credits active time while history deletion preserves numeric progress and activity (1.1m)
+  ✓  94 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/learning-loop.spec.ts:261:7 › Learning Loop Integration (PR7, Waves A-C) › catalog keeps the final CI filter when controlled responses arrive in reverse order (534ms)
+  ✓  95 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/learning-loop.spec.ts:298:7 › Learning Loop Integration (PR7, Waves A-C) › disabled playback and smart stream capabilities preserve the legacy learning path (2.5s)
+  ✓  96 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/learning-loop.spec.ts:352:7 › Learning Loop Integration (PR7, Waves A-C) › 409, HTTP 500 and offline failures render actionable feedback (617ms)
+  ✓  14 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
+  ✓  72 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
+
+  96 passed (2.5m)
+== Cleaning up E2E resources [run=20260908171838_19795] ==
+== E2E run finished (exit 0). Evidence preserved at: /tmp/jplearn-e2e-20260908171838_19795 ==

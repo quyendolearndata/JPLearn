@@ -1,0 +1,66 @@
+
+> @jplearn/web@ test <candidate-worktree>/apps/web
+> tsc --noEmit && pnpm test:unit
+
+
+> @jplearn/web@ test:unit <candidate-worktree>/apps/web
+> node --import tsx --test "src/lib/**/*.test.ts"
+
+✔ T-SES-REC-001: stale-token 401 does not clear a newer user session (26.848ms)
+✔ T-SES-REC-001: current-token 401 still clears the current user session (0.405167ms)
+✔ an API calendar date preserves 8 September in every policy timezone (15.374667ms)
+✔ seven-day ranges use policy calendar days across DST and year boundaries (1.143167ms)
+✔ timestamp formatting still follows the active policy timezone (0.373458ms)
+✔ activity range uses current policy while pending effective time uses its own timezone (0.1225ms)
+✔ T-LRN-001 F-03: one error cycle permits only one automatic catalog refetch (2.469166ms)
+✔ T-LRN-001 F-03: concurrent source errors coalesce into the in-flight refetch (0.103166ms)
+✔ T-LRN-001 F-03: manual retry starts a fresh error cycle (0.068ms)
+✔ T-LRN-001 F-03: a missing target is unavailable and never falls back to another item (0.689458ms)
+✔ T-LRN-001 F-03: a session without an item chooses one default exactly once (0.076542ms)
+✔ start retains the exact version, body and idempotency key after an uncertain response (22.5425ms)
+✔ retry checkpoint keeps its payload despite video movement, then advances exactly once (1.2815ms)
+✔ end waits for in-flight checkpoint and freezes a final payload across retries (0.888292ms)
+✔ end reconciles a lost checkpoint ACK before posting the next sequence (0.52275ms)
+✔ failed end is retried automatically while mounted with an unchanged payload (11.296791ms)
+✔ a response cannot update another auth epoch, including A to B to A (0.682125ms)
+✔ a stale read cannot restore history after an accepted deletion (0.778917ms)
+✔ a slow 409 refresh is still owned by the mutation that triggered it (0.093291ms)
+✔ reversed filter responses only expose the latest filter (0.087708ms)
+✔ an old finally cannot clear the busy flag of a newer operation (0.058583ms)
+✔ dispose invalidates slow JSON parsing and capability work (0.052166ms)
+✔ T-AUTH-SEC-001: accepts only internal paths with exactly one leading slash (0.608083ms)
+✔ T-AUTH-SEC-001: rejects protocol-relative, backslash, scheme and empty targets (0.070417ms)
+✔ T-SES-REC-001 F-02: ended progress uses valid required fields and server duration (1.233291ms)
+✔ T-SES-REC-001 F-02: ended progress HTTP 500 stays unavailable without fake numbers (0.060333ms)
+✔ T-SES-REC-001 F-02: ended progress omitting a required field stays unavailable (0.063ms)
+✔ T-SES-REC-001: session recovery cannot become ready before authenticated identity (0.070959ms)
+✔ T-SES-REC-001: end fallback GET 403 and 404 are terminal while 500 is unverified (0.0675ms)
+✔ T-SES-REC-001: invalid or mismatched ended GET is not terminal (2.828709ms)
+✔ T-SES-REC-001: recovery and end share one in-flight operation (0.172916ms)
+✔ T-SES-REC-001: stale start and end tickets are ignored after user change or cancel (0.075292ms)
+✔ T-SES-REC-001: LearningSession accepts omitted optional fields (0.1175ms)
+✔ T-SES-REC-001: LearningSession rejects invalid UUID, date-time and fractional duration (0.119792ms)
+✔ T-SES-REC-001: replay 409 is terminal while 500 stays unverified (0.066458ms)
+✔ T-SES-REC-001: failed active persistence stays unverified with the recoverable pointer (1.404625ms)
+✔ T-SES-REC-001: non-starting records without sessionId are rejected (0.274833ms)
+✔ T-SES-REC-001: terminal clear must be confirmed before storage is empty (0.230291ms)
+✔ T-SES-REC-001: storage unavailable is distinct from an empty record (0.135167ms)
+✔ T-SES-REC-001: unavailable storage blocks start without minting a key (0.154917ms)
+✔ T-SES-REC-001: key is scoped per user (0.126041ms)
+✔ T-SES-REC-001: clear only touches the given user (0.0875ms)
+✔ T-SES-REC-001: corrupt or foreign-shaped records are dropped, never returned (0.091375ms)
+✔ T-SES-REC-001: corrupt record with unconfirmed removal is unavailable, not empty (0.090125ms)
+✔ T-SES-REC-001: writer refuses payloads carrying catalog/media URLs (0.107208ms)
+✔ newIdempotencyKey returns distinct, header-safe values ≤128 chars (0.314292ms)
+✔ T-SES-REC-001: short and typical header-safe persisted keys remain replayable (0.148417ms)
+✔ T-SES-REC-001: unsafe idempotency keys are neither persisted nor replayed (0.194791ms)
+✔ T-SES-REC-001: starting retries preserve the stored key, device and item (0.05175ms)
+✔ T-SES-REC-001: non-starting recovery only verifies the stored session id (0.055541ms)
+ℹ tests 50
+ℹ suites 0
+ℹ pass 50
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 190.2865
