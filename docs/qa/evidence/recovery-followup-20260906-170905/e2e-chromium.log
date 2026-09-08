@@ -1,0 +1,81 @@
+== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260906171030_4570] ==
+== 2/5 FastAPI :60741 ==
+== 3/5 seed nội dung published + HLS thật ==
+   published item 00000000-0000-4000-8000-0000000000c1, asset c718e513-2332-40ac-987b-a1ef88684c1b (+hls)
+== 3b/5 teacher E2E account (isolated DB only) ==
+granted teacher to teacher@e2e.local
+== 4/5 web :60742 → API :60741 [workspace=/tmp/jplearn-e2e-20260906171030_4570/web] ==
+== 5/5 playwright --project=chromium ==
+
+Running 42 tests using 6 workers
+
+(node:41468) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:41470) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:41472) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:41471) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:41469) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:41473) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.7s)
+  ✓   2 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (1.8s)
+  ✓   3 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/auth.spec.ts:3:5 › T-AUTH-SEC-001: open-redirect targets fall back to /, internal path is honoured (1.9s)
+No accessibility violations detected!
+  ✓   6 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:129:7 › Session recovery T-SES-REC-001 › F-01 pending active GET disables Start and cannot POST a new session T-SES-REC-001 (2.6s)
+  ✓   8 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (1.2s)
+No accessibility violations detected!
+  ✓   9 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/auth.spec.ts:20:5 › T-AUTH-ERR-001: a 400 validation error from the API is shown verbatim in the alert (1.2s)
+No accessibility violations detected!
+No accessibility violations detected!
+  ✓   7 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (2.6s)
+  ✓  10 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:173:9 › Session recovery T-SES-REC-001 › F-01 network during active recovery keeps the record and retries the same GET T-SES-REC-001 (1.8s)
+No accessibility violations detected!
+  ✓   5 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:62:5 › chrome learner đạt contrast AA + mọi route có document title T-NFR-A1 (4.5s)
+  ✓   4 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/staff.spec.ts:39:7 › Staff CMS T-CMS-E2E-001 › teacher drafts+uploads+submits (no publish button); admin publishes; learner sees; admin unpublishes — each step survives reload (4.6s)
+  ✓  12 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:87:5 › F-03 đổi URL HLS cùng item khôi phục vị trí pause T-LRN-001 (2.0s)
+No accessibility violations detected!
+  ✓  13 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:173:9 › Session recovery T-SES-REC-001 › F-01 HTTP 500 during outcome_unknown recovery keeps the record and retries the same GET T-SES-REC-001 (2.0s)
+No accessibility violations detected!
+  ✓  14 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:79:5 › chrome staff CMS đạt contrast AA + mọi route có document title T-NFR-A1 (2.2s)
+  ✓  15 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/staff.spec.ts:95:7 › Staff CMS T-CMS-E2E-001 › publish without media is refused and status stays level_qa (2.4s)
+  ✓  16 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/hls.spec.ts:148:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (1.3s)
+No accessibility violations detected!
+  ✓  19 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/staff.spec.ts:107:7 › Staff CMS T-CMS-E2E-001 › upload failure keeps the draft and shows an error (952ms)
+No accessibility violations detected!
+No accessibility violations detected!
+  ✓  17 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:219:7 › Session recovery T-SES-REC-001 › F-01 starting replay keeps one key through HTTP 500 and malformed success T-SES-REC-001 (2.5s)
+  ✓  20 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/staff.spec.ts:119:7 › Staff CMS T-CMS-E2E-001 › stale revision → 409 → reload button loads the winner (1.2s)
+No accessibility violations detected!
+  ✓  18 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:94:5 › axe: error state on login, active session state, staff detail route T-NFR-A1 (2.5s)
+  ✓  22 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/staff.spec.ts:138:7 › Staff CMS T-CMS-E2E-001 › client-side validation rejects non-mp4 in both staff forms (1.0s)
+  ✓  21 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:268:7 › Session recovery T-SES-REC-001 › F-01 starting replay 409 is terminal and allows a new start T-SES-REC-001 (1.2s)
+[F-04] chromium [{"type":"f04-native-media-keys","description":"chromium: tab-to-video=false; spaceChangedPaused=false"},{"type":"f04-play-focus-path","description":"chromium: tab-from-catalog"},{"type":"f04-pause-focus-path","description":"chromium: stayed-on-control"}]
+  ✓  23 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:192:5 › keyboard: login form tab order and Enter-to-submit; player controls reachable T-NFR-A1 (1.2s)
+  ✓  24 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:298:7 › Session recovery T-SES-REC-001 › F-01 starting replay returned ended does not restore End or send it twice T-SES-REC-001 (961ms)
+  ✓  26 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:330:7 › Session recovery T-SES-REC-001 › F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001 (1.3s)
+  ✓  25 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/a11y.spec.ts:294:5 › F-04 recovery and summary errors expose role=alert T-NFR-A1 (2.1s)
+  ✓  27 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:360:9 › Session recovery T-SES-REC-001 › F-01 GET 403 clears only the unusable record with an explicit terminal status T-SES-REC-001 (1.1s)
+  ✓  28 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:360:9 › Session recovery T-SES-REC-001 › F-01 GET 404 clears only the unusable record with an explicit terminal status T-SES-REC-001 (1.1s)
+  ✓  29 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:390:7 › Session recovery T-SES-REC-001 › F-01 late recovery response cannot overwrite state after the user changes T-SES-REC-001 (1.3s)
+  ✓  30 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:435:7 › Session recovery T-SES-REC-001 › start response lost after commit → reload replays same key → one session (1.9s)
+  ✓  31 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:462:7 › Session recovery T-SES-REC-001 › started → reload → route away and back → session still active, end works once (1.1s)
+  ✓  32 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:482:7 › Session recovery T-SES-REC-001 › F-02 end response lost after commit → GET confirms ended → real summary shown, no second end T-SES-REC-001 (1.6s)
+  ✓  33 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:511:7 › Session recovery T-SES-REC-001 › F-02 progress HTTP 500 after ended confirmation keeps recovery and retry loads summary without second end T-SES-REC-001 (1.0s)
+  ✓  34 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:555:7 › Session recovery T-SES-REC-001 › F-02 reload with progress offline keeps ended reference and next reload loads summary without POST end T-SES-REC-001 (1.4s)
+  ✓  35 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:605:7 › Session recovery T-SES-REC-001 › end and status check both offline → not reported ended, record kept for retry (1.1s)
+  ✓  36 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:629:7 › Session recovery T-SES-REC-001 › two tabs same user keep independent records; switching user hides previous record (1.4s)
+  ✓  37 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:660:7 › Session recovery T-SES-REC-001 › F-03 recovery persists the chosen default item but never media URLs T-SES-REC-001 T-LRN-001 (2.0s)
+  ✓  38 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:677:7 › Session recovery T-SES-REC-001 › F-03 legacy session without item persists the first default once T-SES-REC-001 T-LRN-001 (1.1s)
+  ✓  39 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:694:7 › Session recovery T-SES-REC-001 › F-03 MP4 failure refetches a changed real URL and restores paused position T-LRN-001 (2.2s)
+  ✓  40 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:748:7 › Session recovery T-SES-REC-001 › F-03 manual retry can choose the default after initial catalog failure T-LRN-001 (1.2s)
+  ✓  41 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:769:7 › Session recovery T-SES-REC-001 › F-03 dual-source faults use one auto refetch and manual retry starts a new cycle T-LRN-001 (1.5s)
+  ✓  42 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:815:7 › Session recovery T-SES-REC-001 › F-03 real unpublish keeps target unavailable instead of playing another item T-SES-REC-001 T-LRN-001 (2.5s)
+  ✓  11 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/sync.spec.ts:10:5 › UC-L06 cùng user hai client: cùng catalog published, cùng minutes_comprehensible (2.2m)
+
+  42 passed (2.3m)
+== Cleaning up E2E resources [run=20260906171030_4570] ==
+== E2E run finished (exit 0). Evidence preserved at: /tmp/jplearn-e2e-20260906171030_4570 ==

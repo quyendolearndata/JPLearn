@@ -1,0 +1,8 @@
+command	exit	count	duration_s	log
+git rev-parse HEAD && git status --porcelain	0	sha=41a4009fed53f8ff43bf5527a16d0976993293ff; dirty-before empty	0.208	sha.txt dirty-before.txt
+pnpm test:guard	0	0 banned textbook fields	0.480	guard.log
+pnpm --filter @jplearn/web test	0	tsc 0 errors; 35 unit passed, 0 failed	1.132	web-unit.log
+pnpm --filter @jplearn/web build	0	10 routes compiled	7.543	web-build.log
+pnpm test:api	0	217 passed, 2 warnings	32.436	pytest.log
+apps/api-python/differential/web-e2e-python.sh --project=chromium	0	42 passed	148.044	e2e-chromium.log
+apps/api-python/differential/web-e2e-python.sh --project=webkit	0	42 passed	147.639	e2e-webkit.log

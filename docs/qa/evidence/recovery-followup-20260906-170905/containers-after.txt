@@ -1,0 +1,8 @@
+=== leftover e2e containers after webkit ===
+=== compose projects with e2e ===
+NAME                STATUS              CONFIG FILES
+=== leftover next/playwright/uvicorn from harness ===
+=== docker volumes matching e2e (not postgres_data) ===
+=== confirm jplearn_postgres_data still present (must NOT reset) ===
+fucisport_postgres_data
+jplearn_postgres_data

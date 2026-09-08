@@ -1,0 +1,47 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.12.13, pytest-9.1.1, pluggy-1.6.0 -- /Users/quyendo/Documents/Learn/JPLearn/apps/api-python/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /Users/quyendo/Documents/Learn/JPLearn/.worktrees/candidate_clean_b9194df/apps/api-python
+configfile: pyproject.toml
+plugins: asyncio-1.4.0, anyio-4.15.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 26 items
+
+tests/test_openapi_diff.py::test_generated_openapi_matches_handwritten_on_implemented_ops PASSED [  3%]
+tests/test_openapi_diff.py::test_docs_and_openapi_json_stay_off PASSED   [  7%]
+tests/test_openapi_diff.py::test_negative_removing_required_field_fails_diff PASSED [ 11%]
+tests/test_openapi_diff.py::test_negative_changing_parameter_type_fails_diff PASSED [ 15%]
+tests/test_openapi_diff.py::test_negative_removing_endpoint_fails_diff PASSED [ 19%]
+tests/test_openapi_diff.py::test_negative_extra_endpoint_fails_diff PASSED [ 23%]
+tests/test_openapi_diff.py::test_main_cli_returns_non_zero_on_mismatch PASSED [ 26%]
+tests/test_openapi_mutation_suite.py::test_baseline_cli_exits_zero PASSED [ 30%]
+tests/test_openapi_mutation_suite.py::test_mutation_1_ci_level_integer_to_string PASSED [ 34%]
+tests/test_openapi_mutation_suite.py::test_mutation_2_drop_minimum_or_maximum PASSED [ 38%]
+tests/test_openapi_mutation_suite.py::test_mutation_3_add_nullable PASSED [ 42%]
+tests/test_openapi_mutation_suite.py::test_mutation_4_drop_required_field PASSED [ 46%]
+tests/test_openapi_mutation_suite.py::test_mutation_5_expand_device_class_enum_and_case PASSED [ 50%]
+tests/test_openapi_mutation_suite.py::test_mutation_6_change_400_body_to_detail PASSED [ 53%]
+tests/test_openapi_mutation_suite.py::test_mutation_7_drop_security_alternative_on_media PASSED [ 57%]
+tests/test_openapi_mutation_suite.py::test_mutation_8_add_forbidden_response_field PASSED [ 61%]
+tests/test_openapi_mutation_suite.py::test_mutation_9_delete_ready_operation PASSED [ 65%]
+tests/test_openapi_mutation_suite.py::test_mutation_10_extra_required_query_parameter PASSED [ 69%]
+tests/test_openapi_mutation_suite.py::test_mutation_11_missing_type_in_schema PASSED [ 73%]
+tests/test_openapi_mutation_suite.py::test_mutation_12_undefined_ref_fails PASSED [ 76%]
+tests/test_openapi_mutation_suite.py::test_mutation_13_password_min_length_100_fails PASSED [ 80%]
+tests/test_openapi_mutation_suite.py::test_mutation_14_password_min_length_1_fails PASSED [ 84%]
+tests/test_openapi_mutation_suite.py::test_mutation_15_password_min_length_dropped_fails PASSED [ 88%]
+tests/test_openapi_mutation_suite.py::test_mutation_16_max_length_variations_fail PASSED [ 92%]
+tests/test_openapi_mutation_suite.py::test_mutation_17_unexpected_min_length_added_fails PASSED [ 96%]
+tests/test_openapi_mutation_suite.py::test_mutation_18_enum_type_bool_vs_int_fails PASSED [100%]
+
+=============================== warnings summary ===============================
+../../../../apps/api-python/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /Users/quyendo/Documents/Learn/JPLearn/apps/api-python/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../../../../apps/api-python/.venv/lib/python3.12/site-packages/starlette/testclient.py:53
+  /Users/quyendo/Documents/Learn/JPLearn/apps/api-python/.venv/lib/python3.12/site-packages/starlette/testclient.py:53: DeprecationWarning: The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead.
+    _PortalFactoryType = Callable[[], AbstractContextManager[anyio.abc.BlockingPortal]]
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+======================== 26 passed, 2 warnings in 1.52s ========================

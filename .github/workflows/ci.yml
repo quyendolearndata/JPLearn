@@ -53,11 +53,11 @@ jobs:
       # macOS and CPython skips hidden .pth files, so the editable install is not
       # importable there. PYTHONPATH=src behaves the same on every OS.
       # Alembic owns DDL (ADR-004); pytest applies migrations through pg_harness.
-      - run: PYTHONPATH=src uv run python -m jplearn_api.migrate upgrade
+      - run: PYTHONPATH=src uv run python -m jplearn_api.entrypoints.cli.migrate upgrade
         working-directory: apps/api-python
       - run: uv run pytest
         working-directory: apps/api-python
-      - run: PYTHONPATH=src uv run python -m jplearn_api.openapi_diff
+      - run: PYTHONPATH=src uv run python -m jplearn_api.tooling.openapi_diff
         working-directory: apps/api-python
 
   container-verification:

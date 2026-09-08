@@ -1,0 +1,5626 @@
+{
+  "time": "2026-09-07T16:54:56.411381+00:00",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "postgres": "PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) on aarch64-unknown-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit",
+  "scope": "ASGI; no baseline comparison; 4 rounds of 15s heartbeats; candidate only",
+  "dataset": {
+    "clips": 1000,
+    "scenes": 10000,
+    "historical_playbacks": 100000,
+    "concurrent_playbacks": 100
+  },
+  "summary": {
+    "checkpoint": {
+      "samples": 400,
+      "p95_ms": 506.11558300442994,
+      "max_ms": 709.3888750023325
+    },
+    "content": {
+      "samples": 400,
+      "p95_ms": 366.4896670015878,
+      "max_ms": 505.9592910038191
+    }
+  },
+  "samples": [
+    {
+      "operation": "checkpoint",
+      "user": 11,
+      "seq": 1,
+      "latency_ms": 53.033541997137945,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 23,
+      "seq": 1,
+      "latency_ms": 46.817707996524405,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 4,
+      "seq": 1,
+      "latency_ms": 48.85883400129387,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 39,
+      "seq": 1,
+      "latency_ms": 58.31166700227186,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 11,
+      "seq": 1,
+      "latency_ms": 143.17966599628562,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 46,
+      "seq": 1,
+      "latency_ms": 166.24558300100034,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 23,
+      "seq": 1,
+      "latency_ms": 174.25400000502123,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 4,
+      "seq": 1,
+      "latency_ms": 178.68945800000802,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 42,
+      "seq": 1,
+      "latency_ms": 94.48095799598377,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 9,
+      "seq": 1,
+      "latency_ms": 187.53316599759273,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 14,
+      "seq": 1,
+      "latency_ms": 252.4318330033566,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 3,
+      "seq": 1,
+      "latency_ms": 245.05837499600602,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 74,
+      "seq": 1,
+      "latency_ms": 102.93870799796423,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 77,
+      "seq": 1,
+      "latency_ms": 255.0508339991211,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 39,
+      "seq": 1,
+      "latency_ms": 259.11412500136066,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 93,
+      "seq": 1,
+      "latency_ms": 98.9665419983794,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 73,
+      "seq": 1,
+      "latency_ms": 292.3236659989925,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 46,
+      "seq": 1,
+      "latency_ms": 153.64454200607724,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 0,
+      "seq": 1,
+      "latency_ms": 303.42574999667704,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 94,
+      "seq": 1,
+      "latency_ms": 100.65112500160467,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 66,
+      "seq": 1,
+      "latency_ms": 162.90741699776845,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 79,
+      "seq": 1,
+      "latency_ms": 287.741250002,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 45,
+      "seq": 1,
+      "latency_ms": 204.87791699997615,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 15,
+      "seq": 1,
+      "latency_ms": 253.82574999821372,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 18,
+      "seq": 1,
+      "latency_ms": 260.05491700198036,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 95,
+      "seq": 1,
+      "latency_ms": 123.57304200122599,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 12,
+      "seq": 1,
+      "latency_ms": 294.9261670000851,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 16,
+      "seq": 1,
+      "latency_ms": 275.75762500055134,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 19,
+      "seq": 1,
+      "latency_ms": 277.64254200155847,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 27,
+      "seq": 1,
+      "latency_ms": 250.17108299653046,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 7,
+      "seq": 1,
+      "latency_ms": 314.4505419986672,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 28,
+      "seq": 1,
+      "latency_ms": 255.11020799604012,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 22,
+      "seq": 1,
+      "latency_ms": 255.88341600087006,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 24,
+      "seq": 1,
+      "latency_ms": 257.4539580018609,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 69,
+      "seq": 1,
+      "latency_ms": 204.33158399828244,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 34,
+      "seq": 1,
+      "latency_ms": 255.49374999536667,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 30,
+      "seq": 1,
+      "latency_ms": 268.6362500026007,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 25,
+      "seq": 1,
+      "latency_ms": 274.0970839950023,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 33,
+      "seq": 1,
+      "latency_ms": 267.7945000032196,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 36,
+      "seq": 1,
+      "latency_ms": 267.64858300157357,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 78,
+      "seq": 1,
+      "latency_ms": 200.6140840021544,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 72,
+      "seq": 1,
+      "latency_ms": 213.13370799907716,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 44,
+      "seq": 1,
+      "latency_ms": 276.5143330034334,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 32,
+      "seq": 1,
+      "latency_ms": 279.485624996596,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 38,
+      "seq": 1,
+      "latency_ms": 277.7025830000639,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 35,
+      "seq": 1,
+      "latency_ms": 287.1179589928943,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 48,
+      "seq": 1,
+      "latency_ms": 287.40308299893513,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 82,
+      "seq": 1,
+      "latency_ms": 223.98091699869838,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 6,
+      "seq": 1,
+      "latency_ms": 360.23795799701475,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 10,
+      "seq": 1,
+      "latency_ms": 379.4252920051804,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 25,
+      "seq": 1,
+      "latency_ms": 43.5693750041537,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 43,
+      "seq": 1,
+      "latency_ms": 307.48795899853576,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 47,
+      "seq": 1,
+      "latency_ms": 307.71249999816064,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 52,
+      "seq": 1,
+      "latency_ms": 303.16954199952306,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 30,
+      "seq": 1,
+      "latency_ms": 59.6867500062217,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 13,
+      "seq": 1,
+      "latency_ms": 392.00508299836656,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 89,
+      "seq": 1,
+      "latency_ms": 240.69616699853214,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 2,
+      "seq": 1,
+      "latency_ms": 234.45070799789391,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 55,
+      "seq": 1,
+      "latency_ms": 312.90987499960465,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 62,
+      "seq": 1,
+      "latency_ms": 313.42804100131616,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 60,
+      "seq": 1,
+      "latency_ms": 313.69862500287127,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 88,
+      "seq": 1,
+      "latency_ms": 443.885542001226,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 1,
+      "seq": 1,
+      "latency_ms": 449.7035419990425,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 51,
+      "seq": 1,
+      "latency_ms": 213.152958000137,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 63,
+      "seq": 1,
+      "latency_ms": 320.4298749988084,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 50,
+      "seq": 1,
+      "latency_ms": 349.8188749945257,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 92,
+      "seq": 1,
+      "latency_ms": 258.64641700172797,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 85,
+      "seq": 1,
+      "latency_ms": 217.1984579981654,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 14,
+      "seq": 1,
+      "latency_ms": 206.78733300155727,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 3,
+      "seq": 1,
+      "latency_ms": 197.03708300221479,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 8,
+      "seq": 1,
+      "latency_ms": 444.4832500012126,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 68,
+      "seq": 1,
+      "latency_ms": 326.7482919982285,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 70,
+      "seq": 1,
+      "latency_ms": 326.9442910022917,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 15,
+      "seq": 1,
+      "latency_ms": 182.7180420004879,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 29,
+      "seq": 1,
+      "latency_ms": 406.8328749999637,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 71,
+      "seq": 1,
+      "latency_ms": 333.5526669980027,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 12,
+      "seq": 1,
+      "latency_ms": 176.0931669996353,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 40,
+      "seq": 1,
+      "latency_ms": 401.01387500180863,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 76,
+      "seq": 1,
+      "latency_ms": 338.1306249939371,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 81,
+      "seq": 1,
+      "latency_ms": 340.4281670009368,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 27,
+      "seq": 1,
+      "latency_ms": 180.10116699588252,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 75,
+      "seq": 1,
+      "latency_ms": 354.83183299947996,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 7,
+      "seq": 1,
+      "latency_ms": 183.50170799385523,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 84,
+      "seq": 1,
+      "latency_ms": 366.9502080010716,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 69,
+      "seq": 1,
+      "latency_ms": 195.79779200284975,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 42,
+      "seq": 1,
+      "latency_ms": 362.0764580045943,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 57,
+      "seq": 1,
+      "latency_ms": 429.29583299701335,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 87,
+      "seq": 1,
+      "latency_ms": 378.0655000009574,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 58,
+      "seq": 1,
+      "latency_ms": 445.2613749963348,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 70,
+      "seq": 1,
+      "latency_ms": 99.55983400141122,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 86,
+      "seq": 1,
+      "latency_ms": 403.8737079972634,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 56,
+      "seq": 1,
+      "latency_ms": 459.0201250030077,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 59,
+      "seq": 1,
+      "latency_ms": 457.7064160039299,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 20,
+      "seq": 1,
+      "latency_ms": 549.2029159941012,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 35,
+      "seq": 1,
+      "latency_ms": 227.40633400098886,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 65,
+      "seq": 1,
+      "latency_ms": 474.4649999993271,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 48,
+      "seq": 1,
+      "latency_ms": 225.53237499960233,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 99,
+      "seq": 1,
+      "latency_ms": 414.0059580022353,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 81,
+      "seq": 1,
+      "latency_ms": 112.70033299661009,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 98,
+      "seq": 1,
+      "latency_ms": 384.00175000424497,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 61,
+      "seq": 1,
+      "latency_ms": 490.1737089967355,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 10,
+      "seq": 1,
+      "latency_ms": 225.41966699645855,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 67,
+      "seq": 1,
+      "latency_ms": 490.36837500170805,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 64,
+      "seq": 1,
+      "latency_ms": 392.04866599902743,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 43,
+      "seq": 1,
+      "latency_ms": 224.00408400426386,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 96,
+      "seq": 1,
+      "latency_ms": 393.2037080012378,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 74,
+      "seq": 1,
+      "latency_ms": 364.1605000011623,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 17,
+      "seq": 1,
+      "latency_ms": 551.074333001452,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 77,
+      "seq": 1,
+      "latency_ms": 375.75995899533154,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 6,
+      "seq": 1,
+      "latency_ms": 245.8948329949635,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 20,
+      "seq": 1,
+      "latency_ms": 47.12437499983935,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 73,
+      "seq": 1,
+      "latency_ms": 357.20937499718275,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 2,
+      "seq": 1,
+      "latency_ms": 215.69383399764774,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 93,
+      "seq": 1,
+      "latency_ms": 359.69666599703487,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 55,
+      "seq": 1,
+      "latency_ms": 210.0219170024502,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 62,
+      "seq": 1,
+      "latency_ms": 212.47700000094483,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 49,
+      "seq": 1,
+      "latency_ms": 564.7362919989973,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 31,
+      "seq": 1,
+      "latency_ms": 580.1964170022984,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 18,
+      "seq": 1,
+      "latency_ms": 354.8666669958038,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 50,
+      "seq": 1,
+      "latency_ms": 214.48125000461005,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 19,
+      "seq": 1,
+      "latency_ms": 337.8282499979832,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 16,
+      "seq": 1,
+      "latency_ms": 340.5711669984157,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 85,
+      "seq": 1,
+      "latency_ms": 214.2098749973229,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 63,
+      "seq": 1,
+      "latency_ms": 216.88549999817042,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 60,
+      "seq": 1,
+      "latency_ms": 229.10370799945667,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 80,
+      "seq": 1,
+      "latency_ms": 506.11558300442994,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 41,
+      "seq": 1,
+      "latency_ms": 579.2806250028661,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 8,
+      "seq": 1,
+      "latency_ms": 213.13308300159406,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 51,
+      "seq": 1,
+      "latency_ms": 232.97050000110175,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 28,
+      "seq": 1,
+      "latency_ms": 344.3029999980354,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 68,
+      "seq": 1,
+      "latency_ms": 216.6885420010658,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 24,
+      "seq": 1,
+      "latency_ms": 344.20862499973737,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 83,
+      "seq": 1,
+      "latency_ms": 514.1603750016657,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 54,
+      "seq": 1,
+      "latency_ms": 560.64204100403,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 36,
+      "seq": 1,
+      "latency_ms": 340.7889169975533,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 29,
+      "seq": 1,
+      "latency_ms": 212.74716700281715,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 78,
+      "seq": 1,
+      "latency_ms": 338.9517920004437,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 32,
+      "seq": 1,
+      "latency_ms": 329.3293340029777,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 90,
+      "seq": 1,
+      "latency_ms": 516.8483329980518,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 72,
+      "seq": 1,
+      "latency_ms": 336.55679199728183,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 9,
+      "seq": 1,
+      "latency_ms": 505.9592910038191,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 44,
+      "seq": 1,
+      "latency_ms": 337.2506669984432,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 38,
+      "seq": 1,
+      "latency_ms": 341.84999999706633,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 84,
+      "seq": 1,
+      "latency_ms": 179.0071249997709,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 97,
+      "seq": 1,
+      "latency_ms": 522.1152919984888,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 41,
+      "seq": 1,
+      "latency_ms": 42.39650000090478,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 82,
+      "seq": 1,
+      "latency_ms": 324.86741600587266,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 37,
+      "seq": 1,
+      "latency_ms": 484.3312090015388,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 58,
+      "seq": 1,
+      "latency_ms": 148.31437500106404,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 89,
+      "seq": 1,
+      "latency_ms": 301.9571670010919,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 57,
+      "seq": 1,
+      "latency_ms": 166.72249999828637,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 0,
+      "seq": 1,
+      "latency_ms": 439.37800000276184,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 79,
+      "seq": 1,
+      "latency_ms": 435.93833400518633,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 45,
+      "seq": 1,
+      "latency_ms": 433.69766699470347,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 66,
+      "seq": 1,
+      "latency_ms": 439.0533330006292,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 59,
+      "seq": 1,
+      "latency_ms": 148.863792004704,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 95,
+      "seq": 1,
+      "latency_ms": 429.49762500211364,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 22,
+      "seq": 1,
+      "latency_ms": 413.5165830011829,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 34,
+      "seq": 1,
+      "latency_ms": 402.09158299694536,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 61,
+      "seq": 1,
+      "latency_ms": 133.43108299886808,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 33,
+      "seq": 1,
+      "latency_ms": 392.8917500015814,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 40,
+      "seq": 1,
+      "latency_ms": 255.8132919948548,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 31,
+      "seq": 1,
+      "latency_ms": 90.93379200203344,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 1,
+      "seq": 1,
+      "latency_ms": 306.7000419978285,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 64,
+      "seq": 1,
+      "latency_ms": 127.02079200244043,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 71,
+      "seq": 1,
+      "latency_ms": 265.05866699881153,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 76,
+      "seq": 1,
+      "latency_ms": 255.68420899799094,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 5,
+      "seq": 1,
+      "latency_ms": 709.3888750023325,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 75,
+      "seq": 1,
+      "latency_ms": 253.22824999602744,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 13,
+      "seq": 1,
+      "latency_ms": 359.16200000065146,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 87,
+      "seq": 1,
+      "latency_ms": 206.99037500162376,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 86,
+      "seq": 1,
+      "latency_ms": 188.85366600443376,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 47,
+      "seq": 1,
+      "latency_ms": 366.4896670015878,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 88,
+      "seq": 1,
+      "latency_ms": 330.4158329992788,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 53,
+      "seq": 1,
+      "latency_ms": 670.9465410021949,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 94,
+      "seq": 1,
+      "latency_ms": 479.08125000685686,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 56,
+      "seq": 1,
+      "latency_ms": 185.5094580023433,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 65,
+      "seq": 1,
+      "latency_ms": 171.1148750036955,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 67,
+      "seq": 1,
+      "latency_ms": 153.78829100518487,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 99,
+      "seq": 1,
+      "latency_ms": 171.95083399565192,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 98,
+      "seq": 1,
+      "latency_ms": 169.45641699567204,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 92,
+      "seq": 1,
+      "latency_ms": 336.22208399901865,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 26,
+      "seq": 1,
+      "latency_ms": 706.3557500005118,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 49,
+      "seq": 1,
+      "latency_ms": 130.29249999817694,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 17,
+      "seq": 1,
+      "latency_ms": 158.959042004426,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 96,
+      "seq": 1,
+      "latency_ms": 163.00041700014845,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 97,
+      "seq": 1,
+      "latency_ms": 75.20125000155531,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 80,
+      "seq": 1,
+      "latency_ms": 121.67995900381356,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 83,
+      "seq": 1,
+      "latency_ms": 109.7612920057145,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 52,
+      "seq": 1,
+      "latency_ms": 389.356833002239,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 54,
+      "seq": 1,
+      "latency_ms": 111.2637909973273,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 90,
+      "seq": 1,
+      "latency_ms": 96.41291699517751,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 37,
+      "seq": 1,
+      "latency_ms": 82.19924999866635,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 91,
+      "seq": 1,
+      "latency_ms": 566.4234579962795,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 21,
+      "seq": 1,
+      "latency_ms": 570.7242079952266,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 5,
+      "seq": 1,
+      "latency_ms": 45.13020799640799,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 53,
+      "seq": 1,
+      "latency_ms": 34.64024999993853,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 26,
+      "seq": 1,
+      "latency_ms": 21.71216600254411,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 91,
+      "seq": 1,
+      "latency_ms": 12.194958995678462,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 21,
+      "seq": 1,
+      "latency_ms": 12.775208997481968,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 11,
+      "seq": 2,
+      "latency_ms": 48.37820800457848,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 11,
+      "seq": 2,
+      "latency_ms": 18.323042000702117,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 23,
+      "seq": 2,
+      "latency_ms": 31.258707997039892,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 4,
+      "seq": 2,
+      "latency_ms": 25.6728749955073,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 23,
+      "seq": 2,
+      "latency_ms": 14.5933750027325,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 4,
+      "seq": 2,
+      "latency_ms": 13.539915998990182,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 39,
+      "seq": 2,
+      "latency_ms": 31.77391599456314,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 46,
+      "seq": 2,
+      "latency_ms": 22.143416994367726,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 39,
+      "seq": 2,
+      "latency_ms": 12.873708998085931,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 46,
+      "seq": 2,
+      "latency_ms": 11.34499999898253,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 25,
+      "seq": 2,
+      "latency_ms": 28.321917001449037,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 30,
+      "seq": 2,
+      "latency_ms": 23.631208001461346,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 25,
+      "seq": 2,
+      "latency_ms": 12.882500006526243,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 30,
+      "seq": 2,
+      "latency_ms": 10.637833001965191,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 14,
+      "seq": 2,
+      "latency_ms": 21.140958997420967,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 3,
+      "seq": 2,
+      "latency_ms": 19.981500001449604,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 14,
+      "seq": 2,
+      "latency_ms": 12.169957997684833,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 3,
+      "seq": 2,
+      "latency_ms": 11.29695800045738,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 15,
+      "seq": 2,
+      "latency_ms": 17.457957997976337,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 12,
+      "seq": 2,
+      "latency_ms": 15.571582996926736,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 15,
+      "seq": 2,
+      "latency_ms": 11.48795799963409,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 12,
+      "seq": 2,
+      "latency_ms": 11.522499997226987,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 27,
+      "seq": 2,
+      "latency_ms": 16.766417000326328,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 7,
+      "seq": 2,
+      "latency_ms": 16.1501250040601,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 27,
+      "seq": 2,
+      "latency_ms": 10.674625002138782,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 7,
+      "seq": 2,
+      "latency_ms": 9.862874998361804,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 69,
+      "seq": 2,
+      "latency_ms": 13.016291006351821,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 69,
+      "seq": 2,
+      "latency_ms": 9.70329199481057,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 42,
+      "seq": 2,
+      "latency_ms": 13.095207999867853,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 42,
+      "seq": 2,
+      "latency_ms": 8.13791700056754,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 70,
+      "seq": 2,
+      "latency_ms": 11.795916994742583,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 70,
+      "seq": 2,
+      "latency_ms": 9.443832997931167,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 35,
+      "seq": 2,
+      "latency_ms": 16.48116700380342,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 48,
+      "seq": 2,
+      "latency_ms": 17.514041006506886,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 81,
+      "seq": 2,
+      "latency_ms": 42.7211249989341,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 35,
+      "seq": 2,
+      "latency_ms": 111.05391699675238,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 48,
+      "seq": 2,
+      "latency_ms": 130.2219170029275,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 10,
+      "seq": 2,
+      "latency_ms": 158.14262499770848,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 77,
+      "seq": 2,
+      "latency_ms": 169.27929200028302,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 43,
+      "seq": 2,
+      "latency_ms": 198.22379099787213,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 32,
+      "seq": 2,
+      "latency_ms": 123.44754199875752,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 28,
+      "seq": 2,
+      "latency_ms": 153.43429199856473,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 26,
+      "seq": 2,
+      "latency_ms": 62.06195900449529,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 62,
+      "seq": 2,
+      "latency_ms": 221.15679099806584,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 72,
+      "seq": 2,
+      "latency_ms": 187.6177500016638,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 9,
+      "seq": 2,
+      "latency_ms": 189.88737499603303,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 49,
+      "seq": 2,
+      "latency_ms": 126.54370899690548,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 6,
+      "seq": 2,
+      "latency_ms": 286.0599999985425,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 47,
+      "seq": 2,
+      "latency_ms": 160.32391699991422,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 50,
+      "seq": 2,
+      "latency_ms": 237.66025000077207,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 18,
+      "seq": 2,
+      "latency_ms": 240.07116600114387,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 2,
+      "seq": 2,
+      "latency_ms": 292.94604200549657,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 73,
+      "seq": 2,
+      "latency_ms": 293.52241599553963,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 20,
+      "seq": 2,
+      "latency_ms": 296.3272080014576,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 55,
+      "seq": 2,
+      "latency_ms": 295.01333300140686,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 93,
+      "seq": 2,
+      "latency_ms": 295.4719999979716,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 63,
+      "seq": 2,
+      "latency_ms": 255.00637499499135,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 81,
+      "seq": 2,
+      "latency_ms": 295.65666699636495,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 60,
+      "seq": 2,
+      "latency_ms": 256.49370799510507,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 76,
+      "seq": 2,
+      "latency_ms": 201.44850000360748,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 94,
+      "seq": 2,
+      "latency_ms": 187.36966700089397,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 75,
+      "seq": 2,
+      "latency_ms": 204.22087499900954,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 19,
+      "seq": 2,
+      "latency_ms": 289.199541999551,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 68,
+      "seq": 2,
+      "latency_ms": 270.61158300057286,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 97,
+      "seq": 2,
+      "latency_ms": 196.23912499810103,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 36,
+      "seq": 2,
+      "latency_ms": 262.65104099729797,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 65,
+      "seq": 2,
+      "latency_ms": 213.70591699815122,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 58,
+      "seq": 2,
+      "latency_ms": 265.0962499974412,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 74,
+      "seq": 2,
+      "latency_ms": 368.03341699851444,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 38,
+      "seq": 2,
+      "latency_ms": 270.2029579959344,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 90,
+      "seq": 2,
+      "latency_ms": 197.35841600049753,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 20,
+      "seq": 2,
+      "latency_ms": 62.73199999850476,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 44,
+      "seq": 2,
+      "latency_ms": 283.78041699761525,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 82,
+      "seq": 2,
+      "latency_ms": 286.28562499943655,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 57,
+      "seq": 2,
+      "latency_ms": 293.4771250002086,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 80,
+      "seq": 2,
+      "latency_ms": 230.3031249975902,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 89,
+      "seq": 2,
+      "latency_ms": 295.86695799662266,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 0,
+      "seq": 2,
+      "latency_ms": 294.3389170031878,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 16,
+      "seq": 2,
+      "latency_ms": 331.11050000297837,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 79,
+      "seq": 2,
+      "latency_ms": 282.34845899714855,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 59,
+      "seq": 2,
+      "latency_ms": 285.16833300091093,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 95,
+      "seq": 2,
+      "latency_ms": 286.35170799680054,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 1,
+      "seq": 2,
+      "latency_ms": 290.9134999936214,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 40,
+      "seq": 2,
+      "latency_ms": 296.2280420033494,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 10,
+      "seq": 2,
+      "latency_ms": 270.05712499521906,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 41,
+      "seq": 2,
+      "latency_ms": 325.4755000016303,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 51,
+      "seq": 2,
+      "latency_ms": 339.96545799891464,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 87,
+      "seq": 2,
+      "latency_ms": 288.6108750026324,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 22,
+      "seq": 2,
+      "latency_ms": 312.91079099901253,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 38,
+      "seq": 2,
+      "latency_ms": 69.62783299968578,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 86,
+      "seq": 2,
+      "latency_ms": 294.73570899426704,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 88,
+      "seq": 2,
+      "latency_ms": 294.59758299344685,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 56,
+      "seq": 2,
+      "latency_ms": 295.9694999954081,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 29,
+      "seq": 2,
+      "latency_ms": 346.2321249971865,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 78,
+      "seq": 2,
+      "latency_ms": 360.0825840039761,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 99,
+      "seq": 2,
+      "latency_ms": 307.5777499980177,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 92,
+      "seq": 2,
+      "latency_ms": 305.7220410046284,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 17,
+      "seq": 2,
+      "latency_ms": 318.38941699970746,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 73,
+      "seq": 2,
+      "latency_ms": 175.00358299730578,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 96,
+      "seq": 2,
+      "latency_ms": 323.3308750059223,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 55,
+      "seq": 2,
+      "latency_ms": 175.58312499750173,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 67,
+      "seq": 2,
+      "latency_ms": 342.0605420033098,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 83,
+      "seq": 2,
+      "latency_ms": 327.8565829969011,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 60,
+      "seq": 2,
+      "latency_ms": 174.71837499761023,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 52,
+      "seq": 2,
+      "latency_ms": 333.4998330028611,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 77,
+      "seq": 2,
+      "latency_ms": 318.03616699471604,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 45,
+      "seq": 2,
+      "latency_ms": 387.5672919966746,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 54,
+      "seq": 2,
+      "latency_ms": 339.5438750012545,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 53,
+      "seq": 2,
+      "latency_ms": 346.5540830002283,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 34,
+      "seq": 2,
+      "latency_ms": 408.76741700049024,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 68,
+      "seq": 2,
+      "latency_ms": 179.23249999876134,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 43,
+      "seq": 2,
+      "latency_ms": 344.59966600115877,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 36,
+      "seq": 2,
+      "latency_ms": 180.09441700269235,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 33,
+      "seq": 2,
+      "latency_ms": 416.8326250000973,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 61,
+      "seq": 2,
+      "latency_ms": 420.67758399934974,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 31,
+      "seq": 2,
+      "latency_ms": 423.97733299731044,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 64,
+      "seq": 2,
+      "latency_ms": 425.1502499973867,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 71,
+      "seq": 2,
+      "latency_ms": 439.4551670047804,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 13,
+      "seq": 2,
+      "latency_ms": 431.4987920006388,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 28,
+      "seq": 2,
+      "latency_ms": 340.92354099993827,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 85,
+      "seq": 2,
+      "latency_ms": 513.5042500041891,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 90,
+      "seq": 2,
+      "latency_ms": 210.82708299945807,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 32,
+      "seq": 2,
+      "latency_ms": 371.5463750049821,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 26,
+      "seq": 2,
+      "latency_ms": 356.9943330003298,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 34,
+      "seq": 2,
+      "latency_ms": 71.65245900250738,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 79,
+      "seq": 2,
+      "latency_ms": 207.6887910006917,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 16,
+      "seq": 2,
+      "latency_ms": 207.96987500216346,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 98,
+      "seq": 2,
+      "latency_ms": 450.6346249982016,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 57,
+      "seq": 2,
+      "latency_ms": 217.02541700506117,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 9,
+      "seq": 2,
+      "latency_ms": 329.03116600209614,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 49,
+      "seq": 2,
+      "latency_ms": 328.44199999817647,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 6,
+      "seq": 2,
+      "latency_ms": 325.6347089991323,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 47,
+      "seq": 2,
+      "latency_ms": 327.75862499693176,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 50,
+      "seq": 2,
+      "latency_ms": 328.7716250051744,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 2,
+      "seq": 2,
+      "latency_ms": 330.70299999963026,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 93,
+      "seq": 2,
+      "latency_ms": 329.06487499712966,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 88,
+      "seq": 2,
+      "latency_ms": 212.12345900130458,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 63,
+      "seq": 2,
+      "latency_ms": 329.7997920017224,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 37,
+      "seq": 2,
+      "latency_ms": 479.68937500263564,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 18,
+      "seq": 2,
+      "latency_ms": 352.70266699808417,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 84,
+      "seq": 2,
+      "latency_ms": 566.0204579980928,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 99,
+      "seq": 2,
+      "latency_ms": 205.64566599932732,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 22,
+      "seq": 2,
+      "latency_ms": 232.88275000231806,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 94,
+      "seq": 2,
+      "latency_ms": 334.8926249964279,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 5,
+      "seq": 2,
+      "latency_ms": 491.9499999959953,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 66,
+      "seq": 2,
+      "latency_ms": 554.2188330000499,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 75,
+      "seq": 2,
+      "latency_ms": 332.12204199662665,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 91,
+      "seq": 2,
+      "latency_ms": 490.741125002387,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 19,
+      "seq": 2,
+      "latency_ms": 319.27391700446606,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 21,
+      "seq": 2,
+      "latency_ms": 491.4757910009939,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 97,
+      "seq": 2,
+      "latency_ms": 325.6183749981574,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 65,
+      "seq": 2,
+      "latency_ms": 325.07691699720453,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 83,
+      "seq": 2,
+      "latency_ms": 195.45512500189943,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 52,
+      "seq": 2,
+      "latency_ms": 191.1170419989503,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 74,
+      "seq": 2,
+      "latency_ms": 326.0230409941869,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 8,
+      "seq": 2,
+      "latency_ms": 605.144166998798,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 45,
+      "seq": 2,
+      "latency_ms": 187.59291699825553,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 82,
+      "seq": 2,
+      "latency_ms": 308.25008299871115,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 80,
+      "seq": 2,
+      "latency_ms": 304.21054199541686,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 62,
+      "seq": 2,
+      "latency_ms": 458.73491700331215,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 1,
+      "seq": 2,
+      "latency_ms": 287.9512910003541,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 59,
+      "seq": 2,
+      "latency_ms": 300.7025419938145,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 95,
+      "seq": 2,
+      "latency_ms": 309.17841700284043,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 87,
+      "seq": 2,
+      "latency_ms": 285.92233399831457,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 40,
+      "seq": 2,
+      "latency_ms": 296.2400410033297,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 41,
+      "seq": 2,
+      "latency_ms": 291.35274999862304,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 51,
+      "seq": 2,
+      "latency_ms": 292.7031250001164,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 86,
+      "seq": 2,
+      "latency_ms": 283.15687499707565,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 29,
+      "seq": 2,
+      "latency_ms": 282.1267079998506,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 24,
+      "seq": 2,
+      "latency_ms": 639.435915996728,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 56,
+      "seq": 2,
+      "latency_ms": 284.1926670007524,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 76,
+      "seq": 2,
+      "latency_ms": 397.0807090008748,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 17,
+      "seq": 2,
+      "latency_ms": 246.30654100474203,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 21,
+      "seq": 2,
+      "latency_ms": 50.11891699541593,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 96,
+      "seq": 2,
+      "latency_ms": 244.06250000174623,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 58,
+      "seq": 2,
+      "latency_ms": 372.3422089969972,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 44,
+      "seq": 2,
+      "latency_ms": 355.83020799822407,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 67,
+      "seq": 2,
+      "latency_ms": 248.22795799991582,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 8,
+      "seq": 2,
+      "latency_ms": 49.546207999810576,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 0,
+      "seq": 2,
+      "latency_ms": 347.78874999756226,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 53,
+      "seq": 2,
+      "latency_ms": 220.5449589964701,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 89,
+      "seq": 2,
+      "latency_ms": 350.510000003851,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 72,
+      "seq": 2,
+      "latency_ms": 461.3509159971727,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 37,
+      "seq": 2,
+      "latency_ms": 91.58333400409902,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 33,
+      "seq": 2,
+      "latency_ms": 208.12737500091316,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 31,
+      "seq": 2,
+      "latency_ms": 200.818834004167,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 71,
+      "seq": 2,
+      "latency_ms": 185.03545899875462,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 61,
+      "seq": 2,
+      "latency_ms": 206.45341600175016,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 13,
+      "seq": 2,
+      "latency_ms": 178.13929200201528,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 92,
+      "seq": 2,
+      "latency_ms": 287.7788330006297,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 91,
+      "seq": 2,
+      "latency_ms": 80.51108299696352,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 85,
+      "seq": 2,
+      "latency_ms": 175.1513330018497,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 78,
+      "seq": 2,
+      "latency_ms": 298.81700000260025,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 54,
+      "seq": 2,
+      "latency_ms": 251.3442909985315,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 5,
+      "seq": 2,
+      "latency_ms": 89.11337499739602,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 64,
+      "seq": 2,
+      "latency_ms": 208.8162919972092,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 66,
+      "seq": 2,
+      "latency_ms": 87.20424999773968,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 98,
+      "seq": 2,
+      "latency_ms": 149.97199999925215,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 84,
+      "seq": 2,
+      "latency_ms": 95.68766599841183,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 24,
+      "seq": 2,
+      "latency_ms": 37.95933400397189,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 11,
+      "seq": 3,
+      "latency_ms": 19.24933300324483,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 11,
+      "seq": 3,
+      "latency_ms": 11.95433300017612,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 23,
+      "seq": 3,
+      "latency_ms": 19.681332996697165,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 4,
+      "seq": 3,
+      "latency_ms": 19.119999997201376,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 23,
+      "seq": 3,
+      "latency_ms": 11.521792002895381,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 4,
+      "seq": 3,
+      "latency_ms": 10.513166002056096,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 39,
+      "seq": 3,
+      "latency_ms": 18.485500004317146,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 46,
+      "seq": 3,
+      "latency_ms": 17.03687500412343,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 39,
+      "seq": 3,
+      "latency_ms": 9.599958000762854,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 46,
+      "seq": 3,
+      "latency_ms": 9.475041995756328,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 25,
+      "seq": 3,
+      "latency_ms": 20.53441600583028,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 30,
+      "seq": 3,
+      "latency_ms": 19.217041997762863,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 25,
+      "seq": 3,
+      "latency_ms": 12.086874994565733,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 30,
+      "seq": 3,
+      "latency_ms": 11.182000002008863,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 14,
+      "seq": 3,
+      "latency_ms": 18.27449999836972,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 3,
+      "seq": 3,
+      "latency_ms": 18.808624998200685,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 14,
+      "seq": 3,
+      "latency_ms": 14.109666000877041,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 3,
+      "seq": 3,
+      "latency_ms": 13.202916998125147,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 15,
+      "seq": 3,
+      "latency_ms": 21.035666002717335,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 12,
+      "seq": 3,
+      "latency_ms": 22.808583002188243,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 15,
+      "seq": 3,
+      "latency_ms": 15.020042003015988,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 12,
+      "seq": 3,
+      "latency_ms": 15.652416994271334,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 27,
+      "seq": 3,
+      "latency_ms": 22.74379200389376,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 7,
+      "seq": 3,
+      "latency_ms": 20.339209004305303,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 27,
+      "seq": 3,
+      "latency_ms": 12.607208002009429,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 7,
+      "seq": 3,
+      "latency_ms": 12.757292002788745,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 69,
+      "seq": 3,
+      "latency_ms": 18.54033300332958,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 69,
+      "seq": 3,
+      "latency_ms": 9.627791005186737,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 42,
+      "seq": 3,
+      "latency_ms": 16.338624998752493,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 42,
+      "seq": 3,
+      "latency_ms": 8.298249995277729,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 70,
+      "seq": 3,
+      "latency_ms": 11.640709002676886,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 70,
+      "seq": 3,
+      "latency_ms": 7.5626249963534065,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 35,
+      "seq": 3,
+      "latency_ms": 22.697667001921218,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 35,
+      "seq": 3,
+      "latency_ms": 11.77208299486665,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 48,
+      "seq": 3,
+      "latency_ms": 19.33941700553987,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 48,
+      "seq": 3,
+      "latency_ms": 11.227333001443185,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 81,
+      "seq": 3,
+      "latency_ms": 31.561042000248563,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 81,
+      "seq": 3,
+      "latency_ms": 13.315750002220739,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 20,
+      "seq": 3,
+      "latency_ms": 21.431749999464955,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 20,
+      "seq": 3,
+      "latency_ms": 16.219291996094398,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 10,
+      "seq": 3,
+      "latency_ms": 26.26491699629696,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 38,
+      "seq": 3,
+      "latency_ms": 24.4146670011105,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 10,
+      "seq": 3,
+      "latency_ms": 13.669833999301773,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 38,
+      "seq": 3,
+      "latency_ms": 10.175832998356782,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 73,
+      "seq": 3,
+      "latency_ms": 20.208541995089035,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 55,
+      "seq": 3,
+      "latency_ms": 21.696791998692788,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 73,
+      "seq": 3,
+      "latency_ms": 16.48166700033471,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 77,
+      "seq": 3,
+      "latency_ms": 26.612665998982266,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 60,
+      "seq": 3,
+      "latency_ms": 30.225333000998944,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 55,
+      "seq": 3,
+      "latency_ms": 19.064416002947837,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 77,
+      "seq": 3,
+      "latency_ms": 14.414083001611289,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 60,
+      "seq": 3,
+      "latency_ms": 14.16179099760484,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 68,
+      "seq": 3,
+      "latency_ms": 17.593457996554207,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 43,
+      "seq": 3,
+      "latency_ms": 18.7080830000923,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 36,
+      "seq": 3,
+      "latency_ms": 19.210875005228445,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 68,
+      "seq": 3,
+      "latency_ms": 11.984125005255919,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 43,
+      "seq": 3,
+      "latency_ms": 10.397291000117548,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 36,
+      "seq": 3,
+      "latency_ms": 10.006875003455207,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 28,
+      "seq": 3,
+      "latency_ms": 18.31037499505328,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 90,
+      "seq": 3,
+      "latency_ms": 24.861540994606912,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 32,
+      "seq": 3,
+      "latency_ms": 61.00725000578677,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 28,
+      "seq": 3,
+      "latency_ms": 63.03812499390915,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 26,
+      "seq": 3,
+      "latency_ms": 141.5168329986045,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 34,
+      "seq": 3,
+      "latency_ms": 160.55366699583828,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 90,
+      "seq": 3,
+      "latency_ms": 169.93679100414738,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 16,
+      "seq": 3,
+      "latency_ms": 197.72987499891315,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 9,
+      "seq": 3,
+      "latency_ms": 174.97533300047508,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 1,
+      "seq": 3,
+      "latency_ms": 107.00374999578344,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 75,
+      "seq": 3,
+      "latency_ms": 115.97237500245683,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 47,
+      "seq": 3,
+      "latency_ms": 188.68229199870257,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 50,
+      "seq": 3,
+      "latency_ms": 183.50795899459627,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 58,
+      "seq": 3,
+      "latency_ms": 88.0083329975605,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 86,
+      "seq": 3,
+      "latency_ms": 97.8190839960007,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 63,
+      "seq": 3,
+      "latency_ms": 180.74979099765187,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 79,
+      "seq": 3,
+      "latency_ms": 239.56683299911674,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 57,
+      "seq": 3,
+      "latency_ms": 239.39554199751,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 22,
+      "seq": 3,
+      "latency_ms": 178.84695900283987,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 99,
+      "seq": 3,
+      "latency_ms": 182.48683300043922,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 18,
+      "seq": 3,
+      "latency_ms": 197.94958399870666,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 37,
+      "seq": 3,
+      "latency_ms": 113.22708400257397,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 72,
+      "seq": 3,
+      "latency_ms": 114.26962499535875,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 6,
+      "seq": 3,
+      "latency_ms": 234.03033300564857,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 49,
+      "seq": 3,
+      "latency_ms": 236.8988750022254,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 19,
+      "seq": 3,
+      "latency_ms": 167.2673749999376,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 45,
+      "seq": 3,
+      "latency_ms": 168.69375000533182,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 89,
+      "seq": 3,
+      "latency_ms": 132.9442919959547,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 93,
+      "seq": 3,
+      "latency_ms": 238.49733299721265,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 2,
+      "seq": 3,
+      "latency_ms": 241.6343750010128,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 79,
+      "seq": 3,
+      "latency_ms": 45.27149999921676,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 26,
+      "seq": 3,
+      "latency_ms": 156.18191700195894,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 67,
+      "seq": 3,
+      "latency_ms": 157.55445799732115,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 54,
+      "seq": 3,
+      "latency_ms": 138.0255420008325,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 83,
+      "seq": 3,
+      "latency_ms": 195.78420899779303,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 65,
+      "seq": 3,
+      "latency_ms": 196.83854200411588,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 88,
+      "seq": 3,
+      "latency_ms": 250.04354200063972,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 8,
+      "seq": 3,
+      "latency_ms": 163.42604200326605,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 31,
+      "seq": 3,
+      "latency_ms": 157.92654200049583,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 71,
+      "seq": 3,
+      "latency_ms": 160.1135000018985,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 19,
+      "seq": 3,
+      "latency_ms": 44.481625001935754,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 24,
+      "seq": 3,
+      "latency_ms": 150.46529100072803,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 59,
+      "seq": 3,
+      "latency_ms": 212.05558300425764,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 40,
+      "seq": 3,
+      "latency_ms": 202.57433399820002,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 76,
+      "seq": 3,
+      "latency_ms": 200.517958997807,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 96,
+      "seq": 3,
+      "latency_ms": 200.5389589976403,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 41,
+      "seq": 3,
+      "latency_ms": 214.73504100140417,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 21,
+      "seq": 3,
+      "latency_ms": 201.66379200236406,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 56,
+      "seq": 3,
+      "latency_ms": 203.54541599954246,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 52,
+      "seq": 3,
+      "latency_ms": 269.8489999966114,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 53,
+      "seq": 3,
+      "latency_ms": 231.431790998613,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 16,
+      "seq": 3,
+      "latency_ms": 180.415125003492,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 65,
+      "seq": 3,
+      "latency_ms": 91.49745800095843,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 71,
+      "seq": 3,
+      "latency_ms": 85.46604099683464,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 61,
+      "seq": 3,
+      "latency_ms": 245.23779199807905,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 91,
+      "seq": 3,
+      "latency_ms": 242.82579099963186,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 85,
+      "seq": 3,
+      "latency_ms": 242.75391699484317,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 62,
+      "seq": 3,
+      "latency_ms": 293.3537080025417,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 5,
+      "seq": 3,
+      "latency_ms": 251.05166600405937,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 64,
+      "seq": 3,
+      "latency_ms": 253.76654099818552,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 78,
+      "seq": 3,
+      "latency_ms": 260.08745800209,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 72,
+      "seq": 3,
+      "latency_ms": 154.32924999913666,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 66,
+      "seq": 3,
+      "latency_ms": 257.48604199907277,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 98,
+      "seq": 3,
+      "latency_ms": 264.7115829968243,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 80,
+      "seq": 3,
+      "latency_ms": 325.1354580061161,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 84,
+      "seq": 3,
+      "latency_ms": 268.3933340013027,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 87,
+      "seq": 3,
+      "latency_ms": 312.2492089969455,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 37,
+      "seq": 3,
+      "latency_ms": 172.8162910003448,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 29,
+      "seq": 3,
+      "latency_ms": 302.1854170001461,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 51,
+      "seq": 3,
+      "latency_ms": 304.36879199987743,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 17,
+      "seq": 3,
+      "latency_ms": 302.7232499953243,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 94,
+      "seq": 3,
+      "latency_ms": 364.1309579979861,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 67,
+      "seq": 3,
+      "latency_ms": 153.7305829988327,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 45,
+      "seq": 3,
+      "latency_ms": 181.13020800228696,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 54,
+      "seq": 3,
+      "latency_ms": 155.66979099821765,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 83,
+      "seq": 3,
+      "latency_ms": 155.25337500002934,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 44,
+      "seq": 3,
+      "latency_ms": 317.65870800154516,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 88,
+      "seq": 3,
+      "latency_ms": 156.6446659999201,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 1,
+      "seq": 3,
+      "latency_ms": 243.4672080053133,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 75,
+      "seq": 3,
+      "latency_ms": 247.39133300317917,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 97,
+      "seq": 3,
+      "latency_ms": 364.3570839994936,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 50,
+      "seq": 3,
+      "latency_ms": 245.07483300112654,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 33,
+      "seq": 3,
+      "latency_ms": 322.20466600119835,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 74,
+      "seq": 3,
+      "latency_ms": 369.62583400600124,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 47,
+      "seq": 3,
+      "latency_ms": 254.4765839993488,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 32,
+      "seq": 3,
+      "latency_ms": 426.1935410031583,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 82,
+      "seq": 3,
+      "latency_ms": 377.37487500271527,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 34,
+      "seq": 3,
+      "latency_ms": 321.49370800470933,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 92,
+      "seq": 3,
+      "latency_ms": 331.50279199617216,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 57,
+      "seq": 3,
+      "latency_ms": 240.46366599941393,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 22,
+      "seq": 3,
+      "latency_ms": 237.6092089980375,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 52,
+      "seq": 3,
+      "latency_ms": 118.69983300130116,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 18,
+      "seq": 3,
+      "latency_ms": 232.6654589996906,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 49,
+      "seq": 3,
+      "latency_ms": 230.47195800609188,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 86,
+      "seq": 3,
+      "latency_ms": 268.0865410002298,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 0,
+      "seq": 3,
+      "latency_ms": 355.79833300289465,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 99,
+      "seq": 3,
+      "latency_ms": 249.31233300594613,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 93,
+      "seq": 3,
+      "latency_ms": 222.87595799571136,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 95,
+      "seq": 3,
+      "latency_ms": 388.61899999756133,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 2,
+      "seq": 3,
+      "latency_ms": 223.33454100589734,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 89,
+      "seq": 3,
+      "latency_ms": 230.13595800148323,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 61,
+      "seq": 3,
+      "latency_ms": 119.56883300445043,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 5,
+      "seq": 3,
+      "latency_ms": 105.74883300432703,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 9,
+      "seq": 3,
+      "latency_ms": 314.75925000268035,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 64,
+      "seq": 3,
+      "latency_ms": 107.61537500366103,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 8,
+      "seq": 3,
+      "latency_ms": 219.30970800167415,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 80,
+      "seq": 3,
+      "latency_ms": 99.30475000146544,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 63,
+      "seq": 3,
+      "latency_ms": 295.9732500021346,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 78,
+      "seq": 3,
+      "latency_ms": 113.17666700051632,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 59,
+      "seq": 3,
+      "latency_ms": 212.07587500248337,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 76,
+      "seq": 3,
+      "latency_ms": 197.45274999877438,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 41,
+      "seq": 3,
+      "latency_ms": 199.10295800218591,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 56,
+      "seq": 3,
+      "latency_ms": 198.16208300471772,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 21,
+      "seq": 3,
+      "latency_ms": 199.8053749994142,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 44,
+      "seq": 3,
+      "latency_ms": 80.51262499793665,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 13,
+      "seq": 3,
+      "latency_ms": 390.64233400131343,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 6,
+      "seq": 3,
+      "latency_ms": 279.1320420001284,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 53,
+      "seq": 3,
+      "latency_ms": 164.8506659985287,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 91,
+      "seq": 3,
+      "latency_ms": 148.46429199678823,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 62,
+      "seq": 3,
+      "latency_ms": 148.55045799777145,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 85,
+      "seq": 3,
+      "latency_ms": 149.4036669973866,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 66,
+      "seq": 3,
+      "latency_ms": 132.54020800377475,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 24,
+      "seq": 3,
+      "latency_ms": 235.76904099900275,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 31,
+      "seq": 3,
+      "latency_ms": 243.9791659999173,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 74,
+      "seq": 3,
+      "latency_ms": 81.67566599877318,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 98,
+      "seq": 3,
+      "latency_ms": 131.07091699930606,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 40,
+      "seq": 3,
+      "latency_ms": 236.65858299500542,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 96,
+      "seq": 3,
+      "latency_ms": 225.07962500094436,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 51,
+      "seq": 3,
+      "latency_ms": 123.3022090018494,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 87,
+      "seq": 3,
+      "latency_ms": 128.7810840003658,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 17,
+      "seq": 3,
+      "latency_ms": 123.99216699850513,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 82,
+      "seq": 3,
+      "latency_ms": 82.10058300028322,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 97,
+      "seq": 3,
+      "latency_ms": 96.28133299702313,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 94,
+      "seq": 3,
+      "latency_ms": 125.82454099901952,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 84,
+      "seq": 3,
+      "latency_ms": 134.14791700051865,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 92,
+      "seq": 3,
+      "latency_ms": 80.8796670025913,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 58,
+      "seq": 3,
+      "latency_ms": 340.4267079968122,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 33,
+      "seq": 3,
+      "latency_ms": 94.81037500518141,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 0,
+      "seq": 3,
+      "latency_ms": 64.71037500159582,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 29,
+      "seq": 3,
+      "latency_ms": 133.17962500150315,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 13,
+      "seq": 3,
+      "latency_ms": 27.215374997467734,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 95,
+      "seq": 3,
+      "latency_ms": 63.802333002968226,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 11,
+      "seq": 4,
+      "latency_ms": 24.436375002551358,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 4,
+      "seq": 4,
+      "latency_ms": 22.892333996423986,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 23,
+      "seq": 4,
+      "latency_ms": 24.78204200451728,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 11,
+      "seq": 4,
+      "latency_ms": 16.31391699629603,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 4,
+      "seq": 4,
+      "latency_ms": 15.366415995231364,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 23,
+      "seq": 4,
+      "latency_ms": 15.096667004399933,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 39,
+      "seq": 4,
+      "latency_ms": 20.025457997689955,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 46,
+      "seq": 4,
+      "latency_ms": 20.386541000334546,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 39,
+      "seq": 4,
+      "latency_ms": 11.391416999686044,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 46,
+      "seq": 4,
+      "latency_ms": 11.82229199912399,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 25,
+      "seq": 4,
+      "latency_ms": 21.405249994131736,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 30,
+      "seq": 4,
+      "latency_ms": 22.06379200652009,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 25,
+      "seq": 4,
+      "latency_ms": 11.515291000250727,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 30,
+      "seq": 4,
+      "latency_ms": 11.076791997766122,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 3,
+      "seq": 4,
+      "latency_ms": 14.759000005142298,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 14,
+      "seq": 4,
+      "latency_ms": 16.09774999815272,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 3,
+      "seq": 4,
+      "latency_ms": 10.064333000627812,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 14,
+      "seq": 4,
+      "latency_ms": 10.422250001283828,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 15,
+      "seq": 4,
+      "latency_ms": 18.63949999824399,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 12,
+      "seq": 4,
+      "latency_ms": 17.729750004946254,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 15,
+      "seq": 4,
+      "latency_ms": 11.615333001827821,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 12,
+      "seq": 4,
+      "latency_ms": 11.692666994349565,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 27,
+      "seq": 4,
+      "latency_ms": 21.74145800381666,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 7,
+      "seq": 4,
+      "latency_ms": 21.67491699947277,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 69,
+      "seq": 4,
+      "latency_ms": 20.147458999417722,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 27,
+      "seq": 4,
+      "latency_ms": 14.131292002275586,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 7,
+      "seq": 4,
+      "latency_ms": 14.273792003223207,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 42,
+      "seq": 4,
+      "latency_ms": 20.38283399451757,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 69,
+      "seq": 4,
+      "latency_ms": 13.86350000393577,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 42,
+      "seq": 4,
+      "latency_ms": 12.756165997416247,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 70,
+      "seq": 4,
+      "latency_ms": 19.699416996445507,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 70,
+      "seq": 4,
+      "latency_ms": 8.564499999920372,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 35,
+      "seq": 4,
+      "latency_ms": 18.158291997679044,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 35,
+      "seq": 4,
+      "latency_ms": 15.209250006591901,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 48,
+      "seq": 4,
+      "latency_ms": 23.79795800516149,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 48,
+      "seq": 4,
+      "latency_ms": 13.592707997304387,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 81,
+      "seq": 4,
+      "latency_ms": 21.167416001844686,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 81,
+      "seq": 4,
+      "latency_ms": 11.614000002737157,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 20,
+      "seq": 4,
+      "latency_ms": 15.652000001864508,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 20,
+      "seq": 4,
+      "latency_ms": 10.120666003786027,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 10,
+      "seq": 4,
+      "latency_ms": 16.51237499754643,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 38,
+      "seq": 4,
+      "latency_ms": 16.84370900329668,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 10,
+      "seq": 4,
+      "latency_ms": 11.161540998728015,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 38,
+      "seq": 4,
+      "latency_ms": 10.99833300395403,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 73,
+      "seq": 4,
+      "latency_ms": 15.877500001806766,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 55,
+      "seq": 4,
+      "latency_ms": 18.601541996758897,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 73,
+      "seq": 4,
+      "latency_ms": 13.657999996212311,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 55,
+      "seq": 4,
+      "latency_ms": 13.655125003424473,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 60,
+      "seq": 4,
+      "latency_ms": 24.39849999791477,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 77,
+      "seq": 4,
+      "latency_ms": 25.401209000847302,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 60,
+      "seq": 4,
+      "latency_ms": 27.340584005287383,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 77,
+      "seq": 4,
+      "latency_ms": 27.51687499403488,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 68,
+      "seq": 4,
+      "latency_ms": 36.80175000044983,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 43,
+      "seq": 4,
+      "latency_ms": 33.95970899873646,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 36,
+      "seq": 4,
+      "latency_ms": 45.44424999767216,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 68,
+      "seq": 4,
+      "latency_ms": 14.663209003629163,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 43,
+      "seq": 4,
+      "latency_ms": 14.947125004255213,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 36,
+      "seq": 4,
+      "latency_ms": 10.92762499320088,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 28,
+      "seq": 4,
+      "latency_ms": 12.480124998546671,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 28,
+      "seq": 4,
+      "latency_ms": 7.842167004127987,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 90,
+      "seq": 4,
+      "latency_ms": 17.031165996741038,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 90,
+      "seq": 4,
+      "latency_ms": 11.034374998416752,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 79,
+      "seq": 4,
+      "latency_ms": 23.237209003127646,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 26,
+      "seq": 4,
+      "latency_ms": 23.09116600372363,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 79,
+      "seq": 4,
+      "latency_ms": 19.612417003372684,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 26,
+      "seq": 4,
+      "latency_ms": 18.72370800265344,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 19,
+      "seq": 4,
+      "latency_ms": 27.7155000003404,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 19,
+      "seq": 4,
+      "latency_ms": 13.82466700306395,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 16,
+      "seq": 4,
+      "latency_ms": 18.74662499903934,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 65,
+      "seq": 4,
+      "latency_ms": 20.901541000057478,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 16,
+      "seq": 4,
+      "latency_ms": 16.22549999592593,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 71,
+      "seq": 4,
+      "latency_ms": 23.58875000209082,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 65,
+      "seq": 4,
+      "latency_ms": 14.712958000018261,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 71,
+      "seq": 4,
+      "latency_ms": 13.925832994573284,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 72,
+      "seq": 4,
+      "latency_ms": 22.638957998424303,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 72,
+      "seq": 4,
+      "latency_ms": 13.330832996871322,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 37,
+      "seq": 4,
+      "latency_ms": 22.57708300021477,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 67,
+      "seq": 4,
+      "latency_ms": 151.2213750029332,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 54,
+      "seq": 4,
+      "latency_ms": 152.75162499892758,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 50,
+      "seq": 4,
+      "latency_ms": 156.29770899977302,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 83,
+      "seq": 4,
+      "latency_ms": 176.52258300222456,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 45,
+      "seq": 4,
+      "latency_ms": 178.70012499770382,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 75,
+      "seq": 4,
+      "latency_ms": 178.0129999970086,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 86,
+      "seq": 4,
+      "latency_ms": 151.88475000468316,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 32,
+      "seq": 4,
+      "latency_ms": 177.49354099942138,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 6,
+      "seq": 4,
+      "latency_ms": 101.24749999522464,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 45,
+      "seq": 4,
+      "latency_ms": 52.34720899898093,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 98,
+      "seq": 4,
+      "latency_ms": 109.16579199692933,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 37,
+      "seq": 4,
+      "latency_ms": 232.68383299728157,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 21,
+      "seq": 4,
+      "latency_ms": 147.48225000221282,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 1,
+      "seq": 4,
+      "latency_ms": 234.97641699941596,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 18,
+      "seq": 4,
+      "latency_ms": 198.44966700475197,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 84,
+      "seq": 4,
+      "latency_ms": 118.49579199770233,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 99,
+      "seq": 4,
+      "latency_ms": 187.08874999720138,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 22,
+      "seq": 4,
+      "latency_ms": 216.41604199976427,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 34,
+      "seq": 4,
+      "latency_ms": 218.5797089987318,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 47,
+      "seq": 4,
+      "latency_ms": 231.1336670027231,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 17,
+      "seq": 4,
+      "latency_ms": 138.93583299795864,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 57,
+      "seq": 4,
+      "latency_ms": 225.8038750005653,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 52,
+      "seq": 4,
+      "latency_ms": 225.32191700156545,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 61,
+      "seq": 4,
+      "latency_ms": 196.35166600346565,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 89,
+      "seq": 4,
+      "latency_ms": 199.47420799871907,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 93,
+      "seq": 4,
+      "latency_ms": 206.80741700198269,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 64,
+      "seq": 4,
+      "latency_ms": 208.5369999986142,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 59,
+      "seq": 4,
+      "latency_ms": 187.6878749972093,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 80,
+      "seq": 4,
+      "latency_ms": 189.9014590017032,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 9,
+      "seq": 4,
+      "latency_ms": 212.2935410006903,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 41,
+      "seq": 4,
+      "latency_ms": 201.4892079969286,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 76,
+      "seq": 4,
+      "latency_ms": 203.04545799444895,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 78,
+      "seq": 4,
+      "latency_ms": 205.02112499525538,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 5,
+      "seq": 4,
+      "latency_ms": 227.87179199804086,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 44,
+      "seq": 4,
+      "latency_ms": 211.49079099996015,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 56,
+      "seq": 4,
+      "latency_ms": 214.2353329982143,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 24,
+      "seq": 4,
+      "latency_ms": 190.35916699795052,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 53,
+      "seq": 4,
+      "latency_ms": 193.6626660026377,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 91,
+      "seq": 4,
+      "latency_ms": 192.13787499757018,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 85,
+      "seq": 4,
+      "latency_ms": 194.49537500622682,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 66,
+      "seq": 4,
+      "latency_ms": 195.76941699779127,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 96,
+      "seq": 4,
+      "latency_ms": 207.19999999710126,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 88,
+      "seq": 4,
+      "latency_ms": 326.77379199594725,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 87,
+      "seq": 4,
+      "latency_ms": 212.33262500027195,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 82,
+      "seq": 4,
+      "latency_ms": 216.02024999447167,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 94,
+      "seq": 4,
+      "latency_ms": 216.53791700373404,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 67,
+      "seq": 4,
+      "latency_ms": 195.11620899720583,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 92,
+      "seq": 4,
+      "latency_ms": 258.2173340051668,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 31,
+      "seq": 4,
+      "latency_ms": 261.8869159996393,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 58,
+      "seq": 4,
+      "latency_ms": 263.5755840019556,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 33,
+      "seq": 4,
+      "latency_ms": 266.09608400030993,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 75,
+      "seq": 4,
+      "latency_ms": 198.03816700004973,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 86,
+      "seq": 4,
+      "latency_ms": 196.42691699846182,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 2,
+      "seq": 4,
+      "latency_ms": 325.4862499961746,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 63,
+      "seq": 4,
+      "latency_ms": 317.8027500034659,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 98,
+      "seq": 4,
+      "latency_ms": 181.39725000219187,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 94,
+      "seq": 4,
+      "latency_ms": 85.38920800492633,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 47,
+      "seq": 4,
+      "latency_ms": 167.69079200457782,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 49,
+      "seq": 4,
+      "latency_ms": 387.6774999953341,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 74,
+      "seq": 4,
+      "latency_ms": 308.5103749981499,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 99,
+      "seq": 4,
+      "latency_ms": 188.37508399883518,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 51,
+      "seq": 4,
+      "latency_ms": 321.59933400544105,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 54,
+      "seq": 4,
+      "latency_ms": 293.5279170051217,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 52,
+      "seq": 4,
+      "latency_ms": 183.53716700221412,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 41,
+      "seq": 4,
+      "latency_ms": 157.33945799729554,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 0,
+      "seq": 4,
+      "latency_ms": 328.5772499948507,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 62,
+      "seq": 4,
+      "latency_ms": 331.13937500456814,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 78,
+      "seq": 4,
+      "latency_ms": 160.05329199833795,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 33,
+      "seq": 4,
+      "latency_ms": 65.85295900003985,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 13,
+      "seq": 4,
+      "latency_ms": 336.7911249952158,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 95,
+      "seq": 4,
+      "latency_ms": 343.72716700454475,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 29,
+      "seq": 4,
+      "latency_ms": 349.2931669970858,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 32,
+      "seq": 4,
+      "latency_ms": 267.86087499931455,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 53,
+      "seq": 4,
+      "latency_ms": 163.33750000194414,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 85,
+      "seq": 4,
+      "latency_ms": 162.52591700322228,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 50,
+      "seq": 4,
+      "latency_ms": 312.02633299835725,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 83,
+      "seq": 4,
+      "latency_ms": 309.7381250045146,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 21,
+      "seq": 4,
+      "latency_ms": 250.9585829975549,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 96,
+      "seq": 4,
+      "latency_ms": 163.1770830063033,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 87,
+      "seq": 4,
+      "latency_ms": 160.4180419963086,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 84,
+      "seq": 4,
+      "latency_ms": 253.80291700275848,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 57,
+      "seq": 4,
+      "latency_ms": 233.5031250040629,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 51,
+      "seq": 4,
+      "latency_ms": 57.20895899867173,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 89,
+      "seq": 4,
+      "latency_ms": 236.05700000189245,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 92,
+      "seq": 4,
+      "latency_ms": 125.00191599974642,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 80,
+      "seq": 4,
+      "latency_ms": 235.40579200198408,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 95,
+      "seq": 4,
+      "latency_ms": 49.88470800162759,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 34,
+      "seq": 4,
+      "latency_ms": 263.12537500052713,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 56,
+      "seq": 4,
+      "latency_ms": 224.83087499858811,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 6,
+      "seq": 4,
+      "latency_ms": 312.262291998195,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 1,
+      "seq": 4,
+      "latency_ms": 302.80833299912047,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 66,
+      "seq": 4,
+      "latency_ms": 232.05462499754503,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 22,
+      "seq": 4,
+      "latency_ms": 295.69987500144634,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 93,
+      "seq": 4,
+      "latency_ms": 277.31225000025006,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 61,
+      "seq": 4,
+      "latency_ms": 297.40495800069766,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 17,
+      "seq": 4,
+      "latency_ms": 301.5539169937256,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 0,
+      "seq": 4,
+      "latency_ms": 112.22458400152391,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 58,
+      "seq": 4,
+      "latency_ms": 184.39095799840288,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 40,
+      "seq": 4,
+      "latency_ms": 449.51379200210795,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 2,
+      "seq": 4,
+      "latency_ms": 177.68300000170711,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 59,
+      "seq": 4,
+      "latency_ms": 296.49991699989187,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 76,
+      "seq": 4,
+      "latency_ms": 282.3873330053175,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 29,
+      "seq": 4,
+      "latency_ms": 106.7058340049698,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 8,
+      "seq": 4,
+      "latency_ms": 492.3715839977376,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 5,
+      "seq": 4,
+      "latency_ms": 285.8043340020231,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 31,
+      "seq": 4,
+      "latency_ms": 203.95495800039498,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 63,
+      "seq": 4,
+      "latency_ms": 186.24924999312498,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 44,
+      "seq": 4,
+      "latency_ms": 293.7377499983995,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 88,
+      "seq": 4,
+      "latency_ms": 271.7330830055289,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 74,
+      "seq": 4,
+      "latency_ms": 171.30449999967823,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 49,
+      "seq": 4,
+      "latency_ms": 171.72204200323904,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 24,
+      "seq": 4,
+      "latency_ms": 298.95149999356363,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 82,
+      "seq": 4,
+      "latency_ms": 278.03858400147874,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 13,
+      "seq": 4,
+      "latency_ms": 162.6769169961335,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 9,
+      "seq": 4,
+      "latency_ms": 345.04150000429945,
+      "status": 200
+    },
+    {
+      "operation": "checkpoint",
+      "user": 97,
+      "seq": 4,
+      "latency_ms": 511.65333300014026,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 91,
+      "seq": 4,
+      "latency_ms": 325.2701250021346,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 18,
+      "seq": 4,
+      "latency_ms": 404.02162500686245,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 62,
+      "seq": 4,
+      "latency_ms": 202.7802500015241,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 64,
+      "seq": 4,
+      "latency_ms": 407.0310419992893,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 40,
+      "seq": 4,
+      "latency_ms": 113.63270899892086,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 8,
+      "seq": 4,
+      "latency_ms": 119.20183300389908,
+      "status": 200
+    },
+    {
+      "operation": "content",
+      "user": 97,
+      "seq": 4,
+      "latency_ms": 83.6244159945636,
+      "status": 200
+    }
+  ]
+}

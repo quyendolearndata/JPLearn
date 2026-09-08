@@ -1,0 +1,39 @@
+== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260906232947_23821] ==
+== 2/5 FastAPI :57440 ==
+== 3/5 seed nội dung published + HLS thật ==
+   published item 00000000-0000-4000-8000-0000000000c1, asset 19daa175-0abd-4e70-9551-d6bdbc94928c (+hls)
+== 3b/5 teacher E2E account (isolated DB only) ==
+granted teacher to teacher@e2e.local
+== 4/5 web :57441 → API :57440 [workspace=/tmp/jplearn-e2e-20260906232947_23821/web] ==
+== 5/5 playwright --project=chromium --project=webkit --grep replay 401|both offline --repeat-each=3 ==
+
+Running 12 tests using 6 workers
+
+(node:12826) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12828) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12825) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12829) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12830) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:12827) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:330:7 › Session recovery T-SES-REC-001 › F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001 (1.7s)
+  ✓   5 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:330:7 › Session recovery T-SES-REC-001 › F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001 (1.8s)
+  ✓   3 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:330:7 › Session recovery T-SES-REC-001 › F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001 (1.8s)
+  ✓   6 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:330:7 › Session recovery T-SES-REC-001 › F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001 (1.9s)
+  ✓   2 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:330:7 › Session recovery T-SES-REC-001 › F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001 (1.9s)
+  ✓   4 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:330:7 › Session recovery T-SES-REC-001 › F-01 replay 401 redirects to login without deleting the user recovery record T-SES-REC-001 (1.9s)
+  ✓   7 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:607:7 › Session recovery T-SES-REC-001 › end and status check both offline → not reported ended, record kept for retry (1.6s)
+  ✓   9 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:607:7 › Session recovery T-SES-REC-001 › end and status check both offline → not reported ended, record kept for retry (1.7s)
+  ✓   8 [chromium] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:607:7 › Session recovery T-SES-REC-001 › end and status check both offline → not reported ended, record kept for retry (1.8s)
+  ✓  10 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:607:7 › Session recovery T-SES-REC-001 › end and status check both offline → not reported ended, record kept for retry (1.9s)
+  ✓  11 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:607:7 › Session recovery T-SES-REC-001 › end and status check both offline → not reported ended, record kept for retry (1.9s)
+  ✓  12 [webkit] › ../../../../Users/quyendo/Documents/Learn/JPLearn/apps/web/e2e/recovery.spec.ts:607:7 › Session recovery T-SES-REC-001 › end and status check both offline → not reported ended, record kept for retry (1.9s)
+
+  12 passed (4.5s)
+== Cleaning up E2E resources [run=20260906232947_23821] ==
+== E2E run finished (exit 0). Evidence preserved at: /tmp/jplearn-e2e-20260906232947_23821 ==

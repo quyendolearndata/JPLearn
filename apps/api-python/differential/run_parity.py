@@ -138,7 +138,7 @@ def _spawn_py(server: Server) -> None:
         "PYTHONPATH": str(API_PY / "src"),
     }
     uvicorn = API_PY / ".venv" / "bin" / "uvicorn"
-    command = [str(uvicorn), "jplearn_api.main:app", "--port", str(PY_PORT)]
+    command = [str(uvicorn), "jplearn_api.entrypoints.http.app:app", "--port", str(PY_PORT)]
     server.process = subprocess.Popen(command, cwd=API_PY, env=env)
 
 

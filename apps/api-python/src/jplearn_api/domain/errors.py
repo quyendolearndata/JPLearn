@@ -1,0 +1,69 @@
+"""Domain errors taxonomy (Pure Python, zero external dependencies)."""
+
+from __future__ import annotations
+
+
+class DomainError(Exception):
+    """Base exception for all business domain errors."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
+
+
+class EntityNotFoundError(DomainError):
+    """Raised when an entity requested by ID does not exist."""
+
+
+class ValidationError(DomainError):
+    """Raised when input data or domain bounds fail validation."""
+
+
+class ConflictError(DomainError):
+    """Raised when a unique constraint or concurrency conflict occurs."""
+
+
+class RevisionConflictError(ConflictError):
+    """Raised when an expected_revision does not match the current revision."""
+
+
+class DuplicateEmailError(ConflictError):
+    """Raised when attempting to register with an existing email."""
+
+
+class InvalidDomainStateError(DomainError):
+    """Raised when an entity operation is invalid in its current state."""
+
+
+class SessionAlreadyEndedError(InvalidDomainStateError):
+    """Raised when attempting to terminate an already ended session."""
+
+
+class UnauthorizedError(DomainError):
+    """Raised when authentication credentials or token are invalid."""
+
+
+class ForbiddenError(DomainError):
+    """Raised when authenticated user lacks authorization for the operation."""
+
+
+class MediaInvariantError(DomainError):
+    """Raised when a media asset violates publish or playback invariants."""
+
+
+class QuotaExceededError(DomainError):
+    """Raised when an operation exceeds allowed quota or rate limit."""
+
+
+class DuplicateSettlementError(ConflictError):
+    """Raised when a settlement for the same provider, request_id, attempt and kind is submitted."""
+
+
+class InvalidReservationStateError(InvalidDomainStateError):
+    """Raised when attempting an operation on a reservation with invalid status."""
+
+
+class DeterministicAbortError(Exception):
+    """Raised when a persistence operation fails deterministically (e.g. constraint violation).
+    The transaction has aborted deterministically, so rollback is confirmed.
+    """

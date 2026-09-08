@@ -6,19 +6,24 @@ Onboarding/cài đặt: tiếng Việt. Chrome học: tối giản, không giả
 
 ## Màn hình chung (mọi bề mặt)
 
-| ID màn | Việc | UC | Ghi chú |
-|---|---|---|---|
-| S-LOGIN | Email / mật khẩu | UC-L01, UC-T01 | Staff và learner cùng login; route sau role |
-| S-HOME | Catalog theo `ci_level` | UC-L02 | Empty state hợp lệ |
-| S-SESSION | Bắt đầu / kết thúc phiên | UC-L03, UC-L04 | Nút rõ; không bắt play video |
-| S-PROGRESS | Phút CI + cấp hiện tại | UC-L05 | Không điểm, không % bài |
-| S-FLAGS-GATE | Ẩn UI nếu flag tắt | UC-A02 | Không nút Nói / Thẻ / Ngữ pháp |
+| ID màn | Việc | Route | UC | Ghi chú |
+|---|---|---|---|---|
+| S-LANDING | Giới thiệu phương pháp CI & CTA | `/` | — | Landing công khai, thẩm mỹ Tonmana Nhật đương đại, cam kết trung thực |
+| S-LOGIN | Email / mật khẩu / đăng ký / đăng xuất | `/login` | UC-L01, UC-T01 | Staff và learner cùng login; route sau role; thông báo logout mọi thiết bị |
+| S-CATALOG | Catalog theo `ci_level` (S-HOME) | `/catalog` | UC-L02, UC-L10 | Bộ lọc CI qua API; card từ metadata public; empty/error/retry phân biệt |
+| S-SESSION | Vòng học & phiên phát CI | `/session` | UC-L03, UC-L04, UC-L10 | Phát clip đã chọn; record `sessionStorage` theo user/tab, không lưu clip/signed URL; logout xoá record UI của user hiện tại, không end server session; hỗ trợ Idempotency & khôi phục |
+| S-PROGRESS | Phút CI + cấp hiện tại | `/progress` | UC-L05 | Tự làm mới sau khi end; không điểm, không % bài |
+| S-STAFF-LIST | Danh sách nội dung CMS | `/staff` | UC-T02b | Lọc status/CI, phân trang; teacher/admin truy cập |
+| S-STAFF-NEW | Tạo clip draft mới | `/staff/new` | UC-T02 | Form nhập `catalogWriteFields`; validation chặt chẽ |
+| S-STAFF-EDIT | Chi tiết, sửa draft & media | `/staff/[id]` | UC-T03, UC-T04, UC-T05, UC-A01 | Sửa draft với revision; upload MP4; nộp QA; admin publish/unpublish |
+| S-FLAGS-GATE | Ẩn UI nếu flag tắt | (toàn app) | UC-A02 | Không nút Nói / Thẻ / Ngữ pháp / Bản dịch |
 
 ## Web (lean-forward)
 
+- Bố cục responsive 3 tầng: Public (Landing), Learner (Catalog, Session, Progress), Staff (/staff/*).
 - Cột catalog rộng, tiến độ luôn nhìn thấy.
-- `/staff/*`: CMS list, tạo item, upload, submit QA, publish (admin).
-- Breakpoint ≥ 1024px cho staff bảng.
+- Breakpoint ≥ 1024px cho staff bảng thao tác.
+
 
 ## Phone (on-the-go)
 

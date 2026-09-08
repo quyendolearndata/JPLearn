@@ -6,6 +6,10 @@
 - Quan hệ: **Supersedes [ADR-003](adr-003-runtime-python.md) D2** (phần chủ DDL + phần «cấm Alembic»). [ADR-001](adr-001-stack.md) giữ nguyên: PostgreSQL, object storage, Next.js, Expo, `/staff`.
 - Kèm: baseline schema [`docs/qa/adr-004-schema-baseline.json`](../../qa/adr-004-schema-baseline.json) · test [`apps/api-python/tests/test_schema_ddl.py`](../../../apps/api-python/tests/test_schema_ddl.py)
 
+> Cập nhật đường chạy 2026-09-05: xem [runbook backend](../../ops/runbook-backend.md).
+> CLI hiện tự kiểm tra schema trước baseline stamp và chặn một số dạng downgrade
+> theo provenance environment. Số test/chữ ký khi ban hành bên dưới là lịch sử.
+
 ## 1. Bối cảnh
 
 ADR-003 D2 giữ Prisma làm chủ DDL và **cấm Alembic** — đó là quyết định có chủ đích, không phải quán tính. Lý do: giai đoạn song song có hai runtime đọc **một** schema, nên chủ DDL phải là bên đang có lịch sử migration đã chạy thật (`0001`…`0004` + `_prisma_migrations`). Hai công cụ cùng ghi DDL trong giai đoạn đó là cách nhanh nhất để có schema không ai giải thích được.
@@ -36,15 +40,15 @@ DB đã có schema do Prisma dựng thì **adopt**, không dựng lại: `jplear
 
 ### D4 — CLI là bề mặt vận hành
 
-`jplearn-migrate upgrade|downgrade|stamp|current` (`src/jplearn_api/migrate.py`) và `jplearn-seed` (`src/jplearn_api/seed.py`, port của `prisma/seed.ts`, idempotent, **không đè `status`** — FR-CAT-002/#39: seed không được publish hộ và không được kéo item đang QA về `draft`).
+`jplearn-migrate upgrade|downgrade|stamp|current` (`src/jplearn_api/entrypoints/cli/migrate.py`) và `jplearn-seed` (`src/jplearn_api/entrypoints/cli/seed.py`, port của `prisma/seed.ts`, idempotent, **không đè `status`** — FR-CAT-002/#39: seed không được publish hộ và không được kéo item đang QA về `draft`).
 
 Runbook và CI gọi CLI này. Gọi `alembic` trần bỏ qua cấu hình async engine của repo.
 
 ## 3. Gate chống drift (điều kiện D2 của ADR-003 đã trả)
 
-- `src/jplearn_api/schema_snapshot.py` chụp cấu trúc **thật** từ `information_schema` / `pg_catalog`: enums, columns, constraints, indexes. So schema sống, không so file.
+- `src/jplearn_api/adapters/persistence/schema_snapshot.py` chụp cấu trúc **thật** từ `information_schema` / `pg_catalog`: enums, columns, constraints, indexes. So schema sống, không so file.
 - Baseline [`docs/qa/adr-004-schema-baseline.json`](../../qa/adr-004-schema-baseline.json) chụp từ DB do **Prisma** dựng, **trước khi xóa**: 6 enum, 10 bảng, 20 constraint, 12 index. Đây là bằng chứng còn lại duy nhất của schema thời Prisma.
-- [`apps/api-python/tests/test_schema_ddl.py`](../../../apps/api-python/tests/test_schema_ddl.py) — **6 test, PASS**:
+- [`apps/api-python/tests/test_schema_ddl.py`](../../../apps/api-python/tests/test_schema_ddl.py) — bản ghi khi ban hành: **6 test, PASS**:
   1. DB do Alembic dựng == baseline.
   2. `downgrade base` → `upgrade head` trở lại **đúng** baseline (migration hai chiều, không one-way).
   3. `stamp` adopt DB dựng trước Alembic (`0001_prisma_baseline`).
@@ -52,7 +56,12 @@ Runbook và CI gọi CLI này. Gọi `alembic` trần bỏ qua cấu hình async
   5. FR-NEG-004: schema sống không có cột textbook.
   6. Scanner `scripts/assert-no-textbook.ts` vẫn **đỏ** khi cột cấm nằm trong file `.py`.
 
-**Quy tắc:** đổi schema có chủ đích thì revision mới **và** regenerate baseline JSON **trong cùng một commit**, kèm FR id. Baseline lệch mà commit chỉ sửa test → reject.
+**Quy tắc khi ban hành:** đổi schema có chủ đích cần revision, expected schema và
+FR id cùng commit; không chỉ sửa test cho xanh. **Lưu ý implementation hiện tại:**
+`adr-004-schema-baseline.json` và packaged copy được dùng trực tiếp cho adoption
+`0001_prisma_baseline`; không ghi đè bằng schema HEAD mới mà chưa có thiết kế
+versioning baseline/adoption được CTO/BA review. Snapshot kiểm tra phải ghi artifact
+riêng. Lượt cập nhật docs này không thêm migration hoặc đổi baseline.
 
 **Cấm** nới lỏng test cho xanh (skip, xfail, so sánh lỏng field). Test đỏ nghĩa là schema đã lệch, không phải test sai.
 
@@ -79,7 +88,7 @@ Runbook và CI gọi CLI này. Gọi `alembic` trần bỏ qua cấu hình async
 | Revision tay sai hoặc thiếu | Không có autogenerate đối chiếu | Round-trip `downgrade base` → `upgrade head` so baseline; job CI `api-python` chạy `jplearn-migrate upgrade` trên DB trống |
 | Regenerate baseline «cho xanh» | JSON là chỗ dễ ăn gian nhất trong gate | Review coi sửa baseline **là** sửa schema: phải có revision + FR id đi kèm trong cùng commit |
 | Không còn runtime thứ hai để đối chiếu | Sai **hành vi** (không phải sai schema) không còn bên nào so | Baseline mới = pytest 55/55 + web E2E Playwright 10/10 (chromium + webkit). Hồi quy phải thành test mới, không so với Nest |
-| `stamp` sai trên staging | `stamp` ghi version mà không kiểm shape | Chạy `schema_snapshot` so baseline **trước** khi stamp; nằm trong runbook Platform + Ops |
+| `stamp` sai trên staging | CLI hiện kiểm live schema khi stamp baseline/head; lệnh Alembic trần có thể bypass | Dùng CLI đã kiểm chứng, backup trước adoption, không tắt verify/bypass để ép stamp |
 | Có người «điền vào» `target_metadata` | `None` dễ bị đọc là thiếu sót | Ghi lý do tại `env.py` và tại D2 ở trên; PR bật autogenerate khi mapping chưa mang DDL truth → reject |
 
 ## 6. Phương án loại

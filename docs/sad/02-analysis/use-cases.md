@@ -6,13 +6,21 @@ Sơ đồ Mermaid: [diagrams.md](diagrams.md) — mục 1 actor → UC; mục **
 
 Không có UC flashcard, bài ngữ pháp, hay kênh dịch L1 trên client học viên (`FR-NEG-001`…`003`).
 
-## Sơ đồ (nền tảng)
+## Sơ đồ (nền tảng & Vòng học CI mở rộng)
 
 ```
 Learner: UC-L01 Login, UC-L02 Browse catalog, UC-L03 Start session,
-         UC-L04 End session, UC-L05 View progress, UC-L06 Sync devices
+         UC-L04 End session, UC-L05 View progress, UC-L06 Sync devices,
+         UC-L10 Complete session with clip,
+         UC-L14 Scene navigation & subtitles, UC-L15 Save bookmarks & context,
+         UC-L16 Resume playback, UC-L17 Active watch heartbeat,
+         UC-L18 Daily goal & streak, UC-L19 Watch history,
+         UC-L20 Smart stream recommendations, UC-L21 Personal collections,
+         UC-L23 Study time reports, UC-L24 Single playback lease takeover
 Teacher: UC-T01 Login staff, UC-T02 Create item, UC-T03 Upload media,
-         UC-T04 Submit level QA
+         UC-T04 Submit level QA, UC-T05 Edit draft metadata,
+         UC-T06 Manage scenes & subtitles, UC-T07 Manage series & episodes,
+         UC-T09 Freeze content version on QA submit
 LevelQA: UC-Q01 Review CI rubric, UC-Q02 Approve or reject
 Admin:   UC-A01 Publish, UC-A02 Manage flags, UC-A03 Manage roles
 ```
@@ -158,7 +166,7 @@ Chặt UML thì login là precondition; v1 mô hình include vì mọi UC học 
   3. Hệ thống tạo item `draft`, `has_l1_translation=false` (không checkbox “thêm bản dịch” v1).
   4. Hệ thống không expose item này trên GET `/catalog` học viên.
 - **Kịch bản phụ (extend):** không.
-- **Ngoại lệ:** Learner → 403. Không nhảy `draft` → `published` từ màn này. Không include UC-T03 (upload là bước BPMN riêng, mục 5).
+- **Ngoại lệ:** Learner → 403. Không nhảy `draft` → `published` từ màn này. Không include UC-T03 (upload là bước BPMN riêng, mục 5). Q1: `media_type=audio` giữ trong schema, UI vô hiệu hoá lựa chọn vì upload chỉ nhận MP4 (FR-CMS-001). BA quyết định 2026-09-06.
 - **Quan hệ:** «include» UC-T01.
 
 ### UC-T03 Upload media
@@ -256,7 +264,7 @@ Chặt UML thì login là precondition; v1 mô hình include vì mọi UC học 
 ### UC-A02 Feature flags
 
 - **Actor:** Admin
-- **FR / NFR:** FR-FLG-001, FR-FLG-002
+- **FR / NFR:** FR-FLG-001, FR-FLG-002, FR-FLG-003
 - **Trigger:** Admin xem/sửa cờ nền tảng.
 - **Tiền điều kiện:** UC-T01 («include»).
 - **Hậu điều kiện (thành công):** `speaking_enabled`, `l1_subtitles_enabled`, `grammar_enabled`, `flashcards_enabled` mặc định `false`. Client không vẽ UI kênh đã tắt.
@@ -265,6 +273,7 @@ Chặt UML thì login là precondition; v1 mô hình include vì mọi UC học 
   2. Hệ thống trả bốn cờ (mặc định false).
   3. Actor không bật textbook ở v1 trừ quyết định Pedagogy có chủ đích (cổng nền tảng).
   4. Client học viên ẩn Nói / Thẻ / Ngữ pháp khi flag false (`S-FLAGS-GATE`).
+  5. Technical capabilities đọc qua GET /capabilities, cấu hình môi trường/allowlist độc lập. Server chặn route bị tắt bằng 403 CAPABILITY_DISABLED; end/reconcile playback vẫn hoạt động nhưng zero credit. Không mở rộng PATCH /staff/flags.
 - **Kịch bản phụ (extend):** không.
 - **Ngoại lệ:** Không phải Admin → 403. Không có UC dương cho flashcard/grammar/dịch L1.
 - **Quan hệ:** «include» UC-T01.
@@ -285,16 +294,268 @@ Chặt UML thì login là precondition; v1 mô hình include vì mọi UC học 
 - **Ngoại lệ:** Không invent role `level_qa`. Teacher không publish nếu policy chỉ Admin (A01) — đổi role không bỏ bước QA.
 - **Quan hệ:** «include» UC-T01.
 
-## Deferred — Kịch bản Phase 5 (chưa thiết kế UI v1)
+### UC-T02b Xem danh sách nội dung CMS
 
-Không vẽ `UC-L10`…`UC-L13` trên sơ đồ v1 (mục 1 / 1b). Mỗi UC: một kịch bản chính; UI vòng học = SAD Phase 5.
+- **Actor:** Teacher hoặc Admin
+- **FR / NFR:** FR-CAT-005, FR-CMS-001…004, NFR-SEC-002
+- **Trigger:** Actor truy cập màn hình `/staff`.
+- **Tiền điều kiện:** UC-T01 («include»).
+- **Hậu điều kiện (thành công):** Danh sách item nội bộ với phân trang, lọc theo status (`draft`, `level_qa`, `published`, `archived`) và `ci_level`. Không lộ secret/storage_key.
+- **Kịch bản chính:**
+  1. Actor mở `/staff`.
+  2. Hệ thống gọi `GET /staff/catalog` kèm query filter (status, ci_level).
+  3. Hệ thống trả danh sách kèm `revision`, `status`, metadata nội bộ và cờ media.
+  4. Client hiển thị bảng nội dung kèm hành động tương ứng với vai trò (Teacher: sửa draft, nộp QA; Admin: thêm publish, unpublish).
+- **Kịch bản phụ (extend):** không.
+- **Ngoại lệ:** Learner gọi `GET /staff/catalog` → 403 Forbidden.
+- **Quan hệ:** «include» UC-T01.
 
-### UC-L10 Phát item CI trong phiên
+### UC-T05 Chỉnh sửa metadata draft
 
-- **Actor:** Learner — **FR:** FR-LRN-001
-- **Tiền:** Phiên đã start (UC-L03); item `published` có URL media.
-- **Kịch bản chính:** Actor chọn phát item trong phiên → Hệ thống cấp playback URL (ký) → Client phát xem/nghe CI. Không phụ đề L1, không flashcard, không bài ngữ pháp.
-- **Hiện trạng (không đổi FR):** Web đã có player skeleton sau cổng nền tảng. Expo native gộp #30. Chưa thiết kế UI v1 đầy đủ / HLS trên mọi client (NFR-PERF-002).
+- **Actor:** Teacher hoặc Admin
+- **FR / NFR:** FR-CAT-005
+- **Trigger:** Actor chỉnh sửa metadata của item draft tại `/staff/[id]`.
+- **Tiền điều kiện:** UC-T01 («include»). Item có `status=draft`.
+- **Hậu điều kiện (thành công):** Metadata cập nhật thành công, `revision` tăng lên.
+- **Kịch bản chính:**
+  1. Actor mở item draft, sửa thông tin trong `catalogWriteFields` (topic, ci_level, duration, media_type, visual_support, title_internal).
+  2. Client gửi `PATCH /staff/catalog/{id}` kèm body và `revision` hiện tại.
+  3. Hệ thống kiểm tra trong transaction: nếu item là `draft` và `revision` khớp, cập nhật metadata và tăng `revision`.
+  4. Hệ thống trả về item đã cập nhật.
+- **Kịch bản phụ (extend):** không.
+- **Ngoại lệ:**
+  - Item không ở trạng thái `draft` → 400 Bad Request.
+  - `revision` không khớp (xung đột đồng thời do người khác vừa sửa) → 409 Conflict; client yêu cầu reload dữ liệu mới.
+- **Quan hệ:** «include» UC-T01.
+
+### UC-T06 Quản lý scenes & subtitles cho clip CI
+
+- **Actor:** Teacher hoặc Admin
+- **FR / NFR:** FR-SCN-001, FR-CAT-005
+- **Trigger:** Actor chỉnh sửa kịch bản phân đoạn cảnh (scene breakdown) và transcript tiếng Nhật của clip CI tại `/staff/[id]/content`.
+- **Tiền điều kiện:** UC-T01 («include»). Item ở trạng thái `draft`.
+- **Hậu điều kiện (thành công):** Tạo hoặc cập nhật phiên bản nội dung nháp (`ContentVersion`) với danh sách các phân đoạn cảnh (`Scene`) có timestamp bắt đầu/kết thúc, tiêu đề cảnh và lời thoại JP. `revision` của content version tăng lên.
+- **Kịch bản chính:**
+  1. Actor mở trang biên soạn phân đoạn cho clip draft.
+  2. Actor nhập danh sách cảnh: `scene_index`, `start_time_seconds`, `end_time_seconds`, `title_jp`, `transcript_jp`.
+  3. Client gửi `PUT /staff/catalog/{id}/content` kèm body danh sách scenes và `version_revision` hiện tại.
+  4. Hệ thống kiểm tra: item phải là `draft`, `start_time < end_time`, các cảnh không chồng lấn vô lý và nằm trong thời lượng clip, `version_revision` khớp với bản hiện hành.
+  5. Hệ thống lưu phiên bản nháp và các cảnh liên kết trong một transaction, cập nhật `updated_at`.
+  6. Hệ thống trả về content version mới cùng danh sách scenes.
+- **Kịch bản phụ (extend):**
+  - 4a. Xung đột đồng thời (`version_revision` không khớp): Hệ thống trả 409 Conflict; client thông báo nội dung đã được người khác chỉnh sửa và tải lại bản mới nhất.
+- **Ngoại lệ:**
+  - Item đã `level_qa` hoặc `published` → 400 Bad Request (nội dung đã freeze hoặc xuất bản, không được sửa trực tiếp; phải return to draft hoặc tạo revision mới).
+- **Quan hệ:** «include» UC-T01.
+
+### UC-T07 Quản lý series & episodes
+
+- **Actor:** Teacher hoặc Admin
+- **FR / NFR:** FR-SER-001, FR-CAT-005
+- **Trigger:** Actor tổ chức các clip lẻ vào cùng một Series để học viên binge-watch CI có hệ thống.
+- **Tiền điều kiện:** UC-T01 («include»). Series được tạo hoặc cập nhật trong CMS.
+- **Hậu điều kiện (thành công):** Series lưu trữ thông tin tiêu đề, mô tả, độ khó CI mục tiêu; các CatalogItem được gán `series_id` và `episode_number` tăng dần.
+- **Kịch bản chính:**
+  1. Actor tạo mới Series qua `POST /staff/series` hoặc sửa qua `PATCH /staff/series/{id}`.
+  2. Actor gán các clip vào Series và xếp thứ tự tập (`episode_number`).
+  3. Hệ thống kiểm tra không trùng `episode_number` trong cùng một series.
+  4. Hệ thống cập nhật liên kết và trả về thông tin series kèm danh sách tập.
+- **Kịch bản phụ (extend):** không.
+- **Ngoại lệ:**
+  - Gán tập vào series không tồn tại → 404 Not Found.
+- **Quan hệ:** «include» UC-T01.
+
+### UC-T09 Freeze content version khi submit Level QA
+
+- **Actor:** Teacher
+- **FR / NFR:** FR-SCN-001, FR-CMS-002
+- **Trigger:** Teacher hoàn tất biên soạn video và scenes, gửi sang cho Level QA kiểm định.
+- **Tiền điều kiện:** UC-T01 («include»). Item đang ở trạng thái `draft`.
+- **Hậu điều kiện (thành công):** Phiên bản nội dung và scenes hiện tại chuyển sang trạng thái `frozen`; `item.status` chuyển thành `level_qa`. Không thể thay đổi nội dung nếu không bị reject trả về draft.
+- **Kịch bản chính:**
+  1. Teacher nhấn "Gửi kiểm định QA" (`POST /staff/catalog/{id}/submit-qa`).
+  2. Hệ thống kiểm tra item có ít nhất 1 content version hợp lệ và media đầy đủ.
+  3. Trong cùng transaction, hệ thống khóa version hiện tại (`is_frozen = true`), đổi `item.status = 'level_qa'`.
+  4. Hệ thống ghi audit log và trả về item cập nhật.
+- **Kịch bản phụ (extend):**
+  - 1a. QA từ chối hoặc Admin yêu cầu sửa: Staff gọi `POST /staff/catalog/{id}/return-to-draft` để mở khóa sửa tiếp.
+- **Ngoại lệ:**
+  - Clip chưa có media hoặc metadata thiếu → 400 Bad Request.
+- **Quan hệ:** «include» UC-T01, UC-T04.
+
+## SAD Vòng 2 — Vòng học có chọn clip & Khôi phục phiên (Phase 5 / Mốc A)
+
+### UC-L10 Vòng học hoàn chỉnh: chọn clip, mở phiên, phát CI và kết thúc
+
+- **Actor:** Learner
+- **FR / NFR:** FR-LRN-001, FR-SES-001…003, FR-PRG-001/004, NFR-PERF-002, NFR-A11Y-001
+- **Trigger:** Actor chọn bài học từ danh mục hoặc mở `/session`.
+- **Tiền điều kiện:** UC-L01 đã thực hiện («include»). Item được chọn phải có `status=published` và có media playback hợp lệ.
+- **Hậu điều kiện (thành công):** Phiên học được ghi nhận, phát media mượt mà, kết thúc và cộng phút tích lũy chính xác trên server. Tiến độ hiển thị cập nhật.
+- **Kịch bản chính:**
+  1. Actor duyệt `/catalog`, chọn một clip CI cụ thể.
+  2. Client chuyển sang giao diện `/session` gắn với clip đã chọn.
+  3. Client sinh `Idempotency-Key`, gửi `POST /sessions` (kèm header `Idempotency-Key` và `device_class=web`).
+  4. Hệ thống lưu phiên và ghi nhận idempotency key, trả về `session_id`.
+  5. Client lưu tham chiếu phiên vào storage theo tab/user để tồn tại qua reload.
+  6. Client khởi tạo trình phát `CiPlayer`: ưu tiên `hls_url` (HLS native hoặc hls.js), tự động fallback về `playback_url` (MP4) khi cần.
+  7. Actor xem/nghe nội dung CI (điều khiển được bằng bàn phím theo NFR-A11Y-001). Tuyệt đối không có phụ đề tiếng Việt L1, không câu hỏi ngữ pháp, không flashcard.
+  8. Actor bấm "Kết thúc phiên".
+  9. Client gửi `POST /sessions/{id}/end`.
+  10. Server xác nhận kết thúc, tính thời lượng, cộng floor phút vào `minutes_comprehensible`, trả về tiến độ mới.
+  11. Client dọn sạch active session và hiển thị trạng thái hoàn thành.
+- **Kịch bản phụ (extend):**
+  - 4a. Mất kết nối lúc gửi Start: Client retry có chủ đích với cùng `Idempotency-Key`. Hệ thống trả về phiên đã tạo thay vì sinh phiên trùng.
+  - 9a. Mất kết nối lúc gửi End: Client giữ nguyên `session_id`, gửi `GET /sessions/{id}` để tra cứu trạng thái. Nếu phiên đã kết thúc trên server, client cập nhật UI thành công và gọi `GET /progress`. Nếu phiên vẫn `active`, cho phép người dùng thử kết thúc lại.
+  - 5a. Người dùng F5 / reload trình duyệt giữa phiên: Client đọc lại session active từ local storage, gọi `GET /sessions/{id}` để khôi phục trạng thái và tiếp tục phiên học.
+- **Ngoại lệ:**
+  - Clip bị gỡ (unpublish) trong lúc học: Báo lỗi nội dung không còn khả dụng, nhưng vẫn cho phép bấm kết thúc phiên để ghi nhận phút học trước đó.
+  - 401 hết hạn token giữa phiên: Yêu cầu đăng nhập lại, chỉ khôi phục phiên nếu đúng tài khoản sở hữu ban đầu.
+- **Quan hệ:** «include» UC-L01, UC-L02, UC-L05.
+
+### UC-L14 Xem clip kèm scene navigation & subtitle đồng bộ
+
+- **Actor:** Learner
+- **FR / NFR:** FR-SCN-001, FR-LRN-001, NFR-A11Y-001
+- **Trigger:** Trong khi xem clip CI tại `/session`, Actor muốn tua nhanh/chậm theo cảnh hoặc đọc kịch bản tiếng Nhật đồng bộ.
+- **Tiền điều kiện:** UC-L01, UC-L10 («include»). Clip có `published_content_version` kèm danh sách cảnh.
+- **Hậu điều kiện (thành công):** Trình phát hiển thị danh sách cảnh; khi video phát đến đâu, cảnh hiện tại tự động được highlight; Actor bấm vào cảnh nào thì video nhảy đến mốc thời gian đó. Tuyệt đối không có phụ đề tiếng mẹ đẻ L1.
+- **Kịch bản chính:**
+  1. Client tải nội dung clip qua `GET /catalog/{id}/content`.
+  2. Client hiển thị danh sách scene tabs bên dưới hoặc cạnh video player.
+  3. Khi phát video, thanh tiến trình cập nhật; cảnh tương ứng với thời điểm hiện tại (`start_time <= current_time < end_time`) được đánh dấu active.
+  4. Actor chọn một cảnh khác: player tua đến `scene.start_time_seconds`.
+- **Kịch bản phụ (extend):**
+  - 1a. Clip không có scene breakdown (clip ngắn hoặc phiên bản cũ): Client ẩn bảng phân cảnh và phát video bình thường.
+- **Ngoại lệ:** không.
+- **Quan hệ:** «include» UC-L10.
+
+### UC-L15 Lưu từ vựng & câu ngữ cảnh vào sổ tay
+
+- **Actor:** Learner
+- **FR / NFR:** FR-BMK-001, FR-NEG-001, FR-NEG-003
+- **Trigger:** Actor gặp một từ hoặc câu ấn tượng trong clip CI và bấm "Lưu vào sổ tay cá nhân".
+- **Tiền điều kiện:** UC-L01 («include»). Đang xem clip hoặc xem lại phân cảnh.
+- **Hậu điều kiện (thành công):** Bản ghi Bookmark được lưu trữ với từ vựng/cụm từ, câu ngữ cảnh tiếng Nhật trích xuất từ transcript của scene, timestamp và liên kết tới clip. Không sinh flashcard hay thuật toán lặp lại ngắt quãng (SRS) trắc nghiệm.
+- **Kịch bản chính:**
+  1. Actor chọn từ hoặc bấm lưu câu thoại hiện tại.
+  2. Client gửi `POST /bookmarks` kèm `catalog_item_id`, `scene_id`, `term`, `context_sentence`, `timestamp_seconds`.
+  3. Hệ thống xác thực quyền sở hữu và lưu bản ghi vào sổ tay cá nhân của học viên.
+  4. Hệ thống trả về bản ghi đã tạo.
+  5. Actor có thể xem danh sách đã lưu qua `GET /bookmarks`.
+- **Kịch bản phụ (extend):**
+  - 1a. Actor xóa bookmark: Client gửi `DELETE /bookmarks/{id}` → Hệ thống xóa bản ghi khỏi sổ tay.
+- **Ngoại lệ:**
+  - Lưu trùng lặp cùng một cụm từ trong cùng cảnh: Hệ thống trả về bản ghi hiện có (idempotent), không tạo bản ghi rác.
+- **Quan hệ:** «include» UC-L01.
+
+### UC-L16 Tiếp tục xem từ vị trí dừng
+
+- **Actor:** Learner — **FR/NFR:** FR-RSM-001, FR-LRN-001, NFR-XPLAT-001.
+- **Tiền điều kiện:** UC-L01; đã có checkpoint.
+- **Kịch bản:** GET `/me/resume/{catalog_item_id}` hoặc list `/me/resume`; chỉ trả resume hợp lệ sau deletion cutoff, gắn content version và availability. Start dùng position của đúng version current; không chuyển mốc cũ sang media mới. Không dùng max(position) vì tua lùi là hợp lệ.
+- **Hậu điều kiện:** Client biết vị trí có thể tiếp tục; version stale/unpublished không được cấp media cũ. Mặc định 0 khi không có checkpoint hợp lệ. Không tự áp dụng quy tắc 95% chưa được chốt.
+
+### UC-L17 Ghi nhận thời gian phát thực
+
+- **Actor:** Learner/client — **FR/NFR:** FR-WAT-001, NFR-LAT-001, NFR-CONCUR-001.
+- **Tiền điều kiện:** UC-L01, UC-L10; playback current published và writer lease hợp lệ.
+- **Kịch bản:** POST `/playbacks` với Idempotency-Key; client gửi PUT `/playbacks/{id}/checkpoints/{seq}` mỗi khoảng 15s và khi pause/end, cumulative active milliseconds, epoch, position/rate. Server kiểm receipt trước trạng thái live, rồi active writer ID/lease45s/epoch/current version/seq/counter dưới user lock; atomic receipt+resume+daily credit.
+- **Hậu điều kiện:** Active theo wall time, không nhân playback rate; pause/end nhận phần active thực trước chuyển trạng thái. Legacy sessions/progress không thay đổi.
+- **Ngoại lệ:** Delta/rate/position sai trả 400; conflict seq/body/version/epoch trả 409; gap>30s reset mốc với credit0; lease hết hạn phải start mới. GET `/playbacks/{id}` reconcile; POST end dùng final checkpoint cùng validation, receipt retry không ghi lại credit/resume sau deletion.
+
+### UC-L18 Mục tiêu ngày và preferences
+
+- **Actor:** Learner — **FR/NFR:** FR-GOL-001, FR-WAT-001.
+- **Kịch bản:** GET/PUT `/me/learning-preferences`, expected_revision, goal0–120 phút (0=tắt), IANA timezone, topics tồn tại. Goal/timezone pending từ nửa đêm tiếp theo của timezone current; topics áp dụng ngay. Trước effective, sửa lại thay pending dưới user lock, giữ boundary tính theo current. CAS stale trả409.
+- **Hậu điều kiện:** GET `/me/activity` tính goal chỉ từ active_watch_seconds, trả bucket ngày/timezone/policy version; goal/timezone lịch sử không overwrite. Range inclusive tối đa90 ngày. Goal0 không báo hoàn thành mục tiêu. Response trả `current_streak_days` và `longest_streak_days` trong cửa sổ được hỏi; một ngày có nhiều policy bucket chỉ được tính một lần. Nếu ngày cuối là hôm nay và chưa đạt goal, streak tới hôm qua vẫn còn hiệu lực đến hết ngày.
+- **Phạm vi nghiệm thu:** Không có streak freeze mặc định. Không cộng legacy với active.
+
+### UC-L19 Xem và xóa lịch sử
+
+- **Actor:** Learner — **FR/NFR:** FR-HIS-001, NFR-RET-001, NFR-PRIV-001.
+- **Kịch bản:** GET `/me/watch-history` cursor; DELETE toàn bộ trả202 + deletion ID/cutoff/scope/retained_data. GET `/me/history-deletions/{id}` theo dõi queued/running/completed/failed.
+- **Hậu điều kiện:** History/resume trước cutoff ẩn ngay và loại khỏi recommendation; active playback bị fence, gói late không tái tạo. Worker dọn chi tiết, giữ receipt/tombstone chống retry trong cửa sổ đã chốt, giữ saved scenes và daily/legacy aggregates.
+- **Ngoại lệ/phạm vi:** Owner isolation; không xóa tài khoản, reset progress hoặc endpoint xóa một mục lịch sử trong phạm vi này. NFR-RET-001 raw90d/aggregate vĩnh viễn giữ nguyên; policy mới chưa được duyệt.
+
+### UC-L20 Xem danh sách gợi ý clip tiếp theo (Smart Stream)
+
+- **Actor:** Learner
+- **FR / NFR:** FR-REC-001, FR-PRG-002
+- **Trigger:** Sau khi kết thúc một clip hoặc tại trang chủ, Actor muốn hệ thống tự động gợi ý clip CI tiếp theo phù hợp với trình độ.
+- **Tiền điều kiện:** UC-L01 («include»).
+- **Hậu điều kiện (thành công):** Trả về luồng đề xuất clip thông minh dựa trên `current_ci_level`, các chủ đề học viên thường xem, ưu tiên các tập tiếp theo trong cùng series nếu đang xem dở, hoặc clip cùng cấp độ.
+- **Kịch bản chính:**
+  1. Client gửi `GET /me/recommendations`.
+  2. Hệ thống kiểm tra `current_ci_level` của học viên và lịch sử xem gần đây.
+  3. Thuật toán chọn lựa các clip published phù hợp:
+     - Ưu tiên 1: Tập tiếp theo trong series đang xem.
+     - Ưu tiên 2: Clip cùng level CI nhưng chưa xem hết.
+     - Ưu tiên 3: Clip cùng topic ở level phù hợp.
+  4. Hệ thống trả về danh sách gợi ý kèm lý do gợi ý (ví dụ: "Tập tiếp theo của series X", "Phù hợp với trình độ L1").
+- **Kịch bản phụ (extend):**
+  - 2a. Chưa có lịch sử xem (học viên mới): Đề xuất các clip phổ biến nhất ở level mặc định (0 hoặc 1).
+- **Ngoại lệ:** không.
+- **Quan hệ:** «include» UC-L01.
+
+### UC-L21 Quản lý playlist & bộ sưu tập cá nhân
+
+- **Actor:** Learner
+- **FR / NFR:** FR-COL-001
+- **Trigger:** Actor muốn nhóm các clip theo chủ đề riêng (ví dụ: "Hội thoại đời thường", "Ẩm thực Nhật Bản", "Nghe lúc lái xe").
+- **Tiền điều kiện:** UC-L01 («include»).
+- **Hậu điều kiện (thành công):** Playlist cá nhân được tạo, cho phép thêm/bớt clip và sắp xếp thứ tự nghe.
+- **Kịch bản chính:**
+  1. Actor tạo playlist mới qua `POST /collections` kèm tên và mô tả.
+  2. Actor thêm clip vào playlist qua `POST /collections/{id}/items`.
+  3. Client gọi `GET /collections` hoặc `GET /collections/{id}` để duyệt danh sách.
+  4. Actor có thể xóa clip khỏi playlist hoặc xóa cả playlist (`DELETE /collections/{id}`).
+- **Kịch bản phụ (extend):** không.
+- **Ngoại lệ:**
+  - Thêm clip không tồn tại hoặc chưa published → 404/400.
+  - Sửa hoặc xóa collection của người khác → 403/404 (cách ly phạm vi dữ liệu).
+- **Quan hệ:** «include» UC-L01.
+
+### UC-L23 Xem báo cáo thống kê thời gian học
+
+- **Actor:** Learner
+- **FR / NFR:** FR-RPT-001, FR-WAT-001, NFR-RET-001
+- **Trigger:** Actor mở trang Báo cáo / Thống kê để đánh giá nỗ lực học tập immersion của mình.
+- **Tiền điều kiện:** UC-L01 («include»).
+- **Hậu điều kiện (thành công):** Trả về biểu đồ phân tích thời gian học: số phút/giờ học mỗi ngày trong tuần/tháng, tỷ lệ hoàn thành mục tiêu, tổng thời gian tích lũy theo cả 2 chỉ số (`minutes_comprehensible` và `active_watch_seconds`).
+- **Kịch bản chính:**
+  1. Actor mở tab Báo cáo.
+  2. Client gửi `GET /reports/study-time?period=week` (hoặc `month`).
+  3. Hệ thống truy vấn dữ liệu tổng hợp theo ngày của học viên trong khoảng thời gian yêu cầu.
+  4. Hệ thống trả về mảng dữ liệu thống kê ngày: `{date, active_seconds, legacy_minutes, completed_items_count}`.
+  5. Client vẽ biểu đồ trực quan (cột / đường) thể hiện mức độ chuyên cần.
+- **Kịch bản phụ (extend):** không.
+- **Ngoại lệ:** không.
+- **Quan hệ:** «include» UC-L01.
+
+### UC-L24 Đơn phiên phát đồng thời (Single playback lease takeover)
+
+- **Actor:** Learner (thao tác trên 2 thiết bị khác nhau)
+- **FR / NFR:** FR-WAT-001, NFR-CONCUR-001
+- **Trigger:** Học viên đang xem clip trên máy tính, sau đó mở app trên điện thoại để tiếp tục xem cùng một clip hoặc clip khác.
+- **Tiền điều kiện:** UC-L01 («include»). Thiết bị A đang nắm giữ active playback lease.
+- **Hậu điều kiện (thành công):** Thiết bị B chiếm quyền phát (lease takeover) với epoch mới. Thiết bị A bị thu hồi quyền phát, heartbeat tiếp theo của thiết bị A bị từ chối và thiết bị A chuyển sang trạng thái tạm dừng với thông báo rõ ràng.
+- **Kịch bản chính:**
+  1. Thiết bị B gửi yêu cầu bắt đầu phát hoặc mở phiên mới (`POST /playbacks` kèm Idempotency-Key và take_over khi cần).
+  2. Hệ thống kiểm tra thấy user đã có lease trên thiết bị A.
+  3. Hệ thống tăng `lease_epoch` (ví dụ từ 1 lên 2), gán `current_device_class` cho thiết bị B, ghi nhận thời gian lease mới.
+  4. Thiết bị B nhận lease token và epoch 2, bắt đầu phát video và gửi heartbeat.
+  5. Thiết bị A gửi heartbeat định kỳ với epoch 1.
+  6. Hệ thống kiểm tra `heartbeat.epoch (1) < current_lease.epoch (2)` → Trả về 409 Conflict (`code: "LEASE_TAKEN_OVER"`).
+  7. Trình phát trên thiết bị A lập tức tạm dừng (pause video) và hiển thị thông báo: "Tài khoản của bạn đang phát trên một thiết bị khác".
+- **Kịch bản phụ (extend):**
+  - 7a. Người dùng trên thiết bị A muốn tiếp tục trên thiết bị A: Bấm nút "Phát tại đây" → Thiết bị A gửi yêu cầu lease takeover mới (epoch tăng lên 3), chiếm lại quyền phát từ thiết bị B.
+- **Ngoại lệ:** không.
+- **Quan hệ:** «include» UC-L10, UC-L17.
+
+## Deferred — Kịch bản Phase 5 mở rộng (chưa thiết kế UI v1)
+
+Không vẽ `UC-L11`…`UC-L13` trên sơ đồ v1.
 
 ### UC-L11 Chọn hình kiểm hiểu
 
@@ -311,7 +572,7 @@ Không vẽ `UC-L10`…`UC-L13` trên sơ đồ v1 (mục 1 / 1b). Mỗi UC: m�
 - **Actor:** Learner — **FR:** FR-EVT-003
 - **Kịch bản chính:** Actor mở item một `ci_level` → Hệ thống ghi event `level_exposed` (`ci_level`). Nếu shell v1 chỉ list, không màn chi tiết: ghi khi start session với `current_ci_level` của user (ghi OpenAPI). Có thể làm sớm khi có detail; **chưa thiết kế UI v1.**
 
-## Truy vết FR → UC (nền tảng)
+## Truy vết FR → UC (nền tảng & Mốc A/B)
 
 | FR | UC |
 |---|---|
@@ -320,24 +581,41 @@ Không vẽ `UC-L10`…`UC-L13` trên sơ đồ v1 (mục 1 / 1b). Mỗi UC: m�
 | FR-ID-003 | UC-L01 |
 | FR-ID-004 | UC-T01, UC-A03 |
 | FR-CAT-001 | UC-T02 |
-| FR-CAT-002 | UC-L02 |
+| FR-CAT-002 | UC-L02, UC-L10 |
 | FR-CAT-003 | UC-L02 |
 | FR-CAT-004 | UC-L02, UC-T02 |
-| FR-CAT-005 | UC-T02 |
-| FR-SES-001 | UC-L03 |
-| FR-SES-002 | UC-L04 |
-| FR-SES-003 | UC-L03 |
-| FR-PRG-001 | UC-L04, UC-L05 |
-| FR-PRG-002 | UC-L05 |
+| FR-CAT-005 | UC-T02, UC-T02b, UC-T05, UC-T06, UC-T07 |
+| FR-SES-001 | UC-L03, UC-L10, UC-L24 |
+| FR-SES-002 | UC-L04, UC-L10 |
+| FR-SES-003 | UC-L03, UC-L10 |
+| FR-LRN-001 | UC-L10, UC-L14, UC-L16 |
+| FR-PRG-001 | UC-L04, UC-L05, UC-L10, UC-L17 |
+| FR-PRG-002 | UC-L05, UC-L20 |
 | FR-PRG-003 | UC-L05 |
 | FR-PRG-004 | UC-L06 |
-| FR-CMS-001 | UC-T03 |
-| FR-CMS-002 | UC-T04, UC-A01 |
-| FR-CMS-003 | UC-A01, UC-L02 |
+| FR-CMS-001 | UC-T03, UC-T02b |
+| FR-CMS-002 | UC-T04, UC-A01, UC-T02b, UC-T09 |
+| FR-CMS-003 | UC-A01, UC-L02, UC-L10 |
 | FR-CMS-004 | UC-A01 |
 | FR-FLG-001 | UC-A02 |
 | FR-FLG-002 | UC-A02, UC-L02 |
-| FR-EVT-001 | UC-L03, UC-L04 |
-| FR-EVT-002 | UC-L04 |
+| FR-FLG-003 | UC-A02, UC-L17, UC-L24 |
+| FR-EVT-001 | UC-L03, UC-L04, UC-L10 |
+| FR-EVT-002 | UC-L04, UC-L10, UC-L17 |
 | FR-EVT-003 | UC-L13 (tối thiểu: session start với current level) |
+| FR-SCN-001 | UC-T06, UC-T09, UC-L14 |
+| FR-SER-001 | UC-T07 |
+| FR-RSM-001 | UC-L16 |
+| FR-WAT-001 | UC-L17, UC-L24 |
+| FR-HIS-001 | UC-L19 |
+| FR-GOL-001 | UC-L18 |
+| FR-REC-001 | UC-L20 |
+| FR-BMK-001 | UC-L15 |
+| FR-COL-001 | UC-L21 |
+| FR-RPT-001 | UC-L23 |
+| NFR-LAT-001 | UC-L17 |
+| NFR-RET-001 | UC-L19, UC-L23 |
+| NFR-CONCUR-001 | UC-L17, UC-L24 |
 | FR-NEG-* | Không có UC dương; QA kiểm vắng feature |
+
+> R0 engineering amendment 2026-09-07; local verification 2026-09-08: contract trên đã có API/Web/Mobile engineering evidence nhưng không thay chữ ký BA/CTO/Pedagogy/Ops hoặc cho phép production. Full transcript chỉ staff; learner scene metadata không full transcript, search chỉ excerpt Nhật đã duyệt.

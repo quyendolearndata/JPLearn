@@ -1,7 +1,13 @@
 # JPLearn — bộ tài liệu nền tảng
 
-Ngày: 2026-08-31  
-Trạng thái: cổng SAD-1/2/3 và cổng nền tảng đã ký 2026-08-25 ([gates.md](company/gates.md)). **SAD-3 mở lại 2026-08-31** — [ADR-003](sad/03-design/adr-003-runtime-python.md) Accepted (runtime API FastAPI); scaffold Python vẫn chờ Phase 0. Phase 5 được phép thiết kế; flags textbook vẫn `false`. Exception HLS/URL ký/UC-L06 native — xem `gates.md`.
+Cập nhật hiện trạng: 2026-09-05. Backend hiện là FastAPI + Alembic, đã refactor
+package theo ADR-006; không còn chờ scaffold Phase 0. Bắt đầu ở
+[tài liệu backend hiện hành](backend/README.md): sử dụng API, phát triển và vận hành.
+
+Lịch sử ký cổng nằm ở [gates.md](company/gates.md), không đại diện cho mọi revision
+sau đó. Engineering còn review hiệu năng; R-09 Operational Acceptance vẫn **HOLD**.
+Xem [ADR-006](sad/03-design/adr-006-clean-architecture.md) và
+[verification refactor](qa/package-layout-refactor.md). Không cấp lại chữ ký từ việc cập nhật docs.
 
 ## Đọc theo thứ tự
 

@@ -19,4 +19,21 @@ File [openapi.yaml](openapi.yaml) (3.0.3) is the contract. FastAPI may emit 3.1.
 
 Contract tests **read this YAML in git**. Do not use a public `/openapi.json` on staging/prod (D8).
 
-Implementation: `apps/api-python/src/jplearn_api/openapi_diff.py` (pytest + `uv run jplearn-openapi-diff`). During partial port, FastAPI paths must be a **subset** of this file; required ops (health + auth in Phase 3) must match.
+Implementation: `apps/api-python/src/jplearn_api/tooling/openapi_diff.py`.
+Port đã hoàn tất: so toàn bộ operations, không áp quy tắc subset của giai đoạn
+partial port. Hiện runtime/contract có 20 operations; docs UI không thuộc số này.
+So cả request/response schemas, parameters, content types và constraints với
+mutation tests; zero diff không chứng minh mọi validation/runtime case đều đúng.
+
+Từ repo root:
+
+```bash
+cd apps/api-python
+PYTHONPATH=src uv run python -m jplearn_api.tooling.openapi_diff
+uv run pytest tests/test_openapi_diff.py tests/test_openapi_mutation_suite.py -q
+```
+
+Console `jplearn-openapi-diff` giữ nguyên trong bản cài package. Docker image không
+chứa YAML contract của repo; khi diff ngoài checkout, truyền `--handwritten` trỏ
+file contract đã mount, hoặc `OPENAPI_SPEC_PATH`. HTTP runtime không import diff tool;
+normalization dùng chung nằm trong `entrypoints/http/openapi.py`.

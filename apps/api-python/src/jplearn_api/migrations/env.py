@@ -15,7 +15,7 @@ from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from jplearn_api.db import async_database_url
+from jplearn_api.adapters.persistence.connection import async_database_url
 
 config = context.config
 

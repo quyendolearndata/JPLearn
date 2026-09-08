@@ -17,8 +17,8 @@ from pathlib import Path
 import asyncpg
 import pytest
 
-from jplearn_api.migrate import downgrade, load_baseline_schema, stamp, upgrade
-from jplearn_api.schema_snapshot import diff, snapshot_url
+from jplearn_api.entrypoints.cli.migrate import downgrade, load_baseline_schema, stamp, upgrade
+from jplearn_api.adapters.persistence.schema_snapshot import diff, snapshot_url
 from pg_harness import start_docker_postgres, stop_docker_postgres
 
 
@@ -116,11 +116,7 @@ def test_stamp_empty_database_fails_closed(isolated_postgres: str) -> None:
     async def ensure_clean_db() -> None:
         conn = await asyncpg.connect(isolated_postgres)
         try:
-            tables = await conn.fetch(
-                "SELECT tablename FROM pg_tables WHERE schemaname = 'public'",
-            )
-            for row in tables:
-                await conn.execute(f"DROP TABLE IF EXISTS \"{row['tablename']}\" CASCADE")
+            await conn.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
         finally:
             await conn.close()
 
@@ -148,8 +144,16 @@ def test_stamp_empty_database_fails_closed(isolated_postgres: str) -> None:
 def test_stamp_fails_on_schema_divergence_and_preserves_clean_state(
     isolated_postgres: str,
 ) -> None:
+    async def ensure_clean_db() -> None:
+        conn = await asyncpg.connect(isolated_postgres)
+        try:
+            await conn.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+        finally:
+            await conn.close()
+
+    asyncio.run(ensure_clean_db())
     # First, bring DB to baseline via upgrade
-    upgrade(isolated_postgres)
+    upgrade(isolated_postgres, "0001_prisma_baseline")
 
     async def drop_bookkeeping() -> None:
         conn = await asyncpg.connect(isolated_postgres)
@@ -202,8 +206,8 @@ def test_stamp_fails_on_schema_divergence_and_preserves_clean_state(
     stamp("0001_prisma_baseline", isolated_postgres)
     assert asyncio.run(check_alembic_version()) == "0001_prisma_baseline"
 
-    # Subsequent upgrade head is a clean no-op
-    expected = load_baseline_schema()
+    # Subsequent upgrade head is a clean upgrade
+    expected = load_baseline_schema("head")
     upgrade(isolated_postgres)
     actual = asyncio.run(snapshot_url(isolated_postgres))
     assert not diff(expected, actual), "upgrade after stamp modified the schema!"
@@ -215,6 +219,14 @@ def test_destructive_downgrade_unconfigured_env_preserves_data(
 ) -> None:
     """R-08/A: Real database with populated data must not be dropped when
     ENVIRONMENT is unconfigured, even with ALLOW_DESTRUCTIVE_DOWNGRADE=true."""
+    async def ensure_clean_db() -> None:
+        conn = await asyncpg.connect(isolated_postgres)
+        try:
+            await conn.execute("DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
+        finally:
+            await conn.close()
+
+    asyncio.run(ensure_clean_db())
     # 1. Bring DB to head
     upgrade(isolated_postgres)
 
@@ -255,7 +267,7 @@ def test_destructive_downgrade_unconfigured_env_preserves_data(
 
 
 def test_migrate_cli_help_and_unknown_exit_codes(capsys: pytest.CaptureFixture[str]) -> None:
-    from jplearn_api.migrate import main
+    from jplearn_api.entrypoints.cli.migrate import main
 
     # 1. Help flags return 0
     assert main(["--help"]) == 0

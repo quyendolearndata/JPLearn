@@ -4,13 +4,13 @@ import os
 from pathlib import Path
 import pytest
 
-from jplearn_api.env_resolver import (
+from jplearn_api.config.env_resolver import (
     is_destructive_downgrade_allowed,
     read_env_file,
     resolve_database_url,
     resolve_environment,
 )
-from jplearn_api import migrate
+from jplearn_api.entrypoints.cli import migrate
 
 
 def test_resolve_environment_precedence(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):

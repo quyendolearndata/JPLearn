@@ -8,7 +8,7 @@ validation failures must keep the Nest error shape rather than FastAPI's 422
 
 from __future__ import annotations
 
-from jplearn_api.openapi_diff import load_handwritten_spec
+from jplearn_api.tooling.openapi_diff import load_handwritten_spec
 
 HTTP_METHODS = ("get", "post", "put", "patch", "delete")
 SAMPLES = {

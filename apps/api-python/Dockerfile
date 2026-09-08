@@ -3,6 +3,8 @@ FROM python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1
 # Install uv package manager (pinned digest)
 COPY --from=ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff /uv /uvx /bin/
 
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 ENV PYTHONUNBUFFERED=1 \
@@ -36,4 +38,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 EXPOSE 3002
 
-CMD ["uvicorn", "jplearn_api.main:app", "--host", "0.0.0.0", "--port", "3002"]
+CMD ["uvicorn", "jplearn_api.entrypoints.http.app:app", "--host", "0.0.0.0", "--port", "3002"]

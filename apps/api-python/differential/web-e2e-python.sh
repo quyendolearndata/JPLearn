@@ -4,7 +4,7 @@
 #   apps/api-python/differential/web-e2e-python.sh [--project=chromium ...]
 #
 # Dựng DB test riêng (Alembic migrate + seed), chạy FastAPI trên port động, dựng nội dung
-# thật (upload MP4 kho stock → submit-qa → publish → transcode HLS → register),
+# thật (upload MP4 kho stock → transcode HLS → register → submit-qa → publish),
 # build + serve web trỏ vào API, rồi playwright test.
 # Mặc định chạy mọi project trong playwright.config.ts (chromium + webkit).
 #
@@ -82,6 +82,21 @@ wait_http() { # url, name
   exit 1
 }
 
+STALE="$(docker ps --filter "name=jplearn-web-e2e-" --format '{{.Names}}' | grep -v "$E2E_PROJECT" || true)"
+if [[ -n "$STALE" ]]; then
+  echo "== stale E2E containers detected (previous run did not clean up): ==" >&2
+  echo "$STALE" >&2
+  if [[ "${JPLEARN_E2E_PRUNE_STALE:-}" == "true" ]]; then
+    while read -r name; do
+      proj="${name%-db-test-1}"
+      "$VENV_PY" "$REPO/apps/api-python/differential/db.py" --project "$proj" down >/dev/null 2>&1 || true
+    done <<<"$STALE"
+  else
+    echo "   set JPLEARN_E2E_PRUNE_STALE=true to remove them, or run: docker compose -p <name-without--db-test-1> down -v" >&2
+    exit 2
+  fi
+fi
+
 echo "== 1/5 docker db-test (Alembic migrate + seed) [project=$E2E_PROJECT] =="
 DB_LINE="$("$VENV_PY" "$REPO/apps/api-python/differential/db.py" --project "$E2E_PROJECT" up | grep E2E_DB_READY)"
 DATABASE_URL="${DB_LINE#E2E_DB_READY }"
@@ -96,7 +111,7 @@ echo "== 2/5 FastAPI :$PY_PORT =="
   ENVIRONMENT="test" \
   CORS_ORIGIN_REGEX="^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$" \
   PYTHONPATH=src \
-  exec .venv/bin/uvicorn jplearn_api.main:app --port "$PY_PORT" >"$RUN_DIR/api.log" 2>&1
+  exec .venv/bin/uvicorn jplearn_api.entrypoints.http.app:app --port "$PY_PORT" >"$RUN_DIR/api.log" 2>&1
 ) &
 API_PID=$!
 wait_http "http://localhost:$PY_PORT/ready" "FastAPI"
@@ -112,11 +127,6 @@ ASSET_ID="$(curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/
   -F "file=@$SOURCE_MP4;type=video/mp4" \
   | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
-curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/submit-qa" \
-  -H "Authorization: Bearer $TOKEN" >/dev/null
-curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/publish" \
-  -H "Authorization: Bearer $TOKEN" >/dev/null
-
 mkdir -p "$STORAGE/hls/$ASSET_ID"
 ffmpeg -loglevel error -y -i "$STORAGE/$ASSET_ID.bin" \
   -codec: copy -start_number 0 -hls_time 4 -hls_list_size 0 -f hls \
@@ -124,7 +134,18 @@ ffmpeg -loglevel error -y -i "$STORAGE/$ASSET_ID.bin" \
   "$STORAGE/hls/$ASSET_ID/index.m3u8"
 curl -fsS -X POST "http://localhost:$PY_PORT/staff/media/$ASSET_ID/hls" \
   -H "Authorization: Bearer $TOKEN" >/dev/null
+curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/submit-qa" \
+  -H "Authorization: Bearer $TOKEN" >/dev/null
+curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/publish" \
+  -H "Authorization: Bearer $TOKEN" >/dev/null
+
 echo "   published item $ITEM_ID, asset $ASSET_ID (+hls)"
+
+echo "== 3b/5 teacher E2E account (isolated DB only) =="
+curl -fsS -X POST "http://localhost:$PY_PORT/auth/register" \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"teacher@e2e.local","password":"password10"}' >/dev/null
+"$VENV_PY" "$REPO/apps/api-python/differential/grant_role.py" "$DATABASE_URL" teacher@e2e.local teacher
 
 echo "== 4/5 web :$WEB_PORT → API :$PY_PORT [workspace=$WEB_WORKSPACE] =="
 (

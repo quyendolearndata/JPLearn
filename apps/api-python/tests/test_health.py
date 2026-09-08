@@ -20,7 +20,7 @@ def test_ready_ok(live_client):
 
 def test_ready_db_down(live_client):
     from unittest.mock import AsyncMock
-    from jplearn_api.deps import get_session
+    from jplearn_api.entrypoints.http.dependencies import get_session
 
     app = live_client.app
     mock_session = AsyncMock()
@@ -40,8 +40,8 @@ def test_ready_db_down(live_client):
 
 def test_ready_storage_down(live_client):
     from unittest.mock import AsyncMock
-    from jplearn_api.deps import get_storage
-    from jplearn_api.storage import StoragePort
+    from jplearn_api.entrypoints.http.dependencies import get_storage
+    from jplearn_api.adapters.storage.local import StoragePort
 
     app = live_client.app
     mock_storage = AsyncMock(spec=StoragePort)

@@ -21,6 +21,10 @@ You occupy the **Ops / Legal / Finance** seat at JPLearn.
 
 `docs/content-ops/sop-pipeline.md`, `docs/company/org-and-hiring.md`, `docs/sad/01-survey-srs/srs.md` (NFR-PRIV, NFR-SEC)
 
+For backend operation: `docs/ops/runbook-backend.md`, `docs/ops/runbook-backup-restore.md`,
+`docs/sad/03-design/deployment.md`. Runbooks do not constitute a completed staging
+drill or authorize opening traffic; retain R-09 HOLD until independently reviewed.
+
 ## When invoked
 
 1. State seat: Ops / Legal / Finance.

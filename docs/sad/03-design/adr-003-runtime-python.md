@@ -1,6 +1,6 @@
 # ADR-003 — Runtime lớp API: Python/FastAPI
 
-- Trạng thái: **Accepted** (cổng SAD-3 mở lại 2026-08-31) — chữ ký §10. **Chưa scaffold `apps/api-python`:** còn Phase 0 (áp delta SRS/OpenAPI, harness, vector).
+- Trạng thái: **Accepted** (cổng SAD-3 mở lại 2026-08-31) — chữ ký §10. Scaffold/port đã có; ghi chú Phase 0 là lịch sử. DDL theo ADR-004, cấu trúc theo ADR-006; [backend docs](../../backend/README.md) là hướng dẫn hiện hành. Operational Acceptance vẫn HOLD.
 - Ngày: 2026-08-31
 - Người đề xuất: ghế CTO (theo yêu cầu founder)
 - Quan hệ: **Supersedes một phần [ADR-001](adr-001-stack.md)** — chỉ runtime API. Web (Next.js), Expo, PostgreSQL, object storage, CMS `/staff` **giữ nguyên**. Số **ADR-003** (ADR-002 đã dành cho CMS khi `/staff` outgrow). **D2 superseded bởi [ADR-004](adr-004-ddl-alembic.md)** (2026-09-04) — chủ DDL là Alembic.

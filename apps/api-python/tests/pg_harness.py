@@ -1,8 +1,8 @@
 """Start / migrate jplearn_test. Alembic owns DDL (ADR-004) — never create_all."""
 
-from __future__ import annotations
-
+import atexit
 import os
+import signal
 import socket
 import subprocess
 import sys
@@ -13,6 +13,25 @@ from urllib.parse import urlparse
 REPO = Path(__file__).resolve().parents[3]
 API_PY = REPO / "apps" / "api-python"
 COMPOSE = REPO / "docker-compose.yml"
+
+_tracked_docker_projects: set[str] = set()
+
+
+def _cleanup_tracked_projects() -> None:
+    for project in list(_tracked_docker_projects):
+        try:
+            stop_docker_postgres(project)
+        except Exception:
+            pass
+
+
+atexit.register(_cleanup_tracked_projects)
+
+for sig in (signal.SIGTERM, signal.SIGINT):
+    try:
+        signal.signal(sig, lambda s, f: (_cleanup_tracked_projects(), sys.exit(128 + s)))
+    except (ValueError, AttributeError):
+        pass
 
 if str(API_PY / "src") not in sys.path:
     sys.path.insert(0, str(API_PY / "src"))
@@ -26,7 +45,7 @@ def assert_test_database_url(database_url: str) -> None:
 
 def migrate_database(database_url: str, *, seed: bool = False) -> None:
     assert_test_database_url(database_url)
-    from jplearn_api.migrate import upgrade
+    from jplearn_api.entrypoints.cli.migrate import upgrade
 
     upgrade(database_url)
     if seed:
@@ -40,7 +59,7 @@ def seed_database(database_url: str) -> None:
     os.environ.setdefault("BOOTSTRAP_ADMIN_EMAIL", "admin@jplearn.local")
     os.environ.setdefault("BOOTSTRAP_ADMIN_PASSWORD", "password10")
 
-    from jplearn_api.seed import seed_url
+    from jplearn_api.entrypoints.cli.seed import seed_url
 
     asyncio.run(seed_url(database_url))
 
@@ -68,8 +87,38 @@ def _compose(project_name: str, args: list[str], **kwargs) -> subprocess.Complet
     )
 
 
+def _cleanup_stale_pytest_containers() -> None:
+    """Find and clean up any orphaned jplearn-pytest-<pid> containers whose PID is dead."""
+    try:
+        res = subprocess.run(
+            ["docker", "ps", "-a", "--filter", "name=jplearn-pytest-", "--format", "{{.Names}}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if res.returncode != 0 or not res.stdout.strip():
+            return
+        current_pid = os.getpid()
+        for name in res.stdout.strip().splitlines():
+            parts = name.split("-")
+            if len(parts) >= 3 and parts[0] == "jplearn" and parts[1] == "pytest":
+                pid_str = parts[2]
+                if pid_str.isdigit():
+                    pid = int(pid_str)
+                    if pid == current_pid:
+                        continue
+                    try:
+                        os.kill(pid, 0)
+                    except OSError:
+                        subprocess.run(["docker", "rm", "-f", name], capture_output=True, check=False)
+    except Exception:
+        pass
+
+
 def start_docker_postgres(project_name: str, *, seed: bool = False, migrate: bool = True) -> str:
     subprocess.run(["docker", "version"], check=True, capture_output=True)
+    _cleanup_stale_pytest_containers()
+    _tracked_docker_projects.add(project_name)
     try:
         _compose(project_name, ["up", "--detach", "db-test"])
         container_id = ""
@@ -99,6 +148,7 @@ def start_docker_postgres(project_name: str, *, seed: bool = False, migrate: boo
 
 
 def stop_docker_postgres(project_name: str) -> None:
+    _tracked_docker_projects.discard(project_name)
     _compose(project_name, ["down", "--volumes", "--remove-orphans"], check=False)
 
 

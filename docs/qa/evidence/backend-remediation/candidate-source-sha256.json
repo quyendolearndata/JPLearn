@@ -1,0 +1,8 @@
+{
+  "captured_at": "2026-09-08T05:07:30.864418+00:00",
+  "scope": "dirty working tree; no commit provenance claim",
+  "tracked_diff_sha256": "518b7843ff1aa818651ee26fad4e1be2120b0247e19c7e41d810467b1f49ea6d",
+  "untracked_files_excluding_this_manifest": 192,
+  "untracked_paths_and_contents_sha256": "921ac59b57af4a8e06e5475a40d2e1696314ac25179cdb2f33d72ac3cbb5ba90",
+  "untracked_hash_algorithm": "sorted UTF-8 path + NUL + SHA256(file bytes), concatenated then SHA256"
+}

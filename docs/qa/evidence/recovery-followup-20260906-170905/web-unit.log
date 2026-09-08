@@ -1,0 +1,51 @@
+
+> @jplearn/web@ test /Users/quyendo/Documents/Learn/JPLearn/apps/web
+> tsc --noEmit && pnpm test:unit
+
+
+> @jplearn/web@ test:unit /Users/quyendo/Documents/Learn/JPLearn/apps/web
+> node --import tsx --test "src/lib/**/*.test.ts"
+
+✔ T-SES-REC-001: stale-token 401 does not clear a newer user session (22.42225ms)
+✔ T-SES-REC-001: current-token 401 still clears the current user session (0.288542ms)
+✔ T-LRN-001 F-03: one error cycle permits only one automatic catalog refetch (0.645792ms)
+✔ T-LRN-001 F-03: concurrent source errors coalesce into the in-flight refetch (0.058416ms)
+✔ T-LRN-001 F-03: manual retry starts a fresh error cycle (0.05975ms)
+✔ T-LRN-001 F-03: a missing target is unavailable and never falls back to another item (0.633333ms)
+✔ T-LRN-001 F-03: a session without an item chooses one default exactly once (0.067083ms)
+✔ T-AUTH-SEC-001: accepts only internal paths with exactly one leading slash (0.598791ms)
+✔ T-AUTH-SEC-001: rejects protocol-relative, backslash, scheme and empty targets (0.067042ms)
+✔ T-SES-REC-001 F-02: ended progress uses valid required fields and server duration (1.276625ms)
+✔ T-SES-REC-001 F-02: ended progress HTTP 500 stays unavailable without fake numbers (0.058667ms)
+✔ T-SES-REC-001 F-02: ended progress omitting a required field stays unavailable (0.046084ms)
+✔ T-SES-REC-001: session recovery cannot become ready before authenticated identity (0.068542ms)
+✔ T-SES-REC-001: end fallback GET 403 and 404 are terminal while 500 is unverified (0.081667ms)
+✔ T-SES-REC-001: invalid or mismatched ended GET is not terminal (0.8925ms)
+✔ T-SES-REC-001: recovery and end share one in-flight operation (0.150792ms)
+✔ T-SES-REC-001: stale start and end tickets are ignored after user change or cancel (0.074ms)
+✔ T-SES-REC-001: LearningSession accepts omitted optional fields (0.07225ms)
+✔ T-SES-REC-001: LearningSession rejects invalid UUID, date-time and fractional duration (0.107667ms)
+✔ T-SES-REC-001: replay 409 is terminal while 500 stays unverified (0.056042ms)
+✔ T-SES-REC-001: failed active persistence stays unverified with the recoverable pointer (1.318417ms)
+✔ T-SES-REC-001: non-starting records without sessionId are rejected (0.246875ms)
+✔ T-SES-REC-001: terminal clear must be confirmed before storage is empty (0.202041ms)
+✔ T-SES-REC-001: storage unavailable is distinct from an empty record (0.134375ms)
+✔ T-SES-REC-001: unavailable storage blocks start without minting a key (0.14275ms)
+✔ T-SES-REC-001: key is scoped per user (0.12275ms)
+✔ T-SES-REC-001: clear only touches the given user (0.095042ms)
+✔ T-SES-REC-001: corrupt or foreign-shaped records are dropped, never returned (0.089708ms)
+✔ T-SES-REC-001: corrupt record with unconfirmed removal is unavailable, not empty (0.094041ms)
+✔ T-SES-REC-001: writer refuses payloads carrying catalog/media URLs (0.105ms)
+✔ newIdempotencyKey returns distinct, header-safe values ≤128 chars (0.317916ms)
+✔ T-SES-REC-001: short and typical header-safe persisted keys remain replayable (0.148875ms)
+✔ T-SES-REC-001: unsafe idempotency keys are neither persisted nor replayed (0.30825ms)
+✔ T-SES-REC-001: starting retries preserve the stored key, device and item (0.353375ms)
+✔ T-SES-REC-001: non-starting recovery only verifies the stored session id (0.127875ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 140.384834

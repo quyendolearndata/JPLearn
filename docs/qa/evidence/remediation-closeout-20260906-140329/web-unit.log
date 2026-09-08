@@ -1,0 +1,24 @@
+
+> @jplearn/web@ test /Users/quyendo/Documents/Learn/JPLearn/apps/web
+> tsc --noEmit && pnpm test:unit
+
+
+> @jplearn/web@ test:unit /Users/quyendo/Documents/Learn/JPLearn/apps/web
+> node --import tsx --test "src/lib/**/*.test.ts"
+
+✔ T-AUTH-SEC-001: accepts only internal paths with exactly one leading slash (0.5885ms)
+✔ T-AUTH-SEC-001: rejects protocol-relative, backslash, scheme and empty targets (0.06525ms)
+✔ T-SES-REC-001: key is scoped per user (1.304041ms)
+✔ T-SES-REC-001: clear only touches the given user (0.118291ms)
+✔ T-SES-REC-001: corrupt or foreign-shaped records are dropped, never returned (0.088458ms)
+✔ T-SES-REC-001: writer refuses payloads carrying catalog/media URLs (0.136834ms)
+✔ newIdempotencyKey returns distinct, header-safe values ≤128 chars (0.333375ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 103.3825
+exit=0
