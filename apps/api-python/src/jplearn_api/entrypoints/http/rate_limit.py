@@ -21,9 +21,25 @@ class LoginRateLimiter:
         cutoff = current - self._window_seconds
 
         with self._lock:
-            timestamps = self._timestamps.setdefault(key, deque())
-            while timestamps and timestamps[0] <= cutoff:
-                timestamps.popleft()
+            expired_keys = [
+                stored_key
+                for stored_key, stored_timestamps in self._timestamps.items()
+                if stored_key != key
+                and (not stored_timestamps or stored_timestamps[-1] <= cutoff)
+            ]
+            for expired_key in expired_keys:
+                del self._timestamps[expired_key]
+
+            timestamps = self._timestamps.get(key)
+            if timestamps is not None:
+                while timestamps and timestamps[0] <= cutoff:
+                    timestamps.popleft()
+                if not timestamps:
+                    del self._timestamps[key]
+                    timestamps = None
+            if timestamps is None:
+                timestamps = deque()
+                self._timestamps[key] = timestamps
             if len(timestamps) >= self._attempts:
                 return False
             timestamps.append(current)

@@ -1,5 +1,7 @@
 from fastapi.testclient import TestClient
 
+from jplearn_api.entrypoints.http.rate_limit import LoginRateLimiter
+
 
 def _attempt(client: TestClient, email: str):
     return client.post(
@@ -40,6 +42,20 @@ def test_throttle_window_expires(live_client: TestClient) -> None:
 
     assert limiter.check(key, now=59.999) is False
     assert limiter.check(key, now=60.0) is True
+
+
+def test_check_drops_all_expired_keys() -> None:
+    limiter = LoginRateLimiter(attempts=10, window_seconds=60)
+    expired_keys = {
+        "1.1.1.1|a@x.test",
+        "1.1.1.1|b@x.test",
+    }
+    for key in expired_keys:
+        assert limiter.check(key, now=0.0) is True
+
+    assert limiter.check("1.1.1.1|c@x.test", now=60.0) is True
+
+    assert expired_keys.isdisjoint(limiter._timestamps)
 
 
 def test_throttle_can_be_reset(live_client: TestClient) -> None:
