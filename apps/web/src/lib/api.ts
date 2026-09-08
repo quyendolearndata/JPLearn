@@ -125,3 +125,25 @@ export async function parseApiError(res: Response): Promise<ApiErrorResponse> {
   };
 }
 
+export class ApiResponseError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+    public details?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiResponseError";
+  }
+}
+
+export async function apiJson<T>(
+  path: string,
+  opts: RequestInit & { token?: string } = {},
+): Promise<T> {
+  const response = await api(path, opts);
+  if (!response.ok) {
+    const error = await parseApiError(response);
+    throw new ApiResponseError(error.message, response.status, error.details);
+  }
+  return parseApiResponse<T>(response);
+}

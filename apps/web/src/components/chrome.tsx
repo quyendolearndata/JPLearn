@@ -37,8 +37,12 @@ export function Chrome({ children }: { children: React.ReactNode }) {
           </Link>
           <nav className="nav-main">
             <Link href="/catalog" aria-current={pathname === "/catalog" ? "page" : undefined}>Catalog</Link>
+            <Link href="/series" aria-current={pathname.startsWith("/series") ? "page" : undefined}>Series</Link>
+            <Link href="/library" aria-current={pathname.startsWith("/library") ? "page" : undefined}>Thư viện</Link>
             <Link href="/session" aria-current={pathname === "/session" ? "page" : undefined}>Phiên</Link>
             <Link href="/progress" aria-current={pathname === "/progress" ? "page" : undefined}>Tiến độ</Link>
+            <Link href="/history" aria-current={pathname === "/history" ? "page" : undefined}>Lịch sử</Link>
+            <Link href="/reports" aria-current={pathname === "/reports" ? "page" : undefined}>Phản hồi</Link>
             {isStaff ? <Link href="/staff" className="nav-staff-link">Staff</Link> : null}
             <Link href="/login" className="nav-auth-link">
               {user ? (
