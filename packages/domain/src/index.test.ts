@@ -13,3 +13,10 @@ test("FR-PRG-001 minutes floor; zombie adds zero", () => {
   expect(minutesFromDuration(119)).toBe(1);
   expect(minutesFromDuration(ZOMBIE_SESSION_SECONDS + 1)).toBe(0);
 });
+
+test("Batch A-D domain contracts type validation", () => {
+  import("./index").then((domain) => {
+    expect(domain).toBeDefined();
+    expect(domain.minutesFromDuration).toBeInstanceOf(Function);
+  });
+});

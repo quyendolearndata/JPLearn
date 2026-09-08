@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type Hls from "hls.js";
+import { PlaybackTracker } from "../lib/playback-tracker";
 
 // NFR-PERF-002: phát hls_url khi có (Safari native, hls.js cho Chrome/Firefox),
 // luôn rơi về playback_url (MP4) khi hls_url vắng hoặc HLS lỗi nặng.
@@ -9,15 +10,71 @@ export function CiPlayer({
   hlsUrl,
   playbackUrl,
   onSourceFailure,
+  catalogItemId,
+  contentVersionId,
+  seekTargetSeconds,
+  onTimeUpdate,
+  onActiveTimeChange,
 }: {
   hlsUrl?: string | null;
   playbackUrl?: string | null;
   onSourceFailure?: () => void;
+  catalogItemId?: string | null;
+  contentVersionId?: string | null;
+  seekTargetSeconds?: number | null;
+  onTimeUpdate?: (seconds: number) => void;
+  onActiveTimeChange?: (cumulativeActiveMs: number) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastPositionRef = useRef(0);
   const shouldResumeRef = useRef(false);
   const [paused, setPaused] = useState(true);
+  const [leaseConflictNotice, setLeaseConflictNotice] = useState<string | null>(null);
+  const trackerRef = useRef<PlaybackTracker | null>(null);
+  const callbacksRef = useRef({ onSourceFailure, onTimeUpdate, onActiveTimeChange });
+  callbacksRef.current = { onSourceFailure, onTimeUpdate, onActiveTimeChange };
+
+  // Handle seekTargetSeconds from parent (e.g. Scene selection)
+  useEffect(() => {
+    if (seekTargetSeconds !== undefined && seekTargetSeconds !== null && videoRef.current) {
+      videoRef.current.currentTime = seekTargetSeconds;
+      void videoRef.current.play().catch(() => {});
+    }
+  }, [seekTargetSeconds]);
+
+  // Setup PlaybackTracker when video and catalogItemId are ready
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !catalogItemId) return;
+
+    const tracker = new PlaybackTracker({
+      video,
+      catalogItemId,
+      contentVersionId,
+      onLeaseConflict: (msg) => {
+        setLeaseConflictNotice(msg);
+      },
+      onActiveTimeChange: (activeMs) => {
+        callbacksRef.current.onActiveTimeChange?.(activeMs);
+      },
+    });
+    trackerRef.current = tracker;
+
+    void tracker.start().then((res) => {
+      if (res && res.resumePositionMs && res.resumePositionMs > 0 && lastPositionRef.current === 0) {
+        // Resume playback position from server if available
+        const posSeconds = res.resumePositionMs / 1000;
+        if (Number.isFinite(video.duration) && posSeconds < video.duration) {
+          video.currentTime = posSeconds;
+        }
+      }
+    });
+
+    return () => {
+      tracker.destroy();
+      trackerRef.current = null;
+    };
+  }, [catalogItemId, contentVersionId]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -38,6 +95,7 @@ export function CiPlayer({
       }
       shouldResumeRef.current = !video.paused;
       setPaused(video.paused);
+      callbacksRef.current.onTimeUpdate?.(video.currentTime);
     };
     video.addEventListener("timeupdate", rememberPlayback);
     video.addEventListener("seeking", rememberPlayback);
@@ -79,7 +137,7 @@ export function CiPlayer({
       removeRestorePlayback();
       // Retain this position while the parent fetches replacement signed URLs.
       trackingSuspended = true;
-      onSourceFailure?.();
+      callbacksRef.current.onSourceFailure?.();
     };
 
     const useMp4OrReport = (shouldResume?: boolean) => {
@@ -157,7 +215,7 @@ export function CiPlayer({
       removeSourceError();
       hls?.destroy();
     };
-  }, [hlsUrl, onSourceFailure, playbackUrl]);
+  }, [hlsUrl, playbackUrl]);
 
   const togglePlayback = () => {
     const video = videoRef.current;
@@ -171,6 +229,22 @@ export function CiPlayer({
 
   return (
     <div>
+      {leaseConflictNotice && (
+        <div
+          role="alert"
+          style={{
+            padding: "0.6rem 1rem",
+            background: "#fee2e2",
+            color: "#b91c1c",
+            fontWeight: 600,
+            border: "2px solid #ef4444",
+            borderRadius: "var(--radius-sm)",
+            marginBottom: "0.75rem",
+          }}
+        >
+          ⚠️ {leaseConflictNotice}
+        </div>
+      )}
       <div style={{ padding: "0.5rem 0.75rem", background: "var(--bg-subtle)" }}>
         <button type="button" tabIndex={0} onClick={togglePlayback} aria-pressed={!paused}>
           {paused ? "Phát" : "Tạm dừng"}

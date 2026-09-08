@@ -12,6 +12,7 @@ from jplearn_api.domain.errors import (
     ForbiddenError,
     InvalidDomainStateError,
     MediaInvariantError,
+    QuotaExceededError,
     SessionAlreadyEndedError,
     UnauthorizedError,
 )
@@ -42,6 +43,8 @@ def map_domain_error_to_http(exc: DomainError) -> HTTPException:
         return HTTPException(status_code=401, detail=exc.message or "Unauthorized")
     if isinstance(exc, ForbiddenError):
         return HTTPException(status_code=403, detail=exc.message or "Forbidden")
+    if isinstance(exc, QuotaExceededError):
+        return HTTPException(status_code=429, detail=exc.message)
     if isinstance(exc, (InvalidDomainStateError, MediaInvariantError)):
         return HTTPException(status_code=400, detail=exc.message)
     return HTTPException(status_code=400, detail=exc.message)

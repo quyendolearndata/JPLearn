@@ -59,9 +59,25 @@ Phạm vi: **nền tảng**. Yêu cầu học đầy đủ đánh dấu `Deferre
 |---|---|---|
 | FR-FLG-001 | Cờ `speaking_enabled`, `l1_subtitles_enabled`, `grammar_enabled`, `flashcards_enabled` mặc định `false` | P0 |
 | FR-FLG-002 | Client không vẽ UI cho kênh đã tắt | P0 |
+| FR-FLG-003 | Technical capabilities tách bốn cờ sư phạm, mặc định tắt, server kiểm cấu hình/allowlist và trả 403 CAPABILITY_DISABLED; khi tracking tắt vẫn cho end/reconcile không cấp credit | P1 |
 | FR-EVT-001 | Ghi `session_started`, `session_ended` | P0 |
 | FR-EVT-002 | Ghi `minutes_comprehensible` (số, theo user, cập nhật khi phiên kết thúc) | P0 |
 | FR-EVT-003 | Ghi `level_exposed` khi user mở item một `ci_level` | P0 |
+
+### Vòng học CI mở rộng & Thói quen (Phase 5 — Đợt A–C)
+
+| ID | Yêu cầu | Ưu tiên |
+|---|---|---|
+| FR-SCN-001 | Hệ thống quản lý scene breakdown và mốc thời gian (start/end timestamp, title, JP transcript) theo từng content version của video CI; full transcript chỉ staff, learner search chỉ nhận excerpt được duyệt riêng | P1 |
+| FR-SER-001 | Hệ thống cấu trúc item theo Series & Episodes với thứ tự tự nhiên phục vụ binge CI | P1 |
+| FR-RSM-001 | Hệ thống lưu vị trí phát (playback position) và cho phép tiếp tục phát (resume) liền mạch đa thiết bị | P1 |
+| FR-WAT-001 | Hệ thống hạch toán kép: phân biệt `active_watch_seconds` (thời gian phát thực qua cumulative milliseconds, nhịp 15s, lease 45s; không nhân playback rate) và `minutes_comprehensible` (phút phiên legacy) | P1 |
+| FR-HIS-001 | Hệ thống ghi nhận và cung cấp lịch sử xem (watch history) theo học viên, hỗ trợ dọn dẹp hoặc ẩn lịch sử | P1 |
+| FR-GOL-001 | Học viên thiết lập daily goal 0–120 phút (0=tắt), chỉ dùng active_watch_seconds; goal/timezone đổi tại nửa đêm kế tiếp timezone đang áp dụng, topics áp dụng ngay; activity trả current/longest streak theo policy-version bucket | P1 |
+| FR-REC-001 | Hệ thống gợi ý clip tiếp theo (Smart Stream) dựa trên trình độ CI (`current_ci_level`), chủ đề đang học và lịch sử xem | P1 |
+| FR-BMK-001 | Học viên bookmark từ vựng và câu ngữ cảnh trong clip CI vào sổ tay cá nhân (không biến thành flashcard/SRS trắc nghiệm) | P1 |
+| FR-COL-001 | Học viên tạo và quản lý bộ sưu tập/playlist cá nhân (lưu clip yêu thích, chia theo ngữ cảnh immersion) | P1 |
+| FR-RPT-001 | Hệ thống tổng hợp báo cáo và thống kê thời gian học thực tế theo ngày, tuần, tháng cho học viên | P1 |
 
 ## 2. Yêu cầu phủ định (cấm v1)
 
@@ -85,12 +101,15 @@ Phạm vi: **nền tảng**. Yêu cầu học đầy đủ đánh dấu `Deferre
 | NFR-PRIV-001 | PII tối thiểu: email, id; không bán dữ liệu Q1 |
 | NFR-A11Y-001 | Shell web: contrast đạt WCAG AA cho text chrome; media có control pause/play bằng bàn phím |
 | NFR-OBS-001 | API có request id; lỗi 5xx alertable trên staging |
+| NFR-LAT-001 | Độ trễ API: P95 endpoint heartbeat ≤ 100ms dưới tải đồng thời tiêu chuẩn |
+| NFR-RET-001 | Lưu trữ dữ liệu: Sự kiện playback raw lưu giữ 90 ngày; tiến độ tích lũy và báo cáo tổng hợp lưu giữ vĩnh viễn |
+| NFR-CONCUR-001 | Đồng thời: Heartbeat và session takeover xử lý an toàn qua lease/epoch CAS, không gây race condition hoặc double-counting thời gian |
 
 ## 4. Deferred — Phase 5 (có ID, không thiết kế UI v1)
 
 | ID | Yêu cầu | Ghi chú |
 |---|---|---|
-| FR-LRN-001 | Học viên phát item CI (xem/nghe) trong phiên | Cần SAD vòng 2 |
+| FR-LRN-001 | Học viên phát item CI (xem/nghe) trong phiên | Cần SAD vòng 2 (đã triển khai Mốc A) |
 | FR-LRN-002 | Probe hiểu không lời: chọn đúng hình | Schema `ComprehensionProbe` chừa chỗ |
 | FR-LRN-003 | Silent period: không ép nói cho đến khi Pedagogy bật flag | Bám FR-FLG-001 |
 | FR-LRN-004 | Recast, không bảng ngữ pháp | Chỉ nguyên tắc |
@@ -100,3 +119,7 @@ Phạm vi: **nền tảng**. Yêu cầu học đầy đủ đánh dấu `Deferre
 - Mỗi FR nền tảng có ≥1 use case trong SAD-2.
 - Mỗi NFR có hướng kiểm trong ma trận truy vết SAD-3.
 - Không có yêu cầu “làm app học tiếng Nhật” không mã.
+
+> **R0 — Engineering decision, 2026-09-07; local verification 2026-09-08:** Hợp đồng sửa đã có kiểm chứng local. Đây không phải chữ ký BA/CTO/Pedagogy/Ops hoặc cho phép production.
+
+NFR-RET-001 hiện giữ nguyên raw playback 90 ngày và aggregate vĩnh viễn. Đề xuất retention khác chưa được duyệt; không chạy destructive retention theo mốc đề xuất. Xóa history theo yêu cầu người dùng là use case riêng.

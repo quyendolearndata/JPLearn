@@ -12,9 +12,21 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from jplearn_api.adapters.persistence.catalog_repository import SqlAlchemyCatalogRepository
+from jplearn_api.adapters.persistence.collection_repository import SqlAlchemyCollectionRepository
+from jplearn_api.adapters.persistence.content_job_repository import SqlAlchemyContentJobRepository
+from jplearn_api.adapters.persistence.content_report_repository import SqlAlchemyContentReportRepository
+from jplearn_api.adapters.persistence.content_repository import SqlAlchemyContentRepository
 from jplearn_api.adapters.persistence.flags_repository import SqlAlchemyFlagsRepository
 from jplearn_api.adapters.persistence.learning_repository import SqlAlchemyLearningRepository
 from jplearn_api.adapters.persistence.media_repository import SqlAlchemyMediaRepository
+from jplearn_api.adapters.persistence.playback_repository import SqlAlchemyPlaybackRepository
+from jplearn_api.adapters.persistence.quota_repository import (
+    SqlAlchemyQuotaRepository,
+    SqlAlchemyUsageLedgerRepository,
+)
+from jplearn_api.adapters.persistence.saved_scene_repository import SqlAlchemySavedSceneRepository
+from jplearn_api.adapters.persistence.series_repository import SqlAlchemySeriesRepository
+from jplearn_api.adapters.persistence.transcript_repository import SqlAlchemyTranscriptRepository
 from jplearn_api.adapters.persistence.user_repository import SqlAlchemyUserRepository
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
 from jplearn_api.domain.errors import DeterministicAbortError
@@ -51,12 +63,23 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
             self._managed_session = True
             self.users = None  # type: ignore[assignment]
             self.catalog = None  # type: ignore[assignment]
+            self.content = None  # type: ignore[assignment]
             self.media = None  # type: ignore[assignment]
             self.learning = None  # type: ignore[assignment]
             self.flags = None  # type: ignore[assignment]
+            self.series = None  # type: ignore[assignment]
+            self.saved_scenes = None  # type: ignore[assignment]
+            self.collections = None  # type: ignore[assignment]
+            self.content_reports = None  # type: ignore[assignment]
+            self.playbacks = None  # type: ignore[assignment]
+            self.transcripts = None  # type: ignore[assignment]
+            self.quota = None  # type: ignore[assignment]
+            self.usage_ledger = None  # type: ignore[assignment]
+            self.content_jobs = None  # type: ignore[assignment]
         self._committed = False
         self._rolled_back = False
         self._cleanup: asyncio.Task[None] | None = None
+        self._depth = 0
 
     def own_cleanup(self, task: asyncio.Task[None]) -> None:
         self._cleanup = task
@@ -64,11 +87,24 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
     def _bind_repositories(self, session: AsyncSession) -> None:
         self.users = SqlAlchemyUserRepository(session)
         self.catalog = SqlAlchemyCatalogRepository(session)
+        self.content = SqlAlchemyContentRepository(session)
         self.media = SqlAlchemyMediaRepository(session)
         self.learning = SqlAlchemyLearningRepository(session)
         self.flags = SqlAlchemyFlagsRepository(session)
+        self.series = SqlAlchemySeriesRepository(session)
+        self.saved_scenes = SqlAlchemySavedSceneRepository(session)
+        self.collections = SqlAlchemyCollectionRepository(session)
+        self.content_reports = SqlAlchemyContentReportRepository(session)
+        self.playbacks = SqlAlchemyPlaybackRepository(session)
+        self.transcripts = SqlAlchemyTranscriptRepository(session)
+        self.quota = SqlAlchemyQuotaRepository(session)
+        self.usage_ledger = SqlAlchemyUsageLedgerRepository(session)
+        self.content_jobs = SqlAlchemyContentJobRepository(session)
 
     async def __aenter__(self) -> SqlAlchemyUnitOfWork:
+        self._depth += 1
+        if self._depth > 1:
+            return self
         if any(t.get_loop() is asyncio.get_running_loop() for t in _quarantined):
             raise RuntimeError("UoW cleanup quarantined; new transaction admission suspended")
         if self._managed_session and self._session_factory is not None:
@@ -84,6 +120,11 @@ class SqlAlchemyUnitOfWork(AsyncUnitOfWork):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
+        self._depth -= 1
+        if self._depth > 0:
+            if exc_type is not None and not self._rolled_back:
+                await self.rollback()
+            return
         if self._cleanup is not None:
             async def finish() -> None:
                 try:

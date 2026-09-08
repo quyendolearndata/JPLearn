@@ -9,9 +9,19 @@ from typing import Callable, Protocol, TypeVar
 
 from jplearn_api.application.ports.repositories import (
     CatalogRepository,
+    CollectionRepository,
+    ContentJobRepository,
+    ContentReportRepository,
+    ContentRepository,
     FlagsRepository,
     LearningRepository,
     MediaRepository,
+    PlaybackRepository,
+    QuotaRepository,
+    SavedSceneRepository,
+    SeriesRepository,
+    TranscriptRepository,
+    UsageLedgerRepository,
     UserRepository,
 )
 
@@ -23,9 +33,19 @@ class AsyncUnitOfWork(Protocol):
 
     users: UserRepository
     catalog: CatalogRepository
+    content: ContentRepository
     media: MediaRepository
     learning: LearningRepository
     flags: FlagsRepository
+    series: SeriesRepository
+    saved_scenes: SavedSceneRepository
+    collections: CollectionRepository
+    content_reports: ContentReportRepository
+    playbacks: PlaybackRepository
+    transcripts: TranscriptRepository
+    quota: QuotaRepository
+    usage_ledger: UsageLedgerRepository
+    content_jobs: ContentJobRepository
 
     async def __aenter__(self: T) -> T:
         ...

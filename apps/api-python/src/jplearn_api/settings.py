@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Literal
 
-from pydantic import model_validator
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 EnvironmentType = Literal["local", "test", "staging", "production"]
@@ -26,6 +26,25 @@ class Settings(BaseSettings):
     bootstrap_admin_email: str | None = None
     bootstrap_admin_password: str | None = None
     allow_admin_bootstrap: bool = False
+    database_pool_size: int = Field(default=10, ge=1, le=100)
+    database_max_overflow: int = Field(default=10, ge=0, le=100)
+    database_pool_timeout_seconds: float = Field(default=10.0, gt=0, le=60)
+    database_pool_pre_ping: bool = False
+
+    # Capability switches (Phase 5 / ADR-007)
+    video_scene_breakdown_enabled: bool = False
+    smart_stream_enabled: bool = False
+    interactive_dual_subs_enabled: bool = False
+    immersion_lookup_enabled: bool = False
+    personal_collections_enabled: bool = False
+    content_reports_enabled: bool = False
+    playback_tracking_enabled: bool = False
+    scene_search_enabled: bool = False
+    staff_ai_enabled: bool = False
+    enable_trial_transcriber: bool = False
+    ai_pricing_version: str = Field(default="trial-2026-09-08", min_length=1, max_length=100)
+    ai_transcript_micros_per_audio_second: int = Field(default=1_000, ge=0, le=1_000_000_000)
+    ai_segmentation_micros_per_audio_second: int = Field(default=1_000, ge=0, le=1_000_000_000)
 
     @model_validator(mode="after")
     def validate_configuration(self) -> Settings:
@@ -35,6 +54,8 @@ class Settings(BaseSettings):
             raise ValueError(
                 f"JWT_SECRET must be at least 32 bytes (got {len(self.jwt_secret.encode('utf-8'))} bytes)"
             )
+        if self.database_pool_size + self.database_max_overflow > 100:
+            raise ValueError("DATABASE_POOL_SIZE + DATABASE_MAX_OVERFLOW cannot exceed 100 per API process")
 
         if self.storage_root is not None:
             storage_path = Path(self.storage_root)
@@ -116,4 +137,3 @@ class Settings(BaseSettings):
 
 def get_settings() -> Settings:
     return Settings()
-

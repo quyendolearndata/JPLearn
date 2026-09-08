@@ -16,6 +16,9 @@ class MediaRef:
     playback_url: str | None = None
     hls_url: str | None = None
     mime: str = "video/mp4"
+    measured_duration_ms: int | None = None
+    source_sha256: str | None = None
+    hls_bundle_sha256: str | None = None
 
 
 @dataclass
@@ -61,6 +64,13 @@ class CatalogItem:
         self.status = "draft"
         self.revision += 1
 
+    def return_to_draft(self) -> None:
+        """Transition level_qa item back to draft."""
+        if self.status != "level_qa":
+            raise InvalidDomainStateError("Only level_qa items can be returned to draft")
+        self.status = "draft"
+        self.revision += 1
+
     def update_draft_metadata(
         self,
         *,
@@ -91,4 +101,3 @@ class CatalogItem:
     def archive(self) -> None:
         """Mark catalog item as archived."""
         self.status = "archived"
-

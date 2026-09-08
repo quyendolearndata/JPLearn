@@ -2,622 +2,3718 @@ openapi: 3.0.3
 info:
   title: JPLearn Platform API
   version: 0.1.0
-  description: |
-    Foundation v1. No grammar, flashcards, or L1 translation channels.
+  description: 'Foundation v1. No grammar, flashcards, or L1 translation channels.
+
 
     Contract authority is this file (OpenAPI 3.0.3), not FastAPI-generated 3.1 JSON.
+
     Semantic normalized diff (ADR-003 D9): must match HTTP status, required/nullability,
+
     security, operationId, x-jplearn-fr, and error schema. Allowlist: 3.0↔3.1 nullable
+
     vs type union, generated component names, servers, info.
 
-    Docs UI (`/docs`, `/redoc`, `/openapi.json`): off on staging and prod; local dev may
-    enable. Contract tests read this file in git — do not depend on a public OpenAPI URL.
+
+    Docs UI (`/docs`, `/redoc`, `/openapi.json`): off on staging and prod; local dev
+    may
+
+    enable. Contract tests read this file in git — do not depend on a public OpenAPI
+    URL.
+
+    '
 servers:
-  - url: https://api.staging.jplearn.local
+- url: https://api.staging.jplearn.local
 paths:
   /health:
     get:
       operationId: health
-      tags: [Observability]
-      x-jplearn-fr: [NFR-OBS-001]
+      tags:
+      - Observability
+      x-jplearn-fr:
+      - NFR-OBS-001
       description: Liveness. Echoes `x-request-id` (client value or generated UUID).
       parameters:
-        - $ref: "#/components/parameters/RequestIdHeader"
+      - $ref: '#/components/parameters/RequestIdHeader'
       responses:
-        "200":
+        '200':
           description: API process is up
           headers:
             X-Request-Id:
-              $ref: "#/components/headers/XRequestId"
+              $ref: '#/components/headers/XRequestId'
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Health" }
+              schema:
+                $ref: '#/components/schemas/Health'
   /ready:
     get:
       operationId: ready
-      tags: [Observability]
-      x-jplearn-fr: [NFR-OBS-001]
+      tags:
+      - Observability
+      x-jplearn-fr:
+      - NFR-OBS-001
       description: Readiness. Checks database connectivity and storage dependency.
       parameters:
-        - $ref: "#/components/parameters/RequestIdHeader"
+      - $ref: '#/components/parameters/RequestIdHeader'
       responses:
-        "200":
+        '200':
           description: Service dependencies are healthy
           headers:
             X-Request-Id:
-              $ref: "#/components/headers/XRequestId"
+              $ref: '#/components/headers/XRequestId'
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Ready" }
-        "503":
+              schema:
+                $ref: '#/components/schemas/Ready'
+        '503':
           description: One or more service dependencies are unhealthy
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Ready" }
+              schema:
+                $ref: '#/components/schemas/Ready'
   /auth/register:
     post:
       operationId: register
-      tags: [Identity]
-      x-jplearn-fr: [FR-ID-001]
+      tags:
+      - Identity
+      x-jplearn-fr:
+      - FR-ID-001
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [email, password]
+              required:
+              - email
+              - password
               properties:
-                email: { type: string, format: email }
-                password: { type: string, minLength: 10 }
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 10
       responses:
-        "201":
+        '201':
           description: User created
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/AuthSession" }
+              schema:
+                $ref: '#/components/schemas/AuthSession'
   /auth/login:
     post:
       operationId: login
-      tags: [Identity]
-      x-jplearn-fr: [FR-ID-001, FR-ID-002]
+      tags:
+      - Identity
+      x-jplearn-fr:
+      - FR-ID-001
+      - FR-ID-002
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [email, password]
+              required:
+              - email
+              - password
               properties:
-                email: { type: string }
-                password: { type: string }
+                email:
+                  type: string
+                password:
+                  type: string
       responses:
-        "200":
+        '200':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/AuthSession" }
-        "401":
+              schema:
+                $ref: '#/components/schemas/AuthSession'
+        '401':
           description: Invalid credentials
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Http401Error" }
+              schema:
+                $ref: '#/components/schemas/Http401Error'
   /auth/logout:
     post:
       operationId: logout
-      tags: [Identity]
-      x-jplearn-fr: [FR-ID-003]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - Identity
+      x-jplearn-fr:
+      - FR-ID-003
+      security:
+      - bearerAuth: []
       responses:
-        "204": { description: "Invalidates every access_token for this user (all devices); tokenVersion increment (FR-ID-003)" }
-        "401":
+        '204':
+          description: Invalidates every access_token for this user (all devices);
+            tokenVersion increment (FR-ID-003)
+        '401':
           description: Missing or invalid Bearer
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Http401Error" }
+              schema:
+                $ref: '#/components/schemas/Http401Error'
   /me:
     get:
       operationId: getMe
-      tags: [Identity]
-      x-jplearn-fr: [FR-ID-002, FR-ID-004]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - Identity
+      x-jplearn-fr:
+      - FR-ID-002
+      - FR-ID-004
+      security:
+      - bearerAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/User" }
+              schema:
+                $ref: '#/components/schemas/User'
+  /me/saved-scenes:
+    get:
+      operationId: listSavedScenes
+      tags:
+      - Library
+      summary: List Saved Scenes
+      x-jplearn-fr:
+      - FR-BMK-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: query
+        name: offset
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - in: query
+        name: limit
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+          title: Limit
+      - in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+          nullable: true
+          title: Cursor
+      responses:
+        '200':
+          description: List of saved scenes with availability projection
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SavedSceneItemPublic'
+                title: Response Listsavedscenes
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+  /me/saved-scenes/{scene_id}:
+    put:
+      operationId: saveScene
+      tags:
+      - Library
+      summary: Save Scene
+      x-jplearn-fr:
+      - FR-BMK-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: scene_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Scene Id
+      responses:
+        '200':
+          description: Scene was already saved (idempotent)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedScenePublic'
+        '201':
+          description: Scene successfully saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavedScenePublic'
+        '400':
+          description: Scene not in published current version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Scene not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+    delete:
+      operationId: deleteSavedScene
+      tags:
+      - Library
+      summary: Delete Saved Scene
+      x-jplearn-fr:
+      - FR-BMK-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: scene_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Scene Id
+      responses:
+        '204':
+          description: Saved scene deleted idempotently
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+  /me/collections:
+    post:
+      operationId: createCollection
+      tags:
+      - Library
+      summary: Create Collection
+      x-jplearn-fr:
+      - FR-COL-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: header
+        name: Idempotency-Key
+        required: false
+        schema:
+          type: string
+          maxLength: 128
+          nullable: true
+          title: Idempotency-Key
+        description: Optional idempotency key for safely retrying collection creation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCollectionBody'
+      responses:
+        '200':
+          description: Collection was already created (idempotent replay)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionPublic'
+        '201':
+          description: Collection successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionPublic'
+        '400':
+          description: Invalid input or collection quota exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '409':
+          description: Idempotency key reused with different payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+    get:
+      operationId: listCollections
+      tags:
+      - Library
+      summary: List Collections
+      x-jplearn-fr:
+      - FR-COL-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: query
+        name: offset
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - in: query
+        name: limit
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+          title: Limit
+      - in: query
+        name: cursor
+        required: false
+        schema:
+          type: string
+          nullable: true
+          title: Cursor
+      responses:
+        '200':
+          description: List of learner collections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CollectionPublic'
+                title: Response Listcollections
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+  /me/collections/{collection_id}:
+    get:
+      operationId: getCollection
+      tags:
+      - Library
+      summary: Get Collection
+      x-jplearn-fr:
+      - FR-COL-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: collection_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Collection Id
+      responses:
+        '200':
+          description: Collection details including scenes and availability
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionDetailPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Collection not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+    patch:
+      operationId: patchCollection
+      tags:
+      - Library
+      summary: Patch Collection
+      x-jplearn-fr:
+      - FR-COL-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: collection_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Collection Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchCollectionBody'
+      responses:
+        '200':
+          description: Collection name successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionPublic'
+        '400':
+          description: Invalid collection name
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Collection not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+    delete:
+      operationId: deleteCollection
+      tags:
+      - Library
+      summary: Delete Collection
+      x-jplearn-fr:
+      - FR-COL-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: collection_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Collection Id
+      responses:
+        '204':
+          description: Collection deleted idempotently
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+  /me/collections/{collection_id}/scenes:
+    put:
+      operationId: updateCollectionScenes
+      tags:
+      - Library
+      summary: Update Collection Scenes
+      x-jplearn-fr:
+      - FR-COL-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: collection_id
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Collection Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCollectionScenesBody'
+      responses:
+        '200':
+          description: Collection scenes successfully replaced
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionPublic'
+        '400':
+          description: Invalid scene list or scene not saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Collection not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /catalog:
     get:
       operationId: listCatalog
-      tags: [Catalog]
-      x-jplearn-fr: [FR-CAT-002, FR-CAT-003, FR-CAT-004]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - Catalog
+      x-jplearn-fr:
+      - FR-CAT-002
+      - FR-CAT-003
+      - FR-CAT-004
+      security:
+      - bearerAuth: []
       parameters:
-        - in: query
-          name: ci_level
-          schema: { type: integer, minimum: 0, maximum: 4 }
+      - in: query
+        name: ci_level
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 4
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: object
-                required: [items]
+                required:
+                - items
                 properties:
                   items:
                     type: array
-                    items: { $ref: "#/components/schemas/CatalogItemPublic" }
+                    items:
+                      $ref: '#/components/schemas/CatalogItemPublic'
+  /catalog/search:
+    get:
+      summary: Search Catalog Scenes
+      operationId: searchScenes
+      tags:
+      - Catalog
+      x-jplearn-fr:
+      - FR-SCH-001
+      - FR-SCH-002
+      - FR-NEG
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: query
+        name: q
+        required: true
+        description: Japanese search query
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Japanese search query
+      - in: query
+        name: ci_level
+        required: false
+        description: Filter CI level
+        schema:
+          anyOf:
+          - type: integer
+            minimum: 0
+            maximum: 4
+          - type: 'null'
+          description: Filter CI level
+      - in: query
+        name: cursor
+        required: false
+        description: Opaque pagination cursor
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Opaque pagination cursor
+      - in: query
+        name: limit
+        required: false
+        description: Page limit
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 50
+          default: 20
+          description: Page limit
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponsePublic'
+        '400':
+          description: Invalid search query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Scene search capability disabled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Index generation mismatch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /catalog/{id}/content:
+    get:
+      operationId: getCatalogItemContent
+      tags:
+      - Catalog
+      x-jplearn-fr:
+      - FR-SCN-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentVersionPublic'
+        '404':
+          description: Catalog item not found or unpublished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /series:
+    get:
+      operationId: listLearnerSeries
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: query
+        name: ci_level
+        schema:
+          type: string
+      - in: query
+        name: topic_id
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 50
+          minimum: 1
+          maximum: 100
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeriesLearnerSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+  /series/{id}:
+    get:
+      operationId: getLearnerSeries
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      - FR-LRN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesLearnerPublic'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Series not found or has no available clips
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /staff/catalog:
     get:
       operationId: listStaffCatalog
-      tags: [CMS]
-      x-jplearn-fr: [FR-CAT-005, FR-CMS-001]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CAT-005
+      - FR-CMS-001
+      security:
+      - bearerAuth: []
       parameters:
-        - in: query
-          name: status
-          required: false
-          schema: { type: string, nullable: true }
-        - in: query
-          name: ci_level
-          required: false
-          schema: { type: integer, minimum: 0, maximum: 4, nullable: true }
-        - in: query
-          name: limit
-          required: false
-          schema: { type: integer, minimum: 1, maximum: 100, default: 50 }
-        - in: query
-          name: offset
-          required: false
-          schema: { type: integer, minimum: 0, default: 0 }
+      - in: query
+        name: status
+        required: false
+        schema:
+          type: string
+          nullable: true
+      - in: query
+        name: ci_level
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          maximum: 4
+          nullable: true
+      - in: query
+        name: limit
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 50
+      - in: query
+        name: offset
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
       responses:
-        "200":
+        '200':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/CatalogStaffList" }
-        "403":
+              schema:
+                $ref: '#/components/schemas/CatalogStaffList'
+        '403':
           description: Not teacher or admin
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
     post:
       operationId: createCatalogItem
-      tags: [CMS]
-      x-jplearn-fr: [FR-CAT-001, FR-CAT-005]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CAT-001
+      - FR-CAT-005
+      security:
+      - bearerAuth: []
       requestBody:
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/CatalogItemWrite" }
+            schema:
+              $ref: '#/components/schemas/CatalogItemWrite'
       responses:
-        "201":
+        '201':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
-        "403":
+              schema:
+                $ref: '#/components/schemas/CatalogItemStaff'
+        '403':
           description: Not teacher or admin
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /staff/catalog/{id}:
     get:
       operationId: getStaffCatalogItem
-      tags: [CMS]
-      x-jplearn-fr: [FR-CAT-005]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CAT-005
+      security:
+      - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        "200":
+        '200':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
-        "403":
+              schema:
+                $ref: '#/components/schemas/CatalogItemStaff'
+        '403':
           description: Not teacher or admin
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
-        "404":
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
           description: Catalog item not found
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
     patch:
       operationId: updateStaffCatalogItem
-      tags: [CMS]
-      x-jplearn-fr: [FR-CAT-005]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CAT-005
+      security:
+      - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/CatalogItemPatch" }
+            schema:
+              $ref: '#/components/schemas/CatalogItemPatch'
       responses:
-        "200":
+        '200':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
-        "400":
+              schema:
+                $ref: '#/components/schemas/CatalogItemStaff'
+        '400':
           description: Item is not in draft status
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
-        "403":
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
           description: Not teacher or admin
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
-        "404":
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
           description: Catalog item not found
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
-        "409":
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
           description: Revision conflict
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /staff/catalog/{id}/media:
     post:
       operationId: uploadMedia
-      tags: [CMS]
-      x-jplearn-fr: [FR-CMS-001]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CMS-001
+      security:
+      - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
       requestBody:
         content:
           multipart/form-data:
             schema:
               type: object
-              required: [file]
+              required:
+              - file
               properties:
-                file: { type: string, format: binary }
+                file:
+                  type: string
+                  format: binary
       responses:
-        "201":
+        '201':
           description: Media asset created
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/MediaAssetStaff" }
+              schema:
+                $ref: '#/components/schemas/MediaAssetStaff'
   /media/{id}:
     get:
       operationId: streamMedia
-      tags: [Media]
-      x-jplearn-fr: [FR-CMS-003, FR-CMS-004]
-      description: >
-        MP4/audio bytes. Auth is Bearer JWT **or** HMAC query `exp`+`sig` (TTL 1h)
-        so `<video src>` can play without Authorization. Secret = MEDIA_SIGNING_SECRET or JWT_SECRET.
+      tags:
+      - Media
+      x-jplearn-fr:
+      - FR-CMS-003
+      - FR-CMS-004
+      description: 'MP4/audio bytes. Auth is Bearer JWT **or** HMAC query `exp`+`sig`
+        (TTL 1h) so `<video src>` can play without Authorization. Secret = MEDIA_SIGNING_SECRET
+        or JWT_SECRET.
+
+        '
       security:
-        - bearerAuth: []
-        - signedQuery: []
+      - bearerAuth: []
+      - signedQuery: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
-        - in: query
-          name: exp
-          schema: { type: integer }
-          description: Unix seconds expiry (required if no Bearer)
-        - in: query
-          name: sig
-          schema: { type: string, pattern: "^[a-f0-9]{64}$" }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: exp
+        schema:
+          type: integer
+        description: Unix seconds expiry (required if no Bearer)
+      - in: query
+        name: sig
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{64}$
       responses:
-        "200":
+        '200':
           description: Media stream
           content:
             video/mp4:
-              schema: { type: string, format: binary }
-        "401":
+              schema:
+                type: string
+                format: binary
+        '401':
           description: Missing or invalid JWT/signature
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Http401Error" }
-        "404":
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
           description: Asset not found
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /media/{id}/hls/{file}:
     get:
       operationId: streamHls
-      tags: [Media]
-      x-jplearn-fr: [NFR-PERF-002]
-      description: >
-        HLS manifest (.m3u8) and segments (.ts/.m4s); MP4 /media/{id} stays the fallback.
-        Auth is Bearer JWT **or** HMAC query `exp`+`sig` (same as GET /media/{id}) so
-        hls.js can fetch segments without Authorization. Manifest rewrite copies query onto relative URIs.
+      tags:
+      - Media
+      x-jplearn-fr:
+      - NFR-PERF-002
+      description: 'HLS manifest (.m3u8) and segments (.ts/.m4s); MP4 /media/{id}
+        stays the fallback. Auth is Bearer JWT **or** HMAC query `exp`+`sig` (same
+        as GET /media/{id}) so hls.js can fetch segments without Authorization. Manifest
+        rewrite copies query onto relative URIs.
+
+        '
       security:
-        - bearerAuth: []
-        - signedQuery: []
+      - bearerAuth: []
+      - signedQuery: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
-        - in: path
-          name: file
-          required: true
-          schema: { type: string, pattern: "^[A-Za-z0-9._-]+$" }
-        - in: query
-          name: exp
-          schema: { type: integer }
-          description: Unix seconds expiry (required if no Bearer)
-        - in: query
-          name: sig
-          schema: { type: string, pattern: "^[a-f0-9]{64}$" }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: path
+        name: file
+        required: true
+        schema:
+          type: string
+          pattern: ^[A-Za-z0-9._-]+$
+      - in: query
+        name: exp
+        schema:
+          type: integer
+        description: Unix seconds expiry (required if no Bearer)
+      - in: query
+        name: sig
+        schema:
+          type: string
+          pattern: ^[a-f0-9]{64}$
       responses:
-        "200":
+        '200':
           content:
             application/vnd.apple.mpegurl: {}
             video/mp2t: {}
             video/iso.segment: {}
-        "400":
+        '400':
           description: Invalid or unsupported file name
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
-        "401":
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
           description: Missing or invalid JWT/signature
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Http401Error" }
-        "404":
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
           description: Asset or HLS file not found
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /staff/media/{id}/hls:
     post:
       operationId: registerHls
-      tags: [CMS]
-      x-jplearn-fr: [FR-CMS-001, NFR-PERF-002]
-      description: Marks an asset HLS-ready after scripts/transcode-hls.sh wrote the bundle to storage/hls/{id}/.
-      security: [{ bearerAuth: [] }]
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CMS-001
+      - NFR-PERF-002
+      description: Marks an asset HLS-ready after scripts/transcode-hls.sh wrote the
+        bundle to storage/hls/{id}/.
+      security:
+      - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        "201":
+        '201':
           description: hls_url registered
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/MediaAssetStaff" }
-        "400":
+              schema:
+                $ref: '#/components/schemas/MediaAssetStaff'
+        '400':
           description: HLS manifest missing on disk
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
-        "403":
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
           description: Not teacher or admin
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /staff/catalog/{id}/submit-qa:
     post:
       operationId: submitLevelQa
-      tags: [CMS]
-      x-jplearn-fr: [FR-CMS-002]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CMS-002
+      security:
+      - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        "200":
+        '200':
           description: status=level_qa
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
+              schema:
+                $ref: '#/components/schemas/CatalogItemStaff'
   /staff/catalog/{id}/publish:
     post:
       operationId: publishCatalogItem
-      tags: [CMS]
-      x-jplearn-fr: [FR-CMS-002, FR-CMS-003, FR-CMS-004, FR-CAT-002]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CMS-002
+      - FR-CMS-003
+      - FR-CMS-004
+      - FR-CAT-002
+      security:
+      - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        "200":
+        '200':
           description: status=published
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
-        "400":
+              schema:
+                $ref: '#/components/schemas/CatalogItemStaff'
+        '400':
           description: Not level_qa, or no media playback source (FR-CAT-002)
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
-        "403":
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
           description: Admin only
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /staff/catalog/{id}/unpublish:
     post:
       operationId: unpublishCatalogItem
-      tags: [CMS]
-      x-jplearn-fr: [FR-CMS-002, FR-CAT-002]
-      description: Moves a published item back to draft so learners no longer see it.
-      security: [{ bearerAuth: [] }]
+      tags:
+      - CMS
+      x-jplearn-fr:
+      - FR-CMS-002
+      - FR-CAT-002
+      description: Moves a published item back to draft so learners no longer see
+        it.
+      security:
+      - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        "200":
+        '200':
           description: status=draft
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/CatalogItemStaff" }
-        "400":
+              schema:
+                $ref: '#/components/schemas/CatalogItemStaff'
+        '400':
           description: Item is not published
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
-        "403":
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
           description: Admin only
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
-        "404":
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
           description: Catalog item not found
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /staff/catalog/{id}/content:
+    get:
+      operationId: getStaffCatalogItemContent
+      tags:
+      - Catalog
+      x-jplearn-fr:
+      - FR-SCN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentVersionStaff'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Catalog item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+    put:
+      operationId: putStaffCatalogItemContent
+      tags:
+      - Catalog
+      x-jplearn-fr:
+      - FR-SCN-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContentUpdateBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentVersionStaff'
+        '400':
+          description: Invalid scene timing or non-draft item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Catalog item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /staff/catalog/{id}/return-to-draft:
+    post:
+      operationId: returnCatalogItemToDraft
+      tags:
+      - Catalog
+      x-jplearn-fr:
+      - FR-SCN-001
+      - FR-CMS-002
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogItemStaff'
+        '400':
+          description: Item is not in level_qa status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Catalog item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /staff/catalog/{id}/transcript:
+    get:
+      tags:
+      - Staff Transcripts
+      summary: Get transcript for catalog item
+      operationId: getStaffCatalogTranscript
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      - name: content_version_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Content version ID (optional)
+          title: Content Version Id
+        description: Content version ID (optional)
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptRevisionPublic'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Catalog item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-JPA-001
+    put:
+      tags:
+      - Staff Transcripts
+      summary: Save draft transcript with expected_revision CAS
+      operationId: saveStaffCatalogTranscript
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveTranscriptDraftBody'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptRevisionPublic'
+        '400':
+          description: Validation error or invalid scene reference
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Catalog item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-JPA-001
+  /staff/catalog/{id}/transcript/submit-qa:
+    post:
+      tags:
+      - Staff Transcripts
+      summary: Submit draft transcript for QA review
+      operationId: submitStaffCatalogTranscriptQA
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitTranscriptQABody'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptRevisionPublic'
+        '400':
+          description: Invalid state for QA submission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Catalog item or transcript not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-JPA-001
+  /staff/catalog/{id}/transcript/approve:
+    post:
+      tags:
+      - Staff Transcripts
+      summary: Approve transcript revision and publish search projection
+      operationId: approveStaffCatalogTranscript
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApproveTranscriptBody'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptRevisionPublic'
+        '400':
+          description: Invalid state for approval
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Catalog item or transcript not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-JPA-001
+  /staff/catalog/{id}/transcript/return-to-draft:
+    post:
+      tags:
+      - Staff Transcripts
+      summary: Return transcript revision to draft with reason
+      operationId: returnStaffCatalogTranscriptToDraft
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReturnTranscriptToDraftBody'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TranscriptRevisionPublic'
+        '400':
+          description: Validation error or invalid state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Catalog item or transcript not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-JPA-001
+  /staff/catalog/{id}/language-analysis-jobs:
+    post:
+      tags:
+      - Staff Transcripts
+      summary: Create language analysis job for transcript revision
+      operationId: createLanguageAnalysisJob
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLanguageAnalysisJobBody'
+      responses:
+        '202':
+          description: Language analysis job accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageAnalysisJobPublic'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Catalog item or transcript revision not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-JPA-001
+  /staff/language-analysis-jobs/{id}:
+    get:
+      tags:
+      - Staff Transcripts
+      summary: Get language analysis job details
+      operationId: getLanguageAnalysisJob
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageAnalysisJobPublic'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Language analysis job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-JPA-001
+  /staff/series:
+    post:
+      operationId: createSeries
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeriesCreateBody'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesStaffPublic'
+        '400':
+          description: Validation error or invalid topic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+    get:
+      operationId: listStaffSeries
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: ci_level
+        schema:
+          type: string
+      - in: query
+        name: topic_id
+        schema:
+          type: string
+      - in: query
+        name: offset
+        schema:
+          type: integer
+          default: 0
+          minimum: 0
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 50
+          minimum: 1
+          maximum: 100
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SeriesStaffSummary'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /staff/series/{id}:
+    get:
+      operationId: getStaffSeries
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesStaffPublic'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Series not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+    patch:
+      operationId: updateStaffSeries
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeriesPatchBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesStaffPublic'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Series not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /staff/series/{id}/items:
+    put:
+      operationId: updateStaffSeriesItems
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeriesItemsUpdateBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesStaffPublic'
+        '400':
+          description: Validation error or missing items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Series not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /staff/series/{id}/submit-qa:
+    post:
+      operationId: submitStaffSeriesQa
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeriesActionBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesStaffPublic'
+        '400':
+          description: Validation error or series has no items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
+          description: Staff only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Series not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /staff/series/{id}/return-to-draft:
+    post:
+      operationId: returnStaffSeriesToDraft
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeriesReturnToDraftBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesStaffPublic'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Series not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /staff/series/{id}/publish:
+    post:
+      operationId: publishStaffSeries
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeriesActionBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesStaffPublic'
+        '400':
+          description: Validation error or items unpublished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Series not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /staff/series/{id}/unpublish:
+    post:
+      operationId: unpublishStaffSeries
+      tags:
+      - Series
+      x-jplearn-fr:
+      - FR-SER-001
+      security:
+      - bearerAuth: []
+      parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeriesActionBody'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeriesStaffPublic'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '403':
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Series not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /sessions:
     post:
       operationId: startSession
-      tags: [Session]
-      x-jplearn-fr: [FR-SES-001, FR-SES-003, FR-EVT-001, FR-EVT-003]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - Session
+      x-jplearn-fr:
+      - FR-SES-001
+      - FR-SES-003
+      - FR-EVT-001
+      - FR-EVT-003
+      security:
+      - bearerAuth: []
       parameters:
-        - in: header
-          name: Idempotency-Key
-          required: false
-          description: >-
-            Optional. Max 128 chars. Scoped per (user, key). Same key + same body replays the stored
-            session (201); same key + different body returns 409. Keys are retained for the lifetime of
-            the session row (ON DELETE CASCADE); no TTL sweep in Q1.
-          schema: { type: string, nullable: true, maxLength: 128 }
+      - in: header
+        name: Idempotency-Key
+        required: false
+        description: Optional. Max 128 chars. Scoped per (user, key). Same key + same
+          body replays the stored session (201); same key + different body returns
+          409. Keys are retained for the lifetime of the session row (ON DELETE CASCADE);
+          no TTL sweep in Q1.
+        schema:
+          type: string
+          nullable: true
+          maxLength: 128
       requestBody:
         content:
           application/json:
             schema:
               type: object
-              required: [device_class]
+              required:
+              - device_class
               properties:
                 device_class:
                   type: string
-                  enum: [web, phone, ipad]
+                  enum:
+                  - web
+                  - phone
+                  - ipad
       responses:
-        "201":
+        '201':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/LearningSession" }
-        "409":
+              schema:
+                $ref: '#/components/schemas/LearningSession'
+        '409':
           description: Idempotency key conflict
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /sessions/{id}:
     get:
       operationId: getSession
-      tags: [Session]
-      x-jplearn-fr: [FR-SES-001, FR-SES-002]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - Session
+      x-jplearn-fr:
+      - FR-SES-001
+      - FR-SES-002
+      security:
+      - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        "200":
+        '200':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/LearningSession" }
-        "403":
+              schema:
+                $ref: '#/components/schemas/LearningSession'
+        '403':
           description: Forbidden
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
-        "404":
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
           description: Session not found
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /sessions/{id}/end:
     post:
       operationId: endSession
-      tags: [Session]
-      x-jplearn-fr: [FR-SES-002, FR-PRG-001, FR-EVT-001, FR-EVT-002]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - Session
+      x-jplearn-fr:
+      - FR-SES-002
+      - FR-PRG-001
+      - FR-EVT-001
+      - FR-EVT-002
+      security:
+      - bearerAuth: []
       parameters:
-        - in: path
-          name: id
-          required: true
-          schema: { type: string, format: uuid }
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
       responses:
-        "200":
+        '200':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/LearnerProgress" }
-        "400":
+              schema:
+                $ref: '#/components/schemas/LearnerProgress'
+        '400':
           description: Session already ended
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
   /progress:
     get:
       operationId: getProgress
-      tags: [Progress]
-      x-jplearn-fr: [FR-PRG-001, FR-PRG-002, FR-PRG-003, FR-PRG-004]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - Progress
+      x-jplearn-fr:
+      - FR-PRG-001
+      - FR-PRG-002
+      - FR-PRG-003
+      - FR-PRG-004
+      security:
+      - bearerAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/LearnerProgress" }
+              schema:
+                $ref: '#/components/schemas/LearnerProgress'
   /flags:
     get:
       operationId: getFlags
-      tags: [Flags]
-      x-jplearn-fr: [FR-FLG-001, FR-FLG-002]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - Flags
+      x-jplearn-fr:
+      - FR-FLG-001
+      - FR-FLG-002
+      security:
+      - bearerAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Flags" }
+              schema:
+                $ref: '#/components/schemas/Flags'
+  /capabilities:
+    get:
+      operationId: getCapabilities
+      tags:
+      - Capabilities
+      x-jplearn-fr:
+      - FR-FLG-001
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capabilities'
   /staff/flags:
     patch:
       operationId: patchFlags
-      tags: [Flags]
-      x-jplearn-fr: [FR-FLG-001]
-      security: [{ bearerAuth: [] }]
+      tags:
+      - Flags
+      x-jplearn-fr:
+      - FR-FLG-001
+      security:
+      - bearerAuth: []
       requestBody:
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/Flags" }
+            schema:
+              $ref: '#/components/schemas/Flags'
       responses:
-        "200":
+        '200':
           description: Updated
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Flags" }
-        "403":
+              schema:
+                $ref: '#/components/schemas/Flags'
+        '403':
           description: Admin only
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/HttpError" }
+              schema:
+                $ref: '#/components/schemas/HttpError'
+  /catalog/{id}/reports:
+    post:
+      tags:
+      - Content Reports
+      summary: Create Report
+      operationId: createContentReport
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateContentReportBody'
+      responses:
+        '201':
+          description: Report successfully filed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentReportLearnerPublic'
+        '200':
+          description: Report already filed (idempotent replay)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentReportLearnerPublic'
+        '400':
+          description: Invalid parameters, out of bounds position, or unpublished
+            item/version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Catalog item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Idempotency key reused with different request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '429':
+          description: Daily report quota exceeded (max 10 per day)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-RPT-001
+      - FR-LRN-001
+  /me/content-reports:
+    get:
+      tags:
+      - Content Reports
+      summary: List My Reports
+      operationId: listMyContentReports
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: List of user filed content reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContentReportLearnerPublic'
+                title: Response Listmycontentreports
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+      x-jplearn-fr:
+      - FR-RPT-001
+      - FR-LRN-001
+  /me/content-reports/{id}:
+    get:
+      tags:
+      - Content Reports
+      summary: Get My Report
+      operationId: getMyContentReport
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      responses:
+        '200':
+          description: Details of user content report
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentReportLearnerPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-RPT-001
+      - FR-LRN-001
+  /staff/content-reports:
+    get:
+      tags:
+      - Content Reports
+      summary: List Staff Reports
+      operationId: listStaffContentReports
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: status
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Status
+      - name: category
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Category
+      - name: catalog_item_id
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Catalog Item Id
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 50
+          title: Limit
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      responses:
+        '200':
+          description: Moderation queue of content reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContentReportStaffPublic'
+                title: Response Liststaffcontentreports
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Forbidden to non-staff
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-RPT-001
+      - FR-STF-001
+  /staff/content-reports/{id}:
+    get:
+      tags:
+      - Content Reports
+      summary: Get Staff Report
+      operationId: getStaffContentReport
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      responses:
+        '200':
+          description: Detailed staff content report with audit logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentReportStaffDetailPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Forbidden to non-staff
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-RPT-001
+      - FR-STF-001
+    patch:
+      tags:
+      - Content Reports
+      summary: Patch Staff Report
+      operationId: patchStaffContentReport
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchStaffContentReportBody'
+      responses:
+        '200':
+          description: Content report successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentReportStaffPublic'
+        '400':
+          description: Invalid status or resolution version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Forbidden to non-staff
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Revision conflict (OCC)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-RPT-001
+      - FR-STF-001
+  /playbacks:
+    post:
+      tags:
+      - Playback
+      summary: Start Playback
+      operationId: startPlayback
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+            minLength: 1
+            maxLength: 200
+          - type: 'null'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartPlaybackBody'
+        required: true
+      responses:
+        '201':
+          description: Playback session successfully started or taken over
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaybackCreatedPublic'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Catalog item not found or unpublished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Playback lease conflict on another device
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      security:
+      - bearerAuth: []
+      x-jplearn-fr:
+      - FR-WAT-001
+      - FR-RSM-001
+  /playbacks/{id}:
+    get:
+      tags:
+      - Playback
+      summary: Get Playback
+      operationId: getPlayback
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      responses:
+        '200':
+          description: Playback session details and lease status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaybackStatusPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Playback session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-WAT-001
+  /playbacks/{id}/checkpoints/{seq}:
+    put:
+      tags:
+      - Playback
+      summary: Send Playback Checkpoint
+      operationId: sendPlaybackCheckpoint
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      - name: seq
+        in: path
+        required: true
+        schema:
+          type: integer
+          minimum: 1
+          description: Strictly consecutive checkpoint sequence number
+          title: Seq
+        description: Strictly consecutive checkpoint sequence number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckpointBody'
+      responses:
+        '200':
+          description: Checkpoint recorded and active watch time credited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckpointAckPublic'
+        '400':
+          description: Invalid checkpoint values
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Playback session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Sequence mismatch, duplicate conflict, or session superseded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-WAT-001
+      - FR-RSM-001
+  /playbacks/{id}/end:
+    post:
+      tags:
+      - Playback
+      summary: End Playback
+      operationId: endPlayback
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndPlaybackBody'
+      responses:
+        '200':
+          description: Playback session successfully ended and lease released
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaybackStatusPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: Playback session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-WAT-001
+      - FR-RSM-001
+  /me/resume:
+    get:
+      tags:
+      - Playback
+      summary: List Resume
+      operationId: listResume
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          default: 0
+          title: Offset
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: List of resume checkpoints sorted by recent activity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumeListPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+      x-jplearn-fr:
+      - FR-RSM-001
+  /me/resume/{catalog_item_id}:
+    get:
+      tags:
+      - Playback
+      summary: Get Resume Checkpoint
+      operationId: getResumeCheckpoint
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: catalog_item_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Catalog Item Id
+      responses:
+        '200':
+          description: Resume checkpoint for the specified catalog item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResumeItemPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: No resume checkpoint found for this item
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-RSM-001
+  /me/learning-preferences:
+    get:
+      tags:
+      - Activity & Preferences
+      summary: Get Learning Preferences
+      operationId: getLearningPreferences
+      responses:
+        '200':
+          description: Learner preferences retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPreferencesPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+      security:
+      - bearerAuth: []
+      x-jplearn-fr:
+      - UC-L16
+    put:
+      tags:
+      - Activity & Preferences
+      summary: Update Learning Preferences
+      operationId: updateLearningPreferences
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLearningPreferencesBody'
+        required: true
+      responses:
+        '200':
+          description: Learner preferences updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningPreferencesPublic'
+        '400':
+          description: Invalid goal or timezone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '409':
+          description: Revision mismatch (optimistic concurrency control)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      security:
+      - bearerAuth: []
+      x-jplearn-fr:
+      - UC-L16
+  /me/activity:
+    get:
+      tags:
+      - Activity & Preferences
+      summary: Get Learner Activity
+      operationId: getLearnerActivity
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          description: Start date in YYYY-MM-DD format
+          title: From
+        description: Start date in YYYY-MM-DD format
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          description: End date in YYYY-MM-DD format
+          title: To
+        description: End date in YYYY-MM-DD format
+      responses:
+        '200':
+          description: Daily activity retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearnerActivityResponsePublic'
+        '400':
+          description: Invalid date range or exceeding 90 days limit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+      x-jplearn-fr:
+      - UC-L16
+      - FR-NEG
+  /me/watch-history:
+    get:
+      tags:
+      - Activity & Preferences
+      summary: Get Watch History
+      operationId: getWatchHistory
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: cursor
+        in: query
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          description: Opaque pagination cursor
+          title: Cursor
+        description: Opaque pagination cursor
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 50
+          title: Limit
+      responses:
+        '200':
+          description: Watch history list with pagination cursor
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchHistoryResponsePublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+      x-jplearn-fr:
+      - FR-WAT-001
+    delete:
+      tags:
+      - Activity & Preferences
+      summary: Delete Watch History
+      operationId: requestWatchHistoryDeletion
+      security:
+      - bearerAuth: []
+      responses:
+        '202':
+          description: Watch history deletion accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryDeletionCreatedPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+      x-jplearn-fr:
+      - FR-WAT-001
+  /me/history-deletions/{deletion_id}:
+    get:
+      tags:
+      - Activity & Preferences
+      summary: Get History Deletion Status
+      operationId: getHistoryDeletionStatus
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: deletion_id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Deletion Id
+      responses:
+        '200':
+          description: History deletion status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoryDeletionStatusPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '404':
+          description: History deletion job not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-WAT-001
+  /me/recommendations:
+    get:
+      tags:
+      - Recommendations
+      summary: Get Recommendations
+      operationId: getRecommendations
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 50
+          minimum: 1
+          description: Maximum number of recommendations to return
+          default: 10
+          title: Limit
+        description: Maximum number of recommendations to return
+      responses:
+        '200':
+          description: Recommended items retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationsResponsePublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+      x-jplearn-fr:
+      - UC-L16
+      - UC-L17
+      - FR-WAT-001
+      - FR-NEG
+  /staff/ai-usage:
+    get:
+      tags:
+      - Staff AI Usage
+      summary: Get My Ai Usage
+      description: List staff AI usage entries within date range (max 90 days).
+      operationId: getStaffAiUsage
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: from_date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+          description: Start of date range (ISO 8601)
+          title: From Date
+        description: Start of date range (ISO 8601)
+      - name: to_date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+          description: End of date range (ISO 8601)
+          title: To Date
+        description: End of date range (ISO 8601)
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          description: Items per page
+          default: 50
+          title: Limit
+        description: Items per page
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 0
+          description: Pagination offset
+          default: 0
+          title: Offset
+        description: Pagination offset
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiUsageListResponsePublic'
+      x-jplearn-fr:
+      - FR-STAFF-001
+      - FR-AI-001
+  /staff/ai-usage/summary:
+    get:
+      tags:
+      - Staff AI Usage
+      summary: Get Ai Usage Summary
+      description: Admin-only aggregated AI usage summary across all accounts within
+        date range (max 90 days).
+      operationId: getStaffAiUsageSummary
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: from_date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+          description: Start of date range (ISO 8601)
+          title: From Date
+        description: Start of date range (ISO 8601)
+      - name: to_date
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+          description: End of date range (ISO 8601)
+          title: To Date
+        description: End of date range (ISO 8601)
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiUsageSummaryResponsePublic'
+      x-jplearn-fr:
+      - FR-ADMIN-001
+      - FR-AI-001
+  /staff/catalog/{id}/content-jobs:
+    post:
+      tags:
+      - Staff Content Jobs
+      summary: Create Content Job
+      description: Create a durable content job for AI transcription or segmentation.
+      operationId: createStaffContentJob
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      - name: Idempotency-Key
+        in: header
+        required: false
+        schema:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Idempotency-Key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateContentJobRequest'
+      responses:
+        '202':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentJobResponsePublic'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-STAFF-001
+      - FR-AI-001
+  /staff/content-jobs/{id}:
+    get:
+      tags:
+      - Staff Content Jobs
+      summary: Get Content Job
+      description: Retrieve content job status, progress, and draft results.
+      operationId: getStaffContentJob
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentJobResponsePublic'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-STAFF-001
+      - FR-AI-001
+  /staff/content-jobs/{id}/attempts:
+    get:
+      tags:
+      - Staff AI Attempts
+      operationId: listStaffAiAttempts
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AiAttemptPublic'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-AI-001
+  /staff/content-jobs/{id}/attempts/{attempt_id}/reconcile:
+    post:
+      tags:
+      - Staff AI Attempts
+      operationId: reconcileStaffAiAttempt
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: attempt_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReconcileAttemptRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiAttemptPublic'
+        '400':
+          description: Invalid reconciliation evidence or usage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Admin only
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Attempt not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Attempt state or evidence conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-AI-001
+  /staff/content-jobs/{id}/cancel:
+    post:
+      tags:
+      - Staff Content Jobs
+      summary: Cancel Content Job
+      description: Cancel a queued or running content job.
+      operationId: cancelStaffContentJob
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentJobResponsePublic'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-STAFF-001
+      - FR-AI-001
+  /staff/content-jobs/{id}/apply:
+    post:
+      tags:
+      - Staff Content Jobs
+      summary: Apply Content Job
+      description: Apply generated segments to transcript draft with CAS revision
+        check.
+      operationId: applyStaffContentJob
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+          title: Id
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyContentJobRequest'
+      responses:
+        '200':
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentJobResponsePublic'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Http401Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+        '409':
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HttpError'
+      x-jplearn-fr:
+      - FR-STAFF-001
+      - FR-AI-001
 components:
   parameters:
     RequestIdHeader:
       in: header
       name: x-request-id
       required: false
-      schema: { type: string }
-      description: Optional trace id; server echoes it. If omitted, server generates a UUID.
+      schema:
+        type: string
+      description: Optional trace id; server echoes it. If omitted, server generates
+        a UUID.
   headers:
     XRequestId:
       description: Echo of request `x-request-id`, or a generated UUID
-      schema: { type: string }
+      schema:
+        type: string
   securitySchemes:
     bearerAuth:
       type: http
@@ -631,144 +3727,2802 @@ components:
   schemas:
     Health:
       type: object
-      required: [ok]
+      required:
+      - ok
       properties:
-        ok: { type: boolean, enum: [true] }
+        ok:
+          type: boolean
+          enum:
+          - true
     Ready:
       type: object
-      required: [ok, database, storage]
+      required:
+      - ok
+      - database
+      - storage
       properties:
-        ok: { type: boolean }
-        database: { type: string, enum: [up, down] }
-        storage: { type: string, enum: [up, down] }
+        ok:
+          type: boolean
+        database:
+          type: string
+          enum:
+          - up
+          - down
+        storage:
+          type: string
+          enum:
+          - up
+          - down
     HttpError:
       type: object
       description: Standard JSON error body (400, 403, 404, 500) per ADR-005.
-      required: [statusCode, message, error]
+      required:
+      - statusCode
+      - message
+      - error
       properties:
-        statusCode: { type: integer }
+        statusCode:
+          type: integer
         message:
           oneOf:
-            - type: string
-            - type: array
-              items: { type: string }
-        error: { type: string }
+          - type: string
+          - type: array
+            items:
+              type: string
+        error:
+          type: string
     Http401Error:
       type: object
       description: Distinct 401 Unauthorized JSON error body per ADR-005.
-      required: [statusCode, message]
+      required:
+      - statusCode
+      - message
       properties:
-        statusCode: { type: integer, enum: [401] }
-        message: { type: string }
+        statusCode:
+          type: integer
+          enum:
+          - 401
+        message:
+          type: string
     MediaAssetStaff:
       type: object
-      required: [id, catalog_item_id, storage_key, playback_url, mime]
+      required:
+      - id
+      - catalog_item_id
+      - storage_key
+      - playback_url
+      - mime
       properties:
-        id: { type: string, format: uuid }
-        catalog_item_id: { type: string }
-        storage_key: { type: string }
-        playback_url: { type: string }
-        hls_url: { type: string, nullable: true }
-        mime: { type: string }
+        id:
+          type: string
+          format: uuid
+        catalog_item_id:
+          type: string
+        storage_key:
+          type: string
+        playback_url:
+          type: string
+        hls_url:
+          type: string
+          nullable: true
+        mime:
+          type: string
+        measured_duration_ms:
+          anyOf:
+          - type: integer
+            minimum: 1
+          - type: 'null'
+        source_sha256:
+          anyOf:
+          - type: string
+            pattern: ^[a-f0-9]{64}$
+          - type: 'null'
+        hls_bundle_sha256:
+          anyOf:
+          - type: string
+            pattern: ^[a-f0-9]{64}$
+          - type: 'null'
     AuthSession:
       type: object
-      required: [access_token, user]
+      required:
+      - access_token
+      - user
       properties:
-        access_token: { type: string }
-        user: { $ref: "#/components/schemas/User" }
+        access_token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
     User:
       type: object
-      required: [id, email, roles]
+      required:
+      - id
+      - email
+      - roles
       properties:
-        id: { type: string, format: uuid }
-        email: { type: string }
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
         roles:
           type: array
           items:
             type: string
-            enum: [learner, teacher, admin]
+            enum:
+            - learner
+            - teacher
+            - admin
     CatalogItemPublic:
       type: object
       description: Learner-facing. No L1 translation fields.
-      required: [id, ci_level, duration_seconds, media_type, topic_id, visual_support]
+      required:
+      - id
+      - ci_level
+      - duration_seconds
+      - media_type
+      - topic_id
+      - visual_support
       properties:
-        id: { type: string, format: uuid }
-        ci_level: { type: integer }
-        duration_seconds: { type: integer }
-        media_type: { type: string, enum: [video, audio] }
-        topic_id: { type: string }
-        visual_support: { type: string, enum: [high, medium, low] }
-        playback_url: { type: string, format: uri, nullable: true }
+        id:
+          type: string
+          format: uuid
+        ci_level:
+          type: integer
+        duration_seconds:
+          type: integer
+        media_type:
+          type: string
+          enum:
+          - video
+          - audio
+        topic_id:
+          type: string
+        visual_support:
+          type: string
+          enum:
+          - high
+          - medium
+          - low
+        playback_url:
+          type: string
+          format: uri
+          nullable: true
         hls_url:
           type: string
           format: uri
           nullable: true
-          description: NFR-PERF-002 HLS manifest when transcoded; clients prefer it and fall back to playback_url.
+          description: NFR-PERF-002 HLS manifest when transcoded; clients prefer it
+            and fall back to playback_url.
     CatalogItemWrite:
       type: object
-      required: [topic_id, ci_level, duration_seconds, media_type, visual_support, title_internal]
+      required:
+      - topic_id
+      - ci_level
+      - duration_seconds
+      - media_type
+      - visual_support
+      - title_internal
       properties:
-        topic_id: { type: string }
+        topic_id:
+          type: string
         ci_level:
           type: integer
-          description: v1 write has no min/max (Prisma Int). GET /catalog?ci_level= is 0–4.
-        duration_seconds: { type: integer }
-        media_type: { type: string, enum: [video, audio] }
-        visual_support: { type: string, enum: [high, medium, low] }
-        title_internal: { type: string }
+          description: v1 write has no min/max (Prisma Int). GET /catalog?ci_level=
+            is 0–4.
+        duration_seconds:
+          type: integer
+        media_type:
+          type: string
+          enum:
+          - video
+          - audio
+        visual_support:
+          type: string
+          enum:
+          - high
+          - medium
+          - low
+        title_internal:
+          type: string
     CatalogItemStaff:
       allOf:
-        - { $ref: "#/components/schemas/CatalogItemWrite" }
-        - type: object
-          required: [id, status, has_l1_translation]
-          properties:
-            id: { type: string, format: uuid }
-            status:
-              type: string
-              enum: [draft, level_qa, published, archived]
-            has_l1_translation: { type: boolean, enum: [false] }
-            revision:
-              type: integer
-              default: 1
+      - $ref: '#/components/schemas/CatalogItemWrite'
+      - type: object
+        required:
+        - id
+        - status
+        - has_l1_translation
+        properties:
+          id:
+            type: string
+            format: uuid
+          status:
+            type: string
+            enum:
+            - draft
+            - level_qa
+            - published
+            - archived
+          has_l1_translation:
+            type: boolean
+            enum:
+            - false
+          revision:
+            type: integer
+            default: 1
     CatalogItemPatch:
       type: object
-      required: [revision]
+      required:
+      - revision
       properties:
-        revision: { type: integer }
-        topic_id: { type: string, nullable: true }
-        ci_level: { type: integer, minimum: 0, maximum: 4, nullable: true }
-        duration_seconds: { type: integer, minimum: 1, nullable: true }
-        media_type: { type: string, enum: [video, audio], nullable: true }
-        visual_support: { type: string, enum: [high, medium, low], nullable: true }
-        title_internal: { type: string, nullable: true }
+        revision:
+          type: integer
+        topic_id:
+          type: string
+          nullable: true
+        ci_level:
+          type: integer
+          minimum: 0
+          maximum: 4
+          nullable: true
+        duration_seconds:
+          type: integer
+          minimum: 1
+          nullable: true
+        media_type:
+          type: string
+          enum:
+          - video
+          - audio
+          nullable: true
+        visual_support:
+          type: string
+          enum:
+          - high
+          - medium
+          - low
+          nullable: true
+        title_internal:
+          type: string
+          nullable: true
     CatalogStaffList:
       type: object
-      required: [items]
+      required:
+      - items
       properties:
         items:
           type: array
-          items: { $ref: "#/components/schemas/CatalogItemStaff" }
+          items:
+            $ref: '#/components/schemas/CatalogItemStaff'
     LearningSession:
       type: object
-      required: [id, device_class, started_at]
+      required:
+      - id
+      - device_class
+      - started_at
       properties:
-        id: { type: string, format: uuid }
-        device_class: { type: string, enum: [web, phone, ipad] }
-        started_at: { type: string, format: date-time }
-        ended_at: { type: string, format: date-time, nullable: true }
-        duration_seconds: { type: integer, nullable: true }
+        id:
+          type: string
+          format: uuid
+        device_class:
+          type: string
+          enum:
+          - web
+          - phone
+          - ipad
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+          nullable: true
+        duration_seconds:
+          type: integer
+          nullable: true
     LearnerProgress:
       type: object
-      required: [minutes_comprehensible, current_ci_level]
+      required:
+      - minutes_comprehensible
+      - current_ci_level
       properties:
-        minutes_comprehensible: { type: integer, minimum: 0 }
-        current_ci_level: { type: integer, minimum: 0, maximum: 4 }
+        minutes_comprehensible:
+          type: integer
+          minimum: 0
+        current_ci_level:
+          type: integer
+          minimum: 0
+          maximum: 4
       additionalProperties: false
     Flags:
       type: object
-      required: [speaking_enabled, l1_subtitles_enabled, grammar_enabled, flashcards_enabled]
+      required:
+      - speaking_enabled
+      - l1_subtitles_enabled
+      - grammar_enabled
+      - flashcards_enabled
       properties:
-        speaking_enabled: { type: boolean }
-        l1_subtitles_enabled: { type: boolean }
-        grammar_enabled: { type: boolean }
-        flashcards_enabled: { type: boolean }
+        speaking_enabled:
+          type: boolean
+        l1_subtitles_enabled:
+          type: boolean
+        grammar_enabled:
+          type: boolean
+        flashcards_enabled:
+          type: boolean
+    Capabilities:
+      type: object
+      required:
+      - video_scene_breakdown_enabled
+      - smart_stream_enabled
+      - interactive_dual_subs_enabled
+      - immersion_lookup_enabled
+      - personal_collections_enabled
+      - content_reports_enabled
+      - playback_tracking_enabled
+      - scene_search_enabled
+      - staff_ai_enabled
+      properties:
+        video_scene_breakdown_enabled:
+          type: boolean
+        smart_stream_enabled:
+          type: boolean
+        interactive_dual_subs_enabled:
+          type: boolean
+        immersion_lookup_enabled:
+          type: boolean
+        personal_collections_enabled:
+          type: boolean
+        content_reports_enabled:
+          type: boolean
+        playback_tracking_enabled:
+          type: boolean
+        scene_search_enabled:
+          type: boolean
+        staff_ai_enabled:
+          type: boolean
+    SceneWrite:
+      type: object
+      required:
+      - scene_index
+      - start_time_seconds
+      - end_time_seconds
+      - title_jp
+      - transcript_jp
+      properties:
+        scene_index:
+          type: integer
+        start_time_seconds:
+          type: integer
+        end_time_seconds:
+          type: integer
+        title_jp:
+          type: string
+        transcript_jp:
+          type: string
+    ContentUpdateBody:
+      type: object
+      required:
+      - version_revision
+      - scenes
+      properties:
+        version_revision:
+          type: integer
+        scenes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SceneWrite'
+    ScenePublic:
+      type: object
+      required:
+      - id
+      - scene_index
+      - start_time_seconds
+      - end_time_seconds
+      - title_jp
+      properties:
+        id:
+          type: string
+          format: uuid
+        scene_index:
+          type: integer
+        start_time_seconds:
+          type: integer
+        end_time_seconds:
+          type: integer
+        title_jp:
+          type: string
+    ContentVersionPublic:
+      type: object
+      required:
+      - id
+      - catalog_item_id
+      - version_number
+      - revision
+      - is_frozen
+      - is_published
+      - scenes
+      properties:
+        id:
+          type: string
+        catalog_item_id:
+          type: string
+          format: uuid
+        version_number:
+          type: integer
+        revision:
+          type: integer
+        is_frozen:
+          type: boolean
+        is_published:
+          type: boolean
+        scenes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScenePublic'
+    SceneStaff:
+      type: object
+      required:
+      - id
+      - scene_index
+      - start_time_seconds
+      - end_time_seconds
+      - title_jp
+      - transcript_jp
+      properties:
+        id:
+          type: string
+          format: uuid
+        scene_index:
+          type: integer
+        start_time_seconds:
+          type: integer
+        end_time_seconds:
+          type: integer
+        title_jp:
+          type: string
+        transcript_jp:
+          type: string
+    ContentVersionStaff:
+      type: object
+      required:
+      - id
+      - catalog_item_id
+      - version_number
+      - revision
+      - is_frozen
+      - is_published
+      - scenes
+      properties:
+        id:
+          type: string
+        catalog_item_id:
+          type: string
+          format: uuid
+        version_number:
+          type: integer
+        revision:
+          type: integer
+        is_frozen:
+          type: boolean
+        is_published:
+          type: boolean
+        scenes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SceneStaff'
+    SeriesCreateBody:
+      type: object
+      required:
+      - title
+      - ci_level
+      - topic_id
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          default: ''
+          maxLength: 1000
+        ci_level:
+          type: string
+          minLength: 1
+          maxLength: 10
+        topic_id:
+          type: string
+    SeriesPatchBody:
+      type: object
+      required:
+      - expected_revision
+      properties:
+        expected_revision:
+          type: integer
+          minimum: 1
+        title:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+          maxLength: 1000
+        ci_level:
+          type: string
+          nullable: true
+          minLength: 1
+          maxLength: 10
+        topic_id:
+          type: string
+          nullable: true
+    SeriesItemsUpdateBody:
+      type: object
+      required:
+      - expected_revision
+      - item_ids
+      properties:
+        expected_revision:
+          type: integer
+          minimum: 1
+        item_ids:
+          type: array
+          items:
+            type: string
+    SeriesActionBody:
+      type: object
+      required:
+      - expected_revision
+      properties:
+        expected_revision:
+          type: integer
+          minimum: 1
+    SeriesReturnToDraftBody:
+      type: object
+      required:
+      - expected_revision
+      properties:
+        expected_revision:
+          type: integer
+          minimum: 1
+        reason:
+          type: string
+          default: ''
+          maxLength: 500
+    SeriesItemStaffPublic:
+      type: object
+      required:
+      - catalog_item_id
+      - position
+      properties:
+        catalog_item_id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+          minimum: 1
+    SeriesStaffPublic:
+      type: object
+      required:
+      - id
+      - title
+      - description
+      - ci_level
+      - topic_id
+      - status
+      - revision
+      - items
+      - created_at
+      - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        ci_level:
+          type: string
+        topic_id:
+          type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - level_qa
+          - published
+          - unpublished
+        revision:
+          type: integer
+          minimum: 1
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeriesItemStaffPublic'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SeriesStaffSummary:
+      type: object
+      required:
+      - id
+      - title
+      - description
+      - ci_level
+      - topic_id
+      - status
+      - revision
+      - item_count
+      - created_at
+      - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        ci_level:
+          type: string
+        topic_id:
+          type: string
+        status:
+          type: string
+          enum:
+          - draft
+          - level_qa
+          - published
+          - unpublished
+        revision:
+          type: integer
+          minimum: 1
+        item_count:
+          type: integer
+          minimum: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SeriesLearnerSummary:
+      type: object
+      required:
+      - id
+      - title
+      - description
+      - ci_level
+      - topic_id
+      - available_item_count
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        ci_level:
+          type: string
+        topic_id:
+          type: string
+        available_item_count:
+          type: integer
+          minimum: 1
+    SeriesLearnerClipPublic:
+      type: object
+      required:
+      - catalog_item_id
+      - position
+      - topic_id
+      - ci_level
+      - duration_seconds
+      properties:
+        catalog_item_id:
+          type: string
+          format: uuid
+        position:
+          type: integer
+          minimum: 1
+        topic_id:
+          type: string
+        ci_level:
+          type: string
+        duration_seconds:
+          type: integer
+    SeriesLearnerPublic:
+      type: object
+      required:
+      - id
+      - title
+      - description
+      - ci_level
+      - topic_id
+      - items
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        ci_level:
+          type: string
+        topic_id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeriesLearnerClipPublic'
+    SavedScenePublic:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - scene_id
+      - saved_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        scene_id:
+          type: string
+          format: uuid
+          title: Scene Id
+        saved_at:
+          type: string
+          format: date-time
+          title: Saved At
+      title: SavedScenePublic
+    SavedSceneItemPublic:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - scene_id
+      - saved_at
+      - availability
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        scene_id:
+          type: string
+          format: uuid
+          title: Scene Id
+        saved_at:
+          type: string
+          format: date-time
+          title: Saved At
+        availability:
+          type: string
+          enum:
+          - available
+          - stale_version
+          - unavailable
+          title: Availability
+        unavailable_reason:
+          type: string
+          nullable: true
+          title: Unavailable Reason
+        catalog_item_id:
+          type: string
+          format: uuid
+          nullable: true
+          title: Catalog Item Id
+        content_version_id:
+          type: string
+          nullable: true
+          title: Content Version Id
+        scene_index:
+          type: integer
+          nullable: true
+          title: Scene Index
+        start_time_seconds:
+          type: integer
+          nullable: true
+          title: Start Time Seconds
+        end_time_seconds:
+          type: integer
+          nullable: true
+          title: End Time Seconds
+        title_jp:
+          type: string
+          nullable: true
+          title: Title Jp
+        transcript_jp:
+          type: string
+          nullable: true
+          title: Transcript Jp
+      title: SavedSceneItemPublic
+    CreateCollectionBody:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+          title: Name
+      title: CreateCollectionBody
+    PatchCollectionBody:
+      type: object
+      additionalProperties: false
+      required:
+      - expected_revision
+      - name
+      properties:
+        expected_revision:
+          type: integer
+          minimum: 1
+          title: Expected Revision
+        name:
+          type: string
+          minLength: 1
+          maxLength: 80
+          title: Name
+      title: PatchCollectionBody
+    UpdateCollectionScenesBody:
+      type: object
+      additionalProperties: false
+      required:
+      - expected_revision
+      - scene_ids
+      properties:
+        expected_revision:
+          type: integer
+          minimum: 1
+          title: Expected Revision
+        scene_ids:
+          type: array
+          items:
+            type: string
+          maxItems: 200
+          title: Scene Ids
+      title: UpdateCollectionScenesBody
+    CollectionPublic:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - revision
+      - scene_count
+      - created_at
+      - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        revision:
+          type: integer
+          minimum: 1
+          title: Revision
+        scene_count:
+          type: integer
+          minimum: 0
+          title: Scene Count
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      title: CollectionPublic
+    AttemptUsage:
+      type: object
+      additionalProperties: false
+      required:
+      - audio_seconds
+      - input_tokens
+      - output_tokens
+      - cost_micros
+      properties:
+        audio_seconds:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+        input_tokens:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+        output_tokens:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+        cost_micros:
+          type: integer
+          minimum: 0
+          maximum: 2147483647
+        currency:
+          type: string
+          const: USD
+          default: USD
+    ReconcileAttemptRequest:
+      type: object
+      additionalProperties: false
+      required:
+      - decision
+      - evidence
+      properties:
+        decision:
+          type: string
+          enum:
+          - billed
+          - not_billed
+        evidence:
+          type: string
+          minLength: 10
+          maxLength: 2000
+        provider_request_id:
+          anyOf:
+          - type: string
+            minLength: 1
+            maxLength: 200
+          - type: 'null'
+        usage:
+          anyOf:
+          - $ref: '#/components/schemas/AttemptUsage'
+          - type: 'null'
+    AiAttemptPublic:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - job_id
+      - attempt_number
+      - provider
+      - idempotency_key
+      - state
+      - lease_expires_at
+      - created_at
+      - updated_at
+      properties:
+        id:
+          type: string
+        job_id:
+          type: string
+        attempt_number:
+          type: integer
+          minimum: 1
+        provider:
+          type: string
+        idempotency_key:
+          type: string
+        state:
+          type: string
+          enum:
+          - running
+          - outcome_unknown
+          - settled
+          - not_billed
+        lease_expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        provider_request_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+        usage:
+          anyOf:
+          - type: object
+            additionalProperties: true
+          - type: 'null'
+        evidence:
+          anyOf:
+          - type: string
+          - type: 'null'
+        resolved_by:
+          anyOf:
+          - type: string
+          - type: 'null'
+        resolution_hash:
+          anyOf:
+          - type: string
+          - type: 'null'
+    CollectionSceneItemPublic:
+      type: object
+      additionalProperties: false
+      required:
+      - position
+      - scene_id
+      - availability
+      - added_at
+      properties:
+        position:
+          type: integer
+          minimum: 0
+          title: Position
+        scene_id:
+          type: string
+          format: uuid
+          title: Scene Id
+        availability:
+          type: string
+          enum:
+          - available
+          - stale_version
+          - unavailable
+          title: Availability
+        unavailable_reason:
+          type: string
+          nullable: true
+          title: Unavailable Reason
+        catalog_item_id:
+          type: string
+          format: uuid
+          nullable: true
+          title: Catalog Item Id
+        content_version_id:
+          type: string
+          nullable: true
+          title: Content Version Id
+        scene_index:
+          type: integer
+          nullable: true
+          title: Scene Index
+        start_time_seconds:
+          type: integer
+          nullable: true
+          title: Start Time Seconds
+        end_time_seconds:
+          type: integer
+          nullable: true
+          title: End Time Seconds
+        title_jp:
+          type: string
+          nullable: true
+          title: Title Jp
+        transcript_jp:
+          type: string
+          nullable: true
+          title: Transcript Jp
+        added_at:
+          type: string
+          format: date-time
+          title: Added At
+      title: CollectionSceneItemPublic
+    CollectionDetailPublic:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - name
+      - revision
+      - scene_count
+      - created_at
+      - updated_at
+      - scenes
+      properties:
+        id:
+          type: string
+          format: uuid
+          title: Id
+        name:
+          type: string
+          title: Name
+        revision:
+          type: integer
+          minimum: 1
+          title: Revision
+        scene_count:
+          type: integer
+          minimum: 0
+          title: Scene Count
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        scenes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CollectionSceneItemPublic'
+          title: Scenes
+      title: CollectionDetailPublic
+    CreateContentReportBody:
+      properties:
+        content_version_id:
+          type: string
+          title: Content Version Id
+        category:
+          type: string
+          enum:
+          - audio_quality
+          - scene_timing
+          - visual_mismatch
+          - too_difficult
+          - other
+          title: Category
+        description:
+          type: string
+          maxLength: 1000
+          minLength: 1
+          title: Description
+        scene_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scene Id
+        position_ms:
+          type: integer
+          minimum: 0.0
+          title: Position Ms
+          default: 0
+      additionalProperties: false
+      type: object
+      required:
+      - content_version_id
+      - category
+      - description
+      title: CreateContentReportBody
+    ContentReportLearnerPublic:
+      properties:
+        id:
+          type: string
+          title: Id
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        content_version_id:
+          type: string
+          title: Content Version Id
+        scene_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scene Id
+        position_ms:
+          type: integer
+          title: Position Ms
+        category:
+          type: string
+          enum:
+          - audio_quality
+          - scene_timing
+          - visual_mismatch
+          - too_difficult
+          - other
+          title: Category
+        description:
+          type: string
+          title: Description
+        status:
+          type: string
+          enum:
+          - open
+          - in_review
+          - resolved
+          - dismissed
+          title: Status
+        public_reply:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Public Reply
+        resolution_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Resolution Version Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - catalog_item_id
+      - content_version_id
+      - position_ms
+      - category
+      - description
+      - status
+      - created_at
+      - updated_at
+      title: ContentReportLearnerPublic
+    ContentReportAuditPublic:
+      properties:
+        id:
+          type: string
+          title: Id
+        report_id:
+          type: string
+          title: Report Id
+        actor_id:
+          type: string
+          title: Actor Id
+        from_status:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: From Status
+        to_status:
+          type: string
+          title: To Status
+        revision:
+          type: integer
+          title: Revision
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - report_id
+      - actor_id
+      - to_status
+      - revision
+      - created_at
+      title: ContentReportAuditPublic
+    ContentReportStaffPublic:
+      properties:
+        id:
+          type: string
+          title: Id
+        user_id:
+          type: string
+          title: User Id
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        content_version_id:
+          type: string
+          title: Content Version Id
+        scene_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scene Id
+        position_ms:
+          type: integer
+          title: Position Ms
+        category:
+          type: string
+          enum:
+          - audio_quality
+          - scene_timing
+          - visual_mismatch
+          - too_difficult
+          - other
+          title: Category
+        description:
+          type: string
+          title: Description
+        status:
+          type: string
+          enum:
+          - open
+          - in_review
+          - resolved
+          - dismissed
+          title: Status
+        revision:
+          type: integer
+          title: Revision
+        assignee_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assignee Id
+        public_reply:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Public Reply
+        internal_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Internal Note
+        resolution_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Resolution Version Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - user_id
+      - catalog_item_id
+      - content_version_id
+      - position_ms
+      - category
+      - description
+      - status
+      - revision
+      - created_at
+      - updated_at
+      title: ContentReportStaffPublic
+    ContentReportStaffDetailPublic:
+      properties:
+        id:
+          type: string
+          title: Id
+        user_id:
+          type: string
+          title: User Id
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        content_version_id:
+          type: string
+          title: Content Version Id
+        scene_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scene Id
+        position_ms:
+          type: integer
+          title: Position Ms
+        category:
+          type: string
+          enum:
+          - audio_quality
+          - scene_timing
+          - visual_mismatch
+          - too_difficult
+          - other
+          title: Category
+        description:
+          type: string
+          title: Description
+        status:
+          type: string
+          enum:
+          - open
+          - in_review
+          - resolved
+          - dismissed
+          title: Status
+        revision:
+          type: integer
+          title: Revision
+        assignee_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assignee Id
+        public_reply:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Public Reply
+        internal_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Internal Note
+        resolution_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Resolution Version Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        audit_logs:
+          items:
+            $ref: '#/components/schemas/ContentReportAuditPublic'
+          type: array
+          title: Audit Logs
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - user_id
+      - catalog_item_id
+      - content_version_id
+      - position_ms
+      - category
+      - description
+      - status
+      - revision
+      - created_at
+      - updated_at
+      title: ContentReportStaffDetailPublic
+    PatchStaffContentReportBody:
+      properties:
+        expected_revision:
+          type: integer
+          minimum: 1.0
+          title: Expected Revision
+        status:
+          anyOf:
+          - type: string
+            enum:
+            - open
+            - in_review
+            - resolved
+            - dismissed
+          - type: 'null'
+          title: Status
+        assignee_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Assignee Id
+        public_reply:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Public Reply
+        internal_note:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Internal Note
+        resolution_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Resolution Version Id
+        reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Reason
+      additionalProperties: false
+      type: object
+      required:
+      - expected_revision
+      title: PatchStaffContentReportBody
+    CheckpointAckPublic:
+      properties:
+        seq:
+          type: integer
+          title: Seq
+        accepted_delta_ms:
+          type: integer
+          title: Accepted Delta Ms
+        server_acknowledged_active_ms:
+          type: integer
+          title: Server Acknowledged Active Ms
+        lease_expires_at:
+          type: string
+          format: date-time
+          title: Lease Expires At
+        epoch:
+          type: integer
+          title: Epoch
+      additionalProperties: false
+      type: object
+      required:
+      - seq
+      - accepted_delta_ms
+      - server_acknowledged_active_ms
+      - lease_expires_at
+      - epoch
+      title: CheckpointAckPublic
+    CheckpointBody:
+      properties:
+        position_ms:
+          type: integer
+          minimum: 0.0
+          title: Position Ms
+        duration_ms:
+          type: integer
+          minimum: 0.0
+          title: Duration Ms
+        playback_rate:
+          type: number
+          maximum: 2.0
+          minimum: 0.5
+          title: Playback Rate
+          default: 1.0
+        state:
+          type: string
+          enum:
+          - playing
+          - paused
+          - buffering
+          - ended
+          title: State
+        client_cumulative_active_ms:
+          type: integer
+          minimum: 0.0
+          title: Client Cumulative Active Ms
+        client_epoch:
+          type: integer
+          minimum: 1.0
+          title: Client Epoch
+        scene_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scene Id
+      additionalProperties: false
+      type: object
+      required:
+      - position_ms
+      - duration_ms
+      - state
+      - client_cumulative_active_ms
+      - client_epoch
+      title: CheckpointBody
+    EndPlaybackBody:
+      properties:
+        final_seq:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Final Seq
+        final_position_ms:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Final Position Ms
+        final_duration_ms:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Final Duration Ms
+        final_playback_rate:
+          type: number
+          title: Final Playback Rate
+          default: 1.0
+        final_client_cumulative_active_ms:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Final Client Cumulative Active Ms
+        final_client_epoch:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Final Client Epoch
+        final_scene_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Final Scene Id
+      additionalProperties: false
+      type: object
+      title: EndPlaybackBody
+    PlaybackCreatedPublic:
+      properties:
+        playback_id:
+          type: string
+          title: Playback Id
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        epoch:
+          type: integer
+          title: Epoch
+        lease_expires_at:
+          type: string
+          format: date-time
+          title: Lease Expires At
+        initial_position_ms:
+          type: integer
+          title: Initial Position Ms
+        resume_checkpoint:
+          anyOf:
+          - $ref: '#/components/schemas/ResumeItemPublic'
+          - type: 'null'
+      additionalProperties: false
+      type: object
+      required:
+      - playback_id
+      - catalog_item_id
+      - epoch
+      - lease_expires_at
+      - initial_position_ms
+      title: PlaybackCreatedPublic
+    PlaybackStatusPublic:
+      properties:
+        playback_id:
+          type: string
+          title: Playback Id
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        device_id:
+          type: string
+          title: Device Id
+        status:
+          type: string
+          enum:
+          - active
+          - superseded
+          - completed
+          - abandoned
+          title: Status
+        epoch:
+          type: integer
+          title: Epoch
+        lease_expires_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Lease Expires At
+        last_seq:
+          type: integer
+          title: Last Seq
+        last_position_ms:
+          type: integer
+          title: Last Position Ms
+        duration_ms:
+          type: integer
+          title: Duration Ms
+        cumulative_active_ms:
+          type: integer
+          title: Cumulative Active Ms
+        server_acknowledged_active_ms:
+          type: integer
+          title: Server Acknowledged Active Ms
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        closed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Closed At
+      additionalProperties: false
+      type: object
+      required:
+      - playback_id
+      - catalog_item_id
+      - device_id
+      - status
+      - epoch
+      - last_seq
+      - last_position_ms
+      - duration_ms
+      - cumulative_active_ms
+      - server_acknowledged_active_ms
+      - created_at
+      - updated_at
+      title: PlaybackStatusPublic
+    ResumeItemPublic:
+      properties:
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        playback_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Playback Id
+        position_ms:
+          type: integer
+          title: Position Ms
+        duration_ms:
+          type: integer
+          title: Duration Ms
+        scene_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Scene Id
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      additionalProperties: false
+      type: object
+      required:
+      - catalog_item_id
+      - position_ms
+      - duration_ms
+      - updated_at
+      title: ResumeItemPublic
+    ResumeListPublic:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/ResumeItemPublic'
+          type: array
+          title: Items
+        total:
+          type: integer
+          title: Total
+        limit:
+          type: integer
+          title: Limit
+        offset:
+          type: integer
+          title: Offset
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      - total
+      - limit
+      - offset
+      title: ResumeListPublic
+    StartPlaybackBody:
+      properties:
+        content_version_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        device_id:
+          type: string
+          minLength: 1
+          title: Device Id
+        device_info:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Device Info
+        take_over:
+          type: boolean
+          title: Take Over
+          default: false
+      additionalProperties: false
+      type: object
+      required:
+      - catalog_item_id
+      - device_id
+      title: StartPlaybackBody
+    DailyActivityItemPublic:
+      properties:
+        date:
+          type: string
+          title: Date
+        timezone:
+          type: string
+          title: Timezone
+        policy_revision:
+          type: integer
+          minimum: 1
+          title: Policy Revision
+        active_ms:
+          type: integer
+          title: Active Ms
+        active_watch_seconds:
+          type: integer
+          title: Active Watch Seconds
+        goal_minutes:
+          type: integer
+          title: Goal Minutes
+        goal_seconds:
+          type: integer
+          title: Goal Seconds
+        goal_met:
+          type: boolean
+          title: Goal Met
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      additionalProperties: false
+      type: object
+      required:
+      - date
+      - timezone
+      - policy_revision
+      - active_ms
+      - active_watch_seconds
+      - goal_minutes
+      - goal_seconds
+      - goal_met
+      - updated_at
+      title: DailyActivityItemPublic
+    HistoryDeletionCreatedPublic:
+      properties:
+        deletion_id:
+          type: string
+          title: Deletion Id
+        cutoff_time:
+          type: string
+          format: date-time
+          title: Cutoff Time
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - failed
+          title: Status
+        message:
+          type: string
+          title: Message
+      additionalProperties: false
+      type: object
+      required:
+      - deletion_id
+      - cutoff_time
+      - status
+      - message
+      title: HistoryDeletionCreatedPublic
+    HistoryDeletionStatusPublic:
+      properties:
+        deletion_id:
+          type: string
+          title: Deletion Id
+        user_id:
+          type: string
+          title: User Id
+        cutoff_time:
+          type: string
+          format: date-time
+          title: Cutoff Time
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - failed
+          title: Status
+        records_deleted:
+          type: integer
+          title: Records Deleted
+        attempts:
+          type: integer
+          title: Attempts
+        error_message:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Message
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+        completed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Completed At
+      additionalProperties: false
+      type: object
+      required:
+      - deletion_id
+      - user_id
+      - cutoff_time
+      - status
+      - records_deleted
+      - attempts
+      - created_at
+      - updated_at
+      title: HistoryDeletionStatusPublic
+    LearnerActivityResponsePublic:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/DailyActivityItemPublic'
+          type: array
+          title: Items
+        total_active_watch_seconds:
+          type: integer
+          title: Total Active Watch Seconds
+        days_goal_met:
+          type: integer
+          title: Days Goal Met
+        current_streak_days:
+          type: integer
+          title: Current Streak Days
+        longest_streak_days:
+          type: integer
+          title: Longest Streak Days
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      - total_active_watch_seconds
+      - days_goal_met
+      - current_streak_days
+      - longest_streak_days
+      title: LearnerActivityResponsePublic
+    LearningPolicyPublic:
+      type: object
+      required: [daily_goal_minutes, timezone, effective_at]
+      properties:
+        daily_goal_minutes:
+          type: integer
+        timezone:
+          type: string
+        effective_at:
+          type: string
+          format: date-time
+    LearningPreferencesPublic:
+      properties:
+        current_policy:
+          anyOf:
+          - $ref: '#/components/schemas/LearningPolicyPublic'
+          - type: 'null'
+        pending_policy:
+          anyOf:
+          - $ref: '#/components/schemas/LearningPolicyPublic'
+          - type: 'null'
+        daily_goal_minutes:
+          type: integer
+          title: Daily Goal Minutes
+        preferred_topic_ids:
+          items:
+            type: string
+          type: array
+          title: Preferred Topic Ids
+        timezone:
+          type: string
+          title: Timezone
+        revision:
+          type: integer
+          title: Revision
+        effective_at:
+          type: string
+          format: date-time
+          title: Effective At
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      additionalProperties: false
+      type: object
+      required:
+      - daily_goal_minutes
+      - preferred_topic_ids
+      - timezone
+      - revision
+      - effective_at
+      - created_at
+      - updated_at
+      title: LearningPreferencesPublic
+    UpdateLearningPreferencesBody:
+      properties:
+        expected_revision:
+          type: integer
+          title: Expected Revision
+        daily_goal_minutes:
+          anyOf:
+          - type: integer
+            maximum: 120.0
+            minimum: 0.0
+          - type: 'null'
+          title: Daily Goal Minutes
+        preferred_topic_ids:
+          anyOf:
+          - items:
+              type: string
+            type: array
+          - type: 'null'
+          title: Preferred Topic Ids
+        timezone:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Timezone
+      additionalProperties: false
+      type: object
+      required:
+      - expected_revision
+      title: UpdateLearningPreferencesBody
+    WatchHistoryItemPublic:
+      properties:
+        playback_id:
+          type: string
+          title: Playback Id
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        title_jp:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title Jp
+        item_type:
+          type: string
+          title: Item Type
+        topic_id:
+          type: string
+          title: Topic Id
+        duration_seconds:
+          type: integer
+          title: Duration Seconds
+        status:
+          type: string
+          title: Status
+        last_position_ms:
+          type: integer
+          title: Last Position Ms
+        total_active_ms:
+          type: integer
+          title: Total Active Ms
+        content_version_id:
+          type: string
+          title: Content Version Id
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At
+      additionalProperties: false
+      type: object
+      required:
+      - playback_id
+      - catalog_item_id
+      - item_type
+      - topic_id
+      - duration_seconds
+      - status
+      - last_position_ms
+      - total_active_ms
+      - content_version_id
+      - created_at
+      - updated_at
+      title: WatchHistoryItemPublic
+    WatchHistoryResponsePublic:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/WatchHistoryItemPublic'
+          type: array
+          title: Items
+        next_cursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Cursor
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      title: WatchHistoryResponsePublic
+    RecommendationsResponsePublic:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/RecommendedItemPublic'
+          type: array
+          title: Items
+        strategy_version:
+          type: string
+          title: Strategy Version
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      - strategy_version
+      title: RecommendationsResponsePublic
+    RecommendedItemPublic:
+      properties:
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        media_type:
+          type: string
+          title: Media Type
+        topic_id:
+          type: string
+          title: Topic Id
+        duration_seconds:
+          type: integer
+          title: Duration Seconds
+        ci_level:
+          type: integer
+          title: Ci Level
+        reason:
+          type: string
+          enum:
+          - continue_series
+          - preferred_topic
+          - same_level
+          - editor_pick
+          title: Reason
+        title_jp:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Title Jp
+        series_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Series Id
+        series_title:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Series Title
+      additionalProperties: false
+      type: object
+      required:
+      - catalog_item_id
+      - media_type
+      - topic_id
+      - duration_seconds
+      - ci_level
+      - reason
+      title: RecommendedItemPublic
+    ApproveTranscriptBody:
+      properties:
+        content_version_id:
+          type: string
+          title: Content Version Id
+        expected_revision:
+          type: integer
+          title: Expected Revision
+      additionalProperties: false
+      type: object
+      required:
+      - content_version_id
+      - expected_revision
+      title: ApproveTranscriptBody
+    CreateLanguageAnalysisJobBody:
+      properties:
+        transcript_revision_id:
+          type: string
+          title: Transcript Revision Id
+      additionalProperties: false
+      type: object
+      required:
+      - transcript_revision_id
+      title: CreateLanguageAnalysisJobBody
+    LanguageAnalysisJobPublic:
+      properties:
+        id:
+          type: string
+          title: Id
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        transcript_revision_id:
+          type: string
+          title: Transcript Revision Id
+        status:
+          type: string
+          enum:
+          - queued
+          - running
+          - completed
+          - failed
+          title: Status
+        results:
+          anyOf:
+          - additionalProperties: true
+            type: object
+          - type: 'null'
+          title: Results
+        error_message:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Error Message
+        created_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Created At
+        completed_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Completed At
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - catalog_item_id
+      - transcript_revision_id
+      - status
+      title: LanguageAnalysisJobPublic
+    ReturnTranscriptToDraftBody:
+      properties:
+        content_version_id:
+          type: string
+          title: Content Version Id
+        expected_revision:
+          type: integer
+          title: Expected Revision
+        reason:
+          type: string
+          maxLength: 1000
+          minLength: 1
+          title: Reason
+      additionalProperties: false
+      type: object
+      required:
+      - content_version_id
+      - expected_revision
+      - reason
+      title: ReturnTranscriptToDraftBody
+    SaveTranscriptDraftBody:
+      properties:
+        content_version_id:
+          type: string
+          title: Content Version Id
+        expected_revision:
+          type: integer
+          title: Expected Revision
+        segments:
+          items:
+            $ref: '#/components/schemas/TranscriptSegmentPublic'
+          type: array
+          title: Segments
+        provenance:
+          type: string
+          enum:
+          - manual_teacher
+          - ai_assisted
+          - imported
+          title: Provenance
+          default: manual_teacher
+      additionalProperties: false
+      type: object
+      required:
+      - content_version_id
+      - expected_revision
+      - segments
+      title: SaveTranscriptDraftBody
+    SubmitTranscriptQABody:
+      properties:
+        content_version_id:
+          type: string
+          title: Content Version Id
+        expected_revision:
+          type: integer
+          title: Expected Revision
+      additionalProperties: false
+      type: object
+      required:
+      - content_version_id
+      - expected_revision
+      title: SubmitTranscriptQABody
+    TranscriptRevisionPublic:
+      properties:
+        id:
+          type: string
+          title: Id
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        content_version_id:
+          type: string
+          title: Content Version Id
+        revision:
+          type: integer
+          title: Revision
+        status:
+          type: string
+          enum:
+          - draft
+          - qa_submitted
+          - approved
+          - returned_to_draft
+          title: Status
+        segments:
+          items:
+            $ref: '#/components/schemas/TranscriptSegmentPublic'
+          type: array
+          title: Segments
+        provenance:
+          type: string
+          enum:
+          - manual_teacher
+          - ai_assisted
+          - imported
+          title: Provenance
+        created_by:
+          type: string
+          title: Created By
+        approved_by:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Approved By
+        return_reason:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Return Reason
+        created_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Created At
+        updated_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Updated At
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - catalog_item_id
+      - content_version_id
+      - revision
+      - status
+      - segments
+      - provenance
+      - created_by
+      title: TranscriptRevisionPublic
+    TranscriptSegmentPublic:
+      properties:
+        scene_id:
+          type: string
+          title: Scene Id
+        text_ja:
+          type: string
+          maxLength: 500
+          title: Text Ja
+      additionalProperties: false
+      type: object
+      required:
+      - scene_id
+      - text_ja
+      title: TranscriptSegmentPublic
+    HighlightSpan:
+      properties:
+        start_offset:
+          type: integer
+          title: Start Offset
+        end_offset:
+          type: integer
+          title: End Offset
+      additionalProperties: false
+      type: object
+      required:
+      - start_offset
+      - end_offset
+      title: HighlightSpan
+    SearchResultItemPublic:
+      properties:
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        content_version_id:
+          type: string
+          title: Content Version Id
+        scene_id:
+          type: string
+          title: Scene Id
+        scene_index:
+          type: integer
+          title: Scene Index
+        start_time_seconds:
+          type: integer
+          title: Start Time Seconds
+        end_time_seconds:
+          type: integer
+          title: End Time Seconds
+        matched_text_ja:
+          type: string
+          title: Matched Text Ja
+        highlight_spans:
+          items:
+            $ref: '#/components/schemas/HighlightSpan'
+          type: array
+          title: Highlight Spans
+        match_kind:
+          type: string
+          enum:
+          - exact_phrase
+          - token_match
+          title: Match Kind
+        ci_level:
+          type: integer
+          title: Ci Level
+        topic_id:
+          type: string
+          title: Topic Id
+        title_jp:
+          type: string
+          title: Title Jp
+      additionalProperties: false
+      type: object
+      required:
+      - catalog_item_id
+      - content_version_id
+      - scene_id
+      - scene_index
+      - start_time_seconds
+      - end_time_seconds
+      - matched_text_ja
+      - highlight_spans
+      - match_kind
+      - ci_level
+      - topic_id
+      - title_jp
+      title: SearchResultItemPublic
+    SearchResponsePublic:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/SearchResultItemPublic'
+          type: array
+          title: Items
+        next_cursor:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Next Cursor
+        total_estimated:
+          anyOf:
+          - type: integer
+          - type: 'null'
+          title: Total Estimated
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      title: SearchResponsePublic
+    AiUsageItemPublic:
+      properties:
+        id:
+          type: string
+          title: Id
+        account_id:
+          type: string
+          title: Account Id
+        job_id:
+          type: string
+          title: Job Id
+        kind:
+          type: string
+          title: Kind
+        status:
+          type: string
+          title: Status
+        provider:
+          type: string
+          title: Provider
+        provider_request_id:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Provider Request Id
+        attempt:
+          type: integer
+          title: Attempt
+        audio_seconds:
+          type: integer
+          title: Audio Seconds
+        input_tokens:
+          type: integer
+          title: Input Tokens
+        output_tokens:
+          type: integer
+          title: Output Tokens
+        cost_micros:
+          type: integer
+          title: Cost Micros
+        currency:
+          type: string
+          title: Currency
+        policy_version:
+          type: string
+          title: Policy Version
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        settled_at:
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+          title: Settled At
+        description:
+          anyOf:
+          - type: string
+          - type: 'null'
+          title: Description
+      additionalProperties: false
+      type: object
+      required:
+      - id
+      - account_id
+      - job_id
+      - kind
+      - status
+      - provider
+      - attempt
+      - audio_seconds
+      - input_tokens
+      - output_tokens
+      - cost_micros
+      - currency
+      - policy_version
+      - created_at
+      title: AiUsageItemPublic
+    AiUsageListResponsePublic:
+      properties:
+        items:
+          items:
+            $ref: '#/components/schemas/AiUsageItemPublic'
+          type: array
+          title: Items
+        total_count:
+          type: integer
+          title: Total Count
+        from_date:
+          type: string
+          format: date-time
+          title: From Date
+        to_date:
+          type: string
+          format: date-time
+          title: To Date
+      additionalProperties: false
+      type: object
+      required:
+      - items
+      - total_count
+      - from_date
+      - to_date
+      title: AiUsageListResponsePublic
+    AiUsageSummaryItemPublic:
+      properties:
+        provider:
+          type: string
+          title: Provider
+        currency:
+          type: string
+          title: Currency
+        date:
+          type: string
+          title: Date
+        total_audio_seconds:
+          type: integer
+          title: Total Audio Seconds
+        total_input_tokens:
+          type: integer
+          title: Total Input Tokens
+        total_output_tokens:
+          type: integer
+          title: Total Output Tokens
+        total_cost_micros:
+          type: integer
+          title: Total Cost Micros
+        events_count:
+          type: integer
+          title: Events Count
+      additionalProperties: false
+      type: object
+      required:
+      - provider
+      - currency
+      - date
+      - total_audio_seconds
+      - total_input_tokens
+      - total_output_tokens
+      - total_cost_micros
+      - events_count
+      title: AiUsageSummaryItemPublic
+    AiUsageSummaryResponsePublic:
+      properties:
+        from_date:
+          type: string
+          format: date-time
+          title: From Date
+        to_date:
+          type: string
+          format: date-time
+          title: To Date
+        summary:
+          items:
+            $ref: '#/components/schemas/AiUsageSummaryItemPublic'
+          type: array
+          title: Summary
+        total_audio_seconds:
+          type: integer
+          title: Total Audio Seconds
+        total_input_tokens:
+          type: integer
+          title: Total Input Tokens
+        total_output_tokens:
+          type: integer
+          title: Total Output Tokens
+        total_cost_micros:
+          type: integer
+          title: Total Cost Micros
+      additionalProperties: false
+      type: object
+      required:
+      - from_date
+      - to_date
+      - summary
+      - total_audio_seconds
+      - total_input_tokens
+      - total_output_tokens
+      - total_cost_micros
+      title: AiUsageSummaryResponsePublic
+    CreateContentJobRequest:
+      title: CreateContentJobRequest
+      type: object
+      additionalProperties: false
+      required:
+      - content_version_id
+      - task
+      properties:
+        content_version_id:
+          type: string
+          title: Content Version Id
+        task:
+          type: string
+          enum:
+          - transcript
+          - segmentation
+          title: Task
+        language:
+          type: string
+          title: Language
+          default: ja
+        estimated_audio_seconds:
+          type: integer
+          title: Estimated Audio Seconds
+          default: 300
+          maximum: 86400
+          minimum: 0
+          deprecated: true
+          description: Compatibility hint only; quota is estimated from server-observed media duration.
+        estimated_cost_micros:
+          type: integer
+          title: Estimated Cost Micros
+          default: 500000
+          maximum: 1000000000
+          minimum: 0
+          deprecated: true
+          description: Compatibility hint only; quota uses the versioned server pricing policy.
+    ApplyContentJobRequest:
+      title: ApplyContentJobRequest
+      type: object
+      additionalProperties: false
+      required:
+      - expected_revision
+      properties:
+        expected_revision:
+          type: integer
+          title: Expected Revision
+        segments:
+          title: Segments
+          anyOf:
+          - type: array
+            items:
+              type: object
+              additionalProperties:
+                type: string
+          - type: 'null'
+    ContentJobResponsePublic:
+      title: ContentJobResponsePublic
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - catalog_item_id
+      - content_version_id
+      - task
+      - language
+      - status
+      - progress
+      - provenance
+      - created_at
+      - updated_at
+      properties:
+        id:
+          type: string
+          title: Id
+        catalog_item_id:
+          type: string
+          title: Catalog Item Id
+        content_version_id:
+          type: string
+          title: Content Version Id
+        task:
+          type: string
+          title: Task
+        language:
+          type: string
+          title: Language
+        status:
+          type: string
+          title: Status
+        progress:
+          type: number
+          title: Progress
+        provenance:
+          type: object
+          additionalProperties: true
+          title: Provenance
+        result_draft:
+          title: Result Draft
+          anyOf:
+          - type: object
+            additionalProperties: true
+          - type: 'null'
+        error_message:
+          title: Error Message
+          anyOf:
+          - type: string
+          - type: 'null'
+        applied_at:
+          title: Applied At
+          anyOf:
+          - type: string
+            format: date-time
+          - type: 'null'
+        created_at:
+          type: string
+          format: date-time
+          title: Created At
+        updated_at:
+          type: string
+          format: date-time
+          title: Updated At

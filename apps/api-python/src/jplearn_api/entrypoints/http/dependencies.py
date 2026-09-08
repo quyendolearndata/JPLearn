@@ -32,3 +32,26 @@ def get_media_signer(request: Request) -> MediaUrlSigner:
         signer = create_media_signer(request.app.state.settings)
         request.app.state.media_signer = signer
     return signer
+
+
+def get_app_settings(request: Request):
+    return request.app.state.settings
+
+
+import functools
+
+
+@functools.lru_cache(maxsize=None)
+def require_capability(flag_name: str):
+    """Dependency that ensures the runtime capability switch is enabled, else 403 Forbidden."""
+    from fastapi import HTTPException
+
+    def _checker(request: Request) -> None:
+        settings = get_app_settings(request)
+        if not getattr(settings, flag_name, False):
+            raise HTTPException(
+                status_code=403,
+                detail=f"Capability '{flag_name}' is currently disabled",
+            )
+
+    return _checker

@@ -15,8 +15,16 @@ class EntityNotFoundError(DomainError):
     """Raised when an entity requested by ID does not exist."""
 
 
+class ValidationError(DomainError):
+    """Raised when input data or domain bounds fail validation."""
+
+
 class ConflictError(DomainError):
     """Raised when a unique constraint or concurrency conflict occurs."""
+
+
+class RevisionConflictError(ConflictError):
+    """Raised when an expected_revision does not match the current revision."""
 
 
 class DuplicateEmailError(ConflictError):
@@ -41,6 +49,18 @@ class ForbiddenError(DomainError):
 
 class MediaInvariantError(DomainError):
     """Raised when a media asset violates publish or playback invariants."""
+
+
+class QuotaExceededError(DomainError):
+    """Raised when an operation exceeds allowed quota or rate limit."""
+
+
+class DuplicateSettlementError(ConflictError):
+    """Raised when a settlement for the same provider, request_id, attempt and kind is submitted."""
+
+
+class InvalidReservationStateError(InvalidDomainStateError):
+    """Raised when attempting an operation on a reservation with invalid status."""
 
 
 class DeterministicAbortError(Exception):

@@ -17,7 +17,19 @@ def test_resources_and_contract_resolve_outside_working_directory(tmp_path, monk
     assert (MIGRATIONS_DIR / "env.py").is_file()
     assert (MIGRATIONS_DIR / "versions" / "0001_prisma_baseline.py").is_file()
     assert len(load_baseline_schema("0001_prisma_baseline")["tables"]) == 10
-    assert len(load_baseline_schema("head")["tables"]) == 11
+    assert len(load_baseline_schema("0002_session_idem_rev")["tables"]) == 11
+    assert len(load_baseline_schema("0003_content_versions_and_scenes")["tables"]) == 13
+    assert len(load_baseline_schema("0004_series")["tables"]) == 15
+    assert len(load_baseline_schema("0005_saved_scenes")["tables"]) == 16
+    assert len(load_baseline_schema("0006_personal_collections")["tables"]) == 19
+    assert len(load_baseline_schema("0007_content_reports")["tables"]) == 21
+    assert len(load_baseline_schema("0009_activity_and_history")["tables"]) == 28
+    assert len(load_baseline_schema("0010_transcripts_analysis")["tables"]) == 31
+    assert len(load_baseline_schema("0011_ai_quota_and_usage_ledger")["tables"]) == 33
+    assert len(load_baseline_schema("0012_content_jobs")["tables"]) == 34
+    assert len(load_baseline_schema("head")["tables"]) == 37
+
+
     assert handwritten_spec_path().is_file()
     config = alembic_config("postgresql://test:test@localhost/jplearn_test")
     assert Path(config.get_main_option("script_location")) == MIGRATIONS_DIR
@@ -30,6 +42,8 @@ def test_console_entrypoints_target_canonical_modules():
         "jplearn-migrate": "jplearn_api.entrypoints.cli.migrate:main",
         "jplearn-seed": "jplearn_api.entrypoints.cli.seed:main",
         "jplearn-openapi-diff": "jplearn_api.tooling.openapi_diff:main",
+        "jplearn-maintenance": "jplearn_api.entrypoints.cli.maintenance:main",
+        "jplearn-ai-worker": "jplearn_api.entrypoints.cli.ai_worker:main",
     }
 
 

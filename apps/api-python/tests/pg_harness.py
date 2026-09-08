@@ -27,10 +27,11 @@ def _cleanup_tracked_projects() -> None:
 
 atexit.register(_cleanup_tracked_projects)
 
-try:
-    signal.signal(signal.SIGTERM, lambda s, f: (_cleanup_tracked_projects(), sys.exit(128 + s)))
-except (ValueError, AttributeError):
-    pass
+for sig in (signal.SIGTERM, signal.SIGINT):
+    try:
+        signal.signal(sig, lambda s, f: (_cleanup_tracked_projects(), sys.exit(128 + s)))
+    except (ValueError, AttributeError):
+        pass
 
 if str(API_PY / "src") not in sys.path:
     sys.path.insert(0, str(API_PY / "src"))
@@ -86,8 +87,37 @@ def _compose(project_name: str, args: list[str], **kwargs) -> subprocess.Complet
     )
 
 
+def _cleanup_stale_pytest_containers() -> None:
+    """Find and clean up any orphaned jplearn-pytest-<pid> containers whose PID is dead."""
+    try:
+        res = subprocess.run(
+            ["docker", "ps", "-a", "--filter", "name=jplearn-pytest-", "--format", "{{.Names}}"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if res.returncode != 0 or not res.stdout.strip():
+            return
+        current_pid = os.getpid()
+        for name in res.stdout.strip().splitlines():
+            parts = name.split("-")
+            if len(parts) >= 3 and parts[0] == "jplearn" and parts[1] == "pytest":
+                pid_str = parts[2]
+                if pid_str.isdigit():
+                    pid = int(pid_str)
+                    if pid == current_pid:
+                        continue
+                    try:
+                        os.kill(pid, 0)
+                    except OSError:
+                        subprocess.run(["docker", "rm", "-f", name], capture_output=True, check=False)
+    except Exception:
+        pass
+
+
 def start_docker_postgres(project_name: str, *, seed: bool = False, migrate: bool = True) -> str:
     subprocess.run(["docker", "version"], check=True, capture_output=True)
+    _cleanup_stale_pytest_containers()
     _tracked_docker_projects.add(project_name)
     try:
         _compose(project_name, ["up", "--detach", "db-test"])

@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from typing import Any, Protocol
+from jplearn_api.application.ports.media_probe import MediaInspection
 
 
 class StoragePort(Protocol):
     """Abstract storage port for blob storage operations."""
+
+    async def inspect_media(self, key: str) -> "MediaInspection": ...
 
     async def stage_stream(
         self,

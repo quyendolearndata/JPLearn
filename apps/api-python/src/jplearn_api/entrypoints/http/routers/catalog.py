@@ -20,15 +20,17 @@ from jplearn_api.application.handlers.catalog import (
     handle_unpublish,
     handle_update_draft_catalog_item,
 )
+from jplearn_api.application.handlers.search import handle_search_scenes
 from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.queries import (
     GetStaffCatalogItemQuery,
     ListPublishedCatalogQuery,
     ListStaffCatalogQuery,
+    SearchScenesQuery,
 )
 from jplearn_api.application.read_models import UserDTO
 from jplearn_api.bootstrap import create_catalog_query, create_catalog_repository, create_uow
-from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_session, get_storage
+from jplearn_api.entrypoints.http.dependencies import UUIDPath, get_app_settings, get_session, get_storage
 from jplearn_api.domain.errors import DomainError, EntityNotFoundError
 from jplearn_api.entrypoints.http.error_mapping import map_domain_error_to_http
 from jplearn_api.entrypoints.http.roles import require_roles
@@ -39,8 +41,12 @@ from jplearn_api.entrypoints.http.schemas import (
     CatalogItemWrite,
     CatalogList,
     CatalogStaffList,
+    HighlightSpan,
+    SearchResponsePublic,
+    SearchResultItemPublic,
 )
 from jplearn_api.entrypoints.http.security import require_user
+from jplearn_api.settings import Settings
 from fastapi import HTTPException
 
 router = APIRouter()
@@ -80,6 +86,71 @@ async def list_catalog(
             for dto in items_dto
         ]
     )
+
+
+@router.get(
+    "/catalog/search",
+    response_model=SearchResponsePublic,
+    operation_id="searchScenes",
+    tags=["Catalog"],
+    openapi_extra={"x-jplearn-fr": ["FR-SCH-001", "FR-SCH-002", "FR-NEG"]},
+    responses={
+        400: {"description": "Invalid search query"},
+        401: {"description": "Authentication required"},
+        403: {"description": "Scene search capability disabled"},
+        409: {"description": "Index generation mismatch"},
+    },
+)
+async def search_catalog_scenes(
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+    user: UserDTO = Depends(require_user),
+    settings: Settings = Depends(get_app_settings),
+    q: str = Query(..., min_length=1, max_length=100, description="Japanese search query"),
+    ci_level: int | None = Query(default=None, ge=0, le=4, description="Filter CI level"),
+    cursor: str | None = Query(default=None, description="Opaque pagination cursor"),
+    limit: int = Query(default=20, ge=1, le=50, description="Page limit"),
+) -> SearchResponsePublic:
+    uow = create_uow(session)
+    query = SearchScenesQuery(
+        q=q,
+        user_id=user.id,
+        ci_level=ci_level,
+        cursor=cursor,
+        limit=limit,
+    )
+    try:
+        dto = await handle_search_scenes(
+            query=query,
+            uow=uow,
+            search_enabled=settings.scene_search_enabled,
+        )
+        return SearchResponsePublic(
+            items=[
+                SearchResultItemPublic(
+                    catalog_item_id=it.catalog_item_id,
+                    content_version_id=it.content_version_id,
+                    scene_id=it.scene_id,
+                    scene_index=it.scene_index,
+                    start_time_seconds=it.start_time_seconds,
+                    end_time_seconds=it.end_time_seconds,
+                    matched_text_ja=it.matched_text_ja,
+                    highlight_spans=[
+                        HighlightSpan(start_offset=s["start_offset"], end_offset=s["end_offset"])
+                        for s in it.highlight_spans
+                    ],
+                    match_kind=it.match_kind,  # type: ignore[arg-type]
+                    ci_level=it.ci_level,
+                    topic_id=it.topic_id,
+                    title_jp=it.title_jp,
+                )
+                for it in dto.items
+            ],
+            next_cursor=dto.next_cursor,
+            total_estimated=dto.total_estimated,
+        )
+    except DomainError as exc:
+        raise map_domain_error_to_http(exc) from exc
 
 
 @router.get(

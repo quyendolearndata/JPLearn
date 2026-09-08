@@ -921,7 +921,7 @@ async def test_upload_does_not_rollback_while_cancelled_commit_is_still_running(
     rollback_raced_commit = False
 
     class BarrierSession:
-        async def get(self, *args):
+        async def get(self, *args, **kwargs):
             return object()
 
         def add(self, instance) -> None:
@@ -944,6 +944,10 @@ async def test_upload_does_not_rollback_while_cancelled_commit_is_still_running(
             rollback_called.set()
 
     class MemoryStorage:
+        async def inspect_media(self, key):
+            from jplearn_api.application.ports.media_probe import MediaInspection
+            return MediaInspection(3_600_000, "fixture-checksum")
+
         async def stage_stream(self, key, stream) -> int:
             total = 0
             async for chunk in stream:
@@ -972,7 +976,7 @@ async def test_upload_does_not_rollback_while_cancelled_commit_is_still_running(
         )
     )
 
-    await commit_entered.wait()
+    await asyncio.wait_for(commit_entered.wait(), timeout=5)
     rollback_called.clear()
     task.cancel()
     try:

@@ -1020,7 +1020,11 @@ async def test_media_use_cases_in_memory():
         )
 
     # 8. Register HLS with manifest succeeds
-    storage.keys.add(f"hls/{dto.id}/index.m3u8")
+    manifest_key = f"hls/{dto.id}/index.m3u8"
+    segment_key = f"hls/{dto.id}/segment-000.ts"
+    storage.keys.update({manifest_key, segment_key})
+    storage.files[manifest_key] = b"#EXTM3U\n#EXTINF:10,\nsegment-000.ts\n#EXT-X-ENDLIST\n"
+    storage.files[segment_key] = b"transport-stream"
     hls_dto = await handle_register_hls(
         asset_id=dto.id,
         uow=uow,

@@ -12,6 +12,7 @@ from typing import Any
 from uuid import uuid4
 
 from jplearn_api.application.ports.repositories import MediaRepository
+from jplearn_api.application.media_integrity import inspect_hls_bundle
 from jplearn_api.application.ports.security import MediaUrlSigner
 from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork, UnitOfWorkFactory
@@ -53,6 +54,9 @@ def to_staff_dto(
         playback_url=playback_url,
         hls_url=hls_url,
         mime=asset.mime,
+        measured_duration_ms=asset.measured_duration_ms,
+        source_sha256=asset.source_sha256,
+        hls_bundle_sha256=asset.hls_bundle_sha256,
     )
 
 
@@ -142,7 +146,30 @@ class UploadTransactionCoordinator:
         start_t = asyncio.get_event_loop().time()
         while not self.cleanup_task.done():
             elapsed = asyncio.get_event_loop().time() - start_t
-            remaining = max(0.01, self.grace_seconds - elapsed)
+            if elapsed >= self.grace_seconds:
+                self.outcome = "outcome_unknown"
+                logger.warning(
+                    "media_upload_commit_outcome_unknown",
+                    extra={
+                        "asset_id": self.asset_id,
+                        "catalog_item_id": self.catalog_item_id,
+                        "final_key": self.final_key,
+                        "outcome": "outcome_unknown",
+                        "reason": f"cleanup_drain_timeout_{reason}",
+                        "task_state": "drain_timeout",
+                    },
+                )
+                self.cleanup_task.cancel()
+                break
+
+            remaining = self.grace_seconds - elapsed
+            cur_task = asyncio.current_task()
+            cancelling_count = (
+                cur_task.cancelling() if (cur_task and hasattr(cur_task, "cancelling")) else 0
+            )
+            if cancelling_count > 0:
+                for _ in range(cancelling_count):
+                    cur_task.uncancel()
             try:
                 await asyncio.wait_for(asyncio.shield(self.cleanup_task), timeout=remaining)
             except TimeoutError:
@@ -166,6 +193,10 @@ class UploadTransactionCoordinator:
                 continue
             except Exception:
                 break
+            finally:
+                if cancelling_count > 0 and cur_task:
+                    for _ in range(cancelling_count):
+                        cur_task.cancel()
 
         if self.cleanup_task.done() and not self.cleanup_task.cancelled():
             try:
@@ -204,9 +235,13 @@ async def handle_upload_media(
     # Scope 1: Preflight read check (short-lived read scope, closed immediately)
     preflight_uow = uow_factory()
     async with preflight_uow:
-        item_exists = await preflight_uow.media.catalog_item_exists(catalog_item_id)
-        if not item_exists:
+        item_status = await preflight_uow.media.get_catalog_item_status(catalog_item_id)
+        if item_status is None:
             raise EntityNotFoundError("Catalog item not found")
+        if item_status != "draft":
+            raise InvalidDomainStateError(
+                f"Cannot upload media: catalog item must be in 'draft' status (currently '{item_status}')"
+            )
     # Scope 1 exited and closed! Preflight connection returned to pool.
 
     # Scope 2: Stream & Stage & Promote (Zero DB connections or transactions held)
@@ -241,6 +276,14 @@ async def handle_upload_media(
         await storage.stage_stream(temp_key, full_stream())
     except ValueError as exc:
         raise InvalidDomainStateError(str(exc)) from exc
+
+    try:
+        inspection = await storage.inspect_media(temp_key)
+    except BaseException as exc:
+        await asyncio.shield(storage.delete(temp_key))
+        if isinstance(exc, (ValueError, KeyError, FileNotFoundError)):
+            raise InvalidDomainStateError("Media must have a verifiable duration and source") from exc
+        raise
 
     try:
         await storage.promote(temp_key, final_key)
@@ -300,16 +343,22 @@ async def handle_upload_media(
 
             # Revalidate catalog reference at write boundary
             try:
-                catalog_exists = await target_repo.catalog_item_exists(catalog_item_id)
+                item_status = await target_repo.get_catalog_item_status(catalog_item_id, for_update=True)
             except BaseException:
                 abort_reason = "recheck_query_failed"
                 await coordinator.settle_rollback_and_cleanup(abort_reason)
                 raise
 
-            if not catalog_exists:
+            if item_status is None:
                 abort_reason = "catalog_missing"
                 await coordinator.settle_rollback_and_cleanup(abort_reason)
                 raise EntityNotFoundError("Catalog item not found")
+            if item_status != "draft":
+                abort_reason = "catalog_not_draft"
+                await coordinator.settle_rollback_and_cleanup(abort_reason)
+                raise InvalidDomainStateError(
+                    f"Cannot upload media: catalog item is in '{item_status}' status (must be 'draft')"
+                )
 
             # 4. Record staging and run pre-commit hooks
             try:
@@ -324,6 +373,8 @@ async def handle_upload_media(
                     storage_key=final_key,
                     playback_url=playback_raw,
                     mime="video/mp4",
+                    measured_duration_ms=inspection.duration_ms,
+                    source_sha256=inspection.sha256,
                 )
                 await target_repo.add(asset)
 
@@ -455,16 +506,29 @@ async def handle_register_hls(
     """Register HLS manifest for an existing media asset."""
     target_repo = media_repo if media_repo is not None else uow.media
     async with uow:
+        candidate = await target_repo.get_by_id(asset_id)
+        if candidate is None:
+            raise EntityNotFoundError("Media asset not found")
+
+    # Storage traversal and hashing happen without holding a database transaction.
+    inspection = await inspect_hls_bundle(storage, asset_id)
+
+    async with uow:
         asset = await target_repo.get_by_id(asset_id)
         if asset is None:
             raise EntityNotFoundError("Media asset not found")
 
-        manifest_key = f"hls/{asset_id}/{HLS_MANIFEST}"
-        exists = await storage.exists(manifest_key)
-        if not exists:
-            raise InvalidDomainStateError("HLS manifest missing on disk; run scripts/transcode-hls.sh for this asset first")
+        item_status = await target_repo.get_catalog_item_status(asset.catalog_item_id, for_update=True)
+        if item_status is None:
+            raise EntityNotFoundError("Catalog item not found")
+        if item_status != "draft":
+            raise InvalidDomainStateError("HLS registration requires draft catalog status")
+        # Even after unpublish, a previously published asset remains immutable.
+        if await uow.content.is_media_pinned(asset_id):
+            raise InvalidDomainStateError("Published source is immutable; upload a new asset")
 
         asset.hls_url = signer.manifest_url(asset_id)
+        asset.hls_bundle_sha256 = inspection.sha256
         await target_repo.update(asset)
         await uow.commit()
 

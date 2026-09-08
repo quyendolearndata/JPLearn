@@ -34,5 +34,8 @@ class MediaAsset:
     catalog_item_id: str
     storage_key: str
     mime: str = "video/mp4"
+    measured_duration_ms: int | None = None
+    source_sha256: str | None = None
+    hls_bundle_sha256: str | None = None
     playback_url: str | None = None
     hls_url: str | None = None

@@ -7,6 +7,7 @@ import type { CatalogItemPublic } from "@jplearn/domain";
 import { api, parseApiError, parseApiResponse } from "../../lib/api";
 import { getToken, getUser } from "../../lib/auth-storage";
 import { CiPlayer } from "../../components/ci-player";
+import { SceneStrip, type SceneItem } from "../../components/scene-strip";
 import {
   completeAutomaticCatalogRefetch,
   createMediaRecoveryCycle,
@@ -72,6 +73,33 @@ function SessionContent() {
   const [recoveryPhase, setRecoveryPhase] = useState<RecoveryPhase>("initializing");
   const [activeOperation, setActiveOperation] = useState<"recovery" | "start" | "end" | null>(null);
   const [mediaRecoveryState, setMediaRecoveryState] = useState<MediaRecoveryState>("idle");
+  const [contentVersionId, setContentVersionId] = useState<string | null>(null);
+  const [scenes, setScenes] = useState<SceneItem[]>([]);
+  const [currentTimeSeconds, setCurrentTimeSeconds] = useState(0);
+  const [seekTargetSeconds, setSeekTargetSeconds] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!clip?.id) {
+      setScenes([]);
+      setContentVersionId(null);
+      return;
+    }
+    let cancelled = false;
+    void api(`/catalog/${clip.id}/content`)
+      .then(async (res) => {
+        if (res.ok && !cancelled) {
+          const data = await parseApiResponse<{ id: string; scenes: SceneItem[] }>(res);
+          if (data && !cancelled) {
+            setContentVersionId(data.id);
+            setScenes(data.scenes || []);
+          }
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [clip?.id]);
 
   const recoveryAttemptRef = useRef(0);
   const operationGuardRef = useRef(createSessionOperationGuard());
@@ -944,8 +972,19 @@ function SessionContent() {
               hlsUrl={clip.hls_url}
               playbackUrl={clip.playback_url}
               onSourceFailure={handleSourceFailure}
+              catalogItemId={clip.id}
+              contentVersionId={contentVersionId}
+              seekTargetSeconds={seekTargetSeconds}
+              onTimeUpdate={(t) => setCurrentTimeSeconds(t)}
             />
           </div>
+          <SceneStrip
+            catalogItemId={clip.id}
+            contentVersionId={contentVersionId}
+            scenes={scenes}
+            currentTimeSeconds={currentTimeSeconds}
+            onSeek={(t) => setSeekTargetSeconds(t)}
+          />
           <div style={{ marginTop: "0.75rem", display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap", fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 700 }}>
             <span>Chủ đề: {TOPIC_NAMES[clip.topic_id] || clip.topic_id}</span>
             <span>·</span>

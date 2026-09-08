@@ -62,10 +62,45 @@ def load_baseline_schema(
             raise RuntimeError(f"Malformed baseline schema at {p}: {err}") from err
 
     filename = (
-        "adr-004-schema-head-0002.json"
-        if target_revision in ("head", "0002_session_idem_rev")
+        "adr-004-schema-head-0018.json"
+        if target_revision in ("head", "0018_hls_bundle_integrity")
+        else
+        "adr-004-schema-head-0017.json"
+        if target_revision == "0017_activity_policy_streak"
+        else
+        "adr-004-schema-head-0016.json"
+        if target_revision == "0016_media_probe"
+        else "adr-004-schema-head-0015.json"
+        if target_revision == "0015_ai_attempts"
+        else "adr-004-schema-head-0014.json"
+        if target_revision == "0014_content_source_snapshot"
+        else "adr-004-schema-head-0013.json"
+        if target_revision == "0013_playback_recovery"
+        else "adr-004-schema-head-0012.json"
+        if target_revision == "0012_content_jobs"
+        else "adr-004-schema-head-0011.json"
+        if target_revision in ("0011_ai_quota_and_usage_ledger",)
+        else "adr-004-schema-head-0010.json"
+        if target_revision in ("0010_transcripts_analysis",)
+        else "adr-004-schema-head-0009.json"
+        if target_revision in ("0009_activity_and_history",)
+        else "adr-004-schema-head-0008.json"
+        if target_revision in ("0008_playback_tracking",)
+        else "adr-004-schema-head-0007.json"
+        if target_revision in ("0007_content_reports",)
+        else "adr-004-schema-head-0006.json"
+        if target_revision in ("0006_personal_collections",)
+        else "adr-004-schema-head-0005.json"
+        if target_revision in ("0005_saved_scenes",)
+        else "adr-004-schema-head-0004.json"
+        if target_revision in ("0004_series",)
+        else "adr-004-schema-head-0003.json"
+        if target_revision in ("0003_content_versions_and_scenes",)
+        else "adr-004-schema-head-0002.json"
+        if target_revision in ("0002_session_idem_rev",)
         else "adr-004-schema-baseline.json"
     )
+
 
     # 2. Packaged resource
     try:

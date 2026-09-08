@@ -90,6 +90,7 @@ def test_register_serves_manifest_and_segments(live_client):
     parsed = urlparse(registered.json()["hls_url"])
     assert parsed.path == f"/media/{asset_id}/hls/index.m3u8"
     assert "sig=" in parsed.query
+    assert len(registered.json()["hls_bundle_sha256"]) == 64
 
     assert live_client.post(
         f"/staff/catalog/{item_id}/submit-qa",
@@ -121,6 +122,30 @@ def test_register_serves_manifest_and_segments(live_client):
     assert "video/mp2t" in segment.headers["content-type"]
     assert segment.headers["x-content-type-options"] == "nosniff"
     assert segment.content == b"fake ts segment"
+
+
+def test_publish_rejects_hls_segment_changed_after_qa(live_client):
+    admin = _admin(live_client)
+    item_id, asset_id = _upload(live_client, admin)
+    _write_hls_bundle(live_client, asset_id)
+    registered = live_client.post(
+        f"/staff/media/{asset_id}/hls",
+        headers={"Authorization": f"Bearer {admin}"},
+    )
+    assert registered.status_code == 201
+    assert live_client.post(
+        f"/staff/catalog/{item_id}/submit-qa",
+        headers={"Authorization": f"Bearer {admin}"},
+    ).status_code == 200
+
+    root = Path(live_client.app.state.settings.storage_root)
+    (root / "hls" / asset_id / "segment-000.ts").write_bytes(b"tampered segment")
+    published = live_client.post(
+        f"/staff/catalog/{item_id}/publish",
+        headers={"Authorization": f"Bearer {admin}"},
+    )
+    assert published.status_code == 409
+    assert "HLS bundle changed" in published.json()["message"]
 
 
 def test_signed_manifest_rewrites_segment_uris(live_client):

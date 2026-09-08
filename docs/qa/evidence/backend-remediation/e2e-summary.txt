@@ -1,0 +1,5 @@
+Web E2E candidate: 2026-09-08
+Chromium + WebKit: 92 passed (2.5m)
+Exit code: 0
+Isolated evidence directory: /tmp/jplearn-e2e-20260908115114_5698
+The runner removed its isolated Docker database after completion.

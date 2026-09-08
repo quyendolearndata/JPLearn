@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 
 from jplearn_api.adapters.persistence.models import User
 from jplearn_api.application.read_models import UserDTO
@@ -29,9 +29,9 @@ async def require_user(
     sessionmaker = request.app.state.sessionmaker
     async with sessionmaker() as session:
         result = await session.execute(
-            select(User).options(selectinload(User.roles)).where(User.id == payload["sub"]),
+            select(User).options(joinedload(User.roles)).where(User.id == payload["sub"]),
         )
-        user = result.scalar_one_or_none()
+        user = result.unique().scalar_one_or_none()
 
     if user is None or payload["ver"] != user.token_version:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -55,9 +55,9 @@ async def require_media_access(
             sessionmaker = request.app.state.sessionmaker
             async with sessionmaker() as session:
                 result = await session.execute(
-                    select(User).options(selectinload(User.roles)).where(User.id == payload["sub"]),
+                    select(User).options(joinedload(User.roles)).where(User.id == payload["sub"]),
                 )
-                user = result.scalar_one_or_none()
+                user = result.unique().scalar_one_or_none()
             if user is None or payload["ver"] != user.token_version:
                 raise HTTPException(status_code=401, detail="Unauthorized")
             user_dto = UserDTO(

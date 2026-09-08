@@ -11,7 +11,7 @@ nằm trong `apps/api-python/tests/`; xem [development](../../backend/developmen
 và [mapping theo revision](../../qa/clean-architecture-audit/test_mapping_and_reconciliation.md).
 Không suy ra mọi hàng PASS từ việc tồn tại file test; trạng thái cổng cần evidence đúng revision.
 
-Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-cases.md](../02-analysis/use-cases.md). Quan hệ UML: [diagrams.md](../02-analysis/diagrams.md) mục 1b. SAD-2 đã có class diagram (mục 6) và state diagram cho `CatalogItem.status` + `LearningSession` (mục 7). Không đổi FR id hay Test id trong bảng dưới.
+Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-cases.md](../02-analysis/use-cases.md). Quan hệ UML: [diagrams.md](../02-analysis/diagrams.md) mục 1b. SAD-2 đã có class diagram (mục 6) và state diagram cho `CatalogItem.status` + `LearningSession` (mục 7). R0 bổ sung FR-FLG-003/T-FLG-003; test IDs là chỉ tiêu kiểm tra, chưa tự xác nhận PASS.
 
 | Req | Use case | Thiết kế | Test |
 |---|---|---|---|
@@ -37,6 +37,7 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | FR-CMS-004 | UC-A01 | URL từ API (không CDN hardcode) | T-CMS-004 |
 | FR-FLG-001 | UC-A02 | GET /flags defaults false | T-FLG-001 |
 | FR-FLG-002 | UC-A02 | UI ẩn | T-FLG-002 client |
+| FR-FLG-003 | UC-A02, UC-L17, UC-L24 | GET /capabilities; server gates/allowlist, end/reconcile zero-credit khi off | T-FLG-003 capability matrix |
 | FR-EVT-001 | UC-L03, UC-L04 | learning_events table | T-EVT-001 |
 | FR-EVT-002 | UC-L04 | minutes event | T-EVT-002 |
 | FR-EVT-003 | UC-L03 | level_exposed on start | T-EVT-003 |
@@ -55,6 +56,19 @@ Kịch bản SAD-2 (bước chính / phụ, «include» / «extend»): [use-case
 | NFR-OBS-001 | — | request id + alert webhook 5xx (stub, `ALERT_WEBHOOK_URL`) | T-NFR-O1 echo `x-request-id`; T-NFR-O2 alert 5xx env bật/tắt, 4xx im |
 | FR-LRN-001 | UC-L10 | web `<video>` / CiPlayer trong phiên, HLS/MP4, signed URL | T-LRN-001 player clip, T-NFR-A1 keyboard controls, T-SES-REC-001 session recovery; scenario F-03 giữ đúng item khi refresh media (engineering PASS `41a4009`/`d1715d2`; WebKit HLS = engine) |
 | FR-LRN-002…004 | UC-L11–12 | chưa | T-P5-hold |
+| FR-SCN-001 | UC-T06, UC-T09, UC-L14 | content_versions, scenes + PUT /staff/catalog/{id}/content, GET /catalog/{id}/content | T-SCN-001 scene breakdown & transcript, T-SCN-CAS concurrency |
+| FR-SER-001 | UC-T07 | series, episodes + POST/PATCH /staff/series | T-SER-001 series ordering & lookup |
+| FR-RSM-001 | UC-L16 | playback checkpoints + GET /me/resume/{catalog_item_id} | T-RSM-001 position resume cross-device |
+| FR-WAT-001 | UC-L17, UC-L24 | playbacks + PUT /playbacks/{id}/checkpoints/{seq}; POST start/end; cumulative15s/lease45s | T-WAT-001 active watch accounting, T-WAT-002 lease takeover |
+| FR-HIS-001 | UC-L19 | GET/DELETE /me/watch-history + deletion job/cutoff/tombstone | T-HIS-001 history cursor pagination & clear |
+| FR-GOL-001 | UC-L18 | effective preference versions + GET/PUT /me/learning-preferences; policy-aware GET /me/activity with current/longest streak | T-GOL-001 goal & streak tracking |
+| FR-REC-001 | UC-L20 | GET /me/recommendations | T-REC-001 level & topic stream recommendations |
+| FR-BMK-001 | UC-L15 | bookmarks + POST/GET/DELETE /bookmarks | T-BMK-001 context bookmarking (no SRS) |
+| FR-COL-001 | UC-L21 | collections, collection_items + /collections | T-COL-001 custom playlists & library isolation |
+| FR-RPT-001 | UC-L23 | GET /me/activity; legacy progress separate | T-RPT-001 aggregated reports dual-metric |
+| NFR-LAT-001 | UC-L17 | atomic checkpoint transaction; steady ASGI candidate đạt, synchronized burst chưa đạt | T-NFR-LAT-001 p95 heartbeat < 100ms |
+| NFR-RET-001 | UC-L19, UC-L23 | raw playback 90d retention, rollup permanent | T-NFR-RET-001 event retention policy |
+| NFR-CONCUR-001 | UC-L17, UC-L24 | lease epoch CAS, session lock SELECT FOR UPDATE | T-NFR-CONCUR-001 concurrent heartbeat & takeover safety |
 | NFR-MIG-001 | — | Alembic migration & Prisma adoption | T-MIG-002-ADOPT |
 
 Lỗ = hàng FR nền tảng không có UC hoặc không có thiết kế. Cổng nền tảng 2026-08-25: exception HLS player / native UC-L06 / alert 5xx còn mở.
@@ -79,8 +93,12 @@ Lịch sử closeout `fd838d2` (217 / 21+21 / 7) giữ nguyên.
 | FR v1 identity/catalog/session/progress/flags/events | PASS API + web |
 | FR-CMS-003/004 signed URL | PASS API (HMAC query; JWT vẫn được) |
 | FR-FLG-002 | PASS web `useFlags()`; kênh tắt không vẽ |
-| FR-LRN-001 | PARTIAL — player web trong phiên; chưa Expo |
-| UC-L06 native | PARTIAL — API+web; máy thật chưa |
+| FR-LRN-001 | ENGINEERING PASS — Web và Expo tracker; thiết bị thật ở rollout gate |
+| UC-L06 native | PARTIAL — API + Expo code/test; máy thật chưa |
 | NFR-PERF-002 HLS trên client | GAP |
 | NFR-A11Y-001 contrast đo | GAP |
 | NFR-OBS-001 alert 5xx staging | PASS (stub) — webhook `ALERT_WEBHOOK_URL`, default tắt; URL kênh thật (Slack) chờ Ops cấp |
+
+### R0 engineering amendment — 2026-09-07
+
+Playback/goal/history rows reference the remediation contract and local engineering evidence. T-WAT-001/002 cover final checkpoint, lease expiry, takeover and receipt retry; T-GOL-001 covers current/pending policy, midnight/DST, active-only và streak; T-HIS-001 covers late packets and deletion cutoff; T-SCN-001 covers staff-only transcript and separately approved learner excerpt. PostgreSQL concurrency, Web E2E và Mobile unit/typecheck đã đạt; thiết bị thật/staging/pilot vẫn thuộc rollout gate. NFR-RET-001 is unchanged pending a separate BA/Ops policy decision.

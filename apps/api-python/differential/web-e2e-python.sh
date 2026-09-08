@@ -4,7 +4,7 @@
 #   apps/api-python/differential/web-e2e-python.sh [--project=chromium ...]
 #
 # Dựng DB test riêng (Alembic migrate + seed), chạy FastAPI trên port động, dựng nội dung
-# thật (upload MP4 kho stock → submit-qa → publish → transcode HLS → register),
+# thật (upload MP4 kho stock → transcode HLS → register → submit-qa → publish),
 # build + serve web trỏ vào API, rồi playwright test.
 # Mặc định chạy mọi project trong playwright.config.ts (chromium + webkit).
 #
@@ -127,11 +127,6 @@ ASSET_ID="$(curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/
   -F "file=@$SOURCE_MP4;type=video/mp4" \
   | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')"
 
-curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/submit-qa" \
-  -H "Authorization: Bearer $TOKEN" >/dev/null
-curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/publish" \
-  -H "Authorization: Bearer $TOKEN" >/dev/null
-
 mkdir -p "$STORAGE/hls/$ASSET_ID"
 ffmpeg -loglevel error -y -i "$STORAGE/$ASSET_ID.bin" \
   -codec: copy -start_number 0 -hls_time 4 -hls_list_size 0 -f hls \
@@ -139,6 +134,11 @@ ffmpeg -loglevel error -y -i "$STORAGE/$ASSET_ID.bin" \
   "$STORAGE/hls/$ASSET_ID/index.m3u8"
 curl -fsS -X POST "http://localhost:$PY_PORT/staff/media/$ASSET_ID/hls" \
   -H "Authorization: Bearer $TOKEN" >/dev/null
+curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/submit-qa" \
+  -H "Authorization: Bearer $TOKEN" >/dev/null
+curl -fsS -X POST "http://localhost:$PY_PORT/staff/catalog/$ITEM_ID/publish" \
+  -H "Authorization: Bearer $TOKEN" >/dev/null
+
 echo "   published item $ITEM_ID, asset $ASSET_ID (+hls)"
 
 echo "== 3b/5 teacher E2E account (isolated DB only) =="

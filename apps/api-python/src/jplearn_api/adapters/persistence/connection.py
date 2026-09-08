@@ -23,7 +23,13 @@ def async_database_url(url: str) -> str:
 def create_engine_and_sessions(
     settings: Settings,
 ) -> tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:
-    engine = create_async_engine(async_database_url(settings.database_url), pool_pre_ping=True)
+    engine = create_async_engine(
+        async_database_url(settings.database_url),
+        pool_size=settings.database_pool_size,
+        max_overflow=settings.database_max_overflow,
+        pool_timeout=settings.database_pool_timeout_seconds,
+        pool_pre_ping=settings.database_pool_pre_ping,
+    )
     factory = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
     return engine, factory
 

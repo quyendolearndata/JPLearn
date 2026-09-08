@@ -244,6 +244,39 @@ class LocalFilesystemStorage(StoragePort):
             raise ValueError(f"Directory traversal detected for key: {key}")
         return resolved
 
+    async def inspect_media(self, key: str):
+        """Measure local media and hash the same file, with bounded ffprobe execution."""
+        import hashlib
+        import json
+        import math
+        from jplearn_api.application.ports.media_probe import MediaInspection
+        path = self._resolve(key)
+        before = path.stat()
+        process = await asyncio.create_subprocess_exec(
+            "ffprobe", "-v", "error", "-protocol_whitelist", "file,pipe",
+            "-show_entries", "format=duration", "-of", "json", str(path),
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+        )
+        try:
+            stdout, _ = await asyncio.wait_for(process.communicate(), timeout=30)
+        except BaseException:
+            process.kill()
+            await process.wait()
+            raise
+        if process.returncode:
+            raise ValueError("Media duration could not be measured")
+        duration = float(json.loads(stdout)["format"]["duration"])
+        if not math.isfinite(duration) or duration <= 0:
+            raise ValueError("Media duration must be positive and finite")
+        def digest():
+            with path.open("rb") as source:
+                return hashlib.file_digest(source, "sha256").hexdigest()
+        sha256 = await asyncio.to_thread(digest)
+        after = path.stat()
+        if (before.st_ino, before.st_size, before.st_mtime_ns) != (after.st_ino, after.st_size, after.st_mtime_ns):
+            raise ValueError("Media changed during inspection")
+        return MediaInspection(duration_ms=math.floor(duration * 1000), sha256=sha256)
+
     async def stage_stream(
         self,
         temp_key: str,

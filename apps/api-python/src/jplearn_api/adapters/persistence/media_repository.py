@@ -20,6 +20,9 @@ def _to_domain(orm_asset: OrmMediaAsset) -> DomainMediaAsset:
         playback_url=orm_asset.playback_url,
         hls_url=orm_asset.hls_url,
         mime=orm_asset.mime,
+        measured_duration_ms=orm_asset.measured_duration_ms,
+        source_sha256=orm_asset.source_sha256,
+        hls_bundle_sha256=orm_asset.hls_bundle_sha256,
     )
 
 
@@ -43,6 +46,9 @@ class SqlAlchemyMediaRepository(MediaRepository):
             playback_url=asset.playback_url,
             hls_url=asset.hls_url,
             mime=asset.mime,
+            measured_duration_ms=asset.measured_duration_ms,
+            source_sha256=asset.source_sha256,
+            hls_bundle_sha256=asset.hls_bundle_sha256,
         )
         self._session.add(orm_asset)
         if hasattr(self._session, "flush"):
@@ -56,10 +62,17 @@ class SqlAlchemyMediaRepository(MediaRepository):
         if orm_asset is not None:
             orm_asset.hls_url = asset.hls_url
             orm_asset.playback_url = asset.playback_url
+            orm_asset.hls_bundle_sha256 = asset.hls_bundle_sha256
 
     async def catalog_item_exists(self, catalog_item_id: str) -> bool:
         item = await self._session.get(OrmCatalogItem, catalog_item_id)
         return item is not None
+
+    async def get_catalog_item_status(self, catalog_item_id: str, *, for_update: bool = False) -> str | None:
+        item = await self._session.get(OrmCatalogItem, catalog_item_id, with_for_update=for_update, populate_existing=for_update)
+        if item is None:
+            return None
+        return getattr(item, "status", "draft")
 
     async def list_all_storage_keys(self) -> set[str]:
         result = await self._session.execute(select(OrmMediaAsset.storage_key))

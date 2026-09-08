@@ -14,6 +14,7 @@ from jplearn_api.application.commands import (
     UpdateDraftCatalogItemCommand,
 )
 from jplearn_api.application.ports.repositories import CatalogQueryPort, CatalogRepository
+from jplearn_api.application.media_integrity import inspect_hls_bundle
 from jplearn_api.application.ports.storage import StoragePort
 from jplearn_api.application.ports.unit_of_work import AsyncUnitOfWork
 from jplearn_api.application.queries import (
@@ -23,6 +24,7 @@ from jplearn_api.application.queries import (
 )
 from jplearn_api.application.read_models import CatalogItemPublicDTO, CatalogItemStaffDTO
 from jplearn_api.domain.catalog import CatalogItem
+from jplearn_api.domain.content import ContentVersion
 from jplearn_api.domain.errors import (
     ConflictError,
     EntityNotFoundError,
@@ -98,6 +100,42 @@ async def handle_submit_qa(
             raise EntityNotFoundError("Catalog item not found")
         item.submit_for_qa()
         await uow.catalog.update(item)
+        draft_version = await uow.content.get_current_draft_by_catalog_item_id(cmd.item_id)
+        if draft_version is None and item.media:
+            draft_version = ContentVersion(
+                id=str(uuid4()), catalog_item_id=item.id,
+                version_number=await uow.content.get_max_version_number(item.id) + 1,
+            )
+            await uow.content.save_draft(draft_version)
+        if draft_version is not None:
+            if not item.media:
+                raise MediaInvariantError("Cannot submit scene content without media")
+            asset = sorted(item.media, key=lambda media: media.id)[0]
+            if draft_version.scenes and (asset.measured_duration_ms is None or not asset.source_sha256):
+                raise MediaInvariantError("Legacy media must be reuploaded and measured before scene QA")
+            if asset.measured_duration_ms is not None and any(
+                scene.end_time_seconds * 1000 > asset.measured_duration_ms for scene in draft_version.scenes
+            ):
+                raise InvalidDomainStateError("Scene end exceeds measured media duration")
+            draft_version.pin_source(
+                asset.id,
+                asset.storage_key,
+                asset.hls_url,
+                item.duration_seconds,
+                asset.hls_bundle_sha256,
+            )
+            draft_version.measured_duration_ms = asset.measured_duration_ms
+            draft_version.source_sha256 = asset.source_sha256
+            if asset.measured_duration_ms is not None:
+                draft_version.duration_source = "ffprobe"
+            if draft_version.scenes and item.duration_seconds:
+                for sc in draft_version.scenes:
+                    if sc.end_time_seconds > item.duration_seconds:
+                        raise InvalidDomainStateError(
+                            f"Scene end time ({sc.end_time_seconds}s) exceeds clip duration ({item.duration_seconds}s)"
+                        )
+            draft_version.freeze_for_qa()
+            await uow.content.update(draft_version)
         await uow.commit()
 
     return _to_staff_dto(item)
@@ -108,7 +146,25 @@ async def handle_publish(
     uow: AsyncUnitOfWork,
     storage: StoragePort,
 ) -> CatalogItemStaffDTO:
-    """Publish a level_qa item ensuring media presence and storage availability."""
+    """Inspect outside transactions, then revalidate the pinned identity under catalog lock."""
+    async with uow:
+        candidate = await uow.content.get_current_draft_by_catalog_item_id(cmd.item_id)
+        probe_key = candidate.media_storage_key if candidate else None
+        expected_checksum = candidate.source_sha256 if candidate else None
+        expected_hls_checksum = candidate.hls_bundle_sha256 if candidate else None
+        hls_asset_id = candidate.media_asset_id if candidate else None
+    inspection = None
+    if probe_key and expected_checksum:
+        try:
+            inspection = await storage.inspect_media(probe_key)
+        except (ValueError, KeyError, FileNotFoundError) as exc:
+            raise MediaInvariantError("QA source cannot be verified") from exc
+    hls_inspection = None
+    if hls_asset_id and expected_hls_checksum:
+        try:
+            hls_inspection = await inspect_hls_bundle(storage, hls_asset_id)
+        except (InvalidDomainStateError, ValueError, KeyError, FileNotFoundError) as exc:
+            raise MediaInvariantError("QA HLS bundle cannot be verified") from exc
     async with uow:
         item = await uow.catalog.get_by_id_for_update(cmd.item_id)
         if item is None:
@@ -129,6 +185,40 @@ async def handle_publish(
 
         item.publish()
         await uow.catalog.update(item)
+        draft_version = await uow.content.get_current_draft_by_catalog_item_id(cmd.item_id)
+        if draft_version is not None:
+            asset = next((a for a in item.media if a.id == draft_version.media_asset_id), None)
+            if asset is None:
+                raise ConflictError("QA source is missing; return to draft and submit again")
+            draft_version.assert_source(
+                asset.id,
+                asset.storage_key,
+                asset.hls_url,
+                item.duration_seconds,
+                asset.hls_bundle_sha256,
+            )
+            if draft_version.source_sha256 and (
+                inspection is None or draft_version.media_storage_key != probe_key
+                or inspection.sha256 != draft_version.source_sha256
+                or inspection.duration_ms != draft_version.measured_duration_ms
+            ):
+                raise ConflictError("Media bytes changed since QA; upload a new source and repeat QA")
+            if draft_version.hls_bundle_sha256 and (
+                hls_inspection is None
+                or hls_inspection.sha256 != draft_version.hls_bundle_sha256
+            ):
+                raise ConflictError("HLS bundle changed since QA; transcode and repeat QA")
+            if draft_version.scenes and draft_version.duration_source != "ffprobe":
+                raise MediaInvariantError("Legacy segmentation needs measured source and fresh QA")
+            if draft_version.scenes and item.duration_seconds:
+                for sc in draft_version.scenes:
+                    if sc.end_time_seconds > item.duration_seconds:
+                        raise InvalidDomainStateError(
+                            f"Scene end time ({sc.end_time_seconds}s) exceeds clip duration ({item.duration_seconds}s)"
+                        )
+            from datetime import datetime, timezone
+            draft_version.publish(datetime.now(timezone.utc))
+            await uow.content.update(draft_version)
         await uow.commit()
 
     return _to_staff_dto(item)
@@ -230,4 +320,3 @@ async def handle_update_draft_catalog_item(
         await uow.commit()
 
     return _to_staff_dto(result.item)
-

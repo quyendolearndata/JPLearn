@@ -1,0 +1,6 @@
+image_id=sha256:34d404df2ac79c2ebacb0b88d6a45aa55375315d6cd335a3aef46957c152865c
+platform=linux/arm64
+uid=10001
+ffprobe=ffprobe version 7.1.5-0+deb13u1 Copyright (c) 2007-2026 the FFmpeg developers
+schema_0018=37 True
+maintenance_inventory_help=PASS

@@ -18,7 +18,7 @@ from jplearn_api.application.ports.repositories import (
 )
 from jplearn_api.application.read_models import CatalogItemPublicDTO
 from jplearn_api.domain.catalog import CatalogItem as DomainCatalogItem, MediaRef
-from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem, Topic
+from jplearn_api.adapters.persistence.models import CatalogItem as OrmCatalogItem, ContentVersion as OrmContentVersion, Topic
 from jplearn_api.settings import Settings
 from jplearn_api.adapters.security.signed_url import sign_hls_url, sign_media_url
 
@@ -31,6 +31,9 @@ def _to_domain(orm_item: OrmCatalogItem) -> DomainCatalogItem:
             playback_url=m.playback_url,
             hls_url=m.hls_url,
             mime=m.mime,
+            measured_duration_ms=m.measured_duration_ms,
+            source_sha256=m.source_sha256,
+            hls_bundle_sha256=m.hls_bundle_sha256,
         )
         for m in orm_item.media
     ]
@@ -192,6 +195,27 @@ class SqlAlchemyCatalogRepository(CatalogRepository):
         topic = await self._session.get(Topic, topic_id)
         return topic is not None
 
+    async def list_published(
+        self,
+        ci_level: int | None = None,
+        topic_id: str | None = None,
+        limit: int = 100,
+        offset: int = 0,
+    ) -> list[DomainCatalogItem]:
+        stmt = (
+            select(OrmCatalogItem)
+            .options(selectinload(OrmCatalogItem.media))
+            .where(OrmCatalogItem.status == "published")
+            .order_by(OrmCatalogItem.id.asc())
+        )
+        if ci_level is not None:
+            stmt = stmt.where(OrmCatalogItem.ci_level == ci_level)
+        if topic_id is not None:
+            stmt = stmt.where(OrmCatalogItem.topic_id == topic_id)
+        stmt = stmt.limit(limit).offset(offset)
+        result = await self._session.execute(stmt)
+        return [_to_domain(row) for row in result.scalars().all()]
+
 
 
 class SqlAlchemyCatalogQueryAdapter(CatalogQueryPort):
@@ -223,7 +247,17 @@ class SqlAlchemyCatalogQueryAdapter(CatalogQueryPort):
         now_sec = int(time())
         items = []
         for item in result.scalars():
-            asset = item.media[0] if item.media else None
+            version = (await self._session.execute(
+                select(OrmContentVersion).where(
+                    OrmContentVersion.catalog_item_id == item.id,
+                    OrmContentVersion.is_published.is_(True),
+                ).order_by(OrmContentVersion.version_number.desc()).limit(1)
+            )).scalar_one_or_none()
+            asset = (
+                next((a for a in item.media if a.id == version.media_asset_id), None)
+                if version and version.media_asset_id
+                else (sorted(item.media, key=lambda a: a.id)[0] if item.media else None)
+            )
             playback_url = (
                 sign_media_url(
                     asset_id=asset.id,

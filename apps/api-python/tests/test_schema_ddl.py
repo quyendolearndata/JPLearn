@@ -28,7 +28,8 @@ from pg_harness import (
 )
 
 BASELINE_0001 = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-004-schema-baseline.json"
-BASELINE_HEAD = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-004-schema-head-0002.json"
+BASELINE_HEAD = Path(__file__).resolve().parents[3] / "docs" / "qa" / "adr-004-schema-head-0018.json"
+
 
 BANNED_COLUMNS = ("vocabulary_score", "grammar_lesson_id", "textbook_percent", "translation_vi")
 
@@ -137,8 +138,9 @@ def test_stamp_adopts_a_database_built_before_alembic(alembic_database: str) -> 
 
     # 4. Confirm data & schema properties
     ver, rev_val = asyncio.run(get_revision_and_data())
-    assert ver == "0002_session_idem_rev"
+    assert ver == "0018_hls_bundle_integrity"
     assert rev_val == 1, "Catalog items must have default revision=1 after migration 0002"
+
 
     # 5. Drop bookkeeping again to simulate adoption of a 0002 DB
     asyncio.run(drop_bookkeeping())
@@ -245,4 +247,3 @@ def test_destructive_downgrade_blocked_in_staging_and_production(
     monkeypatch.setenv("ALLOW_DESTRUCTIVE_DOWNGRADE", "true")
     downgrade("base", alembic_database)
     upgrade(alembic_database)
-

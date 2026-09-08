@@ -1,0 +1,80 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.27kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+#2 ...
+
+#3 [internal] load metadata for ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff
+#3 DONE 1.4s
+
+#2 [internal] load metadata for docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+#2 DONE 1.6s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 128B done
+#4 DONE 0.0s
+
+#5 FROM ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff
+#5 resolve ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff done
+#5 DONE 0.0s
+
+#6 [base  1/11] FROM docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea
+#6 resolve docker.io/library/python:3.12-slim@sha256:78387bc3881b8273120a12ebe6c1ab22b018ccc2c9adf565ae1ac9b536e184ea done
+#6 DONE 0.0s
+
+#7 [internal] load build context
+#7 transferring context: 40.23kB 0.0s done
+#7 DONE 0.0s
+
+#8 [base  6/11] COPY pyproject.toml uv.lock README.md ./
+#8 CACHED
+
+#9 [base  7/11] RUN uv sync --frozen --no-dev --no-install-project
+#9 CACHED
+
+#10 [base  3/11] RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
+#10 CACHED
+
+#11 [base  2/11] COPY --from=ghcr.io/astral-sh/uv:latest@sha256:8b940d3a9d65bed080436972241af2e21c84b5e8c9193f7014ed71479ee795ff /uv /uvx /bin/
+#11 CACHED
+
+#12 [base  4/11] WORKDIR /app
+#12 CACHED
+
+#13 [base  5/11] RUN useradd -u 10001 -d /app -s /bin/sh appuser
+#13 CACHED
+
+#14 [base  8/11] COPY alembic.ini ./alembic.ini
+#14 CACHED
+
+#15 [base  9/11] COPY src/ ./src/
+#15 DONE 0.1s
+
+#16 [base 10/11] RUN uv sync --frozen --no-dev
+#16 0.272    Building jplearn-api @ file:///app
+#16 1.804       Built jplearn-api @ file:///app
+#16 1.806 Prepared 1 package in 1.53s
+#16 1.810 Installed 1 package in 4ms
+#16 1.951 Bytecode compiled 977 files in 140ms
+#16 1.951  + jplearn-api==0.1.0 (from file:///app)
+#16 DONE 2.0s
+
+#17 [base 11/11] RUN mkdir -p /app/storage && chown -R appuser:appuser /app
+#17 DONE 1.7s
+
+#18 exporting to image
+#18 exporting layers
+#18 exporting layers 1.9s done
+#18 exporting manifest sha256:f5bbeccd1d0cba53f57f3e67b5d4e3871e02063dd09fe131018d52532414b265 done
+#18 exporting config sha256:5ba2062b8af6af71383761e4252c3ebbd20a3340662696aacbc4ab5800302079 done
+#18 exporting attestation manifest sha256:08b3cf62e865cda16fda84b96bdd893f7544425a8e11332e428686b3979e2c5e done
+#18 exporting manifest list sha256:34d404df2ac79c2ebacb0b88d6a45aa55375315d6cd335a3aef46957c152865c done
+#18 naming to docker.io/library/jplearn-api-remediation-check:local done
+#18 unpacking to docker.io/library/jplearn-api-remediation-check:local
+#18 unpacking to docker.io/library/jplearn-api-remediation-check:local 0.3s done
+#18 DONE 2.3s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/rvshul31ab1b5c5l7c7qjzxsa

@@ -22,6 +22,8 @@ dependencies = [
 jplearn-openapi-diff = "jplearn_api.tooling.openapi_diff:main"
 jplearn-migrate = "jplearn_api.entrypoints.cli.migrate:main"
 jplearn-seed = "jplearn_api.entrypoints.cli.seed:main"
+jplearn-maintenance = "jplearn_api.entrypoints.cli.maintenance:main"
+jplearn-ai-worker = "jplearn_api.entrypoints.cli.ai_worker:main"
 
 [dependency-groups]
 dev = [
@@ -40,6 +42,9 @@ packages = ["src/jplearn_api"]
 asyncio_mode = "auto"
 pythonpath = ["src"]
 testpaths = ["tests"]
+markers = [
+  "real_media_probe: requires local ffmpeg and ffprobe executables",
+]
 
 [tool.uv]
 package = true

@@ -18,7 +18,27 @@ from jplearn_api.entrypoints.http.errors import (
 )
 from jplearn_api.entrypoints.http.middleware import RequestIdMiddleware
 from jplearn_api.entrypoints.http.openapi import normalize_security_scheme_names
-from jplearn_api.entrypoints.http.routers import auth, catalog, flags, health, media, sessions
+from jplearn_api.entrypoints.http.routers import (
+    activity,
+    ai_attempts,
+    ai_usage,
+    auth,
+    capabilities,
+    catalog,
+    collections,
+    content,
+    content_jobs,
+    content_reports,
+    flags,
+    health,
+    media,
+    playbacks,
+    recommendations,
+    saved_scenes,
+    series,
+    sessions,
+    transcript,
+)
 from jplearn_api.settings import Settings, get_settings
 from jplearn_api.adapters.storage.local import LocalFilesystemStorage, StoragePort
 
@@ -77,7 +97,20 @@ def create_app(
     app.include_router(health.router)
     app.include_router(auth.router)
     app.include_router(flags.router)
+    app.include_router(capabilities.router)
     app.include_router(catalog.router)
+    app.include_router(content.router)
+    app.include_router(series.router)
+    app.include_router(saved_scenes.router)
+    app.include_router(collections.router)
+    app.include_router(content_reports.router)
+    app.include_router(playbacks.router)
+    app.include_router(activity.router)
+    app.include_router(recommendations.router)
+    app.include_router(transcript.router)
+    app.include_router(ai_usage.router)
+    app.include_router(ai_attempts.router)
+    app.include_router(content_jobs.router)
     app.include_router(sessions.router)
     app.include_router(media.router)
 
@@ -138,7 +171,7 @@ def create_app(
                                             "schema": {"$ref": "#/components/schemas/Http401Error"}
                                         }
                                     }
-                            elif code in ("400", "403", "404", "409", "500"):
+                            elif code in ("400", "403", "404", "409", "429", "500"):
                                 if "content" not in resp:
                                     resp["content"] = {
                                         "application/json": {
