@@ -172,6 +172,7 @@ wait_http "http://localhost:$WEB_PORT/login" "Next"
 
 echo "== 5/5 playwright $* =="
 cd "$WEB_WORKSPACE"
+JPLEARN_E2E_SOURCE_MP4="$SOURCE_MP4" \
 PLAYWRIGHT_TEST_BASE_URL="http://localhost:$WEB_PORT" \
 PLAYWRIGHT_OUTPUT_DIR="$RUN_DIR/test-results" \
 PLAYWRIGHT_HTML_REPORT="$RUN_DIR/playwright-report" \

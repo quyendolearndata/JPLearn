@@ -1,17 +1,10 @@
 import { test, expect, type APIRequestContext, type Page, type BrowserContext } from "@playwright/test";
-import fs from "node:fs";
-import path from "node:path";
+import { stockMp4Buffer } from "./stock-mp4";
 
 const SEED_PUBLISHED_ITEM = "00000000-0000-4000-8000-0000000000c1";
 
 function stockMp4(): Buffer {
-  const candidates = [
-    path.resolve(__dirname, "../../../media/stock/mp4/level-0-wash-hands.mp4"),
-    path.resolve(process.cwd(), "../../media/stock/mp4/level-0-wash-hands.mp4"),
-  ];
-  const hit = candidates.find((candidate) => fs.existsSync(candidate));
-  if (!hit) throw new Error("stock mp4 missing");
-  return fs.readFileSync(hit);
+  return stockMp4Buffer();
 }
 
 async function createPublishedCompanion(

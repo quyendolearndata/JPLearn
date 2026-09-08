@@ -394,3 +394,6 @@ def test_e2e_shell_accepts_mp4_override_and_fails_closed_when_missing() -> None:
     assert guard_start < docker_start
     assert 'echo "Source MP4 not found: $SOURCE_MP4" >&2' in script_text[guard_start:docker_start]
     assert "exit 2" in script_text[guard_start:docker_start]
+    assert "JPLEARN_E2E_SOURCE_MP4=\"$SOURCE_MP4\"" in script_text
+    spec_helper = (REPO_ROOT / "apps/web/e2e/stock-mp4.ts").read_text(encoding="utf-8")
+    assert "process.env.JPLEARN_E2E_SOURCE_MP4" in spec_helper
