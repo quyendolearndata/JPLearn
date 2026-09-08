@@ -4,7 +4,7 @@
 
 ### Trải nghiệm được nghiên cứu
 Tài liệu này đặc tả trải nghiệm **Vòng học CI & Video Player tương tác phân cảnh** (CI Learning Loop & Player Experience) trong sản phẩm JPLearn. Trải nghiệm này bao gồm:
-1. Phát video nhập ngữ liệu dễ hiểu (Comprehensible Input - CI) theo cấp độ (Cấp 0 – 5).
+1. Phát video nhập ngữ liệu dễ hiểu (Comprehensible Input - CI) theo cấp độ (Cấp 0 – 4).
 2. Điều hướng và lặp lại phân cảnh tình huống (Scene Replay & Auto-Loop).
 3. Đánh dấu lưu cảnh yêu thích (Scene Bookmarking) để tích lũy kho ngữ liệu cá nhân.
 4. Điều chỉnh tốc độ nghe (1.0x và 0.8x) mà không méo cao độ âm thanh.
@@ -23,7 +23,7 @@ Trình phát phiên học CI (màn hình `S-SESSION`, route `/session`) là **tr
 ## 2. Existing Product Context
 
 ### Điểm vào (Entry Points)
-* **Từ Catalog (`/catalog`):** Người học duyệt danh mục theo cấp độ CI (`ci_level` 0–5) hoặc chủ đề tình huống (`daily_home`, `shopping`, `food`,...). Bấm thẻ bài học hoặc nút "Học ngay" sẽ chuyển hướng đến `/session?item_id={catalog_item_id}`.
+* **Từ Catalog (`/catalog`):** Người học duyệt danh mục theo cấp độ CI (`ci_level` 0–4) hoặc chủ đề tình huống (`daily_home`, `shopping`, `food`,...). Bấm thẻ bài học hoặc nút "Học ngay" sẽ chuyển hướng đến `/session?item_id={catalog_item_id}`.
 * **Từ Landing Page (`/`):** Nút CTA "Bắt đầu học ngay" dẫn trực tiếp đến phiên học của nội dung mẫu hoặc nội dung đang học dở.
 * **Khôi phục phiên tự động (Session Recovery):** Khi người học mở lại `/session` sau khi đóng tab hoặc tải lại trang, hệ thống đọc `sessionStorage` và xác thực với backend để khôi phục phiên đang phát dở.
 
@@ -42,7 +42,7 @@ Catalog (/catalog)
 
 ### Thuật ngữ hiện hành (Existing Terminology)
 * **Phút CI / `minutes_comprehensible`:** Số phút tiếp xúc ngữ liệu dễ hiểu thực tế được server kiểm chứng qua cơ chế heartbeat định kỳ 15s (không tính thời gian pause, seek, buffer).
-* **Cấp CI / `ci_level`:** Thang đo từ Cấp 0 (hoàn toàn trực quan, từ đơn, cử chỉ rõ) đến Cấp 5 (ngôn ngữ tự nhiên tốc độ chuẩn).
+* **Cấp CI / `ci_level`:** Thang đo từ Cấp 0 (hoàn toàn trực quan, từ đơn, cử chỉ rõ) đến Cấp 4 (Extended — nhiều cảnh, đoạn ngắn; thư viện deferred).
 * **Phân cảnh / `scenes`:** Các trích đoạn tình huống có ý nghĩa trong một clip, được gắn nhãn thời gian bắt đầu (`start_time_seconds`), kết thúc (`end_time_seconds`), và tiêu đề tiếng Nhật (`title_jp`).
 * **Lưu cảnh / `saved_scenes`:** Hành động đánh dấu một phân cảnh vào bộ sưu tập cá nhân.
 * **Chủ đề tình huống / `topic`:** Ngữ cảnh đời sống thực tế (`daily_home`, `food`, `shopping`, `travel`, `culture`, `work`,...).
@@ -374,7 +374,7 @@ Những quyết định UX đã được chốt làm chuẩn đầu vào cho thi
 ## 11. Assumptions & Open Questions
 
 ### Đã xác nhận (Confirmed)
-* Phân loại cấp độ CI từ Cấp 0 đến Cấp 5 theo SRS và Pedagogy Bible.
+* Phân loại cấp độ CI từ Cấp 0 đến Cấp 4 theo SRS và Pedagogy Bible.
 * Backend đã hỗ trợ API phân cảnh (`/catalog/{id}/content` trả về `scenes`), API lưu cảnh (`PUT /me/saved-scenes/{scene_id}`), và API báo cáo lỗi phân cảnh (`POST /catalog/{id}/reports`).
 * Cơ chế theo dõi phiên và heartbeat định kỳ 15s đã được chứng minh qua PlaybackTracker và ADR-007.
 
