@@ -6,7 +6,7 @@ Backend là **FastAPI / Python 3.12** (`apps/api-python`), tuân thủ Clean Arc
 
 > [!IMPORTANT]
 > **Triết lý Sư phạm cốt lõi & Guard Anti-Textbook:**
-> JPLearn theo đuổi phương pháp thụ đắc ngôn ngữ tự nhiên thông qua ngữ cảnh và hình ảnh trực quan (Krashen CI). Toàn bộ mã nguồn, schema DDL, hợp đồng API và giao diện được bảo vệ nghiêm ngặt bằng script tự động `pnpm test:guard` (`scripts/assert-no-textbook.ts`): cấm tuyệt đối các tính năng sách giáo khoa truyền thống (dịch ngữ pháp, danh sách flashcard, điểm từ vựng riêng lẻ, cột dịch tiếng Việt trực diện).
+> JPLearn theo đuổi phương pháp thụ đắc ngôn ngữ tự nhiên thông qua ngữ cảnh và hình ảnh trực quan (Krashen CI). Guard Anti-Textbook có ba lớp: (1) `pnpm test:guard`; (2) `tests/test_schema_ddl.py`; (3) `tests/test_architecture_guard.py` và E2E `shell.spec.ts`.
 
 ---
 
