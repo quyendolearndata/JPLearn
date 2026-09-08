@@ -18,6 +18,11 @@ if [[ -z "${JPLEARN_E2E_SUPERVISED:-}" ]]; then
 fi
 
 VENV_PY="$REPO/apps/api-python/.venv/bin/python"
+SOURCE_MP4="${JPLEARN_E2E_SOURCE_MP4:-$REPO/media/stock/mp4/level-0-wash-hands.mp4}"
+if [[ ! -f "$SOURCE_MP4" ]]; then
+  echo "Source MP4 not found: $SOURCE_MP4" >&2
+  exit 2
+fi
 
 get_free_port() {
   python3 -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()'
@@ -48,7 +53,6 @@ ln -s "$REPO/apps/web/node_modules" "$WEB_WORKSPACE/node_modules"
 API_PID=""
 WEB_PID=""
 ITEM_ID="00000000-0000-4000-8000-0000000000c1" # seed-ci0-daily-home (draft 30s)
-SOURCE_MP4="$REPO/media/stock/mp4/level-0-wash-hands.mp4"
 
 CLEANUP_DONE=0
 cleanup() {
