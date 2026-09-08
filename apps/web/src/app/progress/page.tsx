@@ -47,6 +47,7 @@ export default function ProgressPage() {
   const [, setCapabilities] = useState<Capabilities | null>(null);
 
   const requestGateRef = useRef(new RequestOwnershipGate());
+  const loadedIdentityRef = useRef<AuthIdentity | null>(null);
 
   const owns = useCallback((ticket: RequestTicket) => (
     requestGateRef.current.isCurrent(ticket, currentAuthIdentity())
@@ -69,6 +70,12 @@ export default function ProgressPage() {
 
   const loadData = useCallback(async () => {
     const identity = currentAuthIdentity();
+    const previous = loadedIdentityRef.current;
+    if (previous?.token !== identity?.token || previous?.userId !== identity?.userId) {
+      requestGateRef.current.changeAuthEpoch();
+      loadedIdentityRef.current = identity;
+      clearLearnerState();
+    }
     if (!identity) {
       requestGateRef.current.invalidateScope(PROGRESS_READ_SCOPE);
       clearLearnerState();

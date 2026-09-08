@@ -99,3 +99,33 @@ test("dispose invalidates slow JSON parsing and capability work", () => {
   assert.equal(gate.isCurrent(capability, accountA), false);
   assert.equal(gate.isCurrent(recommendations, accountA), false);
 });
+
+test("Strict Mode reactivation accepts new work but never revives disposed tickets", () => {
+  const gate = new RequestOwnershipGate();
+  const old = gate.next("capabilities", accountA);
+  gate.dispose();
+  gate.activate();
+  const fresh = gate.next("capabilities", accountA);
+  assert.equal(gate.isCurrent(old, accountA), false);
+  assert.equal(gate.isCurrent(fresh, accountA), true);
+});
+
+for (const scope of ["capabilities", "recommendations", "history-delete"]) {
+  test(`${scope}: delayed body completion after logout cannot publish state`, async () => {
+    const gate = new RequestOwnershipGate();
+    const body = deferred<string>();
+    const ticket = gate.next(scope, accountA);
+    let state = "empty";
+    const parsing = (async () => {
+      const parsed = await body.promise;
+      if (gate.isCurrent(ticket, accountA)) state = parsed;
+    })();
+    gate.changeAuthEpoch();
+    gate.next(scope, accountB);
+    gate.changeAuthEpoch();
+    gate.next(scope, accountA);
+    body.resolve("old-account-body");
+    await parsing;
+    assert.equal(state, "empty");
+  });
+}
