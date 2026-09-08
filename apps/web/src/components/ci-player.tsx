@@ -255,7 +255,7 @@ export function CiPlayer({
         controls
         playsInline
         tabIndex={-1}
-        style={{ width: "100%", maxWidth: "40rem" }}
+        style={{ display: "block", width: "100%", aspectRatio: "16 / 9", objectFit: "contain", background: "#17261e" }}
       />
     </div>
   );

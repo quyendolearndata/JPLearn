@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { CatalogItemPublic } from "@jplearn/domain";
 import { api, parseApiResponse } from "../../lib/api";
 import { getToken } from "../../lib/auth-storage";
+import { TopicArt } from "../../components/topic-art";
 
 const TOPIC_LABELS: Record<string, string> = {
   daily_home: "Đời sống hàng ngày",
@@ -26,6 +27,13 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
+
+  const visibleItems = items.filter((item) =>
+    (TOPIC_LABELS[item.topic_id] ?? item.topic_id)
+      .toLocaleLowerCase("vi")
+      .includes(query.toLocaleLowerCase("vi"))
+  );
 
   const fetchCatalog = useCallback(async (level: number | null) => {
     setLoading(true);
@@ -64,18 +72,39 @@ export default function CatalogPage() {
 
   return (
     <section>
-      <div className="catalog-header-bar">
+      <div className="ab-hero catalog-welcome">
+        <div className="ab-hero-copy">
+          <p className="eyebrow">Nghe · Quan sát · Thấu hiểu</p>
+          <h2>Một chút tiếng Nhật.<br/>Một điều mới mỗi ngày.</h2>
+          <p>Chọn một câu chuyện vừa sức, bắt đầu từ điều bạn tò mò.</p>
+          <a href="#catalog-library" className="btn-cta btn-primary">Khám phá video ↗</a>
+        </div>
+        <div className="ab-hero-art">
+          <TopicArt />
+        </div>
+      </div>
+
+      <div className="catalog-header-bar" id="catalog-library">
         <div>
           <h1>Catalog</h1>
           <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>
-            Khám phá các video tiếng Nhật Comprehensible Input được phân cấp chuẩn khoa học.
+            Hôm nay, bạn muốn khám phá điều gì?
           </p>
         </div>
+        <input
+          type="search"
+          className="catalog-search"
+          aria-label="Tìm chủ đề"
+          placeholder="Tìm một chủ đề…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
 
         <div className="filter-pills" role="group" aria-label="Lọc theo cấp độ CI">
           <button
             type="button"
             className={`filter-pill ${selectedLevel === null ? "active" : ""}`}
+            aria-pressed={selectedLevel === null}
             onClick={() => setSelectedLevel(null)}
           >
             Tất cả cấp độ
@@ -85,6 +114,7 @@ export default function CatalogPage() {
               key={level}
               type="button"
               className={`filter-pill ${selectedLevel === level ? "active" : ""}`}
+              aria-pressed={selectedLevel === level}
               onClick={() => setSelectedLevel(level)}
             >
               Cấp {level}
@@ -120,27 +150,27 @@ export default function CatalogPage() {
         </div>
       ) : null}
 
-      {!loading && !errorMessage && items.length === 0 ? (
+      {!loading && !errorMessage && visibleItems.length === 0 ? (
         <div style={{ padding: "3rem 1rem", textAlign: "center", background: "#ffffff", border: "2px solid var(--charcoal)", borderRadius: "var(--radius-md)", boxShadow: "var(--shadow-solid)" }}>
           <h3>Chưa có nội dung published</h3>
           <p style={{ color: "var(--text-muted)", marginTop: "0.5rem" }}>
             {selectedLevel !== null
               ? `Hiện chưa có bài học nào ở Cấp ${selectedLevel}. Vui lòng chọn cấp độ khác.`
-              : "Hiện tại chưa có clip nào trong danh mục."}
+              : "Hiện tại chưa có clip nào phù hợp với tìm kiếm của bạn."}
           </p>
         </div>
       ) : null}
 
       <h2 className="sr-only">Danh sách bài học CI</h2>
 
-      {!loading && items.length > 0 ? (
+      {!loading && visibleItems.length > 0 ? (
         <div className="catalog-grid">
-          {items.map((item) => {
+          {visibleItems.map((item) => {
             const topicLabel = TOPIC_LABELS[item.topic_id] ?? item.topic_id;
             const visualLabel = VISUAL_SUPPORT_LABELS[item.visual_support] ?? item.visual_support;
 
             return (
-              <article key={item.id} className="catalog-card">
+              <article key={item.id} data-item-id={item.id} className="catalog-card">
                 <div>
                   <div className="card-top">
                     <span className="card-level-badge">Cấp {item.ci_level}</span>
@@ -153,7 +183,7 @@ export default function CatalogPage() {
 
                   <div className="card-meta">
                     <span title="Thông số kỹ thuật">
-                      {item.topic_id} · {item.media_type} · {item.duration_seconds}s
+                      {item.duration_seconds} giây
                     </span>
                     <span>{visualLabel}</span>
                   </div>
@@ -163,7 +193,7 @@ export default function CatalogPage() {
                   <Link
                     href={`/session?item_id=${item.id}`}
                     className="btn-cta btn-primary"
-                    style={{ width: "100%", boxSizing: "border-box" }}
+                    style={{ width: "100%", boxSizing: "border-box", textAlign: "center", display: "block" }}
                   >
                     Vào học bài này
                   </Link>

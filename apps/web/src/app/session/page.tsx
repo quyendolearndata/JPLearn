@@ -947,7 +947,9 @@ function SessionContent() {
   }, [loadClip]);
 
   return (
-    <section className="login-card" style={{ maxWidth: "720px" }}>
+    <section className="session-panel">
+      <Link className="back-link" href="/catalog">← Về thư viện</Link>
+      <p className="eyebrow">Một khoảnh khắc đời thường</p>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "0.5rem" }}>
         <h1>Phiên</h1>
         {sessionId && (

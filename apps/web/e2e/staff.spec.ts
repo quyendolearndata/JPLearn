@@ -66,7 +66,7 @@ test.describe("Staff CMS T-CMS-E2E-001", () => {
     await teacherCtx.close();
 
     await learner.goto("/catalog");
-    await expect(learner.locator(`a[href*="${itemId}"]`)).toHaveCount(0);
+    await expect(learner.locator(`[data-item-id="${itemId}"]`)).toHaveCount(0);
 
     const adminCtx = await browser.newContext();
     const admin = await adminCtx.newPage();
@@ -83,13 +83,13 @@ test.describe("Staff CMS T-CMS-E2E-001", () => {
     await expect(admin.getByText("Đã xuất bản (published)", { exact: true })).toBeVisible();
 
     await learner.goto("/catalog");
-    await expect(learner.locator(`a[href*="${itemId}"]`)).toBeVisible();
+    await expect(learner.locator(`[data-item-id="${itemId}"]`)).toBeVisible();
     await expect(learner.getByText(title)).toHaveCount(0);
 
     await admin.getByRole("button", { name: "Gỡ xuất bản (Về nháp)" }).click();
     await expect(admin.getByText("Bản nháp (draft)", { exact: true })).toBeVisible();
     await learner.goto("/catalog");
-    await expect(learner.locator(`a[href*="${itemId}"]`)).toHaveCount(0);
+    await expect(learner.locator(`[data-item-id="${itemId}"]`)).toHaveCount(0);
 
     await adminCtx.close();
     await learnerCtx.close();

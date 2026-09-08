@@ -417,8 +417,20 @@ test.describe("Session recovery T-SES-REC-001", () => {
     await page.reload();
     await statusRequested;
 
-    const otherPage = await context.newPage();
-    const userTwo = await register(otherPage);
+    const otherContext = await context.browser()!.newContext();
+    const otherPage = await otherContext.newPage();
+    await otherPage.goto(new URL("/login", page.url()).toString());
+    const emailTwo = `switch${Date.now()}@example.com`;
+    await otherPage.getByLabel("Email").fill(emailTwo);
+    await otherPage.getByLabel("Mật khẩu").fill("password10");
+    await otherPage.getByRole("button", { name: "Đăng ký" }).click();
+    await expect(otherPage).not.toHaveURL(/\/login$/);
+    const userTwo = await otherPage.evaluate(() => ({
+      token: localStorage.getItem("jplearn.access_token")!,
+      userId: JSON.parse(localStorage.getItem("jplearn.user")!).id,
+      email: JSON.parse(localStorage.getItem("jplearn.user")!).email,
+    }));
+    await otherContext.close();
     await page.evaluate(({ token, user }) => {
       localStorage.setItem("jplearn.access_token", token);
       localStorage.setItem("jplearn.user", JSON.stringify(user));
