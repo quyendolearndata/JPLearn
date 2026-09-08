@@ -1,5 +1,8 @@
 # Evidence — Web learning-loop review fixes — 2026-09-08
 
+Đây là evidence lịch sử ở `18c9e02`. Kết quả mới nhất ở `f446c88` nằm trong
+[followup](followup/README.md); ảnh dưới đây thuộc lần kiểm chứng trước.
+
 Nguồn được kiểm chứng: `18c9e02d1b984fa3786bd400a872302b37cdd872`, tree
 `9cecad93cd066fed958bc06212a188048fccdc9a`. Base `origin/main` đã fetch lại là
 `908b6bbf16a94b9c8e5c0b8bc15c714763011757` và là tổ tiên của candidate.
@@ -23,7 +26,7 @@ thúc phiên legacy thật đủ hơn 60 giây, rồi so sánh số progress/act
 DELETE 202. History được kiểm tra ở projection API; evidence này không khẳng định job
 đã xóa vật lý record.
 
-Ảnh current candidate:
+Ảnh candidate `18c9e02`:
 
 - [Pending goal](pending-goal.png)
 - [Goal conflict 409](goal-conflict.png)

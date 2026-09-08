@@ -130,7 +130,7 @@ Web và ứng dụng di động Mobile kết nối tới API qua biến `NEXT_PU
 
 ### Dữ liệu thử nghiệm cục bộ (Local Pilot Catalog)
 
-Sau khi chạy seed dữ liệu cục bộ (`pnpm seed`), môi trường phát triển được nạp **10 clip mẫu có bản quyền âm thanh tiếng Nhật tự nhiên** (giọng Kyoko TTS, cấp độ CI Level 0 & Level 1) kèm ảnh bìa chủ đề. Với bản clone mới tinh chưa chạy seed, Catalog sẽ hiển thị trạng thái chờ nội dung.
+Lệnh `pnpm db:seed` tạo topics, feature flags và hai catalog item ở trạng thái `draft` khi có tài khoản admin làm người tạo. Seed không kèm media và không tự publish. Để học viên thấy nội dung, cần upload media rồi thực hiện submit QA → review approve → publish qua CMS. Bộ 10 clip Kyoko TTS trong evidence demo cũ là dữ liệu chuẩn bị riêng, không phải kết quả của lệnh seed; TTS là giọng tổng hợp và evidence đó không chứng nhận quyền sử dụng media.
 - Đăng nhập tài khoản bất kỳ trên Web (`http://localhost:3000`) để trải nghiệm Catalog và phiên học trực tiếp.
 - Người dùng có quyền `teacher` hoặc `admin` có thể truy cập `http://localhost:3000/staff` để quản lý danh mục bài học và quy trình kiểm duyệt chất lượng.
 

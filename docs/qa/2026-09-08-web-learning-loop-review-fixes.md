@@ -1,6 +1,6 @@
 # Web learning-loop review fixes — 2026-09-08
 
-Trạng thái: **Engineering PASS** trên source commit `18c9e02`, tree `9cecad9`.
+Trạng thái: **Engineering PASS** trên source commit `f446c88`, tree `cb94a5c`.
 Candidate `codex/web-ui-learning-loop` kế thừa `origin/main` `908b6bb`; remote ref đã
 được fetch lại trước khi chốt và base này vẫn là tổ tiên trực tiếp của candidate.
 
@@ -31,25 +31,31 @@ PostgreSQL test tách biệt; không thay API, schema hay backend semantics.
   và reload.
 - Race filter dùng response barrier để CI0 trả sau CI4. Các ca capability off/403,
   conflict 409, HTTP 500 và offline kiểm tra thông báo/fallback cụ thể.
+- Follow-up sửa Progress khi tài khoản trong storage thay đổi và cửa sổ nhận focus:
+  xóa state/busy của người cũ và tăng auth epoch trước khi tải dữ liệu mới. Thêm năm
+  ca race E2E mỗi engine: PUT, refresh sau 409, DELETE trả chậm khi đổi A → B,
+  GET history cũ sau DELETE 202 và mất token trước mutation.
 
 ## Kết quả kiểm chứng cuối
 
 | Hạng mục | Kết quả |
 |---|---:|
-| Domain test | 3/3 PASS |
-| Web typecheck + unit | 50/50 PASS |
+| Domain test | 3/3 PASS ở `18c9e02`; không đổi domain, không chạy lại |
+| Web typecheck + unit | 54/54 PASS |
 | Next.js production build | PASS, 10 route |
 | Architecture guard | 20/20 PASS |
 | Anti-textbook guard | PASS |
-| Full E2E Chromium + WebKit | 96/96 PASS, 48 mỗi engine |
+| Full E2E Chromium + WebKit | 106/106 PASS, 53 mỗi engine |
 | Capability off Chromium + WebKit | 16/16 PASS, 8 mỗi engine |
 
-Raw log, command, SHA và ảnh current candidate nằm tại
-[evidence/web-learning-loop-review-fixes-20260908](evidence/web-learning-loop-review-fixes-20260908/README.md).
+Log, command và SHA cuối nằm tại
+[evidence follow-up](evidence/web-learning-loop-review-fixes-20260908/followup/README.md).
+Ảnh pending goal/409 và log lần trước giữ tại [evidence `18c9e02`](evidence/web-learning-loop-review-fixes-20260908/README.md);
+không dùng ảnh cũ chứng nhận race mới. Backend/schema không đổi, không chạy lại toàn bộ API suite.
 
 ## Lịch sử candidate
 
-Source đã kiểm chứng có 7 commit sau main:
+Source đã kiểm chứng có 9 commit sau main:
 
 1. `2d145e0` — UI A+B và accessible shell.
 2. `578f410` — tích hợp learning-loop API.
@@ -58,14 +64,19 @@ Source đã kiểm chứng có 7 commit sau main:
 5. `f3be90b` — cấu hình runner và assertion learning-loop ban đầu.
 6. `1693379` — cô lập request theo auth và giữ đúng ngày policy.
 7. `18c9e02` — E2E playback credit và deletion invariants.
+8. `931b458` — báo cáo/evidence vòng kiểm chứng trước.
+9. `f446c88` — reset identity khi focus và regression race bổ sung.
 
-Commit evidence sau báo cáo này là commit thứ tám và chỉ chứa plan/docs/evidence; source tree
-được kiểm chứng không đổi.
+Commit evidence tiếp theo chỉ chứa README, walkthrough, plan/docs/evidence; mã nguồn
+và test được kiểm chứng không đổi.
 
 ## Giới hạn
 
 - Chromium và WebKit là browser engine tự động; chưa thay thế nghiệm thu Safari,
   iPhone hoặc iPad vật lý và chưa chứng nhận production.
+- Race UI dùng response barrier/mock để kiểm tra state, tách khỏi test hạch toán thật.
+  A → B → A, body deferred, unmount và Strict Mode kiểm tra ở ownership-gate unit;
+  chưa kiểm tra browser streaming JSON hoặc thiết bị thật cho các ca này.
 - DELETE được chứng minh ẩn history ở projection ngay lập tức và giữ progress/activity.
   Lượt này không chờ worker để khẳng định record đã bị xóa vật lý.
 - Checkout gốc còn 28 status entry và được giữ nguyên. Backup

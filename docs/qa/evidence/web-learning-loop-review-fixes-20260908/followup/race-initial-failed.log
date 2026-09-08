@@ -1,0 +1,71 @@
+== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260908173507_2883] ==
+== 2/5 FastAPI :53059 ==
+== 3/5 seed nội dung published + HLS thật ==
+   published item 00000000-0000-4000-8000-0000000000c1, asset 576f5fb2-5f0d-4b44-8add-19d2d05da693 (+hls)
+== 3b/5 teacher E2E account (isolated DB only) ==
+granted teacher to teacher@e2e.local
+== 4/5 web :53060 → API :53059 [workspace=/tmp/jplearn-e2e-20260908173507_2883/web] ==
+== 5/5 playwright e2e/learning-races.spec.ts ==
+
+Running 4 tests using 2 workers
+
+(node:92616) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:92615) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/learning-races.spec.ts:23:5 › FR-HIS-001: delayed history GET cannot restore rows after DELETE 202 (30.0s)
+  ✘  1 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/learning-races.spec.ts:23:5 › FR-HIS-001: delayed history GET cannot restore rows after DELETE 202 (30.0s)
+(node:92746) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:92748) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  3 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/learning-races.spec.ts:64:5 › FR-ID-002: losing the token before a mutation never leaves controls busy (416ms)
+  ✓  4 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/learning-races.spec.ts:64:5 › FR-ID-002: losing the token before a mutation never leaves controls busy (699ms)
+
+
+  1) [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/learning-races.spec.ts:23:5 › FR-HIS-001: delayed history GET cannot restore rows after DELETE 202
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Xóa lịch sử', exact: true })
+
+
+      49 |   await captured.promise;
+      50 |   page.once("dialog", (dialog) => void dialog.accept());
+    > 51 |   await page.getByRole("button", { name: "Xóa lịch sử", exact: true }).click();
+         |                                                                        ^
+      52 |   await expect(page.getByText(/Đã yêu cầu xóa lịch sử xem/)).toBeVisible();
+      53 |   await expect(page.getByText("Đang tải tiến độ…")).toHaveCount(0);
+      54 |   const staleResponse = page.waitForResponse("**/me/watch-history?limit=5");
+        at <candidate-worktree>/apps/web/e2e/learning-races.spec.ts:51:72
+
+    Error Context: ../../../../tmp/jplearn-e2e-20260908173507_2883/test-results/learning-races-FR-HIS-001--a05d5-store-rows-after-DELETE-202-chromium/error-context.md
+
+  2) [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/learning-races.spec.ts:23:5 › FR-HIS-001: delayed history GET cannot restore rows after DELETE 202
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for getByRole('button', { name: 'Xóa lịch sử', exact: true })
+
+
+      49 |   await captured.promise;
+      50 |   page.once("dialog", (dialog) => void dialog.accept());
+    > 51 |   await page.getByRole("button", { name: "Xóa lịch sử", exact: true }).click();
+         |                                                                        ^
+      52 |   await expect(page.getByText(/Đã yêu cầu xóa lịch sử xem/)).toBeVisible();
+      53 |   await expect(page.getByText("Đang tải tiến độ…")).toHaveCount(0);
+      54 |   const staleResponse = page.waitForResponse("**/me/watch-history?limit=5");
+        at <candidate-worktree>/apps/web/e2e/learning-races.spec.ts:51:72
+
+    Error Context: ../../../../tmp/jplearn-e2e-20260908173507_2883/test-results/learning-races-FR-HIS-001--a05d5-store-rows-after-DELETE-202-webkit/error-context.md
+
+  2 failed
+    [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/learning-races.spec.ts:23:5 › FR-HIS-001: delayed history GET cannot restore rows after DELETE 202
+    [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/learning-races.spec.ts:23:5 › FR-HIS-001: delayed history GET cannot restore rows after DELETE 202
+  2 passed (31.8s)
+== Cleaning up E2E resources [run=20260908173507_2883] ==
+== E2E run finished (exit 1). Evidence preserved at: /tmp/jplearn-e2e-20260908173507_2883 ==
