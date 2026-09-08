@@ -12,33 +12,24 @@ import type {
   Capabilities,
 } from "@jplearn/domain";
 import { api, parseApiResponse } from "../../lib/api";
-import { getToken, subscribeAuth } from "../../lib/auth-storage";
+import { getToken, getUser, subscribeAuth } from "../../lib/auth-storage";
+import {
+  formatCalendarDate,
+  formatTimestampInTimeZone,
+  sevenDayCalendarRange,
+} from "../../lib/learning-calendar";
+import {
+  AuthIdentity,
+  RequestOwnershipGate,
+  RequestTicket,
+} from "../../lib/request-ownership";
 
-function formatDateInTimezone(date: Date, timeZone: string): string {
-  try {
-    return new Intl.DateTimeFormat("en-CA", {
-      timeZone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    }).format(date);
-  } catch {
-    return date.toISOString().slice(0, 10);
-  }
-}
+const PROGRESS_READ_SCOPE = "progress-read";
 
-function formatDisplayDate(dateStr: string, timeZone: string): string {
-  try {
-    const d = new Date(dateStr);
-    return new Intl.DateTimeFormat("vi-VN", {
-      timeZone,
-      weekday: "short",
-      day: "numeric",
-      month: "numeric",
-    }).format(d);
-  } catch {
-    return dateStr;
-  }
+function currentAuthIdentity(): AuthIdentity | null {
+  const token = getToken();
+  const user = getUser();
+  return token && user?.id ? { token, userId: user.id } : null;
 }
 
 export default function ProgressPage() {
@@ -47,208 +38,221 @@ export default function ProgressPage() {
   const [activity, setActivity] = useState<LearnerActivityResponsePublic | null>(null);
   const [watchHistory, setWatchHistory] = useState<WatchHistoryItemPublic[]>([]);
   const [deletionNotice, setDeletionNotice] = useState<string | null>(null);
-  const [deletionCutoff, setDeletionCutoff] = useState<string | null>(null);
   const [isDeletingHistory, setIsDeletingHistory] = useState(false);
   const [updatingGoal, setUpdatingGoal] = useState(false);
   const [goalError, setGoalError] = useState<string | null>(null);
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
+  const [, setCapabilities] = useState<Capabilities | null>(null);
 
-  const progressGenRef = useRef(0);
+  const requestGateRef = useRef(new RequestOwnershipGate());
+
+  const owns = useCallback((ticket: RequestTicket) => (
+    requestGateRef.current.isCurrent(ticket, currentAuthIdentity())
+  ), []);
+
+  const clearLearnerState = useCallback(() => {
+    setProgress(null);
+    setPreferences(null);
+    setActivity(null);
+    setWatchHistory([]);
+    setDeletionNotice(null);
+    setIsDeletingHistory(false);
+    setUpdatingGoal(false);
+    setGoalError(null);
+    setHistoryError(null);
+    setCapabilities(null);
+    setError("");
+    setLoading(false);
+  }, []);
 
   const loadData = useCallback(async () => {
-    const token = getToken();
-    const gen = ++progressGenRef.current;
-
-    if (!token) {
-      setLoading(false);
-      setProgress(null);
-      setPreferences(null);
-      setActivity(null);
-      setWatchHistory([]);
-      setDeletionNotice(null);
-      setGoalError(null);
-      setHistoryError(null);
+    const identity = currentAuthIdentity();
+    if (!identity) {
+      requestGateRef.current.invalidateScope(PROGRESS_READ_SCOPE);
+      clearLearnerState();
       return;
     }
+    const ticket = requestGateRef.current.next(PROGRESS_READ_SCOPE, identity);
 
     setLoading(true);
     setError("");
 
     try {
-      // 0. Capabilities (non-fatal)
       try {
-        const resCap = await api("/capabilities", { token });
-        if (resCap.ok && gen === progressGenRef.current) {
+        const resCap = await api("/capabilities", { token: identity.token });
+        if (!owns(ticket)) return;
+        if (resCap.ok) {
           const capData = await parseApiResponse<Capabilities>(resCap);
+          if (!owns(ticket)) return;
           setCapabilities(capData);
         }
       } catch {
-        // Non-fatal
+        if (!owns(ticket)) return;
+        setCapabilities(null);
       }
 
-      // 1. Baseline Progress
-      const resProg = await api("/progress", { token });
-      if (gen !== progressGenRef.current) return;
+      const resProg = await api("/progress", { token: identity.token });
+      if (!owns(ticket)) return;
 
       if (resProg.ok) {
         const data = await parseApiResponse<LearnerProgress>(resProg);
+        if (!owns(ticket)) return;
         setProgress(data);
       } else {
         setError("Không thể tải thông tin tiến độ.");
       }
 
-      // 2. Learning Preferences (PR5)
-      let currentTz = "Asia/Tokyo";
+      let currentTimeZone: string | null = null;
       try {
-        const resPref = await api("/me/learning-preferences", { token });
-        if (gen === progressGenRef.current && resPref.ok) {
+        const resPref = await api("/me/learning-preferences", { token: identity.token });
+        if (!owns(ticket)) return;
+        if (resPref.ok) {
           const prefData = await parseApiResponse<LearningPreferencesPublic>(resPref);
+          if (!owns(ticket)) return;
           setPreferences(prefData);
-          if (prefData.current_policy?.timezone) {
-            currentTz = prefData.current_policy.timezone;
-          } else if (prefData.timezone) {
-            currentTz = prefData.timezone;
+          currentTimeZone = prefData.current_policy?.timezone ?? prefData.timezone ?? null;
+        }
+      } catch {
+        if (!owns(ticket)) return;
+      }
+
+      if (currentTimeZone) {
+        try {
+          const range = sevenDayCalendarRange(new Date(), currentTimeZone);
+          const resAct = await api(`/me/activity?from=${range.from}&to=${range.to}`, { token: identity.token });
+          if (!owns(ticket)) return;
+          if (resAct.ok) {
+            const actData = await parseApiResponse<LearnerActivityResponsePublic>(resAct);
+            if (!owns(ticket)) return;
+            setActivity(actData);
           }
+        } catch {
+          if (!owns(ticket)) return;
         }
-      } catch {
-        // Non-fatal
+      } else if (owns(ticket)) {
+        setActivity(null);
       }
 
-      if (gen !== progressGenRef.current) return;
-
-      // 3. 7-day Activity computed in policy timezone
       try {
-        const now = new Date();
-        const past = new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
-        const fromStr = formatDateInTimezone(past, currentTz);
-        const toStr = formatDateInTimezone(now, currentTz);
-
-        const resAct = await api(`/me/activity?from=${fromStr}&to=${toStr}`, { token });
-        if (gen === progressGenRef.current && resAct.ok) {
-          const actData = await parseApiResponse<LearnerActivityResponsePublic>(resAct);
-          setActivity(actData);
-        }
-      } catch {
-        // Non-fatal
-      }
-
-      if (gen !== progressGenRef.current) return;
-
-      // 4. Watch History (PR5)
-      try {
-        const resHist = await api("/me/watch-history?limit=5", { token });
-        if (gen === progressGenRef.current && resHist.ok) {
+        const resHist = await api("/me/watch-history?limit=5", { token: identity.token });
+        if (!owns(ticket)) return;
+        if (resHist.ok) {
           const histData = await parseApiResponse<WatchHistoryResponsePublic>(resHist);
-          const rawItems = histData?.items || [];
-          // Filter out items hidden by an in-session deletion cutoff
-          if (deletionCutoff) {
-            const cutoffMs = new Date(deletionCutoff).getTime();
-            setWatchHistory(rawItems.filter((it) => new Date(it.created_at).getTime() > cutoffMs));
-          } else {
-            setWatchHistory(rawItems);
-          }
+          if (!owns(ticket)) return;
+          setWatchHistory(histData?.items ?? []);
         }
       } catch {
-        // Non-fatal
+        if (!owns(ticket)) return;
       }
     } catch {
-      if (gen === progressGenRef.current) {
+      if (owns(ticket)) {
         setError("Lỗi kết nối máy chủ khi lấy tiến độ.");
       }
     } finally {
-      if (gen === progressGenRef.current) {
+      if (owns(ticket)) {
         setLoading(false);
       }
     }
-  }, [deletionCutoff]);
+  }, [clearLearnerState, owns]);
 
   const handleUpdateGoal = async (newGoalMinutes: number) => {
     if (!preferences) return;
+    const identity = currentAuthIdentity();
+    if (!identity) {
+      setUpdatingGoal(false);
+      return;
+    }
+    const ticket = requestGateRef.current.next("goal-update", identity);
     setUpdatingGoal(true);
     setGoalError(null);
-
-    const token = getToken();
-    if (!token) return;
 
     try {
       const res = await api("/me/learning-preferences", {
         method: "PUT",
-        token,
+        token: identity.token,
         body: JSON.stringify({
           expected_revision: preferences.revision,
           daily_goal_minutes: newGoalMinutes,
-          preferred_topic_ids: preferences.preferred_topic_ids,
-          timezone: preferences.current_policy?.timezone || preferences.timezone,
         }),
       });
+      if (!owns(ticket)) return;
 
       if (res.ok) {
         const updated = await parseApiResponse<LearningPreferencesPublic>(res);
+        if (!owns(ticket)) return;
         setPreferences(updated);
-        // Refresh activity to reflect new goal
         void loadData();
       } else if (res.status === 409) {
         setGoalError("Mục tiêu đã được cập nhật ở nơi khác (xung đột phiên bản). Vui lòng thử lại sau khi dữ liệu được làm mới.");
-        // Fetch fresh preferences revision
         try {
-          const freshRes = await api("/me/learning-preferences", { token });
+          const freshRes = await api("/me/learning-preferences", { token: identity.token });
+          if (!owns(ticket)) return;
           if (freshRes.ok) {
             const freshPref = await parseApiResponse<LearningPreferencesPublic>(freshRes);
+            if (!owns(ticket)) return;
             setPreferences(freshPref);
           }
         } catch {
-          // Non-fatal
+          if (!owns(ticket)) return;
         }
       } else {
         setGoalError(`Không thể cập nhật mục tiêu (mã phản hồi: ${res.status}).`);
       }
     } catch {
-      setGoalError("Lỗi mạng khi cập nhật mục tiêu học.");
+      if (owns(ticket)) setGoalError("Lỗi mạng khi cập nhật mục tiêu học.");
     } finally {
-      setUpdatingGoal(false);
+      if (owns(ticket)) setUpdatingGoal(false);
     }
   };
 
   const handleDeleteWatchHistory = async () => {
     if (!confirm("Bạn có chắc chắn muốn xóa toàn bộ lịch sử xem?")) return;
 
+    const identity = currentAuthIdentity();
+    if (!identity) {
+      setIsDeletingHistory(false);
+      return;
+    }
+    const ticket = requestGateRef.current.next("history-delete", identity);
+
     setIsDeletingHistory(true);
     setHistoryError(null);
-
-    const token = getToken();
-    if (!token) return;
 
     try {
       const res = await api("/me/watch-history", {
         method: "DELETE",
-        token,
+        token: identity.token,
       });
+      if (!owns(ticket)) return;
 
       if (res.status === 202) {
+        requestGateRef.current.invalidateScope(PROGRESS_READ_SCOPE);
         const data = await parseApiResponse<HistoryDeletionCreatedPublic>(res);
+        if (!owns(ticket)) return;
         setDeletionNotice(
           `Đã yêu cầu xóa lịch sử xem (Mã: ${data.deletion_id.slice(0, 8)}…). Lịch sử đã được ẩn ngay lập tức và tác vụ xóa đang xử lý ở nền.`
         );
-        setDeletionCutoff(data.cutoff_time);
         setWatchHistory([]);
+        void loadData();
       } else {
         setHistoryError(`Không thể xóa lịch sử xem (mã phản hồi: ${res.status}).`);
       }
     } catch {
-      setHistoryError("Lỗi kết nối máy chủ khi gửi yêu cầu xóa lịch sử.");
+      if (owns(ticket)) setHistoryError("Lỗi kết nối máy chủ khi gửi yêu cầu xóa lịch sử.");
     } finally {
-      setIsDeletingHistory(false);
+      if (owns(ticket)) setIsDeletingHistory(false);
     }
   };
 
   useEffect(() => {
+    requestGateRef.current.activate();
     void loadData();
 
     const unsubscribe = subscribeAuth(() => {
-      progressGenRef.current += 1;
+      requestGateRef.current.changeAuthEpoch();
+      clearLearnerState();
       void loadData();
     });
 
@@ -260,8 +264,9 @@ export default function ProgressPage() {
     return () => {
       unsubscribe();
       window.removeEventListener("focus", onFocus);
+      requestGateRef.current.dispose();
     };
-  }, [loadData]);
+  }, [clearLearnerState, loadData]);
 
   const activeGoal = preferences?.current_policy?.daily_goal_minutes ?? preferences?.daily_goal_minutes ?? 15;
   const pendingPolicy = preferences?.pending_policy;
@@ -304,7 +309,11 @@ export default function ProgressPage() {
               Cấp độ hiện tại: Cấp {progress.current_ci_level}
             </span>
 
-            <div className="progress-big-number">
+            <div
+              className="progress-big-number"
+              data-testid="legacy-progress-minutes"
+              data-progress-minutes={progress.minutes_comprehensible}
+            >
               {progress.minutes_comprehensible}
             </div>
             <div className="progress-label">
@@ -351,7 +360,10 @@ export default function ProgressPage() {
                   }}
                 >
                   <span style={{ fontWeight: 700 }}>Mục tiêu sắp có hiệu lực: </span>
-                  {pendingPolicy.daily_goal_minutes} phút / ngày (hiệu lực từ: {new Date(pendingPolicy.effective_at).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" })})
+                  {pendingPolicy.daily_goal_minutes} phút / ngày (hiệu lực từ: {formatTimestampInTimeZone(
+                    pendingPolicy.effective_at,
+                    pendingPolicy.timezone,
+                  ) ?? pendingPolicy.effective_at}, múi giờ {pendingPolicy.timezone})
                 </div>
               )}
 
@@ -443,7 +455,7 @@ export default function ProgressPage() {
                         />
                       </div>
                       <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
-                        {formatDisplayDate(item.date, item.timezone)}
+                        {formatCalendarDate(item.date) ?? item.date}
                       </span>
                     </div>
                   );
@@ -451,7 +463,12 @@ export default function ProgressPage() {
               </div>
 
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: "0.75rem", fontSize: "0.85rem" }}>
-                <span>Tổng thời gian nghe chủ động: <strong>{Math.round(activity.total_active_watch_seconds / 60)} phút</strong></span>
+                <span
+                  data-testid="active-watch-total"
+                  data-active-watch-seconds={activity.total_active_watch_seconds}
+                >
+                  Tổng thời gian nghe chủ động: <strong>{Math.round(activity.total_active_watch_seconds / 60)} phút</strong>
+                </span>
                 <span>Số ngày đạt mục tiêu: <strong>{activity.days_goal_met}/7</strong></span>
               </div>
             </div>
@@ -522,6 +539,8 @@ export default function ProgressPage() {
                   <div
                     key={item.playback_id}
                     data-playback-id={item.playback_id}
+                    data-catalog-item-id={item.catalog_item_id}
+                    data-active-ms={item.total_active_ms}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",

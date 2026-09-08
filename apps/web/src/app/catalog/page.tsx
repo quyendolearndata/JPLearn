@@ -9,8 +9,19 @@ import type {
   Capabilities,
 } from "@jplearn/domain";
 import { api, parseApiResponse } from "../../lib/api";
-import { getToken, subscribeAuth } from "../../lib/auth-storage";
+import { getToken, getUser, subscribeAuth } from "../../lib/auth-storage";
+import {
+  AuthIdentity,
+  RequestOwnershipGate,
+  RequestTicket,
+} from "../../lib/request-ownership";
 import { TopicArt } from "../../components/topic-art";
+
+function currentAuthIdentity(): AuthIdentity | null {
+  const token = getToken();
+  const user = getUser();
+  return token && user?.id ? { token, userId: user.id } : null;
+}
 
 const TOPIC_LABELS: Record<string, string> = {
   daily_home: "Đời sống hàng ngày",
@@ -38,14 +49,27 @@ export default function CatalogPage() {
   const [items, setItems] = useState<CatalogItemPublic[]>([]);
   const [recommendations, setRecommendations] = useState<RecommendedItemPublic[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingRecs, setLoadingRecs] = useState(false);
+  const [, setLoadingRecs] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [capabilities, setCapabilities] = useState<Capabilities | null>(null);
 
-  const catalogGenRef = useRef(0);
-  const recGenRef = useRef(0);
+  const requestGateRef = useRef(new RequestOwnershipGate());
+  const selectedLevelRef = useRef<number | null>(null);
+
+  const owns = useCallback((ticket: RequestTicket) => (
+    requestGateRef.current.isCurrent(ticket, currentAuthIdentity())
+  ), []);
+
+  const clearLearnerState = useCallback(() => {
+    setItems([]);
+    setRecommendations([]);
+    setCapabilities(null);
+    setLoading(false);
+    setLoadingRecs(false);
+    setErrorMessage("");
+  }, []);
 
   const visibleItems = items.filter((item) =>
     (TOPIC_LABELS[item.topic_id] ?? item.topic_id)
@@ -54,70 +78,77 @@ export default function CatalogPage() {
   );
 
   const loadCapabilities = useCallback(async () => {
-    const token = getToken();
-    if (!token) return;
+    const identity = currentAuthIdentity();
+    if (!identity) {
+      requestGateRef.current.invalidateScope("capabilities");
+      setCapabilities(null);
+      return;
+    }
+    const ticket = requestGateRef.current.next("capabilities", identity);
     try {
-      const res = await api("/capabilities", { token });
+      const res = await api("/capabilities", { token: identity.token });
+      if (!owns(ticket)) return;
       if (res.ok) {
         const data = await parseApiResponse<Capabilities>(res);
+        if (!owns(ticket)) return;
         setCapabilities(data);
+      } else {
+        setCapabilities(null);
       }
     } catch {
-      // Capabilities fallback is non-fatal
+      if (owns(ticket)) setCapabilities(null);
     }
-  }, []);
+  }, [owns]);
 
   const fetchRecommendations = useCallback(async () => {
-    const token = getToken();
-    if (!token) {
+    const identity = currentAuthIdentity();
+    if (!identity) {
+      requestGateRef.current.invalidateScope("recommendations");
       setRecommendations([]);
+      setLoadingRecs(false);
       return;
     }
 
-    const gen = ++recGenRef.current;
+    const ticket = requestGateRef.current.next("recommendations", identity);
     setLoadingRecs(true);
 
     try {
-      const res = await api("/me/recommendations?limit=4", { token });
-      if (gen !== recGenRef.current) return;
+      const res = await api("/me/recommendations?limit=4", { token: identity.token });
+      if (!owns(ticket)) return;
 
       if (res.ok) {
         const body = await parseApiResponse<RecommendationsResponsePublic>(res);
+        if (!owns(ticket)) return;
         setRecommendations(body?.items ?? []);
       } else {
         setRecommendations([]);
       }
     } catch {
-      if (gen === recGenRef.current) {
-        setRecommendations([]);
-      }
+      if (owns(ticket)) setRecommendations([]);
     } finally {
-      if (gen === recGenRef.current) {
-        setLoadingRecs(false);
-      }
+      if (owns(ticket)) setLoadingRecs(false);
     }
-  }, []);
+  }, [owns]);
 
   const fetchCatalog = useCallback(async (level: number | null) => {
-    const token = getToken();
-    const gen = ++catalogGenRef.current;
-
-    if (!token) {
+    const identity = currentAuthIdentity();
+    if (!identity) {
+      requestGateRef.current.invalidateScope("catalog");
       setLoading(false);
       setErrorMessage("Hãy đăng nhập.");
       setItems([]);
       setRecommendations([]);
       return;
     }
+    const ticket = requestGateRef.current.next("catalog", identity);
 
     setLoading(true);
     setErrorMessage("");
 
     try {
       const path = level !== null ? `/catalog?ci_level=${level}` : "/catalog";
-      const res = await api(path, { token });
-
-      if (gen !== catalogGenRef.current) return;
+      const res = await api(path, { token: identity.token });
+      if (!owns(ticket)) return;
 
       if (!res.ok) {
         setErrorMessage("Không thể tải danh mục bài học.");
@@ -126,37 +157,39 @@ export default function CatalogPage() {
       }
 
       const body = await parseApiResponse<{ items: CatalogItemPublic[] }>(res);
+      if (!owns(ticket)) return;
       setItems(body?.items ?? []);
     } catch {
-      if (gen === catalogGenRef.current) {
+      if (owns(ticket)) {
         setErrorMessage("Lỗi kết nối máy chủ khi tải danh mục.");
         setItems([]);
       }
     } finally {
-      if (gen === catalogGenRef.current) {
-        setLoading(false);
-      }
+      if (owns(ticket)) setLoading(false);
     }
-  }, []);
+  }, [owns]);
 
   useEffect(() => {
+    requestGateRef.current.activate();
     void loadCapabilities();
     void fetchRecommendations();
 
     const unsubscribe = subscribeAuth(() => {
-      catalogGenRef.current += 1;
-      recGenRef.current += 1;
+      requestGateRef.current.changeAuthEpoch();
+      clearLearnerState();
       void loadCapabilities();
       void fetchRecommendations();
-      void fetchCatalog(selectedLevel);
+      void fetchCatalog(selectedLevelRef.current);
     });
 
     return () => {
       unsubscribe();
+      requestGateRef.current.dispose();
     };
-  }, [loadCapabilities, fetchRecommendations, fetchCatalog, selectedLevel]);
+  }, [clearLearnerState, loadCapabilities, fetchRecommendations, fetchCatalog]);
 
   useEffect(() => {
+    selectedLevelRef.current = selectedLevel;
     void fetchCatalog(selectedLevel);
   }, [selectedLevel, fetchCatalog]);
 
