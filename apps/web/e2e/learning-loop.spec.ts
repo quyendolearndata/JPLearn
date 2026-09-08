@@ -7,6 +7,7 @@ interface RegisteredUser {
   email: string;
   token: string;
   userId: string;
+  apiRoot: string;
 }
 
 async function register(page: Page): Promise<RegisteredUser> {
@@ -14,7 +15,12 @@ async function register(page: Page): Promise<RegisteredUser> {
   const email = `lrn${Date.now()}${Math.floor(Math.random() * 1e4)}@example.com`;
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Mật khẩu").fill("password10");
+  const registerResponsePromise = page.waitForResponse(
+    (res) => res.url().includes("/auth/register") && res.request().method() === "POST"
+  );
   await page.getByRole("button", { name: "Đăng ký" }).click();
+  const registerRes = await registerResponsePromise;
+  const apiRoot = new URL(registerRes.url()).origin;
   await expect(page).toHaveURL("/");
 
   const userData = await page.evaluate(() => ({
@@ -22,7 +28,7 @@ async function register(page: Page): Promise<RegisteredUser> {
     userId: JSON.parse(localStorage.getItem("jplearn.user")!).id,
   }));
 
-  return { email, token: userData.token, userId: userData.userId };
+  return { email, token: userData.token, userId: userData.userId, apiRoot };
 }
 
 async function expectNoBannedChrome(page: Page) {
@@ -31,8 +37,7 @@ async function expectNoBannedChrome(page: Page) {
   }
 }
 
-async function seedPlayback(page: Page, token: string, itemId: string) {
-  const apiRoot = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+async function seedPlayback(page: Page, apiRoot: string, token: string, itemId: string) {
   const idempotencyKey = `seed-play-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const response = await page.request.post(`${apiRoot}/playbacks`, {
     headers: {
@@ -80,7 +85,7 @@ test.describe("Learning Loop Integration (PR7, Waves A-C)", () => {
     await expectNoBannedChrome(page);
 
     // 4. Seed a playback record to ensure watch history is populated
-    await seedPlayback(page, user.token, SEED_ITEM_ID);
+    await seedPlayback(page, user.apiRoot, user.token, SEED_ITEM_ID);
 
     // 5. Open /progress: verify metrics and daily goals
     await page.goto("/progress");
@@ -92,11 +97,11 @@ test.describe("Learning Loop Integration (PR7, Waves A-C)", () => {
     const goalBtn = page.getByRole("button", { name: "30 phút / ngày" });
     await expect(goalBtn).toBeVisible();
     await goalBtn.click();
-    await expect(page.getByText("Mục tiêu hiện tại: 30 phút / ngày")).toBeVisible();
+    await expect(page.getByText(/Mục tiêu sắp có hiệu lực:\s*30 phút \/ ngày/)).toBeVisible();
 
-    // Reload page to verify goal persistence
+    // Reload page to verify pending goal persistence
     await page.reload();
-    await expect(page.getByText("Mục tiêu hiện tại: 30 phút / ngày")).toBeVisible();
+    await expect(page.getByText(/Mục tiêu sắp có hiệu lực:\s*30 phút \/ ngày/)).toBeVisible();
 
     // Check 7-day activity section
     await expect(page.getByText("Hoạt động 7 ngày gần đây")).toBeVisible();

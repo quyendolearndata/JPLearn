@@ -109,6 +109,8 @@ echo "== 2/5 FastAPI :$PY_PORT =="
   API_PUBLIC_URL="http://localhost:$PY_PORT" \
   STORAGE_ROOT="$STORAGE" \
   ENVIRONMENT="test" \
+  PLAYBACK_TRACKING_ENABLED="${PLAYBACK_TRACKING_ENABLED:-true}" \
+  SMART_STREAM_ENABLED="${SMART_STREAM_ENABLED:-true}" \
   CORS_ORIGIN_REGEX="^https?://(localhost|127\\.0\\.0\\.1)(:[0-9]+)?$" \
   PYTHONPATH=src \
   exec .venv/bin/uvicorn jplearn_api.entrypoints.http.app:app --port "$PY_PORT" >"$RUN_DIR/api.log" 2>&1
