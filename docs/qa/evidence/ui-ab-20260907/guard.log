@@ -1,0 +1,3 @@
+
+> jplearn@ test:guard /Users/quyendo/Documents/Learn/JPLearn
+> tsx scripts/assert-no-textbook.ts

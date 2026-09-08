@@ -1,0 +1,39 @@
+== 1/5 docker db-test (Alembic migrate + seed) [project=jplearn-web-e2e-20260908174032_18409] ==
+== 2/5 FastAPI :55922 ==
+== 3/5 seed nội dung published + HLS thật ==
+   published item 00000000-0000-4000-8000-0000000000c1, asset 7f7501ca-6a99-47b0-bde5-280c68fa7a73 (+hls)
+== 3b/5 teacher E2E account (isolated DB only) ==
+granted teacher to teacher@e2e.local
+== 4/5 web :55923 → API :55922 [workspace=/tmp/jplearn-e2e-20260908174032_18409/web] ==
+== 5/5 playwright e2e/shell.spec.ts e2e/hls.spec.ts ==
+
+Running 16 tests using 4 workers
+
+(node:94887) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:94890) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:94888) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:94889) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (995ms)
+  ✓   2 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (1.0s)
+  ✓   6 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (641ms)
+  ✓   3 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:22:5 › phiên phát HLS khi item có hls_url T-NFR-P2 (1.7s)
+  ✓   4 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/shell.spec.ts:20:5 › login and progress have no grammar chrome T-FLG-002 T-NEG-002 (1.8s)
+  ✓   5 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (1.3s)
+  ✓   8 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/shell.spec.ts:33:5 › catalog shows published seed item, hides draft T-CAT-002 T-FLG-002 (777ms)
+  ✓   9 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:177:5 › F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001 (809ms)
+  ✓   7 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:55:5 › F-03 HLS lỗi vẫn fallback MP4 mà không refetch catalog T-LRN-001 (1.4s)
+  ✓  10 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí paused T-LRN-001 (939ms)
+  ✓  11 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:177:5 › F-03 đổi URL hls.js cùng item khôi phục vị trí pause T-LRN-001 (1.3s)
+  ✓  12 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí playing T-LRN-001 (707ms)
+  ✓  13 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí paused T-LRN-001 (833ms)
+  ✓  14 [chromium] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:187:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (583ms)
+  ✓  15 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:182:7 › F-03 đổi URL HLS theo engine khôi phục vị trí playing T-LRN-001 (741ms)
+  ✓  16 [webkit] › ../../../..<candidate-worktree>/apps/web/e2e/hls.spec.ts:187:5 › F-03 HLS fallback lấy trạng thái play tại lúc fallback T-LRN-001 (1.0s)
+
+  16 passed (7.6s)
+== Cleaning up E2E resources [run=20260908174032_18409] ==
+== E2E run finished (exit 0). Evidence preserved at: /tmp/jplearn-e2e-20260908174032_18409 ==

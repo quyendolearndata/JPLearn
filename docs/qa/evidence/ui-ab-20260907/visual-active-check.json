@@ -1,0 +1,20 @@
+[
+  {
+    "device": "desktop",
+    "width": 1440,
+    "height": 1050,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "ipad",
+    "width": 820,
+    "height": 1180,
+    "horizontalOverflow": false
+  },
+  {
+    "device": "phone",
+    "width": 390,
+    "height": 844,
+    "horizontalOverflow": false
+  }
+]

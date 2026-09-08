@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api, parseApiError } from "../../lib/api";
@@ -98,6 +99,9 @@ export default function LoginPage() {
     <section className="login-card">
       <h1>Tài khoản</h1>
 
+      {notice ? <p className="status-notice">{notice}</p> : null}
+      {error ? <p className="status-error" role="alert">{error}</p> : null}
+
       {currentUser ? (
         <div className="logged-in-panel">
           <p>
@@ -109,64 +113,68 @@ export default function LoginPage() {
           <p className="logout-note">
             (Đăng xuất sẽ thu hồi phiên trên toàn bộ thiết bị đã đăng nhập)
           </p>
-          <button
-            type="button"
-            className="btn-danger"
-            disabled={isSubmitting}
-            onClick={() => void handleLogout()}
-          >
-            {isSubmitting ? "Đang xử lý…" : "Đăng xuất"}
-          </button>
+          <div className="button-group">
+            <Link href="/catalog" className="btn-cta btn-primary" style={{ textAlign: "center" }}>
+              Khám phá Catalog
+            </Link>
+            <button
+              type="button"
+              className="btn-danger"
+              disabled={isSubmitting}
+              onClick={() => void handleLogout()}
+            >
+              {isSubmitting ? "Đang xử lý…" : "Đăng xuất"}
+            </button>
+          </div>
         </div>
-      ) : null}
+      ) : (
+        <>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="username"
+              placeholder="learner@example.com"
+              value={email}
+              disabled={isSubmitting}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
 
-      {notice ? <p className="status-notice">{notice}</p> : null}
-      {error ? <p className="status-error" role="alert">{error}</p> : null}
+          <div className="form-group">
+            <label htmlFor="password">Mật khẩu</label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              placeholder="Ít nhất 10 ký tự"
+              value={password}
+              disabled={isSubmitting}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
 
-      <div className="form-group">
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="username"
-          placeholder="learner@example.com"
-          value={email}
-          disabled={isSubmitting}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="password">Mật khẩu</label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="Ít nhất 10 ký tự"
-          value={password}
-          disabled={isSubmitting}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-
-      <div className="button-group">
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={() => void submit("/auth/login")}
-        >
-          {isSubmitting ? "Đang xử lý…" : "Đăng nhập"}
-        </button>
-        <button
-          type="button"
-          disabled={isSubmitting}
-          onClick={() => void submit("/auth/register")}
-        >
-          {isSubmitting ? "Đang xử lý…" : "Đăng ký"}
-        </button>
-      </div>
+          <div className="button-group">
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => void submit("/auth/login")}
+            >
+              {isSubmitting ? "Đang xử lý…" : "Đăng nhập"}
+            </button>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => void submit("/auth/register")}
+            >
+              {isSubmitting ? "Đang xử lý…" : "Đăng ký"}
+            </button>
+          </div>
+        </>
+      )}
     </section>
   );
 }

@@ -10,7 +10,7 @@ const LEARNER_PAGES: { path: string; title: string; ready: (page: Page) => Promi
   {
     path: "/login",
     title: "JPLearn — Đăng nhập",
-    ready: async (p) => p.getByRole("button", { name: "Đăng ký" }).waitFor(),
+    ready: async (p) => p.getByRole("button", { name: "Đăng xuất" }).waitFor(),
   },
   {
     path: "/catalog",
@@ -25,7 +25,7 @@ const LEARNER_PAGES: { path: string; title: string; ready: (page: Page) => Promi
   {
     path: "/progress",
     title: "JPLearn — Tiến độ",
-    ready: async (p) => p.getByText(/phút/i).waitFor(),
+    ready: async (p) => p.locator(".progress-label").waitFor(),
   },
 ];
 

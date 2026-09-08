@@ -26,7 +26,7 @@ test("login and progress have no grammar chrome T-FLG-002 T-NEG-002", async ({ p
   await expect(page.getByText(/Phiên đang chạy/)).toBeVisible();
   await expectNoBannedChrome(page);
   await page.goto("/progress");
-  await expect(page.getByText(/phút/i)).toBeVisible();
+  await expect(page.locator(".progress-label")).toHaveText("Phút CI tích lũy");
   await expectNoBannedChrome(page);
 });
 
@@ -34,8 +34,14 @@ test("catalog shows published seed item, hides draft T-CAT-002 T-FLG-002", async
   await register(page);
   await page.goto("/catalog");
   await expect(page.getByRole("heading", { name: "Catalog" })).toBeVisible();
-  await expect(page.getByText(/daily_home · video · 30s/)).toBeVisible();
-  await expect(page.getByText(/food · video · 25s/)).toHaveCount(0);
+  const seed = page.locator('[data-item-id="00000000-0000-4000-8000-0000000000c1"]');
+  await expect(seed).toBeVisible();
+  await expect(seed.getByRole("heading")).toHaveText("Đời sống hàng ngày");
+  await expect(seed.getByText("30 giây")).toBeVisible();
+  await expect(page.locator('[data-item-id="00000000-0000-4000-8000-0000000000d1"]')).toHaveCount(0);
+  await page.getByRole("searchbox", { name: "Tìm chủ đề" }).fill("chủ đề không tồn tại");
+  await expect(seed).toHaveCount(0);
+  await page.getByRole("searchbox", { name: "Tìm chủ đề" }).fill("");
+  await expect(seed).toBeVisible();
   await expectNoBannedChrome(page);
 });
-

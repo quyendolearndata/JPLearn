@@ -45,12 +45,19 @@ test("UC-L06 cùng user hai client: cùng catalog published, cùng minutes_compr
   await expect(pageB).toHaveURL("/");
   await pageB.goto("/catalog");
   await expect(pageB.locator("article.catalog-card").first()).toBeVisible();
-  // CMS tests can publish between these visits. Compare fresh snapshots by item URL.
+  // CMS tests publish concurrently. Compare fresh reads by stable IDs, not an
+  // earlier title snapshot (different items may have the same public topic).
   await expect(async () => {
     await Promise.all([pageA.goto("/catalog"), pageB.goto("/catalog")]);
     await Promise.all([pageA.locator("article.catalog-card").first().waitFor(), pageB.locator("article.catalog-card").first().waitFor()]);
-    const read = (page: import("@playwright/test").Page) => page.locator("article.catalog-card a").evaluateAll(links => links.map(link => link.getAttribute("href")).sort());
-    expect(await read(pageB)).toEqual(await read(pageA));
+    const read = (p: import("@playwright/test").Page) =>
+      p.locator("article.catalog-card").evaluateAll((cards) =>
+        cards.map((c) => c.getAttribute("data-item-id")).filter((id): id is string => Boolean(id)).sort()
+      );
+    const idsA = await read(pageA);
+    const idsB = await read(pageB);
+    expect(idsA.length).toBeGreaterThan(0);
+    expect(idsB).toEqual(idsA);
   }).toPass({ timeout: 10_000 });
 
   await pageB.goto("/progress");

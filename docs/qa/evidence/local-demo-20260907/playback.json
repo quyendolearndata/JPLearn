@@ -1,0 +1,162 @@
+[
+  {
+    "engine": "chromium",
+    "title": "level-0-breakfast",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.307464
+  },
+  {
+    "engine": "chromium",
+    "title": "level-0-kitchen",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.306401
+  },
+  {
+    "engine": "chromium",
+    "title": "level-0-wash-hands",
+    "width": 1280,
+    "height": 720,
+    "duration": 32,
+    "currentTime": 0.310725
+  },
+  {
+    "engine": "chromium",
+    "title": "level-0-put-on-jacket",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.307406
+  },
+  {
+    "engine": "chromium",
+    "title": "level-0-fold-clothes",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.3087
+  },
+  {
+    "engine": "chromium",
+    "title": "level-0-boil-water",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.308901
+  },
+  {
+    "engine": "chromium",
+    "title": "level-0-bedtime",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.307765
+  },
+  {
+    "engine": "chromium",
+    "title": "level-0-tidy-books",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.310377
+  },
+  {
+    "engine": "chromium",
+    "title": "level-1-open-door",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.308117
+  },
+  {
+    "engine": "chromium",
+    "title": "level-1-pack-bag",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.308969
+  },
+  {
+    "engine": "webkit",
+    "title": "level-0-breakfast",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.3113269163336659
+  },
+  {
+    "engine": "webkit",
+    "title": "level-0-kitchen",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.3178051253334811
+  },
+  {
+    "engine": "webkit",
+    "title": "level-0-wash-hands",
+    "width": 1280,
+    "height": 720,
+    "duration": 32,
+    "currentTime": 0.31175529166716326
+  },
+  {
+    "engine": "webkit",
+    "title": "level-0-put-on-jacket",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.310785166332943
+  },
+  {
+    "engine": "webkit",
+    "title": "level-0-fold-clothes",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.3142713339982633
+  },
+  {
+    "engine": "webkit",
+    "title": "level-0-boil-water",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.3056291246659906
+  },
+  {
+    "engine": "webkit",
+    "title": "level-0-bedtime",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.31297445866703577
+  },
+  {
+    "engine": "webkit",
+    "title": "level-0-tidy-books",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.3121573746665153
+  },
+  {
+    "engine": "webkit",
+    "title": "level-1-open-door",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.313146708000388
+  },
+  {
+    "engine": "webkit",
+    "title": "level-1-pack-bag",
+    "width": 1280,
+    "height": 720,
+    "duration": 10,
+    "currentTime": 0.313636042333117
+  }
+]
