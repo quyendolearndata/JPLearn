@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 from typing import Any
 
 LEASE_DURATION_SECONDS = 45
@@ -16,14 +16,14 @@ DEFAULT_DAILY_GOAL_MINUTES = 15
 DEFAULT_TIMEZONE = "Asia/Ho_Chi_Minh"
 
 
-class PlaybackStatus(StrEnum):
+class PlaybackStatus(str, Enum):
     ACTIVE = "active"
     COMPLETED = "completed"
     SUPERSEDED = "superseded"
     ABANDONED = "abandoned"
 
 
-class PlayerState(StrEnum):
+class PlayerState(str, Enum):
     PLAYING = "playing"
     PAUSED = "paused"
     BUFFERING = "buffering"
@@ -125,7 +125,7 @@ class LearnerDailyActivity:
     policy_revision: int = 1
 
 
-class DeletionStatus(StrEnum):
+class DeletionStatus(str, Enum):
     QUEUED = "queued"
     RUNNING = "running"
     COMPLETED = "completed"

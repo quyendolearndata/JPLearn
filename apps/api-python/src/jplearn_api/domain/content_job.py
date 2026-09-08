@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from enum import StrEnum
+from enum import Enum
 from typing import Any
 
 from jplearn_api.domain.errors import (
@@ -13,12 +13,12 @@ from jplearn_api.domain.errors import (
 )
 
 
-class ContentJobTask(StrEnum):
+class ContentJobTask(str, Enum):
     TRANSCRIPT = "transcript"
     SEGMENTATION = "segmentation"
 
 
-class ContentJobStatus(StrEnum):
+class ContentJobStatus(str, Enum):
     QUEUED = "queued"
     RUNNING = "running"
     SUCCEEDED = "succeeded"

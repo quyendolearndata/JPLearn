@@ -14,7 +14,7 @@ from __future__ import annotations
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 from typing import Any
 
 from jplearn_api.domain.errors import InvalidDomainStateError, ValidationError
@@ -24,20 +24,20 @@ MAX_CHARS_PER_SEGMENT = 500
 MAX_TOTAL_CHARS_PER_CLIP = 20_000
 
 
-class TranscriptStatus(StrEnum):
+class TranscriptStatus(str, Enum):
     DRAFT = "draft"
     QA_SUBMITTED = "qa_submitted"
     APPROVED = "approved"
     RETURNED_TO_DRAFT = "returned_to_draft"
 
 
-class TranscriptProvenance(StrEnum):
+class TranscriptProvenance(str, Enum):
     MANUAL_TEACHER = "manual_teacher"
     AI_ASSISTED = "ai_assisted"
     IMPORTED = "imported"
 
 
-class LanguageAnalysisJobStatus(StrEnum):
+class LanguageAnalysisJobStatus(str, Enum):
     QUEUED = "queued"
     RUNNING = "running"
     COMPLETED = "completed"

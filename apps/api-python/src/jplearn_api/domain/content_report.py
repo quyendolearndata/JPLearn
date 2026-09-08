@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 
 
-class ReportCategory(StrEnum):
+class ReportCategory(str, Enum):
     AUDIO_QUALITY = "audio_quality"
     SCENE_TIMING = "scene_timing"
     VISUAL_MISMATCH = "visual_mismatch"
@@ -15,7 +15,7 @@ class ReportCategory(StrEnum):
     OTHER = "other"
 
 
-class ReportStatus(StrEnum):
+class ReportStatus(str, Enum):
     OPEN = "open"
     IN_REVIEW = "in_review"
     RESOLVED = "resolved"

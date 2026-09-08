@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 from typing import Any, Protocol
 
 from jplearn_api.application.read_models import CatalogItemPublicDTO
@@ -75,7 +75,7 @@ class UserRepository(Protocol):
     async def add_initial_progress(self, user_id: str, now: datetime) -> None: ...
 
 
-class UpdateDraftResultStatus(StrEnum):
+class UpdateDraftResultStatus(str, Enum):
     UPDATED = "updated"
     NOT_FOUND = "not_found"
     WRONG_STATUS = "wrong_status"

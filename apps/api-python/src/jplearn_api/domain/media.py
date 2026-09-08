@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
+from enum import Enum
 
 from jplearn_api.domain.errors import DomainError
 
 
-class MediaUploadState(StrEnum):
+class MediaUploadState(str, Enum):
     """Lifecycle states of media upload process."""
 
     STAGED = "STAGED"

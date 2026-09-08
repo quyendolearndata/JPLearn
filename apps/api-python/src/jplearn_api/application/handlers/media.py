@@ -6,7 +6,7 @@ import asyncio
 import logging
 import re
 from collections.abc import AsyncIterator, Callable
-from enum import StrEnum
+from enum import Enum
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -60,7 +60,7 @@ def to_staff_dto(
     )
 
 
-class UploadCommitOutcome(StrEnum):
+class UploadCommitOutcome(str, Enum):
     COMMITTED = "committed"
     ROLLBACK_CONFIRMED = "rollback_confirmed"
     OUTCOME_UNKNOWN = "outcome_unknown"
